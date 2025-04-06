@@ -38,3 +38,6 @@ out/
 
 ### yml ###
 application.yml
+
+### image ###
+src/main/resources/static/images

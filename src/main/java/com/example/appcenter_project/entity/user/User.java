@@ -1,0 +1,63 @@
+package com.example.appcenter_project.entity.user;
+
+import com.example.appcenter_project.dto.request.user.RequestUserDto;
+import com.example.appcenter_project.entity.BaseTimeEntity;
+import com.example.appcenter_project.entity.Image;
+import com.example.appcenter_project.enums.user.College;
+import com.example.appcenter_project.enums.user.DormType;
+import com.example.appcenter_project.enums.user.Role;
+import jakarta.annotation.Nullable;
+import jakarta.persistence.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Entity
+@NoArgsConstructor
+@Getter
+public class User extends BaseTimeEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String studentNumber;
+
+    private String name;
+//    private String password;
+
+    private DormType dormType;
+
+    private College college;
+
+    private int penalty;
+
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "image_id")
+    private Image image;
+
+    @Builder
+    public User(String studentNumber, String name, String password, DormType dormType, int penalty, Role role, Image image) {
+        this.name = name;
+        this.studentNumber = studentNumber;
+//        this.password = password;
+        this.dormType = dormType;
+        this.penalty = penalty;
+        this.role = role;
+        this.image = image;
+    }
+
+    public void update(RequestUserDto requestUserDto) {
+        this.name = requestUserDto.getName();
+        this.dormType = DormType.valueOf(requestUserDto.getDormType());
+        this.college = College.valueOf(requestUserDto.getCollege());
+        this.penalty = requestUserDto.getPenalty();
+    }
+
+    public void updateImage(Image image) {
+        this.image =image;
+    }
+}
