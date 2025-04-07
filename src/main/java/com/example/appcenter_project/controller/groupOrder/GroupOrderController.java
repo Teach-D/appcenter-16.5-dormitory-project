@@ -28,8 +28,8 @@ public class GroupOrderController {
     private final GroupOrderService groupOrderService;
 
     @PostMapping
-    public ResponseEntity<Void> saveGroupOrder(@RequestBody RequestGroupOrderDto requestGroupOrderDto) {
-        groupOrderService.saveGroupOrder(requestGroupOrderDto);
+    public ResponseEntity<Void> saveGroupOrder(@AuthenticationPrincipal SecurityUser user, @RequestBody RequestGroupOrderDto requestGroupOrderDto) {
+        groupOrderService.saveGroupOrder(user.getId(), requestGroupOrderDto);
         return ResponseEntity.status(CREATED).build();
     }
 
@@ -46,8 +46,8 @@ public class GroupOrderController {
     }
 
     @PatchMapping("/like/{groupOrderId}")
-    public ResponseEntity<Integer> likePlusGroupOrder(@PathVariable Long groupOrderId) {
-        return ResponseEntity.status(OK).body(groupOrderService.likePlusGroupOrder(groupOrderId));
+    public ResponseEntity<Integer> likePlusGroupOrder(@AuthenticationPrincipal SecurityUser user, @PathVariable Long groupOrderId) {
+        return ResponseEntity.status(OK).body(groupOrderService.likePlusGroupOrder(user.getId(), groupOrderId));
     }
 
     @PutMapping("/{groupOrderId}")
