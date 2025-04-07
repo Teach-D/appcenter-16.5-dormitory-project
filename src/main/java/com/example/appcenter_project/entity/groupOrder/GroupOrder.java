@@ -1,16 +1,17 @@
 package com.example.appcenter_project.entity.groupOrder;
 
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
+import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.core.annotation.Order;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @NoArgsConstructor
@@ -39,8 +40,12 @@ public class GroupOrder {
 
     private String description;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
     @Builder
-    public GroupOrder(String title, String groupOrderType, int price, String link, int currentPeople, int maxPeople, LocalDateTime deadline, int groupOrderLike, String description) {
+    public GroupOrder(String title, String groupOrderType, int price, String link, int currentPeople, int maxPeople, LocalDateTime deadline, int groupOrderLike, String description, User user) {
         this.title = title;
         this.groupOrderType = GroupOrderType.valueOf(groupOrderType);
         this.price = price;
@@ -50,6 +55,7 @@ public class GroupOrder {
         this.deadline = deadline;
         this.groupOrderLike = groupOrderLike;
         this.description = description;
+        this.user = user;
     }
 
     public void update(RequestGroupOrderDto requestGroupOrderDto) {

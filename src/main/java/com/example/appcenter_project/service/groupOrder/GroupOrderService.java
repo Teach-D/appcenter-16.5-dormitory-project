@@ -3,9 +3,13 @@ package com.example.appcenter_project.service.groupOrder;
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
+import com.example.appcenter_project.entity.like.GroupOrderLike;
+import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import com.example.appcenter_project.repository.groupOrder.GroupOrderRepository;
+import com.example.appcenter_project.repository.like.LikeRepository;
+import com.example.appcenter_project.repository.user.UserRepository;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -18,16 +22,23 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.example.appcenter_project.enums.like.BoardType.*;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class GroupOrderService {
 
     private final GroupOrderRepository groupOrderRepository;
+    private final UserRepository userRepository;
+    private final LikeRepository likeRepository;
 
-    public void saveGroupOrder(RequestGroupOrderDto requestGroupOrderDto) {
-        Optional<GroupOrder> byId = groupOrderRepository.findById(1L);
-        GroupOrder groupOrder = RequestGroupOrderDto.dtoToEntity(requestGroupOrderDto);
+    public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto) {
+        User user = userRepository.findById(userId).orElseThrow();
+        GroupOrder groupOrder = RequestGroupOrderDto.dtoToEntity(requestGroupOrderDto, user);
+
+        user.getGroupOrderList().add(groupOrder);
+
         groupOrderRepository.save(groupOrder);
     }
 
@@ -79,8 +90,20 @@ public class GroupOrderService {
         };
     }
 
-    public Integer likePlusGroupOrder(Long groupOrderId) {
+    public Integer likePlusGroupOrder(Long userId, Long groupOrderId) {
         GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId).orElseThrow();
+        User user = userRepository.findById(userId).orElseThrow();
+
+        GroupOrderLike groupOrderLike = GroupOrderLike.builder()
+                .user(user)
+                .groupOrder(groupOrder)
+                .build();
+
+        likeRepository.save(groupOrderLike);
+
+        // user에 좋아요 정보 추가
+        user.addLike(groupOrderLike);
+
         return groupOrder.plusLike();
     }
 }

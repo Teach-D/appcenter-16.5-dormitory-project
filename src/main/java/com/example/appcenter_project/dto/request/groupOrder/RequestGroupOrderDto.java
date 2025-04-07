@@ -1,6 +1,7 @@
 package com.example.appcenter_project.dto.request.groupOrder;
 
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
+import com.example.appcenter_project.entity.user.User;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
@@ -16,7 +17,7 @@ public class RequestGroupOrderDto {
     private LocalDateTime deadline;
     private String description;
 
-    public static GroupOrder dtoToEntity(RequestGroupOrderDto dto) {
+    public static GroupOrder dtoToEntity(RequestGroupOrderDto dto, User user) {
         return GroupOrder.builder()
                 .title(dto.getTitle())
                 .groupOrderType(dto.getGroupOrderType())
@@ -27,6 +28,7 @@ public class RequestGroupOrderDto {
                 .deadline(dto.getDeadline())
                 .groupOrderLike(0)
                 .description(dto.getDescription())
+                .user(user)
                 .build();
     }
 }
