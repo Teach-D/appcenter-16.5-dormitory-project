@@ -3,14 +3,18 @@ package com.example.appcenter_project.entity.user;
 import com.example.appcenter_project.dto.request.user.RequestUserDto;
 import com.example.appcenter_project.entity.BaseTimeEntity;
 import com.example.appcenter_project.entity.Image;
+import com.example.appcenter_project.entity.groupOrder.GroupOrder;
+import com.example.appcenter_project.entity.like.GroupOrderLike;
 import com.example.appcenter_project.enums.user.College;
 import com.example.appcenter_project.enums.user.DormType;
 import com.example.appcenter_project.enums.user.Role;
-import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @NoArgsConstructor
@@ -39,6 +43,12 @@ public class User extends BaseTimeEntity {
     @JoinColumn(name = "image_id")
     private Image image;
 
+    @OneToMany(mappedBy = "user")
+    private List<GroupOrderLike> groupOrderLikeList = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user")
+    private List<GroupOrder> groupOrderList = new ArrayList<>();
+
     @Builder
     public User(String studentNumber, String name, String password, DormType dormType, int penalty, Role role, Image image) {
         this.name = name;
@@ -59,5 +69,9 @@ public class User extends BaseTimeEntity {
 
     public void updateImage(Image image) {
         this.image =image;
+    }
+
+    public void addLike(GroupOrderLike groupOrderLike) {
+        this.groupOrderLikeList.add(groupOrderLike);
     }
 }
