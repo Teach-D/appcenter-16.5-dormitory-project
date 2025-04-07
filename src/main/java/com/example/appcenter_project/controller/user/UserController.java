@@ -3,6 +3,7 @@ package com.example.appcenter_project.controller.user;
 import com.example.appcenter_project.dto.ImageDto;
 import com.example.appcenter_project.dto.request.user.RequestUserDto;
 import com.example.appcenter_project.dto.request.user.SignupUser;
+import com.example.appcenter_project.dto.response.like.ResponseLikeDto;
 import com.example.appcenter_project.dto.response.user.ResponseLoginDto;
 import com.example.appcenter_project.dto.response.user.ResponseUserDto;
 import com.example.appcenter_project.jwt.SecurityUser;
@@ -16,6 +17,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 import static org.springframework.http.HttpStatus.*;
 
@@ -45,6 +48,11 @@ public class UserController {
         return ResponseEntity.status(FOUND)
                 .contentType(MediaType.parseMediaType(imageDto.getContentType()))
                 .body(imageDto.getResource());
+    }
+
+    @GetMapping("/like")
+    public ResponseEntity<List<ResponseLikeDto>> findLikeByUserId(@AuthenticationPrincipal SecurityUser user) {
+        return ResponseEntity.status(FOUND).body(userService.findLikeByUserId(user.getId()));
     }
 
     @PutMapping
