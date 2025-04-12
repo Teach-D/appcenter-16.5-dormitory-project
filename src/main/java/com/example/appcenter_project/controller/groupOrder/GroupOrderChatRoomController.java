@@ -1,6 +1,5 @@
 package com.example.appcenter_project.controller.groupOrder;
 
-import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
 import com.example.appcenter_project.jwt.SecurityUser;
 import com.example.appcenter_project.service.groupOrder.GroupOrderChatRoomService;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +12,7 @@ import static org.springframework.http.HttpStatus.CREATED;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/group-order-chat-rooms")
-public class GroupOrderChatController {
+public class GroupOrderChatRoomController {
 
     private final GroupOrderChatRoomService groupOrderChatRoomService;
 
