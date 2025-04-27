@@ -35,9 +35,9 @@ public class WebSocketEventListener {
     private final GroupOrderChatRepository groupOrderChatRepository;
 
     public static final Map<String, String> chatRoomListInUserMap = new ConcurrentHashMap<>(); // 세션 ID -> 사용자 ID
-    public static final Map<String, List<String>> chatRoomInUserMap = new ConcurrentHashMap<>(); // 세션 ID -> 사용자 ID
-    public static final Map<String, String> chatRoomMap = new ConcurrentHashMap<>(); // 세션 ID -> 사용자 ID
-    public static final Map<String, String> chatRoomUserMap = new ConcurrentHashMap<>();
+    public static final Map<String, List<String>> groupOrderChatRoomInUserMap = new ConcurrentHashMap<>(); // 세션 ID -> 사용자 ID
+    public static final Map<String, String> groupOrderChatRoomMap = new ConcurrentHashMap<>(); // 세션 ID -> 사용자 ID
+    public static final Map<String, String> groupOrderChatRoomUserMap = new ConcurrentHashMap<>();
 
     public WebSocketEventListener(SimpMessageSendingOperations messagingTemplate, WebSocketHandler webSocketHandler, UserGroupOrderChatRoomRepository userGroupOrderChatRoomRepository, UserGroupOrderChatRoomRepository userGroupOrderChatRoomRepository1, GroupOrderChatRoomRepository groupOrderChatRoomRepository, GroupOrderChatRepository groupOrderChatRepository) {
         this.messagingTemplate = messagingTemplate;
@@ -90,20 +90,20 @@ public class WebSocketEventListener {
             // db에서 특정 유저의 모든 GroupOrderChatRoom를 리턴
             messagingTemplate.convertAndSend("/sub/return/chatRoomList/" + userId, groupOrderChatRoomDtos);
         }
-        // 유저가 자신이 가입한 채팅방에 입장했을 경우
-        else if (destination != null && destination.startsWith("/sub/chatRoom/")) {
+        // 유저가 자신이 가입한 GroupOrder 채팅방에 입장했을 경우
+        else if (destination != null && destination.startsWith("/sub/groupOrderChatRoom/")) {
             String[] pathParts = destination.split("/");
             String groupOrderChatRoomId = pathParts[3]; // chatRoomId
             String userId = pathParts[5]; // memberId
 
             // 같은 sessionId로 특정 유저가 자신이 가입한 채팅방에 입장한 것을 저장
-            chatRoomMap.put(sessionId, String.valueOf(groupOrderChatRoomId));
-            chatRoomUserMap.put(sessionId, String.valueOf(userId));
+            groupOrderChatRoomMap.put(sessionId, String.valueOf(groupOrderChatRoomId));
+            groupOrderChatRoomUserMap.put(sessionId, String.valueOf(userId));
 
             // 채팅방에 유저 입장
-            List<String> chatRoomUser = chatRoomInUserMap.get(groupOrderChatRoomId);
+            List<String> chatRoomUser = groupOrderChatRoomInUserMap.get(groupOrderChatRoomId);
             chatRoomUser.add(userId);
-            chatRoomInUserMap.put(groupOrderChatRoomId, chatRoomUser);
+            groupOrderChatRoomInUserMap.put(groupOrderChatRoomId, chatRoomUser);
 
             // 채팅방 입장시 읽지 않은 메시지 읽음으로 db저장, 읽은 List<GroupOrderChatId> websocket 리턴
             List<ResponseReadGroupOrderChat> readGroupOrderChatId = new ArrayList<>();
@@ -133,21 +133,21 @@ public class WebSocketEventListener {
         }
         // 유저가 채팅방에서 퇴장했을 때 session 삭제
         else {
-            String groupChatRoomId = chatRoomMap.get(sessionId);
-            String userId = chatRoomUserMap.get(sessionId);
+            String groupChatRoomId = groupOrderChatRoomMap.get(sessionId);
+            String userId = groupOrderChatRoomUserMap.get(sessionId);
 
             // sessionId로 GroupChatRoom에 입장해 있는 userId 획득
-            List<String> userList = chatRoomInUserMap.get(groupChatRoomId);
+            List<String> userList = groupOrderChatRoomInUserMap.get(groupChatRoomId);
             if (userList != null && userList.size() > 0) {
                 // 채팅방 퇴장
                 userList.remove(userId);
                 if (userList.isEmpty()) {
-                    chatRoomInUserMap.remove(groupChatRoomId); // 리스트가 비면 map에서 방 자체도 삭제
+                    groupOrderChatRoomInUserMap.remove(groupChatRoomId); // 리스트가 비면 map에서 방 자체도 삭제
                 }
             }
 
-            chatRoomMap.remove(sessionId);
-            chatRoomUserMap.remove(sessionId);
+            groupOrderChatRoomMap.remove(sessionId);
+            groupOrderChatRoomUserMap.remove(sessionId);
         }
     }
 }

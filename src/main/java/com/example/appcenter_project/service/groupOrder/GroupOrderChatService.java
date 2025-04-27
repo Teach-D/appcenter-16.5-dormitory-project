@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.example.appcenter_project.config.WebSocketEventListener.chatRoomInUserMap;
+import static com.example.appcenter_project.config.WebSocketEventListener.groupOrderChatRoomInUserMap;
 import static com.example.appcenter_project.config.WebSocketEventListener.chatRoomListInUserMap;
 
 @Service
@@ -46,7 +46,7 @@ public class GroupOrderChatService {
         }
 
         // 현재 채팅방에 입장한 유저
-        List<String> userInChatRoom = chatRoomInUserMap.get(String.valueOf(groupOrderChatRoom.getId()));
+        List<String> userInChatRoom = groupOrderChatRoomInUserMap.get(String.valueOf(groupOrderChatRoom.getId()));
 
         List<Long> unreadUser = new ArrayList<>();
 
