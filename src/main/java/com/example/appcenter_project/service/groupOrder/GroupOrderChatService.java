@@ -64,6 +64,9 @@ public class GroupOrderChatService {
         // 채팅 db에 저장
         GroupOrderChat saveGroupOrderChat = groupOrderChatRepository.save(groupOrderChat);
 
+        // GroupOrderChatRoom - GroupOrderChat 양방향 매핑
+        groupOrderChatRoom.getGroupOrderChatList().add(saveGroupOrderChat);
+
         // 채팅을 보냈을 때 채팅방에 가입되어 있는 유저의 채팅방 정보 변경
         // 1. 채팅방에 입장한 유저의 경우-읽지 않음 수 그대로
         List<User> readUsers = chatRoomAllUser.stream()
