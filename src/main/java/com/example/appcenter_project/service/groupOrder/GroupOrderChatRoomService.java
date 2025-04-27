@@ -1,5 +1,6 @@
 package com.example.appcenter_project.service.groupOrder;
 
+import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderChatRoomDto;
 import com.example.appcenter_project.entity.groupOrder.GroupOrderChatRoom;
 import com.example.appcenter_project.entity.groupOrder.UserGroupOrderChatRoom;
 import com.example.appcenter_project.entity.user.User;
@@ -9,6 +10,9 @@ import com.example.appcenter_project.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +47,17 @@ public class GroupOrderChatRoomService {
         user.getUserGroupOrderChatRoomList().remove(userGroupOrderChatRoom);
     }
 
-    //
+    public List<ResponseGroupOrderChatRoomDto> findGroupOrderChatRoom(Long userId) {
+        User user = userRepository.findById(userId).orElseThrow();
+
+        List<ResponseGroupOrderChatRoomDto> groupOrderChatRoomDtos = new ArrayList<>();
+
+        for (UserGroupOrderChatRoom userGroupOrderChatRoom : user.getUserGroupOrderChatRoomList()) {
+            ResponseGroupOrderChatRoomDto responseGroupOrderChatRoomDto = ResponseGroupOrderChatRoomDto.entityToDto(userGroupOrderChatRoom);
+            groupOrderChatRoomDtos.add(responseGroupOrderChatRoomDto);
+        }
+
+        return groupOrderChatRoomDtos;
+    }
 
 }
