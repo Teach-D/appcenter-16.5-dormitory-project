@@ -1,5 +1,6 @@
 package com.example.appcenter_project.controller.groupOrder;
 
+import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderChatRoomDto;
 import com.example.appcenter_project.jwt.SecurityUser;
 import com.example.appcenter_project.service.groupOrder.GroupOrderChatRoomService;
 import lombok.RequiredArgsConstructor;
@@ -7,7 +8,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.FOUND;
 
 @RestController
 @RequiredArgsConstructor
@@ -16,10 +20,15 @@ public class GroupOrderChatRoomController {
 
     private final GroupOrderChatRoomService groupOrderChatRoomService;
 
-    @PostMapping("/{chatRoomId}")
+    @PostMapping("/{chatRoomId}/join")
     public ResponseEntity<Void> joinChatRoom(@AuthenticationPrincipal SecurityUser user, @PathVariable Long chatRoomId) {
         groupOrderChatRoomService.joinChatRoom(user.getId(), chatRoomId);
         return ResponseEntity.status(CREATED).build();
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ResponseGroupOrderChatRoomDto>> findGroupOrderChatRoom(@AuthenticationPrincipal SecurityUser user) {
+        return ResponseEntity.status(FOUND).body(groupOrderChatRoomService.findGroupOrderChatRoom(user.getId()));
     }
 
     @PatchMapping("/{chatRoomId}")
