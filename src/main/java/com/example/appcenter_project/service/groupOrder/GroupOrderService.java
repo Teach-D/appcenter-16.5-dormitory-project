@@ -26,8 +26,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.example.appcenter_project.enums.like.BoardType.*;
-
 @Service
 @RequiredArgsConstructor
 @Transactional
