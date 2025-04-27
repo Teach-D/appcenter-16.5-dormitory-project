@@ -1,6 +1,7 @@
 package com.example.appcenter_project.config;
 
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderChatRoomDto;
+import com.example.appcenter_project.dto.response.groupOrder.ResponseReadGroupOrderChat;
 import com.example.appcenter_project.entity.groupOrder.GroupOrderChat;
 import com.example.appcenter_project.entity.groupOrder.UserGroupOrderChatRoom;
 import com.example.appcenter_project.repository.groupOrder.GroupOrderChatRepository;
@@ -105,11 +106,11 @@ public class WebSocketEventListener {
             chatRoomInUserMap.put(groupOrderChatRoomId, chatRoomUser);
 
             // 채팅방 입장시 읽지 않은 메시지 읽음으로 db저장, 읽은 List<GroupOrderChatId> websocket 리턴
-            List<Long> readGroupOrderChatId = new ArrayList<>();
+            List<ResponseReadGroupOrderChat> readGroupOrderChatId = new ArrayList<>();
             List<GroupOrderChat> groupOrderChats = groupOrderChatRepository.findByGroupOrderChatRoom_id(Long.valueOf(groupOrderChatRoomId));
             for (GroupOrderChat groupOrderChat : groupOrderChats) {
                 if (groupOrderChat.getUnreadUser().contains(Long.valueOf(userId))) {
-                    readGroupOrderChatId.add(groupOrderChat.getId());
+                    ResponseReadGroupOrderChat.builder().readGroupOrderChatId(groupOrderChat.getId());
 
                     // 읽지 않은 메시지에서 유저 삭제
                     groupOrderChat.getUnreadUser().remove(Long.valueOf(userId));
