@@ -3,11 +3,15 @@ package com.example.appcenter_project.service.groupOrder;
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
+import com.example.appcenter_project.entity.groupOrder.GroupOrderChatRoom;
+import com.example.appcenter_project.entity.groupOrder.UserGroupOrderChatRoom;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
+import com.example.appcenter_project.repository.groupOrder.GroupOrderChatRoomRepository;
 import com.example.appcenter_project.repository.groupOrder.GroupOrderRepository;
+import com.example.appcenter_project.repository.groupOrder.UserGroupOrderChatRoomRepository;
 import com.example.appcenter_project.repository.like.LikeRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import jakarta.persistence.criteria.Predicate;
@@ -22,8 +26,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.example.appcenter_project.enums.like.BoardType.*;
-
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -32,14 +34,29 @@ public class GroupOrderService {
     private final GroupOrderRepository groupOrderRepository;
     private final UserRepository userRepository;
     private final LikeRepository likeRepository;
+    private final GroupOrderChatRoomRepository groupOrderChatRoomRepository;
+    private final UserGroupOrderChatRoomRepository userGroupOrderChatRoomRepository;
 
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto) {
+
+        // GroupOrder 저장
         User user = userRepository.findById(userId).orElseThrow();
         GroupOrder groupOrder = RequestGroupOrderDto.dtoToEntity(requestGroupOrderDto, user);
 
         user.getGroupOrderList().add(groupOrder);
 
         groupOrderRepository.save(groupOrder);
+
+        // GroupOrderChatRoom 저장
+        GroupOrderChatRoom groupOrderChatRoom = new GroupOrderChatRoom(groupOrder.getTitle());
+        UserGroupOrderChatRoom userGroupOrderChatRoom = UserGroupOrderChatRoom.builder()
+                .groupOrderChatRoom(groupOrderChatRoom)
+                .user(user)
+                .build();
+        user.getUserGroupOrderChatRoomList().add(userGroupOrderChatRoom);
+
+        groupOrderChatRoomRepository.save(groupOrderChatRoom);
+        userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);
     }
 
     public ResponseGroupOrderDto findGroupOrderById(Long groupOrderId) {
