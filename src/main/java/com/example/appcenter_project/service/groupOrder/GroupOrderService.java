@@ -55,8 +55,9 @@ public class GroupOrderService {
         // User - UserGroupOrderChatRoom 1대 N 매핑
         user.getUserGroupOrderChatRoomList().add(userGroupOrderChatRoom);
 
-        // GroupOrder - GroupOrderChatRoom 1대 1 매핑
+        // GroupOrder - GroupOrderChatRoom 1대 1 양방향 매핑
         groupOrder.updateGroupOrderChatRoom(groupOrderChatRoom);
+        groupOrderChatRoom.updateGroupOrder(groupOrder);
 
         groupOrderChatRoomRepository.save(groupOrderChatRoom);
         userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);
