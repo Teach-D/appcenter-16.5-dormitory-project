@@ -16,6 +16,8 @@ public class ResponseGroupOrderDto {
     private int currentPeople;
     private int maxPeople;
     private int groupOrderLike;
+    private String description;
+    private String link;
 
     public static ResponseGroupOrderDto entityToDto(GroupOrder groupOrder) {
         return ResponseGroupOrderDto.builder()
@@ -26,6 +28,8 @@ public class ResponseGroupOrderDto {
                 .currentPeople(groupOrder.getCurrentPeople())
                 .maxPeople(groupOrder.getMaxPeople())
                 .groupOrderLike(groupOrder.getGroupOrderLike())
+                .description(groupOrder.getDescription())
+                .link(groupOrder.getLink())
                 .build();
     }
 }

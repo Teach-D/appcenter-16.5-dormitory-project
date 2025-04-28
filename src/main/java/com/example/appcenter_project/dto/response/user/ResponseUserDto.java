@@ -13,7 +13,6 @@ public class ResponseUserDto {
     private String dormType;
     private String college;
     private int penalty;
-    private String role;
 
 
     public static ResponseUserDto entityToDto(User user) {
@@ -23,7 +22,6 @@ public class ResponseUserDto {
                 .dormType(String.valueOf(user.getDormType()))
                 .college(String.valueOf(user.getCollege()))
                 .penalty(user.getPenalty())
-                .role(String.valueOf(user.getRole()))
                 .build();
     }
 }
