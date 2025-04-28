@@ -86,6 +86,9 @@ public class GroupOrderService {
     }
 
     public void deleteGroupOrder(Long groupOrderId) {
+        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId).orElseThrow();
+        GroupOrderChatRoom groupOrderChatRoom = groupOrder.getGroupOrderChatRoom();
+        groupOrderChatRoom.updateGroupOrder(null);
         groupOrderRepository.deleteById(groupOrderId);
     }
 
