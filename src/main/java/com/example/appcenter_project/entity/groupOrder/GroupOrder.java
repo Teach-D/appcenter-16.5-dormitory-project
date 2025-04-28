@@ -81,4 +81,8 @@ public class GroupOrder {
     public void updateGroupOrderChatRoom(GroupOrderChatRoom groupOrderChatRoom) {
         this.groupOrderChatRoom = groupOrderChatRoom;
     }
+
+    public void plusCurrentPeople() {
+        this.currentPeople += 1;
+    }
 }
