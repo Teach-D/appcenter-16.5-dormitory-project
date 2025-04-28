@@ -1,5 +1,6 @@
 package com.example.appcenter_project.controller.groupOrder;
 
+import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderChatRoomDetailDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderChatRoomDto;
 import com.example.appcenter_project.jwt.SecurityUser;
 import com.example.appcenter_project.service.groupOrder.GroupOrderChatRoomService;
@@ -27,8 +28,18 @@ public class GroupOrderChatRoomController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ResponseGroupOrderChatRoomDto>> findGroupOrderChatRoom(@AuthenticationPrincipal SecurityUser user) {
-        return ResponseEntity.status(FOUND).body(groupOrderChatRoomService.findGroupOrderChatRoom(user.getId()));
+    public ResponseEntity<List<ResponseGroupOrderChatRoomDto>> findGroupOrderChatRoomList(@AuthenticationPrincipal SecurityUser user) {
+        return ResponseEntity.status(FOUND).body(groupOrderChatRoomService.findGroupOrderChatRoomList(user.getId()));
+    }
+
+    @GetMapping("/{groupOrderChatRoomId}")
+    public ResponseEntity<ResponseGroupOrderChatRoomDetailDto> findGroupOrderChatRoom(@PathVariable Long groupOrderChatRoomId) {
+        return ResponseEntity.status(FOUND).body(groupOrderChatRoomService.findGroupOrderChatRoom(groupOrderChatRoomId));
+    }
+
+    @GetMapping("/group-order/{groupOrderId}")
+    public ResponseEntity<ResponseGroupOrderChatRoomDetailDto> findGroupOrderChatRoomByGroupOrder(@PathVariable Long groupOrderId) {
+        return ResponseEntity.status(FOUND).body(groupOrderChatRoomService.findGroupOrderChatRoomByGroupOrder(groupOrderId));
     }
 
     @PatchMapping("/{chatRoomId}")
