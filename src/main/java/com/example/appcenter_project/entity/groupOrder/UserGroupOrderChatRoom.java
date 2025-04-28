@@ -36,6 +36,7 @@ public class UserGroupOrderChatRoom {
     @Builder
     public UserGroupOrderChatRoom(GroupOrderChatRoom groupOrderChatRoom, User user) {
         this.groupOrderChatRoom = groupOrderChatRoom;
+        this.chatRoomTitle = groupOrderChatRoom.getTitle();
         this.user = user;
     }
 

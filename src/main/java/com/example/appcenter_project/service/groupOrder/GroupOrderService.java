@@ -38,7 +38,6 @@ public class GroupOrderService {
     private final UserGroupOrderChatRoomRepository userGroupOrderChatRoomRepository;
 
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto) {
-
         // GroupOrder 저장
         User user = userRepository.findById(userId).orElseThrow();
         GroupOrder groupOrder = RequestGroupOrderDto.dtoToEntity(requestGroupOrderDto, user);
@@ -53,7 +52,12 @@ public class GroupOrderService {
                 .groupOrderChatRoom(groupOrderChatRoom)
                 .user(user)
                 .build();
+        // User - UserGroupOrderChatRoom 1대 N 매핑
         user.getUserGroupOrderChatRoomList().add(userGroupOrderChatRoom);
+
+        // GroupOrder - GroupOrderChatRoom 1대 1 양방향 매핑
+        groupOrder.updateGroupOrderChatRoom(groupOrderChatRoom);
+        groupOrderChatRoom.updateGroupOrder(groupOrder);
 
         groupOrderChatRoomRepository.save(groupOrderChatRoom);
         userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);

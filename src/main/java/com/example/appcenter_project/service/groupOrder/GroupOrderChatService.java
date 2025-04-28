@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.example.appcenter_project.config.WebSocketEventListener.chatRoomInUserMap;
+import static com.example.appcenter_project.config.WebSocketEventListener.groupOrderChatRoomInUserMap;
 import static com.example.appcenter_project.config.WebSocketEventListener.chatRoomListInUserMap;
 
 @Service
@@ -46,7 +46,7 @@ public class GroupOrderChatService {
         }
 
         // 현재 채팅방에 입장한 유저
-        List<String> userInChatRoom = chatRoomInUserMap.get(String.valueOf(groupOrderChatRoom.getId()));
+        List<String> userInChatRoom = groupOrderChatRoomInUserMap.get(String.valueOf(groupOrderChatRoom.getId()));
 
         List<Long> unreadUser = new ArrayList<>();
 
@@ -63,6 +63,9 @@ public class GroupOrderChatService {
 
         // 채팅 db에 저장
         GroupOrderChat saveGroupOrderChat = groupOrderChatRepository.save(groupOrderChat);
+
+        // GroupOrderChatRoom - GroupOrderChat 양방향 매핑
+        groupOrderChatRoom.getGroupOrderChatList().add(saveGroupOrderChat);
 
         // 채팅을 보냈을 때 채팅방에 가입되어 있는 유저의 채팅방 정보 변경
         // 1. 채팅방에 입장한 유저의 경우-읽지 않음 수 그대로

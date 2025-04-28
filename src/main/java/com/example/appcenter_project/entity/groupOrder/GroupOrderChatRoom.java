@@ -22,8 +22,17 @@ public class GroupOrderChatRoom {
     @OneToMany(mappedBy = "groupOrderChatRoom")
     private List<UserGroupOrderChatRoom> userGroupOrderChatRoomList = new ArrayList<>();
 
+    @OneToMany(mappedBy = "groupOrderChatRoom")
+    private List<GroupOrderChat> groupOrderChatList = new ArrayList<>();
+
+    @OneToOne(mappedBy = "groupOrderChatRoom")
+    private GroupOrder groupOrder;
+
     public GroupOrderChatRoom(String title) {
         this.title = title;
     }
 
+    public void updateGroupOrder(GroupOrder groupOrder) {
+        this.groupOrder = groupOrder;
+    }
 }

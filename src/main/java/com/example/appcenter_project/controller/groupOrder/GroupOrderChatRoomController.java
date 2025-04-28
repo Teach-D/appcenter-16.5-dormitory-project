@@ -20,9 +20,9 @@ public class GroupOrderChatRoomController {
 
     private final GroupOrderChatRoomService groupOrderChatRoomService;
 
-    @PostMapping("/{chatRoomId}/join")
-    public ResponseEntity<Void> joinChatRoom(@AuthenticationPrincipal SecurityUser user, @PathVariable Long chatRoomId) {
-        groupOrderChatRoomService.joinChatRoom(user.getId(), chatRoomId);
+    @PostMapping("/group-order/{groupOrderId}")
+    public ResponseEntity<Void> joinChatRoom(@AuthenticationPrincipal SecurityUser user, @PathVariable Long groupOrderId) {
+        groupOrderChatRoomService.joinChatRoom(user.getId(), groupOrderId);
         return ResponseEntity.status(CREATED).build();
     }
 
