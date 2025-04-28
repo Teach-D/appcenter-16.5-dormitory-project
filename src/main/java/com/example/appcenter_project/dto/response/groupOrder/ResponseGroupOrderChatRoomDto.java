@@ -2,8 +2,10 @@ package com.example.appcenter_project.dto.response.groupOrder;
 
 import com.example.appcenter_project.entity.groupOrder.GroupOrderChatRoom;
 import com.example.appcenter_project.entity.groupOrder.UserGroupOrderChatRoom;
+import com.example.appcenter_project.enums.ChatRoomType;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Builder
@@ -17,6 +19,10 @@ public class ResponseGroupOrderChatRoomDto {
     private Integer unreadCount;
     private String recentChatContent;
     private LocalDateTime recentChatTime;
+    private ChatRoomType chatRoomType;
+    private Integer currentPeople;
+    private Integer maxPeople;
+    private LocalDateTime deadline;
 
     public static ResponseGroupOrderChatRoomDto entityToDto(UserGroupOrderChatRoom userGroupOrderChatRoom) {
         return ResponseGroupOrderChatRoomDto.builder()
@@ -25,6 +31,10 @@ public class ResponseGroupOrderChatRoomDto {
                 .unreadCount(userGroupOrderChatRoom.getUnreadCount())
                 .recentChatContent(userGroupOrderChatRoom.getRecentChatContent())
                 .recentChatTime(userGroupOrderChatRoom.getUpdateTime())
+                .chatRoomType(ChatRoomType.GROUP_ORDER)
+                .currentPeople(userGroupOrderChatRoom.getGroupOrderChatRoom().getGroupOrder().getCurrentPeople())
+                .maxPeople(userGroupOrderChatRoom.getGroupOrderChatRoom().getGroupOrder().getMaxPeople())
+                .deadline(userGroupOrderChatRoom.getGroupOrderChatRoom().getGroupOrder().getDeadline())
                 .build();
     }
 }
