@@ -40,12 +40,16 @@ public class GroupOrder {
 
     private String description;
 
+    @OneToOne
+    @JoinColumn(name = "group_order_chat_room_id")
+    private GroupOrderChatRoom groupOrderChatRoom;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
 
     @Builder
-    public GroupOrder(String title, String groupOrderType, int price, String link, int currentPeople, int maxPeople, LocalDateTime deadline, int groupOrderLike, String description, User user) {
+    public GroupOrder(String title, String groupOrderType, int price, String link, int currentPeople, int maxPeople, LocalDateTime deadline, int groupOrderLike, String description, User user, GroupOrderChatRoom groupOrderChatRoom) {
         this.title = title;
         this.groupOrderType = GroupOrderType.valueOf(groupOrderType);
         this.price = price;
@@ -56,6 +60,7 @@ public class GroupOrder {
         this.groupOrderLike = groupOrderLike;
         this.description = description;
         this.user = user;
+        this.groupOrderChatRoom = groupOrderChatRoom;
     }
 
     public void update(RequestGroupOrderDto requestGroupOrderDto) {
@@ -71,5 +76,9 @@ public class GroupOrder {
     public Integer plusLike() {
         this.groupOrderLike += 1;
         return this.groupOrderType.ordinal();
+    }
+
+    public void updateGroupOrderChatRoom(GroupOrderChatRoom groupOrderChatRoom) {
+        this.groupOrderChatRoom = groupOrderChatRoom;
     }
 }
