@@ -28,8 +28,6 @@ public class GroupOrderChat {
 
     private String content;
 
-    @ManyToOne
-    @JoinColumn(name = "un_read_user_id")
     private List<Long> unreadUser = new ArrayList<>();
 
     @Builder
