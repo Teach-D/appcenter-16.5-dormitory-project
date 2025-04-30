@@ -3,11 +3,15 @@ package com.example.appcenter_project.entity.groupOrder;
 import com.example.appcenter_project.entity.user.User;
 import jakarta.persistence.*;
 import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Getter
+@NoArgsConstructor
 public class GroupOrderComment {
 
     @Id
@@ -30,4 +34,21 @@ public class GroupOrderComment {
 
     @OneToMany(mappedBy = "parentGroupOrderComment", orphanRemoval = true)
     private List<GroupOrderComment> childGroupOrderComments = new ArrayList<>();
+
+    @Builder
+    public GroupOrderComment(String reply, GroupOrder groupOrder, User user, GroupOrderComment parentGroupOrderComment, List<GroupOrderComment> childGroupOrderComments) {
+        this.reply = reply;
+        this.groupOrder = groupOrder;
+        this.user = user;
+        this.parentGroupOrderComment = parentGroupOrderComment;
+        this.childGroupOrderComments = childGroupOrderComments;
+    }
+
+    public void setParentGroupOrderCommentNull() {
+        this.parentGroupOrderComment = null;
+    }
+
+    public void addChildGroupOrderComments(GroupOrderComment groupOrderComment) {
+        this.childGroupOrderComments.add(groupOrderComment);
+    }
 }
