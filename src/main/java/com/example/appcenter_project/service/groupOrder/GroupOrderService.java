@@ -1,15 +1,19 @@
 package com.example.appcenter_project.service.groupOrder;
 
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
+import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderChatRoomDetailDto;
+import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderCommentDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.entity.groupOrder.GroupOrderChatRoom;
+import com.example.appcenter_project.entity.groupOrder.GroupOrderComment;
 import com.example.appcenter_project.entity.groupOrder.UserGroupOrderChatRoom;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import com.example.appcenter_project.repository.groupOrder.GroupOrderChatRoomRepository;
+import com.example.appcenter_project.repository.groupOrder.GroupOrderCommentRepository;
 import com.example.appcenter_project.repository.groupOrder.GroupOrderRepository;
 import com.example.appcenter_project.repository.groupOrder.UserGroupOrderChatRoomRepository;
 import com.example.appcenter_project.repository.like.LikeRepository;
@@ -36,6 +40,7 @@ public class GroupOrderService {
     private final LikeRepository likeRepository;
     private final GroupOrderChatRoomRepository groupOrderChatRoomRepository;
     private final UserGroupOrderChatRoomRepository userGroupOrderChatRoomRepository;
+    private final GroupOrderCommentRepository groupOrderCommentRepository;
 
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto) {
         // GroupOrder 저장
@@ -65,7 +70,19 @@ public class GroupOrderService {
 
     public ResponseGroupOrderDto findGroupOrderById(Long groupOrderId) {
         GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId).orElseThrow();
-        return ResponseGroupOrderDto.entityToDto(groupOrder);
+
+        List<ResponseGroupOrderCommentDto> responseGroupOrderCommentDtoList = new ArrayList<>();
+        List<GroupOrderComment> groupOrderCommentList = groupOrderCommentRepository.findByGroupOrder_Id(groupOrder.getId());
+        for (GroupOrderComment groupOrderComment : groupOrderCommentList) {
+            ResponseGroupOrderCommentDto responseGroupOrderCommentDto = ResponseGroupOrderCommentDto.builder()
+                    .groupOrderCommentId(groupOrderComment.getId())
+                    .reply(groupOrderComment.getReply())
+                    .userId(groupOrderComment.getUser().getId())
+                    .build();
+            responseGroupOrderCommentDtoList.add(responseGroupOrderCommentDto);
+        }
+
+        return ResponseGroupOrderDto.detailEntityToDto(groupOrder, responseGroupOrderCommentDtoList);
     }
 
     public List<ResponseGroupOrderDto> findGroupOrders(GroupOrderSort sort, GroupOrderType type, Optional<String> search) {
