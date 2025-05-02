@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface GroupOrderCommentRepository extends JpaRepository<GroupOrderComment, Long> {
     List<GroupOrderComment> findByGroupOrder_Id(Long groupOrderId);
+    List<GroupOrderComment> findByGroupOrder_IdAndParentGroupOrderCommentIsNull(Long groupOrderId);
+
 }

@@ -56,7 +56,7 @@ public class GroupOrderCommentService {
 
     public List<ResponseGroupOrderCommentDto> findGroupOrderComment(Long userId, Long groupOrderId) {
         List<ResponseGroupOrderCommentDto> responseGroupOrderCommentDtoList = new ArrayList<>();
-        List<GroupOrderComment> groupOrderCommentList = groupOrderCommentRepository.findByGroupOrder_Id(groupOrderId);
+        List<GroupOrderComment> groupOrderCommentList = groupOrderCommentRepository.findByGroupOrder_IdAndParentGroupOrderCommentIsNull(groupOrderId);
         for (GroupOrderComment groupOrderComment : groupOrderCommentList) {
             List<ResponseGroupOrderCommentDto> childResponseComments = new ArrayList<>();
             List<GroupOrderComment> childGroupOrderComments = groupOrderComment.getChildGroupOrderComments();
