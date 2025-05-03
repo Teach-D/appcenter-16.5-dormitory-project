@@ -13,12 +13,15 @@ import com.example.appcenter_project.repository.groupOrder.GroupOrderRepository;
 import com.example.appcenter_project.repository.groupOrder.UserGroupOrderChatRoomRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -61,12 +64,20 @@ public class GroupOrderChatRoomService {
 
     public List<ResponseGroupOrderChatRoomDto> findGroupOrderChatRoomList(Long userId) {
         User user = userRepository.findById(userId).orElseThrow();
-
+        List<UserGroupOrderChatRoom> userGroupOrderChatRoomList = user.getUserGroupOrderChatRoomList();
         List<ResponseGroupOrderChatRoomDto> groupOrderChatRoomDtos = new ArrayList<>();
 
-        for (UserGroupOrderChatRoom userGroupOrderChatRoom : user.getUserGroupOrderChatRoomList()) {
-            ResponseGroupOrderChatRoomDto responseGroupOrderChatRoomDto = ResponseGroupOrderChatRoomDto.entityToDto(userGroupOrderChatRoom);
-            groupOrderChatRoomDtos.add(responseGroupOrderChatRoomDto);
+        // updateTime 기준 내림차순 정렬
+        userGroupOrderChatRoomList.sort(
+                Comparator.comparing(UserGroupOrderChatRoom::getUpdateTime, Comparator.nullsLast(Comparator.reverseOrder()))
+        );
+        for (UserGroupOrderChatRoom userGroupOrderChatRoom : userGroupOrderChatRoomList) {
+            log.info(userGroupOrderChatRoom.getChatRoomTitle());
+        }
+
+        for (UserGroupOrderChatRoom userGroupOrderChatRoom : userGroupOrderChatRoomList) {
+            ResponseGroupOrderChatRoomDto dto = ResponseGroupOrderChatRoomDto.entityToDto(userGroupOrderChatRoom);
+            groupOrderChatRoomDtos.add(dto);
         }
 
         return groupOrderChatRoomDtos;
