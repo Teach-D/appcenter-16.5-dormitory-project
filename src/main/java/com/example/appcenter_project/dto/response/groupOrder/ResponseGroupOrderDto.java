@@ -21,6 +21,8 @@ public class ResponseGroupOrderDto {
     private int groupOrderLike;
     private String description;
     private String link;
+
+    @Builder.Default
     private List<ResponseGroupOrderCommentDto> groupOrderCommentDtoList = new ArrayList<>();
 
     public static ResponseGroupOrderDto entityToDto(GroupOrder groupOrder) {
