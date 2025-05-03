@@ -21,6 +21,8 @@ public class ResponseGroupOrderChatRoomDetailDto {
     private Integer currentPeople;
     private Integer maxPeople;
     private LocalDateTime deadline;
+
+    @Builder.Default
     private List<ResponseGroupOrderChatDto> groupOrderChatDtoList = new ArrayList<>();
 
     public static ResponseGroupOrderChatRoomDetailDto entityToDto(GroupOrderChatRoom groupOrderChatRoom, GroupOrder groupOrder) {

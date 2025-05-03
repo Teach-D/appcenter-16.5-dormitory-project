@@ -16,6 +16,8 @@ public class ResponseGroupOrderCommentDto {
     private Long groupOrderCommentId;
     private Long userId;
     private String reply;
+
+    @Builder.Default
     private List<ResponseGroupOrderCommentDto> childGroupOrderCommentList = new ArrayList<>();
 
     public static ResponseGroupOrderCommentDto entityToDto(GroupOrderComment groupOrderComment, User user) {
