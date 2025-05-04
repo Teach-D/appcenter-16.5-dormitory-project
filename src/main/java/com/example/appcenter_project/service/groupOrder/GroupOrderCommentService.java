@@ -63,14 +63,14 @@ public class GroupOrderCommentService {
             for (GroupOrderComment childGroupOrderComment : childGroupOrderComments) {
                 ResponseGroupOrderCommentDto responseGroupOrderCommentDto = ResponseGroupOrderCommentDto.builder()
                         .groupOrderCommentId(childGroupOrderComment.getId())
-                        .userId(userId)
+                        .userId(childGroupOrderComment.getUser().getId())
                         .reply(childGroupOrderComment.getReply())
                         .build();
                 childResponseComments.add(responseGroupOrderCommentDto);
             }
             ResponseGroupOrderCommentDto responseGroupOrderCommentDto = ResponseGroupOrderCommentDto.builder()
                     .groupOrderCommentId(groupOrderComment.getId())
-                    .userId(userId)
+                    .userId(groupOrderComment.getUser().getId())
                     .reply(groupOrderComment.getReply())
                     .childGroupOrderCommentList(childResponseComments)
                     .build();
