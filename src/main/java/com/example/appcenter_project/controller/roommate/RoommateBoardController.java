@@ -3,6 +3,7 @@ package com.example.appcenter_project.controller.roommate;
 import com.example.appcenter_project.dto.request.roommate.RequestRoommateBoardDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommateBoardDto;
 import com.example.appcenter_project.jwt.SecurityUser;
+import com.example.appcenter_project.service.roommate.RoommateBoardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
