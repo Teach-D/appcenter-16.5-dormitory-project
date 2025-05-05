@@ -7,6 +7,7 @@ import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.entity.groupOrder.UserGroupOrderChatRoom;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
 import com.example.appcenter_project.entity.like.TipLike;
+import com.example.appcenter_project.entity.roommate.RoommateBoard;
 import com.example.appcenter_project.enums.user.College;
 import com.example.appcenter_project.enums.user.DormType;
 import com.example.appcenter_project.enums.user.Role;
@@ -56,6 +57,10 @@ public class User extends BaseTimeEntity {
 
     @OneToMany(mappedBy = "user")
     private List<UserGroupOrderChatRoom> userGroupOrderChatRoomList = new ArrayList<>();
+
+    @OneToOne(mappedBy = "member")
+    private RoommateBoard roommateBoard;
+
 
     @Builder
     public User(String studentNumber, String name, String password, DormType dormType, int penalty, Role role, Image image) {
