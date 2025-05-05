@@ -58,7 +58,7 @@ public class User extends BaseTimeEntity {
     @OneToMany(mappedBy = "user")
     private List<UserGroupOrderChatRoom> userGroupOrderChatRoomList = new ArrayList<>();
 
-    @OneToOne(mappedBy = "member")
+    @OneToOne(mappedBy = "user")
     private RoommateBoard roommateBoard;
 
 

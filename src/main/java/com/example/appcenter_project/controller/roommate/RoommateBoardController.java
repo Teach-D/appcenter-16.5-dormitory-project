@@ -4,6 +4,8 @@ import com.example.appcenter_project.dto.request.roommate.RequestRoommateBoardDt
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommateBoardDto;
 import com.example.appcenter_project.jwt.SecurityUser;
 import com.example.appcenter_project.service.roommate.RoommateBoardService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/roommate/board")
+@Tag(name = "RoommateBoard", description = "룸메이트 게시판 API")
 public class RoommateBoardController {
 
     private final RoommateBoardService roommateBoardService;
@@ -27,6 +30,7 @@ public class RoommateBoardController {
      * @return 생성된 게시글 ID와 메시지를 담은 응답
      */
     @PostMapping
+    @Operation(summary = "룸메이트 게시판 작성", description = "체크리스트를 기반으로 게시글을 작성합니다.")
     public ResponseEntity<ResponseRoommateBoardDto> createBoard(
             @AuthenticationPrincipal SecurityUser user,
             @RequestBody RequestRoommateBoardDto requestDto) {

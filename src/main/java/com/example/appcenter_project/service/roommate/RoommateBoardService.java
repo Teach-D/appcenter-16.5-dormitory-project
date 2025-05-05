@@ -2,6 +2,7 @@ package com.example.appcenter_project.service.roommate;
 
 import com.example.appcenter_project.dto.request.roommate.RequestRoommateBoardDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommateBoardDto;
+import com.example.appcenter_project.entity.like.RoommateBoardLike;
 import com.example.appcenter_project.entity.roommate.RoommateBoard;
 import com.example.appcenter_project.entity.roommate.RoommateCheckList;
 import com.example.appcenter_project.entity.user.User;
@@ -47,4 +48,19 @@ public class RoommateBoardService {
         // 응답 반환
         return ResponseRoommateBoardDto.of(board.getId());
     }
+
+    public Integer likeRoommateBoard(Long userId, Long roommateBoardId) {
+        User user = userRepository.findById(userId).orElseThrow();
+        RoommateBoard board = roommateBoardRepository.findById(roommateBoardId).orElseThrow();
+
+        RoommateBoardLike like = RoommateBoardLike.builder()
+                .user(user)
+                .roommateBoard(board)
+                .build();
+
+        roommateBoardLikeRepository.save(like);
+        user.addLike(like); // 유저에 addLike 메서드 만들면 됨
+        return board.plusLike(); // board에 plusLike 필드 및 메서드 추가해야 함
+    }
+
 }
