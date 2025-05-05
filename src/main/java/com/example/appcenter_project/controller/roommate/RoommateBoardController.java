@@ -1,4 +1,4 @@
-package com.example.appcenter_project.controller.Roommate;
+package com.example.appcenter_project.controller.roommate;
 
 import com.example.appcenter_project.dto.request.roommate.RequestRoommateBoardDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommateBoardDto;
