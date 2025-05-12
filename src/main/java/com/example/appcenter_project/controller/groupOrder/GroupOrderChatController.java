@@ -21,11 +21,11 @@ public class GroupOrderChatController {
     private final SimpMessagingTemplate messagingTemplate;
 
     // GroupOrderChat 전송
-    @MessageMapping("/groupOrderChat")
+    @MessageMapping("/group-order-chat")
     public void sendMessage(@AuthenticationPrincipal SecurityUser user, RequestGroupOrderChatDto requestGroupOrderChatDto) {
         ResponseGroupOrderChatDto responseGroupOrderChatDto = groupOrderChatService.sendGroupOrderChat(user.getId(), requestGroupOrderChatDto);
 
         // 채팅 웹소켓에 전송
-        messagingTemplate.convertAndSend("/sub/groupOrderChatRoom/" + responseGroupOrderChatDto.getGroupOrderChatRoomId(), responseGroupOrderChatDto);
+        messagingTemplate.convertAndSend("/sub/group-order-chat-room/" + responseGroupOrderChatDto.getGroupOrderChatRoomId(), responseGroupOrderChatDto);
     }
 }
