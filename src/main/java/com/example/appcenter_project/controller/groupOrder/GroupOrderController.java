@@ -2,6 +2,7 @@ package com.example.appcenter_project.controller.groupOrder;
 
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDetailDto;
+import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import com.example.appcenter_project.jwt.SecurityUser;
@@ -35,7 +36,7 @@ public class GroupOrderController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ResponseGroupOrderDetailDto>> findGroupOrders(
+    public ResponseEntity<List<ResponseGroupOrderDto>> findGroupOrders(
             @RequestParam(defaultValue = "DEADLINE") String sort, @RequestParam(defaultValue = "ALL") String type, @RequestParam(required = false) Optional<String> search
     ) {
         return ResponseEntity.status(FOUND).body(groupOrderService.findGroupOrders(GroupOrderSort.valueOf(sort), GroupOrderType.valueOf(type), search));
