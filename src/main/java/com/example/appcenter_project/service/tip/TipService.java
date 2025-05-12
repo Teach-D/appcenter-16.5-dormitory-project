@@ -60,7 +60,7 @@ public class TipService {
                 .orElseThrow(() -> new RuntimeException("Tip not found with ID: " + tipId));
 
         List<Image> imageList = tip.getImageList();
-        List<TipImageDto> TipImageDtoList = new ArrayList<>();
+        List<TipImageDto> tipImageDtoList = new ArrayList<>();
 
         for (Image image : imageList) {
             File file = new File(image.getFilePath());
@@ -86,10 +86,10 @@ public class TipService {
                     .contentType(contentType)
                     .build();
 
-            TipImageDtoList.add(tipImageDto);
+            tipImageDtoList.add(tipImageDto);
         }
 
-        return TipImageDtoList;
+        return tipImageDtoList;
     }
 
     private void saveImages(Tip tip, List<MultipartFile> files) {
