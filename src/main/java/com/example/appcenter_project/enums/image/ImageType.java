@@ -4,5 +4,5 @@ import lombok.Getter;
 
 @Getter
 public enum ImageType {
-    USER, TIP
+    USER, TIP, GROUP_ORDER
 }
