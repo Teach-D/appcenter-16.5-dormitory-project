@@ -69,19 +69,8 @@ public class GroupOrderService {
 
     public ResponseGroupOrderDetailDto findGroupOrderById(Long groupOrderId) {
         GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId).orElseThrow();
-
-        List<ResponseGroupOrderCommentDto> responseGroupOrderCommentDtoList = new ArrayList<>();
-        List<GroupOrderComment> groupOrderCommentList = groupOrderCommentRepository.findByGroupOrder_Id(groupOrder.getId());
-        for (GroupOrderComment groupOrderComment : groupOrderCommentList) {
-            ResponseGroupOrderCommentDto responseGroupOrderCommentDto = ResponseGroupOrderCommentDto.builder()
-                    .groupOrderCommentId(groupOrderComment.getId())
-                    .reply(groupOrderComment.getReply())
-                    .userId(groupOrderComment.getUser().getId())
-                    .build();
-            responseGroupOrderCommentDtoList.add(responseGroupOrderCommentDto);
-        }
-
-        return ResponseGroupOrderDetailDto.detailEntityToDto(groupOrder, responseGroupOrderCommentDtoList);
+        List<ResponseGroupOrderCommentDto> groupOrderCommentDtoList = findGroupOrderComment(groupOrder);
+        return ResponseGroupOrderDetailDto.detailEntityToDto(groupOrder, groupOrderCommentDtoList);
     }
 
     public List<ResponseGroupOrderDetailDto> findGroupOrders(GroupOrderSort sort, GroupOrderType type, Optional<String> search) {
@@ -145,5 +134,33 @@ public class GroupOrderService {
         user.addLike(groupOrderLike);
 
         return groupOrder.plusLike();
+    }
+
+    // 하나의 GroupOrder 게시판에 있는 모든 GroupOrderComment 조회
+    private List<ResponseGroupOrderCommentDto> findGroupOrderComment(GroupOrder groupOrder) {
+        List<ResponseGroupOrderCommentDto> responseGroupOrderCommentDtoList = new ArrayList<>();
+        List<GroupOrderComment> groupOrderCommentList = groupOrderCommentRepository.findByGroupOrder_IdAndParentGroupOrderCommentIsNull(groupOrder.getId());
+        for (GroupOrderComment groupOrderComment : groupOrderCommentList) {
+            List<ResponseGroupOrderCommentDto> childResponseComments = new ArrayList<>();
+            List<GroupOrderComment> childGroupOrderComments = groupOrderComment.getChildGroupOrderComments();
+            for (GroupOrderComment childGroupOrderComment : childGroupOrderComments) {
+                ResponseGroupOrderCommentDto build = ResponseGroupOrderCommentDto.builder()
+                        .groupOrderCommentId(childGroupOrderComment.getId())
+                        .userId(groupOrder.getUser().getId())
+                        .reply(childGroupOrderComment.getReply())
+                        .build();
+
+                childResponseComments.add(build);
+            }
+            ResponseGroupOrderCommentDto responseGroupOrderCommentDto = ResponseGroupOrderCommentDto.builder()
+                    .groupOrderCommentId(groupOrderComment.getId())
+                    .userId(groupOrder.getUser().getId())
+                    .reply(groupOrderComment.getReply())
+                    .childGroupOrderCommentList(childResponseComments)
+                    .build();
+            responseGroupOrderCommentDtoList.add(responseGroupOrderCommentDto);
+
+        }
+        return responseGroupOrderCommentDtoList;
     }
 }
