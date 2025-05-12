@@ -3,9 +3,6 @@ package com.example.appcenter_project.dto.response.groupOrder;
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import lombok.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
@@ -18,12 +15,6 @@ public class ResponseGroupOrderDto {
     private int price;
     private int currentPeople;
     private int maxPeople;
-    private int groupOrderLike;
-    private String description;
-    private String link;
-
-    @Builder.Default
-    private List<ResponseGroupOrderCommentDto> groupOrderCommentDtoList = new ArrayList<>();
 
     public static ResponseGroupOrderDto entityToDto(GroupOrder groupOrder) {
         return ResponseGroupOrderDto.builder()
@@ -33,24 +24,7 @@ public class ResponseGroupOrderDto {
                 .price(groupOrder.getPrice())
                 .currentPeople(groupOrder.getCurrentPeople())
                 .maxPeople(groupOrder.getMaxPeople())
-                .groupOrderLike(groupOrder.getGroupOrderLike())
-                .description(groupOrder.getDescription())
-                .link(groupOrder.getLink())
                 .build();
-    }
 
-    public static ResponseGroupOrderDto detailEntityToDto(GroupOrder groupOrder, List<ResponseGroupOrderCommentDto> responseGroupOrderCommentDto) {
-        return ResponseGroupOrderDto.builder()
-                .groupOrderId(groupOrder.getId())
-                .title(groupOrder.getTitle())
-                .deadline(String.valueOf(groupOrder.getDeadline()))
-                .price(groupOrder.getPrice())
-                .currentPeople(groupOrder.getCurrentPeople())
-                .maxPeople(groupOrder.getMaxPeople())
-                .groupOrderLike(groupOrder.getGroupOrderLike())
-                .description(groupOrder.getDescription())
-                .link(groupOrder.getLink())
-                .groupOrderCommentDtoList(responseGroupOrderCommentDto)
-                .build();
     }
 }

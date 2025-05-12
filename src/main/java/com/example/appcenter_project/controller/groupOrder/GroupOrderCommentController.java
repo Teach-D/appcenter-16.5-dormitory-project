@@ -18,7 +18,7 @@ import static org.springframework.http.HttpStatus.FOUND;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/group-order-chat-comments")
+@RequestMapping("/group-order-comments")
 public class GroupOrderCommentController {
 
     private final GroupOrderCommentService groupOrderCommentService;
@@ -28,8 +28,4 @@ public class GroupOrderCommentController {
         return ResponseEntity.status(CREATED).body(groupOrderCommentService.saveGroupOrderComment(user.getId(), requestGroupOrderCommentDto));
     }
 
-    @GetMapping("/group-order/{groupOrderId}")
-    public ResponseEntity<List<ResponseGroupOrderCommentDto>> findGroupOrderComment(@AuthenticationPrincipal SecurityUser user, @PathVariable Long groupOrderId) {
-        return ResponseEntity.status(FOUND).body(groupOrderCommentService.findGroupOrderComment(user.getId(), groupOrderId));
-    }
 }

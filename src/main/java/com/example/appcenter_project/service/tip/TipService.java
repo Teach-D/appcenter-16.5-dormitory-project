@@ -1,15 +1,10 @@
 package com.example.appcenter_project.service.tip;
 
 import com.example.appcenter_project.dto.request.tip.RequestTipDto;
-import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
 import com.example.appcenter_project.dto.response.tip.ResponseTipCommentDto;
 import com.example.appcenter_project.dto.response.tip.ResponseTipDto;
 import com.example.appcenter_project.dto.response.tip.TipImageDto;
 import com.example.appcenter_project.entity.Image;
-import com.example.appcenter_project.entity.groupOrder.GroupOrder;
-import com.example.appcenter_project.entity.groupOrder.GroupOrderChatRoom;
-import com.example.appcenter_project.entity.groupOrder.GroupOrderComment;
-import com.example.appcenter_project.entity.like.GroupOrderLike;
 import com.example.appcenter_project.entity.like.TipLike;
 import com.example.appcenter_project.entity.tip.Tip;
 import com.example.appcenter_project.entity.tip.TipComment;

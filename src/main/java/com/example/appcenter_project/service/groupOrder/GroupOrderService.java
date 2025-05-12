@@ -1,9 +1,11 @@
 package com.example.appcenter_project.service.groupOrder;
 
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
-import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderChatRoomDetailDto;
+import com.example.appcenter_project.dto.response.groupOrder.GroupOrderImageDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderCommentDto;
+import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDetailDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
+import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.entity.groupOrder.GroupOrderChatRoom;
 import com.example.appcenter_project.entity.groupOrder.GroupOrderComment;
@@ -12,22 +14,31 @@ import com.example.appcenter_project.entity.like.GroupOrderLike;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
+import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.repository.groupOrder.GroupOrderChatRoomRepository;
 import com.example.appcenter_project.repository.groupOrder.GroupOrderCommentRepository;
 import com.example.appcenter_project.repository.groupOrder.GroupOrderRepository;
 import com.example.appcenter_project.repository.groupOrder.UserGroupOrderChatRoomRepository;
+import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.like.LikeRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -41,6 +52,7 @@ public class GroupOrderService {
     private final GroupOrderChatRoomRepository groupOrderChatRoomRepository;
     private final UserGroupOrderChatRoomRepository userGroupOrderChatRoomRepository;
     private final GroupOrderCommentRepository groupOrderCommentRepository;
+    private final ImageRepository imageRepository;
 
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto) {
         // GroupOrder 저장
@@ -68,21 +80,108 @@ public class GroupOrderService {
         userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);
     }
 
-    public ResponseGroupOrderDto findGroupOrderById(Long groupOrderId) {
+    public ResponseGroupOrderDetailDto findGroupOrderById(Long groupOrderId) {
         GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId).orElseThrow();
+        List<ResponseGroupOrderCommentDto> groupOrderCommentDtoList = findGroupOrderComment(groupOrder);
+        return ResponseGroupOrderDetailDto.detailEntityToDto(groupOrder, groupOrderCommentDtoList);
+    }
 
-        List<ResponseGroupOrderCommentDto> responseGroupOrderCommentDtoList = new ArrayList<>();
-        List<GroupOrderComment> groupOrderCommentList = groupOrderCommentRepository.findByGroupOrder_Id(groupOrder.getId());
-        for (GroupOrderComment groupOrderComment : groupOrderCommentList) {
-            ResponseGroupOrderCommentDto responseGroupOrderCommentDto = ResponseGroupOrderCommentDto.builder()
-                    .groupOrderCommentId(groupOrderComment.getId())
-                    .reply(groupOrderComment.getReply())
-                    .userId(groupOrderComment.getUser().getId())
+    // 이미지와 함께 공동구매 생성
+    public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto, List<MultipartFile> images) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+
+        GroupOrder groupOrder = RequestGroupOrderDto.dtoToEntity(requestGroupOrderDto, user);
+
+        saveImages(groupOrder, images);
+        groupOrderRepository.save(groupOrder);
+    }
+
+    private void saveImages(GroupOrder groupOrder, List<MultipartFile> files) {
+        if (files != null && !files.isEmpty()) {
+            String projectPath = System.getProperty("user.dir") + "/src/main/resources/static/images/group-order/";
+            File directory = new File(projectPath);
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+
+            for (MultipartFile file : files) {
+                String uuid = UUID.randomUUID().toString();
+                String imageFileName = uuid + "_" + file.getOriginalFilename();
+                File destinationFile = new File(projectPath + imageFileName);
+
+                try {
+                    file.transferTo(destinationFile);
+
+                    Image image = Image.builder()
+                            .filePath(destinationFile.getAbsolutePath())
+                            .isDefault(false)
+                            .imageType(ImageType.GROUP_ORDER)
+                            .build();
+
+                    imageRepository.save(image);
+                    groupOrder.getImageList().add(image);
+
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to save image", e);
+                }
+            }
+        }
+    }
+
+    public List<GroupOrderImageDto> findGroupOrderImages(Long groupOrderId) {
+        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId).get();
+
+        List<Image> imageList = groupOrder.getImageList();
+        List<GroupOrderImageDto> groupOrderImageDtoList = new ArrayList<>();
+
+        for (Image image : imageList) {
+            File file = new File(image.getFilePath());
+            if (!file.exists()) {
+                throw new RuntimeException("Image file not found at path: " + image.getFilePath());
+            }
+
+            String contentType;
+            try {
+                contentType = Files.probeContentType(file.toPath());
+                if (contentType == null) {
+                    contentType = "application/octet-stream";
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("Could not determine file type.", e);
+            }
+
+            String filename = file.getName();
+            String url = "/api/images/view?filename=" + filename;
+
+            GroupOrderImageDto tipImageDto = GroupOrderImageDto.builder()
+                    .filename(filename)
+                    .contentType(contentType)
                     .build();
-            responseGroupOrderCommentDtoList.add(responseGroupOrderCommentDto);
+
+            groupOrderImageDtoList.add(tipImageDto);
         }
 
-        return ResponseGroupOrderDto.detailEntityToDto(groupOrder, responseGroupOrderCommentDtoList);
+        return groupOrderImageDtoList;
+    }
+
+    public Resource loadImageAsResource(String filename) {
+        String projectPath = System.getProperty("user.dir") + "/src/main/resources/static/images/group-order/";
+        File file = new File(projectPath + filename);
+
+        if (!file.exists()) {
+            throw new RuntimeException("File not found: " + filename);
+        }
+
+        return new FileSystemResource(file);
+    }
+
+    public String getImageContentType(File file) {
+        try {
+            String contentType = Files.probeContentType(file.toPath());
+            return (contentType != null) ? contentType : "application/octet-stream";
+        } catch (IOException e) {
+            throw new RuntimeException("Could not determine file type.", e);
+        }
     }
 
     public List<ResponseGroupOrderDto> findGroupOrders(GroupOrderSort sort, GroupOrderType type, Optional<String> search) {
@@ -95,11 +194,11 @@ public class GroupOrderService {
                 .collect(Collectors.toList());
     }
 
-    public ResponseGroupOrderDto updateGroupOrder(Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto) {
+    public ResponseGroupOrderDetailDto updateGroupOrder(Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto) {
         GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId).orElseThrow();
         groupOrder.update(requestGroupOrderDto);
 
-        return ResponseGroupOrderDto.entityToDto(groupOrder);
+        return ResponseGroupOrderDetailDto.entityToDto(groupOrder);
     }
 
     public void deleteGroupOrder(Long groupOrderId) {
@@ -146,5 +245,33 @@ public class GroupOrderService {
         user.addLike(groupOrderLike);
 
         return groupOrder.plusLike();
+    }
+
+    // 하나의 GroupOrder 게시판에 있는 모든 GroupOrderComment 조회
+    private List<ResponseGroupOrderCommentDto> findGroupOrderComment(GroupOrder groupOrder) {
+        List<ResponseGroupOrderCommentDto> responseGroupOrderCommentDtoList = new ArrayList<>();
+        List<GroupOrderComment> groupOrderCommentList = groupOrderCommentRepository.findByGroupOrder_IdAndParentGroupOrderCommentIsNull(groupOrder.getId());
+        for (GroupOrderComment groupOrderComment : groupOrderCommentList) {
+            List<ResponseGroupOrderCommentDto> childResponseComments = new ArrayList<>();
+            List<GroupOrderComment> childGroupOrderComments = groupOrderComment.getChildGroupOrderComments();
+            for (GroupOrderComment childGroupOrderComment : childGroupOrderComments) {
+                ResponseGroupOrderCommentDto build = ResponseGroupOrderCommentDto.builder()
+                        .groupOrderCommentId(childGroupOrderComment.getId())
+                        .userId(groupOrder.getUser().getId())
+                        .reply(childGroupOrderComment.getReply())
+                        .build();
+
+                childResponseComments.add(build);
+            }
+            ResponseGroupOrderCommentDto responseGroupOrderCommentDto = ResponseGroupOrderCommentDto.builder()
+                    .groupOrderCommentId(groupOrderComment.getId())
+                    .userId(groupOrder.getUser().getId())
+                    .reply(groupOrderComment.getReply())
+                    .childGroupOrderCommentList(childResponseComments)
+                    .build();
+            responseGroupOrderCommentDtoList.add(responseGroupOrderCommentDto);
+
+        }
+        return responseGroupOrderCommentDtoList;
     }
 }

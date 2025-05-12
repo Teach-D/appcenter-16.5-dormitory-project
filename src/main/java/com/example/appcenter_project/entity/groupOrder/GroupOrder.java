@@ -1,6 +1,7 @@
 package com.example.appcenter_project.entity.groupOrder;
 
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
+import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import jakarta.persistence.*;
@@ -47,6 +48,9 @@ public class GroupOrder {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    @OneToMany
+    private List<Image> imageList = new ArrayList<>();
 
     @Builder
     public GroupOrder(String title, String groupOrderType, int price, String link, int currentPeople, int maxPeople, LocalDateTime deadline, int groupOrderLike, String description, User user, GroupOrderChatRoom groupOrderChatRoom) {
