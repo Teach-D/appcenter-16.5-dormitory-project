@@ -1,17 +1,24 @@
 package com.example.appcenter_project.controller.groupOrder;
 
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
+import com.example.appcenter_project.dto.request.tip.RequestTipDto;
+import com.example.appcenter_project.dto.response.groupOrder.GroupOrderImageDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDetailDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
+import com.example.appcenter_project.dto.response.tip.TipImageDto;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import com.example.appcenter_project.jwt.SecurityUser;
 import com.example.appcenter_project.service.groupOrder.GroupOrderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,14 +32,39 @@ public class GroupOrderController {
     private final GroupOrderService groupOrderService;
 
     @PostMapping
+    public ResponseEntity<Void> saveGroupOrder(@AuthenticationPrincipal SecurityUser user, @RequestPart RequestGroupOrderDto requestGroupOrderDto, @RequestPart List<MultipartFile> images) {
+        groupOrderService.saveGroupOrder(user.getId(), requestGroupOrderDto, images);
+        return ResponseEntity.status(CREATED).build();
+    }
+
+/*    @PostMapping
     public ResponseEntity<Void> saveGroupOrder(@AuthenticationPrincipal SecurityUser user, @RequestBody RequestGroupOrderDto requestGroupOrderDto) {
         groupOrderService.saveGroupOrder(user.getId(), requestGroupOrderDto);
         return ResponseEntity.status(CREATED).build();
-    }
+    }*/
 
     @GetMapping("/{groupOrderId}")
     public ResponseEntity<ResponseGroupOrderDetailDto> findGroupOrderById(@PathVariable Long groupOrderId) {
         return ResponseEntity.status(FOUND).body(groupOrderService.findGroupOrderById(groupOrderId));
+    }
+
+    // 3. 특정 Tip의 이미지 메타 정보 목록 조회
+    @GetMapping("/{groupOrderId}/images")
+    public ResponseEntity<List<GroupOrderImageDto>> getGroupOrderImages(@PathVariable Long groupOrderId) {
+        List<GroupOrderImageDto> images = groupOrderService.findGroupOrderImages(groupOrderId);
+        return ResponseEntity.ok(images);
+    }
+
+    // 4. 실제 이미지 파일 응답
+    @GetMapping("/images/view")
+    public ResponseEntity<Resource> viewImage(@RequestParam String filename) {
+        Resource resource = groupOrderService.loadImageAsResource(filename);
+        File file = new File(resource.getFilename());
+        String contentType = groupOrderService.getImageContentType(file);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .body(resource);
     }
 
     @GetMapping
