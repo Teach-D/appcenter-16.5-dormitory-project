@@ -10,7 +10,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-public class ResponseGroupOrderDto {
+public class ResponseGroupOrderDetailDto {
 
     private Long groupOrderId;
     private String title;
@@ -25,8 +25,8 @@ public class ResponseGroupOrderDto {
     @Builder.Default
     private List<ResponseGroupOrderCommentDto> groupOrderCommentDtoList = new ArrayList<>();
 
-    public static ResponseGroupOrderDto entityToDto(GroupOrder groupOrder) {
-        return ResponseGroupOrderDto.builder()
+    public static ResponseGroupOrderDetailDto entityToDto(GroupOrder groupOrder) {
+        return ResponseGroupOrderDetailDto.builder()
                 .groupOrderId(groupOrder.getId())
                 .title(groupOrder.getTitle())
                 .deadline(String.valueOf(groupOrder.getDeadline()))
@@ -39,8 +39,8 @@ public class ResponseGroupOrderDto {
                 .build();
     }
 
-    public static ResponseGroupOrderDto detailEntityToDto(GroupOrder groupOrder, List<ResponseGroupOrderCommentDto> responseGroupOrderCommentDto) {
-        return ResponseGroupOrderDto.builder()
+    public static ResponseGroupOrderDetailDto detailEntityToDto(GroupOrder groupOrder, List<ResponseGroupOrderCommentDto> responseGroupOrderCommentDto) {
+        return ResponseGroupOrderDetailDto.builder()
                 .groupOrderId(groupOrder.getId())
                 .title(groupOrder.getTitle())
                 .deadline(String.valueOf(groupOrder.getDeadline()))

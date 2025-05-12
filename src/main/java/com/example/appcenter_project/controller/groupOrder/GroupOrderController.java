@@ -1,16 +1,12 @@
 package com.example.appcenter_project.controller.groupOrder;
 
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
-import com.example.appcenter_project.dto.request.user.RequestUserDto;
-import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
-import com.example.appcenter_project.dto.response.user.ResponseUserDto;
+import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDetailDto;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import com.example.appcenter_project.jwt.SecurityUser;
 import com.example.appcenter_project.service.groupOrder.GroupOrderService;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -34,12 +30,12 @@ public class GroupOrderController {
     }
 
     @GetMapping("/{groupOrderId}")
-    public ResponseEntity<ResponseGroupOrderDto> findGroupOrderById(@PathVariable Long groupOrderId) {
+    public ResponseEntity<ResponseGroupOrderDetailDto> findGroupOrderById(@PathVariable Long groupOrderId) {
         return ResponseEntity.status(FOUND).body(groupOrderService.findGroupOrderById(groupOrderId));
     }
 
     @GetMapping
-    public ResponseEntity<List<ResponseGroupOrderDto>> findGroupOrders(
+    public ResponseEntity<List<ResponseGroupOrderDetailDto>> findGroupOrders(
             @RequestParam(defaultValue = "DEADLINE") String sort, @RequestParam(defaultValue = "ALL") String type, @RequestParam(required = false) Optional<String> search
     ) {
         return ResponseEntity.status(FOUND).body(groupOrderService.findGroupOrders(GroupOrderSort.valueOf(sort), GroupOrderType.valueOf(type), search));
@@ -51,7 +47,7 @@ public class GroupOrderController {
     }
 
     @PutMapping("/{groupOrderId}")
-    public ResponseEntity<ResponseGroupOrderDto> updateGroupOrder(@PathVariable Long groupOrderId, @RequestBody RequestGroupOrderDto requestGroupOrderDto) {
+    public ResponseEntity<ResponseGroupOrderDetailDto> updateGroupOrder(@PathVariable Long groupOrderId, @RequestBody RequestGroupOrderDto requestGroupOrderDto) {
         return ResponseEntity.status(FOUND).body(groupOrderService.updateGroupOrder(groupOrderId, requestGroupOrderDto));
     }
 
