@@ -18,7 +18,7 @@ import static org.springframework.http.HttpStatus.FOUND;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/group-order-chat-comments")
+@RequestMapping("/group-order-comments")
 public class GroupOrderCommentController {
 
     private final GroupOrderCommentService groupOrderCommentService;
