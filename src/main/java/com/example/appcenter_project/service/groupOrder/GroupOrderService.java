@@ -1,9 +1,8 @@
 package com.example.appcenter_project.service.groupOrder;
 
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
-import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderChatRoomDetailDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderCommentDto;
-import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
+import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDetailDto;
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.entity.groupOrder.GroupOrderChatRoom;
 import com.example.appcenter_project.entity.groupOrder.GroupOrderComment;
@@ -68,7 +67,7 @@ public class GroupOrderService {
         userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);
     }
 
-    public ResponseGroupOrderDto findGroupOrderById(Long groupOrderId) {
+    public ResponseGroupOrderDetailDto findGroupOrderById(Long groupOrderId) {
         GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId).orElseThrow();
 
         List<ResponseGroupOrderCommentDto> responseGroupOrderCommentDtoList = new ArrayList<>();
@@ -82,24 +81,24 @@ public class GroupOrderService {
             responseGroupOrderCommentDtoList.add(responseGroupOrderCommentDto);
         }
 
-        return ResponseGroupOrderDto.detailEntityToDto(groupOrder, responseGroupOrderCommentDtoList);
+        return ResponseGroupOrderDetailDto.detailEntityToDto(groupOrder, responseGroupOrderCommentDtoList);
     }
 
-    public List<ResponseGroupOrderDto> findGroupOrders(GroupOrderSort sort, GroupOrderType type, Optional<String> search) {
+    public List<ResponseGroupOrderDetailDto> findGroupOrders(GroupOrderSort sort, GroupOrderType type, Optional<String> search) {
         Specification<GroupOrder> spec = buildSpecification(type, search);
         Sort sortOption = getSortOption(sort);
 
         List<GroupOrder> groupOrders = groupOrderRepository.findAll(spec, sortOption);
         return groupOrders.stream()
-                .map(ResponseGroupOrderDto::entityToDto)
+                .map(ResponseGroupOrderDetailDto::entityToDto)
                 .collect(Collectors.toList());
     }
 
-    public ResponseGroupOrderDto updateGroupOrder(Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto) {
+    public ResponseGroupOrderDetailDto updateGroupOrder(Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto) {
         GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId).orElseThrow();
         groupOrder.update(requestGroupOrderDto);
 
-        return ResponseGroupOrderDto.entityToDto(groupOrder);
+        return ResponseGroupOrderDetailDto.entityToDto(groupOrder);
     }
 
     public void deleteGroupOrder(Long groupOrderId) {
