@@ -16,6 +16,7 @@ public class ResponseTipDto {
     private String content;
     private Integer tipLike;
 
+    @Builder.Default
     private List<ResponseTipCommentDto> tipCommentDtoList = new ArrayList<>();
 
     public static ResponseTipDto entityToDto(Tip tip) {
