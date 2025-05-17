@@ -3,7 +3,7 @@ package com.example.appcenter_project.controller.tip;
 import com.example.appcenter_project.dto.request.tip.RequestTipDto;
 import com.example.appcenter_project.dto.response.tip.ResponseTipDto;
 import com.example.appcenter_project.dto.response.tip.TipImageDto;
-import com.example.appcenter_project.jwt.SecurityUser;
+import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.tip.TipService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +11,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -28,7 +29,7 @@ public class TipController {
     private final TipService tipService;
 
     @PostMapping
-    public ResponseEntity<Void> saveTip(@AuthenticationPrincipal SecurityUser user, @RequestPart RequestTipDto requestTipDto, @RequestPart List<MultipartFile> images) {
+    public ResponseEntity<Void> saveTip(@AuthenticationPrincipal CustomUserDetails user, @RequestPart RequestTipDto requestTipDto, @RequestPart List<MultipartFile> images) {
         tipService.saveTip(user.getId(), requestTipDto, images);
         return ResponseEntity.status(CREATED).build();
     }
@@ -36,13 +37,13 @@ public class TipController {
     // 모든 Tip 조회
     @GetMapping
     public ResponseEntity<List<ResponseTipDto>> findAllTips() {
-        return ResponseEntity.status(FOUND).body(tipService.findAllTips());
+        return ResponseEntity.status(OK).body(tipService.findAllTips());
     }
 
     // 2. 특정 Tip의 이미지를 제외한 정보 하나 조회
     @GetMapping("/{tipId}")
     public ResponseEntity<ResponseTipDto> findTip(@PathVariable Long tipId) {
-        return ResponseEntity.status(FOUND).body(tipService.findTip(tipId));
+        return ResponseEntity.status(OK).body(tipService.findTip(tipId));
     }
 
     // 3. 특정 Tip의 이미지 메타 정보 목록 조회
@@ -65,12 +66,12 @@ public class TipController {
     }
 
     @PatchMapping("/like/{tipId}")
-    public ResponseEntity<Integer> likePlusTip(@AuthenticationPrincipal SecurityUser user, @PathVariable Long tipId) {
+    public ResponseEntity<Integer> likePlusTip(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long tipId) {
         return ResponseEntity.status(OK).body(tipService.likePlusTip(user.getId(), tipId));
     }
 
     @PutMapping("/{tipId}")
-    public ResponseEntity<Void> updateTip(@AuthenticationPrincipal SecurityUser user, @RequestPart RequestTipDto requestTipDto, @RequestPart List<MultipartFile> images, @PathVariable Long tipId) {
+    public ResponseEntity<Void> updateTip(@AuthenticationPrincipal CustomUserDetails user, @RequestPart RequestTipDto requestTipDto, @RequestPart List<MultipartFile> images, @PathVariable Long tipId) {
         tipService.updateTip(user.getId(), requestTipDto, images, tipId);
         return ResponseEntity.status(ACCEPTED).build();
     }

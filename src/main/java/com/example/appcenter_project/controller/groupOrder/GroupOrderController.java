@@ -6,13 +6,14 @@ import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderD
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
-import com.example.appcenter_project.jwt.SecurityUser;
+import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.groupOrder.GroupOrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,14 +31,14 @@ public class GroupOrderController {
     private final GroupOrderService groupOrderService;
 
     @PostMapping
-    public ResponseEntity<Void> saveGroupOrder(@AuthenticationPrincipal SecurityUser user, @RequestPart RequestGroupOrderDto requestGroupOrderDto, @RequestPart List<MultipartFile> images) {
+    public ResponseEntity<Void> saveGroupOrder(@AuthenticationPrincipal CustomUserDetails user, @RequestPart RequestGroupOrderDto requestGroupOrderDto, @RequestPart List<MultipartFile> images) {
         groupOrderService.saveGroupOrder(user.getId(), requestGroupOrderDto, images);
         return ResponseEntity.status(CREATED).build();
     }
 
     @GetMapping("/{groupOrderId}")
     public ResponseEntity<ResponseGroupOrderDetailDto> findGroupOrderById(@PathVariable Long groupOrderId) {
-        return ResponseEntity.status(FOUND).body(groupOrderService.findGroupOrderById(groupOrderId));
+        return ResponseEntity.status(OK).body(groupOrderService.findGroupOrderById(groupOrderId));
     }
 
     @GetMapping("/{groupOrderId}/images")
@@ -61,17 +62,17 @@ public class GroupOrderController {
     public ResponseEntity<List<ResponseGroupOrderDto>> findGroupOrders(
             @RequestParam(defaultValue = "DEADLINE") String sort, @RequestParam(defaultValue = "ALL") String type, @RequestParam(required = false) Optional<String> search
     ) {
-        return ResponseEntity.status(FOUND).body(groupOrderService.findGroupOrders(GroupOrderSort.valueOf(sort), GroupOrderType.valueOf(type), search));
+        return ResponseEntity.status(OK).body(groupOrderService.findGroupOrders(GroupOrderSort.valueOf(sort), GroupOrderType.valueOf(type), search));
     }
 
     @PatchMapping("/like/{groupOrderId}")
-    public ResponseEntity<Integer> likePlusGroupOrder(@AuthenticationPrincipal SecurityUser user, @PathVariable Long groupOrderId) {
+    public ResponseEntity<Integer> likePlusGroupOrder(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderId) {
         return ResponseEntity.status(OK).body(groupOrderService.likePlusGroupOrder(user.getId(), groupOrderId));
     }
 
     @PutMapping("/{groupOrderId}")
     public ResponseEntity<ResponseGroupOrderDetailDto> updateGroupOrder(@PathVariable Long groupOrderId, @RequestBody RequestGroupOrderDto requestGroupOrderDto) {
-        return ResponseEntity.status(FOUND).body(groupOrderService.updateGroupOrder(groupOrderId, requestGroupOrderDto));
+        return ResponseEntity.status(ACCEPTED).body(groupOrderService.updateGroupOrder(groupOrderId, requestGroupOrderDto));
     }
 
     @DeleteMapping("/{groupOrderId}")
