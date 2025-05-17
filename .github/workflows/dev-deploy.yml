@@ -2,9 +2,11 @@ name: Deploy to inu-dormitory-dev
 
 on:
   push:
-    branches: [ ci/cd ]
+    branches:
+      - '**'
   pull_request:
-    branches: [ dev ]
+    branches:
+      - dev
 
 jobs:
   build:
