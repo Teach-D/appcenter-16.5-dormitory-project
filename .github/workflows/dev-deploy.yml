@@ -1,16 +1,44 @@
 name: Deploy to inu-dormitory-dev
 
 on:
+  push:
+    branches:
+      - '**'  # 모든 브랜치에 대해 실행
   pull_request:
     branches:
-      - dev
+      - dev  # dev 브랜치로 PR이 생성될 때만 실행
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push'  # push 이벤트일 때만 실행
 
     steps:
-      - run: echo "Build 단계입니다."
+      - uses: actions/checkout@v3
+
+      - name: Set Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Create application.yml
+        run: |
+          mkdir -p ./src/main/resources
+          echo "${{ secrets.APPLICATION_YML }}" > ./src/main/resources/application.yml
+          echo "✅ application.yml created"
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build project
+        run: ./gradlew clean build
+
+      - name: Build Docker image
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGE }}:latest .
 
   deploy:
     runs-on: ubuntu-latest
