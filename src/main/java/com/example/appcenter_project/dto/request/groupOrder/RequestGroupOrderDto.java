@@ -23,7 +23,7 @@ public class RequestGroupOrderDto {
                 .groupOrderType(dto.getGroupOrderType())
                 .price(dto.getPrice())
                 .link(dto.getLink())
-                .currentPeople(0)
+                .currentPeople(1)
                 .maxPeople(dto.getMaxPeople())
                 .deadline(dto.getDeadline())
                 .groupOrderLike(0)

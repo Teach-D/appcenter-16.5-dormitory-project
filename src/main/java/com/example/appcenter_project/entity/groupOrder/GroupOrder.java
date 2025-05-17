@@ -33,7 +33,7 @@ public class GroupOrder {
 
     private int currentPeople;
 
-    private int maxPeople;
+    private Integer maxPeople;
 
     private LocalDateTime deadline;
 

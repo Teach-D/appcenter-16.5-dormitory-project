@@ -93,7 +93,20 @@ public class GroupOrderService {
         GroupOrder groupOrder = RequestGroupOrderDto.dtoToEntity(requestGroupOrderDto, user);
 
         saveImages(groupOrder, images);
+
         groupOrderRepository.save(groupOrder);
+
+        // GroupOrderChatRoom 저장
+        GroupOrderChatRoom groupOrderChatRoom = new GroupOrderChatRoom(groupOrder.getTitle());
+        UserGroupOrderChatRoom userGroupOrderChatRoom = UserGroupOrderChatRoom.builder()
+                .groupOrderChatRoom(groupOrderChatRoom)
+                .user(user)
+                .build();
+        user.getUserGroupOrderChatRoomList().add(userGroupOrderChatRoom);
+
+        groupOrder.updateGroupOrderChatRoom(groupOrderChatRoom);
+        groupOrderChatRoomRepository.save(groupOrderChatRoom);
+        userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);
     }
 
     private void saveImages(GroupOrder groupOrder, List<MultipartFile> files) {
