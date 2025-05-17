@@ -30,7 +30,9 @@ public class User extends BaseTimeEntity {
     private String studentNumber;
 
     private String name;
-//    private String password;
+    private String password;
+
+    private String refreshToken;
 
     private DormType dormType;
 
@@ -61,7 +63,7 @@ public class User extends BaseTimeEntity {
     public User(String studentNumber, String name, String password, DormType dormType, int penalty, Role role, Image image) {
         this.name = name;
         this.studentNumber = studentNumber;
-//        this.password = password;
+        this.password = password;
         this.dormType = dormType;
         this.penalty = penalty;
         this.role = role;
@@ -85,5 +87,9 @@ public class User extends BaseTimeEntity {
 
     public void addLike(TipLike tipLike) {
         this.tipLikeList.add(tipLike);
+    }
+
+    public void updateRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 }
