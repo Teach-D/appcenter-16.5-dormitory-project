@@ -56,7 +56,7 @@ public class UserController {
 
     @GetMapping("/image")
     public ResponseEntity<Resource> findUserImageByUserId(@AuthenticationPrincipal CustomUserDetails user) {
-        ImageDto imageDto = imageService.findUserImageByUserId(user.getUsername());
+        ImageDto imageDto = imageService.findUserImageByUserId(user.getId());
 
         return ResponseEntity.status(OK)
                 .contentType(MediaType.parseMediaType(imageDto.getContentType()))
