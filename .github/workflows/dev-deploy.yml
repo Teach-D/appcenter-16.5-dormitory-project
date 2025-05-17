@@ -46,4 +46,25 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'dev'
 
     steps:
-      - run: echo "Deploy 단계입니다."
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Push Docker image to Docker Hub
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGE }}:latest
+
+      - name: SSH to server & deploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGE }}:latest
+            docker stop ${{ secrets.DOCKER_IMAGE }} || true
+            docker rm ${{ secrets.DOCKER_IMAGE }} || true
+            docker network create inu-network || true
+            docker network connect inu-network inu-dormitory-dev-mysql || true
+            docker run -d --name ${{ secrets.DOCKER_IMAGE }} \
+              --network inu-network \
+              -p 8055:8080 \
+              ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGE }}:latest
