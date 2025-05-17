@@ -3,15 +3,15 @@ name: Deploy to inu-dormitory-dev
 on:
   push:
     branches:
-      - '**'  # 모든 브랜치에 대해 실행
+      - '**'
   pull_request:
     branches:
-      - dev  # dev 브랜치로 PR이 생성될 때만 실행
+      - dev
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'  # push 이벤트일 때만 실행
+    if: github.event_name == 'push'
 
     steps:
       - uses: actions/checkout@v3
@@ -26,7 +26,6 @@ jobs:
         run: |
           mkdir -p ./src/main/resources
           echo "${{ secrets.APPLICATION_YML }}" > ./src/main/resources/application.yml
-          echo "✅ application.yml created"
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
@@ -43,7 +42,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    if: github.event_name == 'pull_request' && github.base_ref == 'dev'  # dev 브랜치 PR일 때만 실행
+    if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'dev'
 
     steps:
       - name: Log in to Docker Hub
