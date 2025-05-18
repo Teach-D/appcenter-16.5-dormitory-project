@@ -10,19 +10,24 @@ import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.image.ImageType;
-import com.example.appcenter_project.enums.like.BoardType;
 import com.example.appcenter_project.enums.user.Role;
-import com.example.appcenter_project.jwt.JwtTokenProvider;
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.like.LikeRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
+import com.example.appcenter_project.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -32,8 +37,10 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final ImageRepository imageRepository;
-    private final JwtTokenProvider jwtTokenProvider;
     private final LikeRepository likeRepository;
+    private final AuthenticationManagerBuilder authenticationManager;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final PasswordEncoder passwordEncoder;
 
     public ResponseLoginDto saveUser(SignupUser signupUser) {
         Boolean existsByStudentNumber = userRepository.existsByStudentNumber(signupUser.getStudentNumber());
@@ -69,12 +76,18 @@ public class UserService {
         userRepository.deleteById(userId);
     }
 
-    private ResponseLoginDto login(SignupUser signupUser) {
-        User user = userRepository.findByStudentNumber(signupUser.getStudentNumber()).orElseThrow();
+    public ResponseLoginDto login(SignupUser signupUser) {
+        String studentNumber = signupUser.getStudentNumber();
+        log.info("[로그인 시도] loginId: {}", signupUser.getStudentNumber());
+        User user = userRepository.findByStudentNumber(studentNumber).orElseThrow();
 
-        String token = jwtTokenProvider.createToken(user.getStudentNumber(), String.valueOf(user.getRole()));
+        // 토큰 생성
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getId(), user.getStudentNumber(), String.valueOf(user.getRole()));
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId(), user.getStudentNumber(), String.valueOf(user.getRole()));
 
-        return new ResponseLoginDto(token);
+        user.updateRefreshToken(refreshToken);
+
+        return new ResponseLoginDto(accessToken, refreshToken);
     }
 
     public List<ResponseLikeDto> findLikeByUserId(Long userId) {
@@ -96,5 +109,20 @@ public class UserService {
         }
 
         return responseLikeDtoList;
+    }
+
+    public String reissueAccessToken(String refreshToken) {
+        if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
+            throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다.");
+        }
+
+        User user = userRepository.findByRefreshToken(refreshToken)
+                .orElseThrow(() -> new IllegalArgumentException("Refresh Token에 해당하는 사용자가 없습니다."));
+
+        return jwtTokenProvider.generateAccessToken(
+                user.getId(),
+                user.getStudentNumber(),
+                String.valueOf(user.getRole())
+        );
     }
 }
