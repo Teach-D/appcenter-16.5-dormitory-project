@@ -1,0 +1,39 @@
+package com.example.appcenter_project.exception;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+
+import static org.springframework.http.HttpStatus.*;
+
+@Getter
+@RequiredArgsConstructor
+public enum ErrorCode {
+
+    // JWT
+    JWT_NOT_VALID(UNAUTHORIZED, 1001, "[Jwt] 유효하지 않은 Jwt"),
+    JWT_ACCESS_TOKEN_EXPIRED(UNAUTHORIZED, 1002, "[Jwt] 만료된 엑세스 토큰입니다."),
+    JWT_REFRESH_TOKEN_EXPIRED(UNAUTHORIZED, 1003, "[Jwt] 만료된 리프레시 토큰입니다."),
+    JWT_MALFORMED(UNAUTHORIZED, 1004, "[Jwt] 잘못된 토큰 형식입니다."),
+    JWT_SIGNATURE(UNAUTHORIZED, 1005, "[Jwt] 유효하지 않은 서명입니다."),
+    JWT_UNSUPPORTED(UNAUTHORIZED, 1006, "[Jwt] 지원하지 않는 토큰입니다."),
+    JWT_ENTRY_POINT(UNAUTHORIZED, 1007, "[Jwt] 인증되지 않은 사용자입니다."),
+    JWT_ACCESS_DENIED(FORBIDDEN, 1008, "[Jwt] 리소스에 접근할 권한이 없습니다."),
+
+    // USER
+    USER_NOT_FOUND(NOT_FOUND, 2001, "[User] 사용자를 찾을 수 없습니다."),
+
+    // GROUP_ORDER
+    GROUP_ORDER_NOT_FOUND(NOT_FOUND, 3001, "[GroupOrder] 공동구매 글을 찾을 수 없습니다."),
+    GROUP_ORDER_CHAT_ROOM_NOT_FOUND(NOT_FOUND, 3002, "[GroupOrder] 채팅방을 찾을 수 없습니다."),
+    USER_GROUP_ORDER_NOT_FOUND(NOT_FOUND, 3003, "[GroupOrder] 사용자의 공동구매 참여 정보를 찾을 수 없습니다."),
+    GROUP_ORDER_COMMENT_NOT_FOUND(NOT_FOUND, 3004, "[GroupOrder] 댓글을 찾을 수 없습니다."),
+
+    // TIP
+    TIP_NOT_FOUND(NOT_FOUND, 4001, "[Tip] 팁 게시글을 찾을 수 없습니다."),
+    TIP_COMMENT_NOT_FOUND(NOT_FOUND, 4002, "[Tip] 팁 게시글의 댓글을 찾을 수 없습니다.");
+
+    private final HttpStatus httpStatus;
+    private final Integer code;
+    private final String message;
+}
