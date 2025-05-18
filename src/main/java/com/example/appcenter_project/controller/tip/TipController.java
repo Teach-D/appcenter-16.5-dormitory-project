@@ -5,6 +5,7 @@ import com.example.appcenter_project.dto.response.tip.ResponseTipDto;
 import com.example.appcenter_project.dto.response.tip.TipImageDto;
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.tip.TipService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
@@ -29,7 +30,7 @@ public class TipController {
     private final TipService tipService;
 
     @PostMapping
-    public ResponseEntity<Void> saveTip(@AuthenticationPrincipal CustomUserDetails user, @RequestPart RequestTipDto requestTipDto, @RequestPart List<MultipartFile> images) {
+    public ResponseEntity<Void> saveTip(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestPart RequestTipDto requestTipDto, @RequestPart List<MultipartFile> images) {
         tipService.saveTip(user.getId(), requestTipDto, images);
         return ResponseEntity.status(CREATED).build();
     }
@@ -71,7 +72,7 @@ public class TipController {
     }
 
     @PutMapping("/{tipId}")
-    public ResponseEntity<Void> updateTip(@AuthenticationPrincipal CustomUserDetails user, @RequestPart RequestTipDto requestTipDto, @RequestPart List<MultipartFile> images, @PathVariable Long tipId) {
+    public ResponseEntity<Void> updateTip(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestPart RequestTipDto requestTipDto, @RequestPart List<MultipartFile> images, @PathVariable Long tipId) {
         tipService.updateTip(user.getId(), requestTipDto, images, tipId);
         return ResponseEntity.status(ACCEPTED).build();
     }

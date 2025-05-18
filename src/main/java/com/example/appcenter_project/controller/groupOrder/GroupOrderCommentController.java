@@ -4,6 +4,7 @@ import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderCom
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderCommentDto;
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.groupOrder.GroupOrderCommentService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,7 +22,7 @@ public class GroupOrderCommentController {
     private final GroupOrderCommentService groupOrderCommentService;
 
     @PostMapping
-    public ResponseEntity<ResponseGroupOrderCommentDto> saveGroupOrderComment(@AuthenticationPrincipal CustomUserDetails user, @RequestBody RequestGroupOrderCommentDto requestGroupOrderCommentDto) {
+    public ResponseEntity<ResponseGroupOrderCommentDto> saveGroupOrderComment(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestBody RequestGroupOrderCommentDto requestGroupOrderCommentDto) {
         return ResponseEntity.status(CREATED).body(groupOrderCommentService.saveGroupOrderComment(user.getId(), requestGroupOrderCommentDto));
     }
 

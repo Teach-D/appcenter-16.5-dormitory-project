@@ -36,7 +36,7 @@ public class GroupOrderChatService {
 
     public ResponseGroupOrderChatDto sendGroupOrderChat(Long userId, RequestGroupOrderChatDto requestGroupOrderChatDto) {
         User user = userRepository.findById(userId).orElseThrow();
-        GroupOrderChatRoom groupOrderChatRoom = groupOrderChatRoomRepository.findById(requestGroupOrderChatDto.getGroupOrderChatRomId()).orElseThrow();
+        GroupOrderChatRoom groupOrderChatRoom = groupOrderChatRoomRepository.findById(requestGroupOrderChatDto.getGroupOrderChatRoomId()).orElseThrow();
 
         // 채팅방에 가입한 유저
         List<User> chatRoomAllUser = new ArrayList<>();
