@@ -31,7 +31,10 @@ public enum ErrorCode {
 
     // TIP
     TIP_NOT_FOUND(NOT_FOUND, 4001, "[Tip] 팁 게시글을 찾을 수 없습니다."),
-    TIP_COMMENT_NOT_FOUND(NOT_FOUND, 4002, "[Tip] 팁 게시글의 댓글을 찾을 수 없습니다.");
+    TIP_COMMENT_NOT_FOUND(NOT_FOUND, 4002, "[Tip] 팁 게시글의 댓글을 찾을 수 없습니다."),
+
+    // VALIDATION
+    VALIDATION_FAILED(BAD_REQUEST, 5001, "[Validation] DTO에서 요청한 값이 올바르지 않습니다.");
 
     private final HttpStatus httpStatus;
     private final Integer code;
