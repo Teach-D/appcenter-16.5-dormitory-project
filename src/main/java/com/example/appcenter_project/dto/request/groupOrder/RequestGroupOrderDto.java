@@ -2,6 +2,10 @@ package com.example.appcenter_project.dto.request.groupOrder;
 
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.entity.user.User;
+import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
@@ -9,12 +13,28 @@ import java.time.LocalDateTime;
 @Getter
 public class RequestGroupOrderDto {
 
+    @NotBlank(message = "제목은 필수 입력 값입니다.")
     private String title;
+
+    @NotBlank(message = "공동구매 유형은 필수 입력 값입니다.")
     private String groupOrderType;
-    private int price;
+
+    @NotNull(message = "가격은 필수 입력 값입니다.")
+    @Min(value = 1, message = "가격은 1원 이상이어야 합니다.")
+    private Integer price;
+
+    @NotBlank(message = "공동구매 링크는 필수 입력 값입니다.")
     private String link;
-    private int maxPeople;
+
+    @NotNull(message = "최대 인원 수는 필수 입력 값입니다.")
+    @Min(value = 1, message = "최대 인원 수는 1명 이상이어야 합니다.")
+    private Integer maxPeople;
+
+    @NotNull(message = "마감일은 필수 입력 값입니다.")
+    @Future(message = "마감일은 미래의 날짜여야 합니다.")
     private LocalDateTime deadline;
+
+    @NotBlank(message = "공동구매 설명은 필수 입력 값입니다.")
     private String description;
 
     public static GroupOrder dtoToEntity(RequestGroupOrderDto dto, User user) {
