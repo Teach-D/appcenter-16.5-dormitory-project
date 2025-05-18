@@ -7,4 +7,4 @@ WORKDIR /app
 COPY build/libs/*.jar app.jar
 
 # 실행 명령
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-jar", "/app.jar"]
