@@ -8,6 +8,7 @@ import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.groupOrder.GroupOrderService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
@@ -31,7 +32,7 @@ public class GroupOrderController {
     private final GroupOrderService groupOrderService;
 
     @PostMapping
-    public ResponseEntity<Void> saveGroupOrder(@AuthenticationPrincipal CustomUserDetails user, @RequestPart RequestGroupOrderDto requestGroupOrderDto, @RequestPart List<MultipartFile> images) {
+    public ResponseEntity<Void> saveGroupOrder(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestPart RequestGroupOrderDto requestGroupOrderDto, @RequestPart List<MultipartFile> images) {
         groupOrderService.saveGroupOrder(user.getId(), requestGroupOrderDto, images);
         return ResponseEntity.status(CREATED).build();
     }
@@ -71,7 +72,7 @@ public class GroupOrderController {
     }
 
     @PutMapping("/{groupOrderId}")
-    public ResponseEntity<ResponseGroupOrderDetailDto> updateGroupOrder(@PathVariable Long groupOrderId, @RequestBody RequestGroupOrderDto requestGroupOrderDto) {
+    public ResponseEntity<ResponseGroupOrderDetailDto> updateGroupOrder(@PathVariable Long groupOrderId, @Valid @RequestBody RequestGroupOrderDto requestGroupOrderDto) {
         return ResponseEntity.status(ACCEPTED).body(groupOrderService.updateGroupOrder(groupOrderId, requestGroupOrderDto));
     }
 

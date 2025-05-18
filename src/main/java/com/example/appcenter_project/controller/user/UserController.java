@@ -9,6 +9,7 @@ import com.example.appcenter_project.dto.response.user.ResponseUserDto;
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.image.ImageService;
 import com.example.appcenter_project.service.user.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
@@ -35,7 +36,7 @@ public class UserController {
     private final ImageService imageService;
 
     @PostMapping
-    public ResponseEntity<ResponseLoginDto> saveUser(@RequestBody SignupUser signupUser) {
+    public ResponseEntity<ResponseLoginDto> saveUser(@Valid @RequestBody SignupUser signupUser) {
         return ResponseEntity.status(CREATED).body(userService.saveUser(signupUser));
     }
 
@@ -69,7 +70,7 @@ public class UserController {
     }
 
     @PutMapping
-    public ResponseEntity<ResponseUserDto> updateUser(@AuthenticationPrincipal CustomUserDetails user, @RequestBody RequestUserDto requestUserDto) {
+    public ResponseEntity<ResponseUserDto> updateUser(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestBody RequestUserDto requestUserDto) {
         return ResponseEntity.status(OK).body(userService.updateUser(user.getId(), requestUserDto));
     }
 
