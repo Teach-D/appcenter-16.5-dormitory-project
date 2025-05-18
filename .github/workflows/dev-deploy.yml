@@ -3,10 +3,11 @@ name: Deploy to inu-dormitory-dev
 on:
   push:
     branches:
-      - '**'
+      - '**'  # 어떤 브랜치든 push되면 build job 실행
   pull_request:
+    types: [closed]  # PR이 닫힐 때 (머지 or 취소)
     branches:
-      - dev
+      - dev          # dev 브랜치에 대한 PR이 머지될 때만 deploy job 실행
 
 jobs:
   build:
@@ -41,8 +42,8 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true  # 머지된 PR인 경우에만 실행
     needs: build
-    if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'dev'
 
     steps:
       - name: Log in to Docker Hub
