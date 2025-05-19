@@ -15,11 +15,13 @@ public class Image {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String filePath;
 
     @Enumerated(EnumType.STRING)
     private ImageType imageType;
 
+    @Column(nullable = false)
     private Boolean isDefault = false;
 
     @Builder
