@@ -1,6 +1,7 @@
 package com.example.appcenter_project.entity.groupOrder;
 
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
+import com.example.appcenter_project.entity.BaseTimeEntity;
 import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
@@ -17,7 +18,7 @@ import java.util.List;
 @Entity
 @NoArgsConstructor
 @Getter
-public class GroupOrder {
+public class GroupOrder extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

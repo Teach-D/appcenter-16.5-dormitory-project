@@ -1,5 +1,6 @@
 package com.example.appcenter_project.entity.groupOrder;
 
+import com.example.appcenter_project.entity.BaseTimeEntity;
 import com.example.appcenter_project.entity.user.User;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -12,7 +13,7 @@ import java.time.LocalDateTime;
 @Entity
 @NoArgsConstructor
 @Getter
-public class UserGroupOrderChatRoom {
+public class UserGroupOrderChatRoom extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,9 +37,6 @@ public class UserGroupOrderChatRoom {
     @Column(length = 100)
     private String recentChatContent;
 
-    @LastModifiedDate
-    private LocalDateTime updateTime;
-
     @Builder
     public UserGroupOrderChatRoom(GroupOrderChatRoom groupOrderChatRoom, User user) {
         this.groupOrderChatRoom = groupOrderChatRoom;
@@ -46,10 +44,9 @@ public class UserGroupOrderChatRoom {
         this.user = user;
     }
 
-    public void update(String title, String content, int unreadCount, LocalDateTime updateTime) {
+    public void update(String title, String content, int unreadCount) {
         this.chatRoomTitle = title;
         this.recentChatContent = content;
         this.unreadCount = unreadCount;
-        this.updateTime = updateTime;
     }
 }
