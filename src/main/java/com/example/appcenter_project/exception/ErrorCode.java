@@ -28,6 +28,8 @@ public enum ErrorCode {
     GROUP_ORDER_CHAT_ROOM_NOT_FOUND(NOT_FOUND, 3002, "[GroupOrder] 채팅방을 찾을 수 없습니다."),
     USER_GROUP_ORDER_NOT_FOUND(NOT_FOUND, 3003, "[GroupOrder] 사용자의 공동구매 참여 정보를 찾을 수 없습니다."),
     GROUP_ORDER_COMMENT_NOT_FOUND(NOT_FOUND, 3004, "[GroupOrder] 댓글을 찾을 수 없습니다."),
+    GROUP_ORDER_TITLE_DUPLICATE(CONFLICT, 3005, "[GroupOrder] 이미 존재하는 제목입니다."),
+
 
     // TIP
     TIP_NOT_FOUND(NOT_FOUND, 4001, "[Tip] 팁 게시글을 찾을 수 없습니다."),
