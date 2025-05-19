@@ -26,8 +26,14 @@ public class UserGroupOrderChatRoom {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @Column(nullable = false, unique = true, length = 30)
     private String chatRoomTitle;
+
+    @Column(nullable = false)
     private Integer unreadCount;
+
+    // 채팅방의 가장 최근 채팅
+    @Column(length = 100)
     private String recentChatContent;
 
     @LastModifiedDate

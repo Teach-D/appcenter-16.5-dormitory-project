@@ -17,6 +17,7 @@ public class GroupOrderChatRoom {
     private Long id;
 
     // GroupOrder의 title과 같은 문자열
+    @Column(nullable = false, unique = true, length = 30)
     private String title;
 
     @OneToMany(mappedBy = "groupOrderChatRoom")

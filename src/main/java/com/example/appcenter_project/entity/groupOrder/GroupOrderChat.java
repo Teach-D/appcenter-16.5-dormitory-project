@@ -26,6 +26,7 @@ public class GroupOrderChat {
     @JoinColumn(name = "group_order_chat_room_id")
     private GroupOrderChatRoom groupOrderChatRoom;
 
+    @Column(nullable = false, length = 100)
     private String content;
 
     private List<Long> unreadUser = new ArrayList<>();
