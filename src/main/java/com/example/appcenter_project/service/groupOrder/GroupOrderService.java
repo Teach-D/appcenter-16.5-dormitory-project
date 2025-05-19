@@ -225,6 +225,10 @@ public class GroupOrderService {
     }
 
     public ResponseGroupOrderDetailDto updateGroupOrder(Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto) {
+        if (groupOrderRepository.existsByTitle(requestGroupOrderDto.getTitle())) {
+            throw new CustomException(GROUP_ORDER_TITLE_DUPLICATE);
+        }
+
         GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
                 .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
 
