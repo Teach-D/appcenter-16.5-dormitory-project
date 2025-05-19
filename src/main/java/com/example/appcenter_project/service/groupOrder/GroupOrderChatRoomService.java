@@ -69,7 +69,7 @@ public class GroupOrderChatRoomService {
 
         // updateTime 기준 내림차순 정렬
         userGroupOrderChatRoomList.sort(
-                Comparator.comparing(UserGroupOrderChatRoom::getUpdateTime, Comparator.nullsLast(Comparator.reverseOrder()))
+                Comparator.comparing(UserGroupOrderChatRoom::getModifiedDate, Comparator.nullsLast(Comparator.reverseOrder()))
         );
         for (UserGroupOrderChatRoom userGroupOrderChatRoom : userGroupOrderChatRoomList) {
             log.info(userGroupOrderChatRoom.getChatRoomTitle());

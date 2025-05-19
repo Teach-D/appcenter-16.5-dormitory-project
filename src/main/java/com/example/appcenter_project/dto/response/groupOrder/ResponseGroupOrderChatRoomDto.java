@@ -30,7 +30,7 @@ public class ResponseGroupOrderChatRoomDto {
                 .chatRoomTitle(userGroupOrderChatRoom.getChatRoomTitle())
                 .unreadCount(userGroupOrderChatRoom.getUnreadCount())
                 .recentChatContent(userGroupOrderChatRoom.getRecentChatContent())
-                .recentChatTime(userGroupOrderChatRoom.getUpdateTime())
+                .recentChatTime(userGroupOrderChatRoom.getModifiedDate())
                 .chatRoomType(ChatRoomType.GROUP_ORDER)
                 .currentPeople(userGroupOrderChatRoom.getGroupOrderChatRoom().getGroupOrder().getCurrentPeople())
                 .maxPeople(userGroupOrderChatRoom.getGroupOrderChatRoom().getGroupOrder().getMaxPeople())
