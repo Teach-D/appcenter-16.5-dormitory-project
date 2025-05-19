@@ -1,5 +1,6 @@
 package com.example.appcenter_project.entity.groupOrder;
 
+import com.example.appcenter_project.entity.BaseTimeEntity;
 import com.example.appcenter_project.entity.user.User;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -12,7 +13,7 @@ import java.util.List;
 @Entity
 @Getter
 @NoArgsConstructor
-public class GroupOrderChat {
+public class GroupOrderChat extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,6 +27,7 @@ public class GroupOrderChat {
     @JoinColumn(name = "group_order_chat_room_id")
     private GroupOrderChatRoom groupOrderChatRoom;
 
+    @Column(nullable = false, length = 100)
     private String content;
 
     private List<Long> unreadUser = new ArrayList<>();

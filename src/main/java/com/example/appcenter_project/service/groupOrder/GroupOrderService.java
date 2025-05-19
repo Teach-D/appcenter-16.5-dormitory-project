@@ -15,6 +15,7 @@ import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import com.example.appcenter_project.enums.image.ImageType;
+import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.repository.groupOrder.GroupOrderChatRoomRepository;
 import com.example.appcenter_project.repository.groupOrder.GroupOrderCommentRepository;
 import com.example.appcenter_project.repository.groupOrder.GroupOrderRepository;
@@ -40,6 +41,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static com.example.appcenter_project.exception.ErrorCode.*;
 
 @Service
 @RequiredArgsConstructor
@@ -81,19 +84,45 @@ public class GroupOrderService {
     }
 
     public ResponseGroupOrderDetailDto findGroupOrderById(Long groupOrderId) {
-        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId).orElseThrow();
+        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
+                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+
         List<ResponseGroupOrderCommentDto> groupOrderCommentDtoList = findGroupOrderComment(groupOrder);
         return ResponseGroupOrderDetailDto.detailEntityToDto(groupOrder, groupOrderCommentDtoList);
     }
 
     // 이미지와 함께 공동구매 생성
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto, List<MultipartFile> images) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+        if (groupOrderRepository.existsByTitle(requestGroupOrderDto.getTitle())) {
+            throw new CustomException(GROUP_ORDER_TITLE_DUPLICATE);
+        }
 
         GroupOrder groupOrder = RequestGroupOrderDto.dtoToEntity(requestGroupOrderDto, user);
 
         saveImages(groupOrder, images);
+
+        user.getGroupOrderList().add(groupOrder);
+
         groupOrderRepository.save(groupOrder);
+
+        // GroupOrderChatRoom 저장
+        GroupOrderChatRoom groupOrderChatRoom = new GroupOrderChatRoom(groupOrder.getTitle());
+        UserGroupOrderChatRoom userGroupOrderChatRoom = UserGroupOrderChatRoom.builder()
+                .groupOrderChatRoom(groupOrderChatRoom)
+                .user(user)
+                .build();
+        // User - UserGroupOrderChatRoom 1대 N 매핑
+        user.getUserGroupOrderChatRoomList().add(userGroupOrderChatRoom);
+
+        // GroupOrder - GroupOrderChatRoom 1대 1 양방향 매핑
+        groupOrder.updateGroupOrderChatRoom(groupOrderChatRoom);
+        groupOrderChatRoom.updateGroupOrder(groupOrder);
+
+        groupOrderChatRoomRepository.save(groupOrderChatRoom);
+        userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);
     }
 
     private void saveImages(GroupOrder groupOrder, List<MultipartFile> files) {
@@ -129,7 +158,8 @@ public class GroupOrderService {
     }
 
     public List<GroupOrderImageDto> findGroupOrderImages(Long groupOrderId) {
-        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId).get();
+        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
+                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
 
         List<Image> imageList = groupOrder.getImageList();
         List<GroupOrderImageDto> groupOrderImageDtoList = new ArrayList<>();
@@ -195,14 +225,22 @@ public class GroupOrderService {
     }
 
     public ResponseGroupOrderDetailDto updateGroupOrder(Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto) {
-        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId).orElseThrow();
+        if (groupOrderRepository.existsByTitle(requestGroupOrderDto.getTitle())) {
+            throw new CustomException(GROUP_ORDER_TITLE_DUPLICATE);
+        }
+
+        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
+                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+
         groupOrder.update(requestGroupOrderDto);
 
         return ResponseGroupOrderDetailDto.entityToDto(groupOrder);
     }
 
     public void deleteGroupOrder(Long groupOrderId) {
-        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId).orElseThrow();
+        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
+                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+
         GroupOrderChatRoom groupOrderChatRoom = groupOrder.getGroupOrderChatRoom();
         groupOrderChatRoom.updateGroupOrder(null);
         groupOrderRepository.deleteById(groupOrderId);
@@ -231,8 +269,10 @@ public class GroupOrderService {
     }
 
     public Integer likePlusGroupOrder(Long userId, Long groupOrderId) {
-        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId).orElseThrow();
-        User user = userRepository.findById(userId).orElseThrow();
+        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
+                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
         GroupOrderLike groupOrderLike = GroupOrderLike.builder()
                 .user(user)

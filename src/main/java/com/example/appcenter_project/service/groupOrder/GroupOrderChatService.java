@@ -75,7 +75,7 @@ public class GroupOrderChatService {
 
         for (User readUser : readUsers) {
             UserGroupOrderChatRoom userGroupOrderChatRoom = userGroupOrderChatRoomRepository.findUserGroupOrderChatRoomByUser_IdAndGroupOrderChatRoom_Id(readUser.getId(), groupOrderChatRoom.getId()).orElseThrow();
-            userGroupOrderChatRoom.update(groupOrderChatRoom.getTitle(), groupOrderChat.getContent(), userGroupOrderChatRoom.getUnreadCount(), LocalDateTime.now());
+            userGroupOrderChatRoom.update(groupOrderChatRoom.getTitle(), groupOrderChat.getContent(), userGroupOrderChatRoom.getUnreadCount());
         }
 
         // 2. 채팅방에 입장하지 않은 유저의 경우-읽지 않음 수 + 1
@@ -85,7 +85,7 @@ public class GroupOrderChatService {
 
         for (User readUser : readUsers) {
             UserGroupOrderChatRoom userGroupOrderChatRoom = userGroupOrderChatRoomRepository.findUserGroupOrderChatRoomByUser_IdAndGroupOrderChatRoom_Id(readUser.getId(), groupOrderChatRoom.getId()).orElseThrow();
-            userGroupOrderChatRoom.update(groupOrderChatRoom.getTitle(), groupOrderChat.getContent(), userGroupOrderChatRoom.getUnreadCount() + 1, LocalDateTime.now());
+            userGroupOrderChatRoom.update(groupOrderChatRoom.getTitle(), groupOrderChat.getContent(), userGroupOrderChatRoom.getUnreadCount() + 1);
         }
 
         // 채팅방 목록에 입장해 있는 유저에게 채팅방의 안읽은 메시지 실시간 전송
@@ -99,7 +99,7 @@ public class GroupOrderChatService {
             // 채팅방 목록에 입장한 유저에게 가장 최신 채팅의 정보 전송
             ResponseGroupOrderChatRoomDto responseGroupOrderChatRoomDto = ResponseGroupOrderChatRoomDto.builder().chatRoomId(groupOrderChatRoom.getId()).chatRoomTitle(groupOrderChatRoom.getTitle())
                     .recentChatContent(userGroupOrderChatRoom.getRecentChatContent()).unreadCount(userGroupOrderChatRoom.getUnreadCount())
-                    .recentChatTime(userGroupOrderChatRoom.getUpdateTime()).build();
+                    .recentChatTime(userGroupOrderChatRoom.getModifiedDate()).build();
             messagingTemplate.convertAndSend("/sub/chatRoomList/chatRoom/" + groupOrderChatRoom.getId() + "/user/" + sendUser.getId(), responseGroupOrderChatRoomDto);
         }
 

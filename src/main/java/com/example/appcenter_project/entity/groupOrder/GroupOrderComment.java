@@ -1,5 +1,6 @@
 package com.example.appcenter_project.entity.groupOrder;
 
+import com.example.appcenter_project.entity.BaseTimeEntity;
 import com.example.appcenter_project.entity.user.User;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -12,12 +13,13 @@ import java.util.List;
 @Entity
 @Getter
 @NoArgsConstructor
-public class GroupOrderComment {
+public class GroupOrderComment extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, length = 100)
     private String reply; // 댓글 내용
 
     @ManyToOne
@@ -41,7 +43,7 @@ public class GroupOrderComment {
         this.groupOrder = groupOrder;
         this.user = user;
         this.parentGroupOrderComment = parentGroupOrderComment;
-        this.childGroupOrderComments = childGroupOrderComments;
+        this.childGroupOrderComments = childGroupOrderComments != null ? childGroupOrderComments : new ArrayList<>();
     }
 
     public void setParentGroupOrderCommentNull() {

@@ -1,6 +1,7 @@
 package com.example.appcenter_project.entity.groupOrder;
 
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
+import com.example.appcenter_project.entity.BaseTimeEntity;
 import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
@@ -17,28 +18,38 @@ import java.util.List;
 @Entity
 @NoArgsConstructor
 @Getter
-public class GroupOrder {
+public class GroupOrder extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, unique = true, length = 30)
     private String title;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private GroupOrderType groupOrderType;
 
-    private int price;
+    @Column(nullable = false)
+    private Integer price;
 
+    @Column(nullable = false, length = 100)
     private String link;
 
-    private int currentPeople;
+    @Column(nullable = false)
+    private int currentPeople = 0;
 
-    private int maxPeople;
+    @Column(nullable = false)
+    private Integer maxPeople;
 
+    @Column(nullable = false)
     private LocalDateTime deadline;
 
-    private int groupOrderLike;
+    @Column(nullable = false)
+    private int groupOrderLike = 0;
 
+    @Column(nullable = false, length = 100)
     private String description;
 
     @OneToOne
@@ -53,8 +64,7 @@ public class GroupOrder {
     private List<Image> imageList = new ArrayList<>();
 
     @Builder
-    public GroupOrder(String title, String groupOrderType, int price, String link, int currentPeople, int maxPeople, LocalDateTime deadline, int groupOrderLike, String description, User user, GroupOrderChatRoom groupOrderChatRoom) {
-        this.title = title;
+    public GroupOrder(String title, String groupOrderType, Integer price, String link, int currentPeople, int maxPeople, LocalDateTime deadline, int groupOrderLike, String description, User user, GroupOrderChatRoom groupOrderChatRoom) {        this.title = title;
         this.groupOrderType = GroupOrderType.valueOf(groupOrderType);
         this.price = price;
         this.link = link;
@@ -79,8 +89,7 @@ public class GroupOrder {
 
     public Integer plusLike() {
         this.groupOrderLike += 1;
-        return this.groupOrderType.ordinal();
-    }
+        return this.groupOrderLike;}
 
     public void updateGroupOrderChatRoom(GroupOrderChatRoom groupOrderChatRoom) {
         this.groupOrderChatRoom = groupOrderChatRoom;
