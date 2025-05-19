@@ -4,6 +4,8 @@ import com.example.appcenter_project.dto.ImageDto;
 import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.image.ImageType;
+import com.example.appcenter_project.exception.CustomException;
+import com.example.appcenter_project.exception.ErrorCode;
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import jakarta.transaction.Transactional;
@@ -19,6 +21,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.UUID;
 
+import static com.example.appcenter_project.exception.ErrorCode.*;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -29,7 +33,8 @@ public class ImageService {
     private final UserRepository userRepository;
 
     public void updateUserImage(Long userId, MultipartFile file) {
-        User user = userRepository.findById(userId).orElseThrow();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
         // 이미 user의 이미지가 defaultImage인 경우
         if (file != null && user.getImage().getIsDefault()) {
@@ -69,7 +74,7 @@ public class ImageService {
 
             File destinationFile = new File(projectPath + imageFileName);
 
-            Image image = imageRepository.findByFilePath(filePath).orElseThrow();
+            Image image = imageRepository.findByFilePath(filePath).orElseThrow(() -> new CustomException(IMAGE_NOT_FOUND));
             image.updateFilePath(projectPath + imageFileName);
 
             try {
@@ -81,7 +86,8 @@ public class ImageService {
     }
 
     public ImageDto findUserImageByUserId(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
         Image image = user.getImage();
 
         File file = new File(image.getFilePath());
