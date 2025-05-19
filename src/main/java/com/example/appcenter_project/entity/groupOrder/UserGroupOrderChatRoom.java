@@ -30,7 +30,7 @@ public class UserGroupOrderChatRoom {
     private String chatRoomTitle;
 
     @Column(nullable = false)
-    private Integer unreadCount;
+    private int unreadCount = 0;
 
     // 채팅방의 가장 최근 채팅
     @Column(length = 100)
