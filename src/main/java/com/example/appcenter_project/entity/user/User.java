@@ -27,18 +27,23 @@ public class User extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, length = 20)
     private String studentNumber;
 
+    @Column(length = 10)
     private String name;
+
     private String password;
 
     private String refreshToken;
 
+    @Enumerated(EnumType.STRING)
     private DormType dormType;
 
+    @Enumerated(EnumType.STRING)
     private College college;
 
-    private int penalty;
+    private Integer penalty;
 
     @Enumerated(EnumType.STRING)
     private Role role;
@@ -60,7 +65,7 @@ public class User extends BaseTimeEntity {
     private List<UserGroupOrderChatRoom> userGroupOrderChatRoomList = new ArrayList<>();
 
     @Builder
-    public User(String studentNumber, String name, String password, DormType dormType, int penalty, Role role, Image image) {
+    public User(String studentNumber, String name, String password, DormType dormType, Integer penalty, Role role, Image image) {
         this.name = name;
         this.studentNumber = studentNumber;
         this.password = password;

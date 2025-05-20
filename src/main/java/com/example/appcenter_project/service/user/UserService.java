@@ -11,6 +11,8 @@ import com.example.appcenter_project.entity.like.GroupOrderLike;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.enums.user.Role;
+import com.example.appcenter_project.exception.CustomException;
+import com.example.appcenter_project.exception.ErrorCode;
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.like.LikeRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
@@ -29,6 +31,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.example.appcenter_project.exception.ErrorCode.*;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -43,14 +47,15 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     public ResponseLoginDto saveUser(SignupUser signupUser) {
-        Boolean existsByStudentNumber = userRepository.existsByStudentNumber(signupUser.getStudentNumber());
-        Image defaultImage = imageRepository.findByImageTypeAndIsDefault(ImageType.USER, true).orElseThrow(RuntimeException::new);
+        boolean existsByStudentNumber = userRepository.existsByStudentNumber(signupUser.getStudentNumber());
+
+        Image defaultImage = imageRepository.findByImageTypeAndIsDefault(ImageType.USER, true)
+                .orElseThrow(() -> new CustomException(DEFAULT_IMAGE_NOT_FOUND));
 
         // 회원정보가 db에 없는 경우 db에 저장 후 로그인
         if (!existsByStudentNumber) {
             User user = User.builder()
                     .studentNumber(signupUser.getStudentNumber())
-//                    .password(signupUser.getPassword())
                     .image(defaultImage)
                     .role(Role.ROLE_USER)
                     .build();
@@ -61,39 +66,48 @@ public class UserService {
     }
 
     public ResponseUserDto findUserByUserId(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
         return ResponseUserDto.entityToDto(user);
     }
 
     public ResponseUserDto updateUser(Long userId, RequestUserDto requestUserDto) {
-        User user = userRepository.findById(userId).orElseThrow();
-        user.update(requestUserDto);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
+        user.update(requestUserDto);
         return ResponseUserDto.entityToDto(user);
     }
 
     public void deleteUser(Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new CustomException(USER_NOT_FOUND);
+        }
         userRepository.deleteById(userId);
     }
 
     public ResponseLoginDto login(SignupUser signupUser) {
         String studentNumber = signupUser.getStudentNumber();
-        log.info("[로그인 시도] loginId: {}", signupUser.getStudentNumber());
-        User user = userRepository.findByStudentNumber(studentNumber).orElseThrow();
+        log.info("[로그인 시도] loginId: {}", studentNumber);
 
-        // 토큰 생성
+        User user = userRepository.findByStudentNumber(studentNumber)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
         String accessToken = jwtTokenProvider.generateAccessToken(user.getId(), user.getStudentNumber(), String.valueOf(user.getRole()));
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId(), user.getStudentNumber(), String.valueOf(user.getRole()));
-
         user.updateRefreshToken(refreshToken);
 
         return new ResponseLoginDto(accessToken, refreshToken);
     }
 
     public List<ResponseLikeDto> findLikeByUserId(Long userId) {
-        List<ResponseLikeDto> responseLikeDtoList = new ArrayList<>();
+        if (!userRepository.existsById(userId)) {
+            throw new CustomException(USER_NOT_FOUND);
+        }
 
         List<GroupOrderLike> groupOrderLikeList = likeRepository.findByUser_Id(userId);
+        List<ResponseLikeDto> responseLikeDtoList = new ArrayList<>();
+
         for (GroupOrderLike groupOrderLike : groupOrderLikeList) {
             GroupOrder groupOrder = groupOrderLike.getGroupOrder();
 
@@ -105,6 +119,7 @@ public class UserService {
                     .boardId(groupOrder.getId())
                     .deadline(groupOrder.getDeadline())
                     .build();
+
             responseLikeDtoList.add(responseLikeDto);
         }
 
@@ -113,11 +128,11 @@ public class UserService {
 
     public String reissueAccessToken(String refreshToken) {
         if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
-            throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다.");
+            throw new CustomException(INVALID_REFRESH_TOKEN);
         }
 
         User user = userRepository.findByRefreshToken(refreshToken)
-                .orElseThrow(() -> new IllegalArgumentException("Refresh Token에 해당하는 사용자가 없습니다."));
+                .orElseThrow(() -> new CustomException(REFRESH_TOKEN_USER_NOT_FOUND));
 
         return jwtTokenProvider.generateAccessToken(
                 user.getId(),
