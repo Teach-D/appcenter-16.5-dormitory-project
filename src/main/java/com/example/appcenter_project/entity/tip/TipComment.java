@@ -20,6 +20,7 @@ public class TipComment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, length = 100)
     private String reply; // 댓글 내용
 
     @ManyToOne
