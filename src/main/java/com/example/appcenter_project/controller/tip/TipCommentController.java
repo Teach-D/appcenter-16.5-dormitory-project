@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.NO_CONTENT;
 
 @RestController
 @RequiredArgsConstructor
@@ -25,4 +26,9 @@ public class TipCommentController {
         return ResponseEntity.status(CREATED).body(tipCommentService.saveTipComment(user.getId(), requestTipCommentDto));
     }
 
+    @DeleteMapping("/{tipCommentId}")
+    public ResponseEntity<Void> deleteTipComment(@PathVariable Long tipCommentId) {
+        tipCommentService.deleteTip(tipCommentId);
+        return ResponseEntity.status(NO_CONTENT).build();
+    }
 }

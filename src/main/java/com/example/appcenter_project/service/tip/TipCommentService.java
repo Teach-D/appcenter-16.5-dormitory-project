@@ -84,4 +84,12 @@ public class TipCommentService {
 
         return responseTipCommentDtoList;
     }
+
+    public void deleteTip(Long tipCommentId) {
+        if (!tipCommentRepository.existsById(tipCommentId)) {
+            throw new CustomException(TIP_COMMENT_NOT_FOUND);
+        }
+
+        tipCommentRepository.deleteById(tipCommentId);
+    }
 }
