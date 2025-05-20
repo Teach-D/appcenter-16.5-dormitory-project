@@ -78,8 +78,8 @@ public class TipController {
     }
 
     @DeleteMapping("/{tipId}")
-    public ResponseEntity<Void> deleteTip(@PathVariable Long tipId) {
-        tipService.deleteTip(tipId);
+    public ResponseEntity<Void> deleteTip(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long tipId) {
+        tipService.deleteTip(user.getId(), tipId);
         return ResponseEntity.status(NO_CONTENT).build();
     }
 }

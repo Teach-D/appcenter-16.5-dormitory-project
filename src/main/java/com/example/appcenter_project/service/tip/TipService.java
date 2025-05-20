@@ -10,6 +10,8 @@ import com.example.appcenter_project.entity.tip.Tip;
 import com.example.appcenter_project.entity.tip.TipComment;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.image.ImageType;
+import com.example.appcenter_project.exception.CustomException;
+import com.example.appcenter_project.exception.ErrorCode;
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.like.TipLikeRepository;
 import com.example.appcenter_project.repository.tip.TipCommentRepository;
@@ -30,6 +32,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static com.example.appcenter_project.exception.ErrorCode.*;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -43,7 +47,7 @@ public class TipService {
     private final TipLikeRepository tipLikeRepository;
 
     public void saveTip(Long userId, RequestTipDto requestTipDto, List<MultipartFile> images) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
         Tip tip = Tip.builder()
                 .title(requestTipDto.getTitle())
@@ -57,7 +61,7 @@ public class TipService {
 
     public List<TipImageDto> findTipImages(Long tipId) {
         Tip tip = tipRepository.findById(tipId)
-                .orElseThrow(() -> new RuntimeException("Tip not found with ID: " + tipId));
+                .orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
 
         List<Image> imageList = tip.getImageList();
         List<TipImageDto> tipImageDtoList = new ArrayList<>();
@@ -145,7 +149,8 @@ public class TipService {
     }
 
     public ResponseTipDto findTip(Long tipId) {
-        Tip tip = tipRepository.findById(tipId).orElseThrow();
+        Tip tip = tipRepository.findById(tipId)
+                .orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
         List<ResponseTipCommentDto> responseTipCommentDtoList = findTipComment(tip);
 
         return ResponseTipDto.builder()
@@ -196,8 +201,9 @@ public class TipService {
     }
 
     public Integer likePlusTip(Long userId, Long tipId) {
-        Tip tip = tipRepository.findById(tipId).orElseThrow();
-        User user = userRepository.findById(userId).orElseThrow();
+        Tip tip = tipRepository.findById(tipId)
+                .orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
+        User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
         TipLike tipLike = TipLike.builder()
                 .user(user)
@@ -216,7 +222,8 @@ public class TipService {
     }
 
     public void updateTip(Long userId, RequestTipDto requestTipDto, List<MultipartFile> images, Long tipId) {
-        Tip tip = tipRepository.findById(tipId).orElseThrow();
+        Tip tip = tipRepository.findByIdAndUserId(tipId, userId).orElseThrow(() -> new CustomException(TIP_NOT_OWNED_BY_USER));
+
         tip.update(requestTipDto);
 
         List<Image> imageList = tip.getImageList();
@@ -231,7 +238,9 @@ public class TipService {
         saveImages(tip, images);
     }
 
-    public void deleteTip(Long tipId) {
+    public void deleteTip(Long userId, Long tipId) {
+        tipRepository.findByIdAndUserId(tipId, userId).orElseThrow(() -> new CustomException(TIP_NOT_OWNED_BY_USER));
+
         tipRepository.deleteById(tipId);
     }
 }
