@@ -222,8 +222,8 @@ public class TipService {
     }
 
     public void updateTip(Long userId, RequestTipDto requestTipDto, List<MultipartFile> images, Long tipId) {
-        Tip tip = tipRepository.findById(tipId)
-                .orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
+        Tip tip = tipRepository.findByIdAndUserId(tipId, userId).orElseThrow(() -> new CustomException(TIP_NOT_OWNED_BY_USER));
+
         tip.update(requestTipDto);
 
         List<Image> imageList = tip.getImageList();
@@ -238,10 +238,8 @@ public class TipService {
         saveImages(tip, images);
     }
 
-    public void deleteTip(Long tipId) {
-        if (!tipRepository.existsById(tipId)) {
-            throw new CustomException(ErrorCode.TIP_NOT_FOUND);
-        }
+    public void deleteTip(Long userId, Long tipId) {
+        tipRepository.findByIdAndUserId(tipId, userId).orElseThrow(() -> new CustomException(TIP_NOT_OWNED_BY_USER));
 
         tipRepository.deleteById(tipId);
     }
