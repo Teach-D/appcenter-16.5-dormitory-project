@@ -40,9 +40,8 @@ public enum ErrorCode {
     VALIDATION_FAILED(BAD_REQUEST, 5001, "[Validation] DTO에서 요청한 값이 올바르지 않습니다."),
 
     // IMAGE
-    IMAGE_NOT_FOUND(NOT_FOUND, 6001, "[Image] 이미지를 찾을 수 없습니다."),
-    DEFAULT_IMAGE_NOT_FOUND(NOT_FOUND, 6002, "[Image] 기본 이미지를 찾을 수 없습니다.");
-
+    DEFAULT_IMAGE_NOT_FOUND(NOT_FOUND, 6002, "[Image] 기본 이미지를 찾을 수 없습니다."),
+    IMAGE_NOT_FOUND(NOT_FOUND, 6001, "[Image] 이미지를 찾을 수 없습니다.");
 
     private final HttpStatus httpStatus;
     private final Integer code;
