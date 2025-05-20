@@ -27,8 +27,8 @@ public class TipCommentController {
     }
 
     @DeleteMapping("/{tipCommentId}")
-    public ResponseEntity<Void> deleteTipComment(@PathVariable Long tipCommentId) {
-        tipCommentService.deleteTip(tipCommentId);
+    public ResponseEntity<Void> deleteTipComment(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long tipCommentId) {
+        tipCommentService.deleteTipComment(user.getId(), tipCommentId);
         return ResponseEntity.status(NO_CONTENT).build();
     }
 }

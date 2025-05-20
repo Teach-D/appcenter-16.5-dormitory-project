@@ -85,7 +85,9 @@ public class TipCommentService {
         return responseTipCommentDtoList;
     }
 
-    public void deleteTip(Long tipCommentId) {
+    public void deleteTipComment(Long userId, Long tipCommentId) {
+        tipCommentRepository.findByIdAndUserId(tipCommentId, userId).orElseThrow(() -> new CustomException(TIP_COMMENT_NOT_OWNED_BY_USER));
+
         if (!tipCommentRepository.existsById(tipCommentId)) {
             throw new CustomException(TIP_COMMENT_NOT_FOUND);
         }
