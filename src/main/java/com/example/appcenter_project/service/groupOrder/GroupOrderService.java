@@ -296,8 +296,8 @@ public class GroupOrderService {
             List<GroupOrderComment> childGroupOrderComments = groupOrderComment.getChildGroupOrderComments();
             for (GroupOrderComment childGroupOrderComment : childGroupOrderComments) {
                 ResponseGroupOrderCommentDto build = ResponseGroupOrderCommentDto.builder()
-                        .groupOrderCommentId(childGroupOrderComment.getId())
-                        .userId(groupOrder.getUser().getId())
+                        .groupOrderCommentId(groupOrderComment.getId())
+                        .userId(childGroupOrderComment.getUser().getId())
                         .reply(childGroupOrderComment.getReply())
                         .build();
 
@@ -305,7 +305,7 @@ public class GroupOrderService {
             }
             ResponseGroupOrderCommentDto responseGroupOrderCommentDto = ResponseGroupOrderCommentDto.builder()
                     .groupOrderCommentId(groupOrderComment.getId())
-                    .userId(groupOrder.getUser().getId())
+                    .userId(groupOrderComment.getUser().getId())
                     .reply(groupOrderComment.getReply())
                     .childGroupOrderCommentList(childResponseComments)
                     .build();
