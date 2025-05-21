@@ -9,4 +9,5 @@ import java.util.Optional;
 public interface GroupOrderRepository extends JpaRepository<GroupOrder, Long>, JpaSpecificationExecutor<GroupOrder> {
     Optional<GroupOrder> findByGroupOrderChatRoom_id(Long id);
     boolean existsByTitle(String title);
+    Optional<GroupOrder> findByIdAndUserId(Long id, Long userId);
 }
