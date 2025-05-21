@@ -32,6 +32,7 @@ public enum ErrorCode {
     GROUP_ORDER_COMMENT_NOT_FOUND(NOT_FOUND, 3004, "[GroupOrder] 댓글을 찾을 수 없습니다."),
     GROUP_ORDER_TITLE_DUPLICATE(CONFLICT, 3005, "[GroupOrder] 이미 존재하는 제목입니다."),
     GROUP_ORDER_NOT_OWNED_BY_USER(FORBIDDEN, 3006, "[GroupOrder] 공동구매 게시글을 생성한 유저가 아니기 때문에 수정 및 삭제할 권한이 없습니다."),
+    GROUP_ORDER_COMMENT_NOT_OWNED_BY_USER(FORBIDDEN, 3006, "[GroupOrder] 공동구매 게시글의 댓글을 생성한 유저가 아니기 때문에 수정 및 삭제할 권한이 없습니다."),
 
     // TIP
     TIP_NOT_FOUND(NOT_FOUND, 4001, "[Tip] 팁 게시글을 찾을 수 없습니다."),
