@@ -1,5 +1,6 @@
 package com.example.appcenter_project.entity.like;
 
+import com.example.appcenter_project.entity.BaseTimeEntity;
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.entity.tip.Tip;
 import com.example.appcenter_project.entity.user.User;
@@ -11,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @NoArgsConstructor
 @Getter
-public class TipLike {
+public class TipLike extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
