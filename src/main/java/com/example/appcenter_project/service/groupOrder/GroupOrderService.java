@@ -224,22 +224,20 @@ public class GroupOrderService {
                 .collect(Collectors.toList());
     }
 
-    public ResponseGroupOrderDetailDto updateGroupOrder(Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto) {
+    public ResponseGroupOrderDetailDto updateGroupOrder(Long userId, Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto) {
+        GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_OWNED_BY_USER));
+
         if (groupOrderRepository.existsByTitle(requestGroupOrderDto.getTitle())) {
             throw new CustomException(GROUP_ORDER_TITLE_DUPLICATE);
         }
-
-        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
-                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
 
         groupOrder.update(requestGroupOrderDto);
 
         return ResponseGroupOrderDetailDto.entityToDto(groupOrder);
     }
 
-    public void deleteGroupOrder(Long groupOrderId) {
-        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
-                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+    public void deleteGroupOrder(Long userId, Long groupOrderId) {
+        GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_OWNED_BY_USER));
 
         GroupOrderChatRoom groupOrderChatRoom = groupOrder.getGroupOrderChatRoom();
         groupOrderChatRoom.updateGroupOrder(null);
