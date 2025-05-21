@@ -1,6 +1,7 @@
 package com.example.appcenter_project.entity.tip;
 
 import com.example.appcenter_project.dto.request.tip.RequestTipDto;
+import com.example.appcenter_project.entity.BaseTimeEntity;
 import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.like.TipLike;
 import com.example.appcenter_project.entity.user.User;
@@ -15,7 +16,7 @@ import java.util.List;
 @Entity
 @NoArgsConstructor
 @Getter
-public class Tip {
+public class Tip extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
