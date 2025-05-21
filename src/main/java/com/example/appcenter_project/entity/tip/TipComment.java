@@ -1,5 +1,6 @@
 package com.example.appcenter_project.entity.tip;
 
+import com.example.appcenter_project.entity.BaseTimeEntity;
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.entity.groupOrder.GroupOrderComment;
 import com.example.appcenter_project.entity.user.User;
@@ -14,7 +15,7 @@ import java.util.List;
 @Entity
 @NoArgsConstructor
 @Getter
-public class TipComment {
+public class TipComment extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
