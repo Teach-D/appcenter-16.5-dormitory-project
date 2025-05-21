@@ -72,13 +72,13 @@ public class GroupOrderController {
     }
 
     @PutMapping("/{groupOrderId}")
-    public ResponseEntity<ResponseGroupOrderDetailDto> updateGroupOrder(@PathVariable Long groupOrderId, @Valid @RequestBody RequestGroupOrderDto requestGroupOrderDto) {
-        return ResponseEntity.status(ACCEPTED).body(groupOrderService.updateGroupOrder(groupOrderId, requestGroupOrderDto));
+    public ResponseEntity<ResponseGroupOrderDetailDto> updateGroupOrder(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderId, @Valid @RequestBody RequestGroupOrderDto requestGroupOrderDto) {
+        return ResponseEntity.status(ACCEPTED).body(groupOrderService.updateGroupOrder(user.getId(), groupOrderId, requestGroupOrderDto));
     }
 
     @DeleteMapping("/{groupOrderId}")
-    public ResponseEntity<Void> deleteGroupOrder(@PathVariable Long groupOrderId) {
-        groupOrderService.deleteGroupOrder(groupOrderId);
+    public ResponseEntity<Void> deleteGroupOrder(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderId) {
+        groupOrderService.deleteGroupOrder(user.getId(), groupOrderId);
         return ResponseEntity.status(NO_CONTENT).build();
     }
 }

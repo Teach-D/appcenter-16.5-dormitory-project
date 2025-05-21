@@ -5,6 +5,8 @@ import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderC
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.entity.groupOrder.GroupOrderComment;
 import com.example.appcenter_project.entity.user.User;
+import com.example.appcenter_project.exception.CustomException;
+import com.example.appcenter_project.exception.ErrorCode;
 import com.example.appcenter_project.repository.groupOrder.GroupOrderCommentRepository;
 import com.example.appcenter_project.repository.groupOrder.GroupOrderRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
@@ -14,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.example.appcenter_project.exception.ErrorCode.*;
 
 @Service
 @RequiredArgsConstructor
@@ -78,5 +82,10 @@ public class GroupOrderCommentService {
 
         }
         return responseGroupOrderCommentDtoList;
+    }
+
+    public void deleteGroupOrderComment(Long userId, Long groupOrderCommentId) {
+        groupOrderCommentRepository.findByIdAndUserId(groupOrderCommentId, userId)
+                .orElseThrow(() -> new CustomException(GROUP_ORDER_COMMENT_NOT_OWNED_BY_USER));
     }
 }
