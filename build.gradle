@@ -48,6 +48,8 @@ dependencies {
 	// Swagger
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 
+	// oracle db
+	implementation 'com.oracle.database.jdbc:ojdbc11'
 }
 
 tasks.named('test') {
