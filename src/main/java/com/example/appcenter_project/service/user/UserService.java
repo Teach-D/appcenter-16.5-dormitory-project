@@ -15,6 +15,7 @@ import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.exception.ErrorCode;
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.like.LikeRepository;
+import com.example.appcenter_project.repository.user.SchoolLoginRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import com.example.appcenter_project.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,7 @@ public class UserService {
     private final AuthenticationManagerBuilder authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
+    private final SchoolLoginRepository schoolLoginRepository;
 
     public ResponseLoginDto saveUser(SignupUser signupUser) {
         boolean existsByStudentNumber = userRepository.existsByStudentNumber(signupUser.getStudentNumber());
@@ -87,6 +89,8 @@ public class UserService {
     }
 
     public ResponseLoginDto login(SignupUser signupUser) {
+        schoolLoginRepository.loginCheck(signupUser.getStudentNumber(), signupUser.getPassword());
+
         String studentNumber = signupUser.getStudentNumber();
         log.info("[로그인 시도] loginId: {}", studentNumber);
 
