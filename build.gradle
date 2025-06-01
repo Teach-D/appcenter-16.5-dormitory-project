@@ -44,6 +44,9 @@ dependencies {
 
 	// websocket
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+	// oracle
+	implementation 'com.oracle.database.jdbc:ojdbc11'
 }
 
 tasks.named('test') {
