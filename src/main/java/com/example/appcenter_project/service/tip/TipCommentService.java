@@ -86,12 +86,7 @@ public class TipCommentService {
     }
 
     public void deleteTipComment(Long userId, Long tipCommentId) {
-        tipCommentRepository.findByIdAndUserId(tipCommentId, userId).orElseThrow(() -> new CustomException(TIP_COMMENT_NOT_OWNED_BY_USER));
-
-        if (!tipCommentRepository.existsById(tipCommentId)) {
-            throw new CustomException(TIP_COMMENT_NOT_FOUND);
-        }
-
-        tipCommentRepository.deleteById(tipCommentId);
+        TipComment tipComment = tipCommentRepository.findByIdAndUserId(tipCommentId, userId).orElseThrow(() -> new CustomException(TIP_COMMENT_NOT_OWNED_BY_USER));
+        tipComment.updateIsDeleted();
     }
 }
