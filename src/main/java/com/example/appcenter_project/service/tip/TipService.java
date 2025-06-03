@@ -183,7 +183,7 @@ public class TipService {
             for (TipComment childGroupOrderComment : childTipComments) {
                 ResponseTipCommentDto build = ResponseTipCommentDto.builder()
                         .tipCommentId(childGroupOrderComment.getId())
-                        .userId(tip.getUser().getId())
+                        .userId(childGroupOrderComment.getUser().getId())
                         .reply(childGroupOrderComment.getReply())
                         .build();
 
@@ -191,7 +191,7 @@ public class TipService {
             }
             ResponseTipCommentDto responseTipCommentDto = ResponseTipCommentDto.builder()
                     .tipCommentId(tipComment.getId())
-                    .userId(tip.getUser().getId())
+                    .userId(tipComment.getUser().getId())
                     .reply(tipComment.getReply())
                     .childTipCommentList(childResponseComments)
                     .build();
