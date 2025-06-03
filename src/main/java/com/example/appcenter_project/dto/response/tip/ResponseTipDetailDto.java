@@ -12,9 +12,11 @@ import java.util.List;
 @Getter
 public class ResponseTipDto {
 
+    private Long tipId;
     private String title;
     private String content;
     private Integer tipLike;
+    private String createTime;
 
     @Builder.Default
     private List<ResponseTipCommentDto> tipCommentDtoList = new ArrayList<>();
@@ -32,6 +34,7 @@ public class ResponseTipDto {
                 .title(tip.getTitle())
                 .content(tip.getContent())
                 .tipLike(tip.getTipLike())
+                .createTime(String.valueOf(tip.getCreatedDate()))
                 .build();
     }
 
