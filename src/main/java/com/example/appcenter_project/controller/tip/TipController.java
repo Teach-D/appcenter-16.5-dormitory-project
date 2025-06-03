@@ -70,9 +70,14 @@ public class TipController {
                 .body(resource);
     }
 
-    @PatchMapping("/like/{tipId}")
+    @PatchMapping("/{tipId}/like")
     public ResponseEntity<Integer> likePlusTip(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long tipId) {
         return ResponseEntity.status(OK).body(tipService.likePlusTip(user.getId(), tipId));
+    }
+
+    @PatchMapping("/{tipId}/unlike")
+    public ResponseEntity<Integer> unlikePlusTip(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long tipId) {
+        return ResponseEntity.status(OK).body(tipService.unlikePlusTip(user.getId(), tipId));
     }
 
     @PutMapping("/{tipId}")
