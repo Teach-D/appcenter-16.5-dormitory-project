@@ -11,6 +11,7 @@ import com.example.appcenter_project.entity.groupOrder.GroupOrderChatRoom;
 import com.example.appcenter_project.entity.groupOrder.GroupOrderComment;
 import com.example.appcenter_project.entity.groupOrder.UserGroupOrderChatRoom;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
+import com.example.appcenter_project.entity.like.TipLike;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
@@ -86,9 +87,17 @@ public class GroupOrderService {
     public ResponseGroupOrderDetailDto findGroupOrderById(Long groupOrderId) {
         GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
                 .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
-
         List<ResponseGroupOrderCommentDto> groupOrderCommentDtoList = findGroupOrderComment(groupOrder);
-        return ResponseGroupOrderDetailDto.detailEntityToDto(groupOrder, groupOrderCommentDtoList);
+
+        List<Long> groupOrderLikeUserList = new ArrayList<>();
+
+        List<GroupOrderLike> groupOrderLikeList = groupOrder.getGroupOrderLikeList();
+        for (GroupOrderLike groupOrderLike : groupOrderLikeList) {
+            Long groupOrderLikeUserId = groupOrderLike.getUser().getId();
+            groupOrderLikeUserList.add(groupOrderLikeUserId);
+        }
+
+        return ResponseGroupOrderDetailDto.detailEntityToDto(groupOrder, groupOrderCommentDtoList, groupOrderLikeUserList);
     }
 
     // 이미지와 함께 공동구매 생성
