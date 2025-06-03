@@ -22,6 +22,8 @@ public class GroupOrderComment extends BaseTimeEntity {
     @Column(nullable = false, length = 100)
     private String reply; // 댓글 내용
 
+    private boolean isDeleted = false;
+
     @ManyToOne
     @JoinColumn(name = "group_order_board_id")
     private GroupOrder groupOrder;
@@ -52,5 +54,9 @@ public class GroupOrderComment extends BaseTimeEntity {
 
     public void addChildGroupOrderComments(GroupOrderComment groupOrderComment) {
         this.childGroupOrderComments.add(groupOrderComment);
+    }
+
+    public void updateIsDeleted() {
+        this.isDeleted = true;
     }
 }

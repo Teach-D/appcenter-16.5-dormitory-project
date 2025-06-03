@@ -15,6 +15,8 @@ public class ResponseGroupOrderDetailDto {
     private Long groupOrderId;
     private String title;
     private String deadline;
+    private String createTime;
+    private String category;
     private int price;
     private int currentPeople;
     private int maxPeople;
@@ -23,27 +25,18 @@ public class ResponseGroupOrderDetailDto {
     private String link;
 
     @Builder.Default
+    private List<Long> groupOrderLikeUserList = new ArrayList<>();
+
+    @Builder.Default
     private List<ResponseGroupOrderCommentDto> groupOrderCommentDtoList = new ArrayList<>();
 
-    public static ResponseGroupOrderDetailDto entityToDto(GroupOrder groupOrder) {
+    public static ResponseGroupOrderDetailDto detailEntityToDto(GroupOrder groupOrder, List<ResponseGroupOrderCommentDto> responseGroupOrderCommentDto, List<Long> groupOrderLikeUserList) {
         return ResponseGroupOrderDetailDto.builder()
                 .groupOrderId(groupOrder.getId())
                 .title(groupOrder.getTitle())
                 .deadline(String.valueOf(groupOrder.getDeadline()))
-                .price(groupOrder.getPrice())
-                .currentPeople(groupOrder.getCurrentPeople())
-                .maxPeople(groupOrder.getMaxPeople())
-                .groupOrderLike(groupOrder.getGroupOrderLike())
-                .description(groupOrder.getDescription())
-                .link(groupOrder.getLink())
-                .build();
-    }
-
-    public static ResponseGroupOrderDetailDto detailEntityToDto(GroupOrder groupOrder, List<ResponseGroupOrderCommentDto> responseGroupOrderCommentDto) {
-        return ResponseGroupOrderDetailDto.builder()
-                .groupOrderId(groupOrder.getId())
-                .title(groupOrder.getTitle())
-                .deadline(String.valueOf(groupOrder.getDeadline()))
+                .createTime(String.valueOf(groupOrder.getCreatedDate()))
+                .category(String.valueOf(groupOrder.getGroupOrderType()))
                 .price(groupOrder.getPrice())
                 .currentPeople(groupOrder.getCurrentPeople())
                 .maxPeople(groupOrder.getMaxPeople())
@@ -51,6 +44,7 @@ public class ResponseGroupOrderDetailDto {
                 .description(groupOrder.getDescription())
                 .link(groupOrder.getLink())
                 .groupOrderCommentDtoList(responseGroupOrderCommentDto)
+                .groupOrderLikeUserList(groupOrderLikeUserList)
                 .build();
     }
 }

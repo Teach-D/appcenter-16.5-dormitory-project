@@ -54,6 +54,10 @@ public class GroupOrderCommentService {
                     .build();
             parentGroupOrderComment.addChildGroupOrderComments(groupOrderComment);
         }
+
+        // 양방향 매핑
+        groupOrder.getGroupOrderCommentList().add(groupOrderComment);
+
         groupOrderCommentRepository.save(groupOrderComment);
         return ResponseGroupOrderCommentDto.entityToDto(groupOrderComment, user);
     }
@@ -85,7 +89,8 @@ public class GroupOrderCommentService {
     }
 
     public void deleteGroupOrderComment(Long userId, Long groupOrderCommentId) {
-        groupOrderCommentRepository.findByIdAndUserId(groupOrderCommentId, userId)
+        GroupOrderComment groupOrderComment = groupOrderCommentRepository.findByIdAndUserId(groupOrderCommentId, userId)
                 .orElseThrow(() -> new CustomException(GROUP_ORDER_COMMENT_NOT_OWNED_BY_USER));
+        groupOrderComment.updateIsDeleted();
     }
 }

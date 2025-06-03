@@ -180,11 +180,11 @@ public class TipService {
         for (TipComment tipComment : tipCommentList) {
             List<ResponseTipCommentDto> childResponseComments = new ArrayList<>();
             List<TipComment> childTipComments = tipComment.getChildTipComments();
-            for (TipComment childGroupOrderComment : childTipComments) {
+            for (TipComment childTipComment : childTipComments) {
                 ResponseTipCommentDto build = ResponseTipCommentDto.builder()
-                        .tipCommentId(childGroupOrderComment.getId())
-                        .userId(childGroupOrderComment.getUser().getId())
-                        .reply(childGroupOrderComment.isDeleted() ? "삭제된 메시지입니다." : childGroupOrderComment.getReply())
+                        .tipCommentId(childTipComment.getId())
+                        .userId(childTipComment.getUser().getId())
+                        .reply(childTipComment.isDeleted() ? "삭제된 메시지입니다." : childTipComment.getReply())
                         .build();
 
                 childResponseComments.add(build);

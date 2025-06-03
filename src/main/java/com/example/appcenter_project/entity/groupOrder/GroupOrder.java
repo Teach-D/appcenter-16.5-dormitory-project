@@ -3,6 +3,7 @@ package com.example.appcenter_project.entity.groupOrder;
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
 import com.example.appcenter_project.entity.BaseTimeEntity;
 import com.example.appcenter_project.entity.Image;
+import com.example.appcenter_project.entity.like.GroupOrderLike;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import jakarta.persistence.*;
@@ -63,6 +64,12 @@ public class GroupOrder extends BaseTimeEntity {
     @OneToMany
     private List<Image> imageList = new ArrayList<>();
 
+    @OneToMany(mappedBy = "groupOrder", orphanRemoval = true)
+    private List<GroupOrderLike> groupOrderLikeList = new ArrayList<>();
+
+    @OneToMany(mappedBy = "groupOrder", orphanRemoval = true)
+    private List<GroupOrderComment> groupOrderCommentList = new ArrayList<>();
+
     @Builder
     public GroupOrder(String title, String groupOrderType, Integer price, String link, int currentPeople, int maxPeople, LocalDateTime deadline, int groupOrderLike, String description, User user, GroupOrderChatRoom groupOrderChatRoom) {        this.title = title;
         this.groupOrderType = GroupOrderType.valueOf(groupOrderType);
@@ -97,5 +104,9 @@ public class GroupOrder extends BaseTimeEntity {
 
     public void plusCurrentPeople() {
         this.currentPeople += 1;
+    }
+
+    public Integer minusLike() {
+        return this.groupOrderLike -= 1;
     }
 }

@@ -11,6 +11,7 @@ import com.example.appcenter_project.entity.groupOrder.GroupOrderChatRoom;
 import com.example.appcenter_project.entity.groupOrder.GroupOrderComment;
 import com.example.appcenter_project.entity.groupOrder.UserGroupOrderChatRoom;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
+import com.example.appcenter_project.entity.like.TipLike;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
@@ -21,7 +22,7 @@ import com.example.appcenter_project.repository.groupOrder.GroupOrderCommentRepo
 import com.example.appcenter_project.repository.groupOrder.GroupOrderRepository;
 import com.example.appcenter_project.repository.groupOrder.UserGroupOrderChatRoomRepository;
 import com.example.appcenter_project.repository.image.ImageRepository;
-import com.example.appcenter_project.repository.like.LikeRepository;
+import com.example.appcenter_project.repository.like.GroupOrderLikeRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +52,7 @@ public class GroupOrderService {
 
     private final GroupOrderRepository groupOrderRepository;
     private final UserRepository userRepository;
-    private final LikeRepository likeRepository;
+    private final GroupOrderLikeRepository groupOrderLikeRepository;
     private final GroupOrderChatRoomRepository groupOrderChatRoomRepository;
     private final UserGroupOrderChatRoomRepository userGroupOrderChatRoomRepository;
     private final GroupOrderCommentRepository groupOrderCommentRepository;
@@ -86,9 +87,17 @@ public class GroupOrderService {
     public ResponseGroupOrderDetailDto findGroupOrderById(Long groupOrderId) {
         GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
                 .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
-
         List<ResponseGroupOrderCommentDto> groupOrderCommentDtoList = findGroupOrderComment(groupOrder);
-        return ResponseGroupOrderDetailDto.detailEntityToDto(groupOrder, groupOrderCommentDtoList);
+
+        List<Long> groupOrderLikeUserList = new ArrayList<>();
+
+        List<GroupOrderLike> groupOrderLikeList = groupOrder.getGroupOrderLikeList();
+        for (GroupOrderLike groupOrderLike : groupOrderLikeList) {
+            Long groupOrderLikeUserId = groupOrderLike.getUser().getId();
+            groupOrderLikeUserList.add(groupOrderLikeUserId);
+        }
+
+        return ResponseGroupOrderDetailDto.detailEntityToDto(groupOrder, groupOrderCommentDtoList, groupOrderLikeUserList);
     }
 
     // 이미지와 함께 공동구매 생성
@@ -214,9 +223,17 @@ public class GroupOrderService {
         }
     }
 
-    public List<ResponseGroupOrderDto> findGroupOrders(GroupOrderSort sort, GroupOrderType type, Optional<String> search) {
+    public List<ResponseGroupOrderDto> findGroupOrders(Long userId, GroupOrderSort sort, GroupOrderType type, Optional<String> search) {
         Specification<GroupOrder> spec = buildSpecification(type, search);
         Sort sortOption = getSortOption(sort);
+
+        // 검색어가 존재할 경우 유저의 검색 기록에 추가
+        search.filter(s -> !s.isBlank())
+                .ifPresent(keyword -> {
+                    User user = userRepository.findById(userId)
+                            .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+                    user.addSearchKeyword(keyword);
+                });
 
         List<GroupOrder> groupOrders = groupOrderRepository.findAll(spec, sortOption);
         return groupOrders.stream()
@@ -233,7 +250,17 @@ public class GroupOrderService {
 
         groupOrder.update(requestGroupOrderDto);
 
-        return ResponseGroupOrderDetailDto.entityToDto(groupOrder);
+        List<ResponseGroupOrderCommentDto> groupOrderCommentDtoList = findGroupOrderComment(groupOrder);
+
+        List<Long> groupOrderLikeUserList = new ArrayList<>();
+
+        List<GroupOrderLike> groupOrderLikeList = groupOrder.getGroupOrderLikeList();
+        for (GroupOrderLike groupOrderLike : groupOrderLikeList) {
+            Long groupOrderLikeUserId = groupOrderLike.getUser().getId();
+            groupOrderLikeUserList.add(groupOrderLikeUserId);
+        }
+
+        return ResponseGroupOrderDetailDto.detailEntityToDto(groupOrder, groupOrderCommentDtoList, groupOrderLikeUserList);
     }
 
     public void deleteGroupOrder(Long userId, Long groupOrderId) {
@@ -272,18 +299,50 @@ public class GroupOrderService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
+        // 좋아요를 누른 유저가 또 좋아요를 할려는 경우 예외처리
+        if (groupOrderLikeRepository.existsByUserAndGroupOrder(user, groupOrder)) {
+            throw new CustomException(ALREADY_GROUP_ORDER_LIKE_USER);
+        }
+
         GroupOrderLike groupOrderLike = GroupOrderLike.builder()
                 .user(user)
                 .groupOrder(groupOrder)
                 .build();
 
-        likeRepository.save(groupOrderLike);
+        groupOrderLikeRepository.save(groupOrderLike);
 
         // user에 좋아요 정보 추가
-        user.addLike(groupOrderLike);
+        user.addGroupOrderLike(groupOrderLike);
+
+        groupOrder.getGroupOrderLikeList().add(groupOrderLike);
 
         return groupOrder.plusLike();
     }
+
+    public Integer likeMinusGroupOrder(Long userId, Long groupOrderId) {
+        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
+                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+        // 좋아요를 누르지 않은 유저가 좋아요 취소를 시도한 경우 예외처리
+        if (!groupOrderLikeRepository.existsByUserAndGroupOrder(user, groupOrder)) {
+            throw new CustomException(GROUP_ORDER_LIKE_NOT_FOUND);
+        }
+
+        GroupOrderLike groupOrderLike = groupOrderLikeRepository.findByUserAndGroupOrder(user, groupOrder)
+                .orElseThrow(() -> new CustomException(GROUP_ORDER_LIKE_NOT_FOUND));
+
+        // user에서 좋아요 정보 제거
+        user.removeGroupOrderLike(groupOrderLike);
+
+        groupOrder.getGroupOrderLikeList().remove(groupOrderLike);
+
+        groupOrderLikeRepository.delete(groupOrderLike);
+
+        return groupOrder.minusLike();
+    }
+
 
     // 하나의 GroupOrder 게시판에 있는 모든 GroupOrderComment 조회
     private List<ResponseGroupOrderCommentDto> findGroupOrderComment(GroupOrder groupOrder) {
@@ -294,9 +353,9 @@ public class GroupOrderService {
             List<GroupOrderComment> childGroupOrderComments = groupOrderComment.getChildGroupOrderComments();
             for (GroupOrderComment childGroupOrderComment : childGroupOrderComments) {
                 ResponseGroupOrderCommentDto build = ResponseGroupOrderCommentDto.builder()
-                        .groupOrderCommentId(groupOrderComment.getId())
+                        .groupOrderCommentId(childGroupOrderComment.getId())
                         .userId(childGroupOrderComment.getUser().getId())
-                        .reply(childGroupOrderComment.getReply())
+                        .reply(childGroupOrderComment.isDeleted() ? "삭제된 메시지입니다." : childGroupOrderComment.getReply())
                         .build();
 
                 childResponseComments.add(build);
@@ -304,7 +363,7 @@ public class GroupOrderService {
             ResponseGroupOrderCommentDto responseGroupOrderCommentDto = ResponseGroupOrderCommentDto.builder()
                     .groupOrderCommentId(groupOrderComment.getId())
                     .userId(groupOrderComment.getUser().getId())
-                    .reply(groupOrderComment.getReply())
+                    .reply(groupOrderComment.isDeleted() ? "삭제된 메시지입니다." : groupOrderComment.getReply())
                     .childGroupOrderCommentList(childResponseComments)
                     .build();
             responseGroupOrderCommentDtoList.add(responseGroupOrderCommentDto);
@@ -312,4 +371,11 @@ public class GroupOrderService {
         }
         return responseGroupOrderCommentDtoList;
     }
+
+    public List<String> findGroupOrderSearchLog(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        return user.getSearchLog();
+    }
+
 }
