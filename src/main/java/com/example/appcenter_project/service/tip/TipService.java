@@ -184,7 +184,7 @@ public class TipService {
                 ResponseTipCommentDto build = ResponseTipCommentDto.builder()
                         .tipCommentId(childGroupOrderComment.getId())
                         .userId(childGroupOrderComment.getUser().getId())
-                        .reply(childGroupOrderComment.getReply())
+                        .reply(childGroupOrderComment.isDeleted() ? "삭제된 메시지입니다." : childGroupOrderComment.getReply())
                         .build();
 
                 childResponseComments.add(build);
@@ -192,7 +192,7 @@ public class TipService {
             ResponseTipCommentDto responseTipCommentDto = ResponseTipCommentDto.builder()
                     .tipCommentId(tipComment.getId())
                     .userId(tipComment.getUser().getId())
-                    .reply(tipComment.getReply())
+                    .reply(tipComment.isDeleted() ? "삭제된 메시지입니다." : tipComment.getReply())
                     .childTipCommentList(childResponseComments)
                     .build();
             responseTipCommentDtoList.add(responseTipCommentDto);
