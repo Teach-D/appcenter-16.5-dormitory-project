@@ -16,7 +16,10 @@ public class ResponseTipDetailDto {
     private String title;
     private String content;
     private Integer tipLikeCount;
+
+    @Builder.Default
     private List<Long> tipLikeUserList = new ArrayList<>();
+
     private String createTime;
 
     @Builder.Default
