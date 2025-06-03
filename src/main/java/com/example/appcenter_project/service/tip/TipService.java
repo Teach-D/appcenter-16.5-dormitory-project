@@ -206,6 +206,11 @@ public class TipService {
                 .orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
+        // 좋아요를 누른 유저가 또 좋아요를 할려는 경우 예외처리
+        if (tipLikeRepository.existsByUserAndTip(user, tip)) {
+            throw new CustomException(ALREADY_TIP_LIKE_USER);
+        }
+
         TipLike tipLike = TipLike.builder()
                 .user(user)
                 .tip(tip)
@@ -220,6 +225,31 @@ public class TipService {
         tip.getTipLikeList().add(tipLike);
 
         return tip.plusLike();
+    }
+
+    public Integer unlikePlusTip(Long userId, Long tipId) {
+        Tip tip = tipRepository.findById(tipId)
+                .orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+        // 좋아요를 누르지 않은 유저가 좋아요 취소를 할려는 경우 예외처리
+        if (!tipLikeRepository.existsByUserAndTip(user, tip)) {
+            throw new CustomException(TIP_LIKE_NOT_FOUND);
+        }
+
+        TipLike tipLike = tipLikeRepository.findByUserAndTip(user, tip)
+                .orElseThrow(() -> new CustomException(TIP_LIKE_NOT_FOUND));
+
+        // user에서 좋아요 정보 제거
+        user.removeLike(tipLike);
+
+        // tip에서 좋아요 정보 제거 (orphanRemoval)
+        tip.getTipLikeList().remove(tipLike);
+
+        tipLikeRepository.delete(tipLike);
+
+        return tip.minusLike();
     }
 
     public void updateTip(Long userId, RequestTipDto requestTipDto, List<MultipartFile> images, Long tipId) {

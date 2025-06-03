@@ -59,4 +59,8 @@ public class Tip extends BaseTimeEntity {
         this.title = requestTipDto.getTitle();
         this.content = requestTipDto.getContent();
     }
+
+    public Integer minusLike() {
+        return this.tipLike -= 1;
+    }
 }
