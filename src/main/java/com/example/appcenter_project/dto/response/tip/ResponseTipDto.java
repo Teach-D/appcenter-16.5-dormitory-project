@@ -14,25 +14,19 @@ public class ResponseTipDto {
 
     private String title;
     private String content;
-    private Integer tipLike;
-
-    @Builder.Default
-    private List<ResponseTipCommentDto> tipCommentDtoList = new ArrayList<>();
+    private Integer tipLikeCount;
+    private Integer tipCommentCount;
+    private String createTime;
 
     public static ResponseTipDto entityToDto(Tip tip) {
         return ResponseTipDto.builder()
                 .title(tip.getTitle())
                 .content(tip.getContent())
-                .tipLike(tip.getTipLike())
+                .tipLikeCount(tip.getTipLike())
+                .tipCommentCount(
+                        tip.getTipCommentList() != null ? tip.getTipCommentList().size() : 0
+                )
+                .createTime(String.valueOf(tip.getCreatedDate()))
                 .build();
     }
-
-    public static ResponseTipDto entityToDtoList(Tip tip) {
-        return ResponseTipDto.builder()
-                .title(tip.getTitle())
-                .content(tip.getContent())
-                .tipLike(tip.getTipLike())
-                .build();
-    }
-
 }

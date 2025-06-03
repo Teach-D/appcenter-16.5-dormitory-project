@@ -1,6 +1,7 @@
 package com.example.appcenter_project.controller.tip;
 
 import com.example.appcenter_project.dto.request.tip.RequestTipDto;
+import com.example.appcenter_project.dto.response.tip.ResponseTipDetailDto;
 import com.example.appcenter_project.dto.response.tip.ResponseTipDto;
 import com.example.appcenter_project.dto.response.tip.TipImageDto;
 import com.example.appcenter_project.security.CustomUserDetails;
@@ -9,11 +10,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -48,7 +47,7 @@ public class TipController {
 
     // 2. 특정 Tip의 이미지를 제외한 정보 하나 조회
     @GetMapping("/{tipId}")
-    public ResponseEntity<ResponseTipDto> findTip(@PathVariable Long tipId) {
+    public ResponseEntity<ResponseTipDetailDto> findTip(@PathVariable Long tipId) {
         return ResponseEntity.status(OK).body(tipService.findTip(tipId));
     }
 
@@ -71,9 +70,14 @@ public class TipController {
                 .body(resource);
     }
 
-    @PatchMapping("/like/{tipId}")
+    @PatchMapping("/{tipId}/like")
     public ResponseEntity<Integer> likePlusTip(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long tipId) {
         return ResponseEntity.status(OK).body(tipService.likePlusTip(user.getId(), tipId));
+    }
+
+    @PatchMapping("/{tipId}/unlike")
+    public ResponseEntity<Integer> unlikePlusTip(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long tipId) {
+        return ResponseEntity.status(OK).body(tipService.unlikePlusTip(user.getId(), tipId));
     }
 
     @PutMapping("/{tipId}")

@@ -39,6 +39,8 @@ public enum ErrorCode {
     TIP_COMMENT_NOT_FOUND(NOT_FOUND, 4002, "[Tip] 팁 게시글의 댓글을 찾을 수 없습니다."),
     TIP_COMMENT_NOT_OWNED_BY_USER(FORBIDDEN, 4004, "[Tip] 팁 게시글의 댓글을 생성한 유저가 아니기 때문에 수정 및 삭제할 권한이 없습니다."),
     TIP_NOT_OWNED_BY_USER(FORBIDDEN, 4005, "[Tip] 팁 게시글을 생성한 유저가 아니기 때문에 수정 및 삭제할 권한이 없습니다."),
+    TIP_LIKE_NOT_FOUND(NOT_FOUND, 4006, "[Tip] 팁 좋아요를 찾을 수 없습니다."),
+    ALREADY_TIP_LIKE_USER(NOT_FOUND, 4006, "[Tip] 이미 팁에 좋아요를 누른 유저입니다"),
 
     // VALIDATION
     VALIDATION_FAILED(BAD_REQUEST, 5001, "[Validation] DTO에서 요청한 값이 올바르지 않습니다."),

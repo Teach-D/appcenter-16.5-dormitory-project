@@ -24,6 +24,8 @@ public class TipComment extends BaseTimeEntity {
     @Column(nullable = false, length = 100)
     private String reply; // 댓글 내용
 
+    private boolean isDeleted = false;
+
     @ManyToOne
     @JoinColumn(name = "tip_id")
     private Tip tip;
@@ -54,5 +56,9 @@ public class TipComment extends BaseTimeEntity {
 
     public void addChildTipComments(TipComment tipComment) {
         this.childTipComments.add(tipComment);
+    }
+
+    public void updateIsDeleted() {
+        this.isDeleted = true;
     }
 }

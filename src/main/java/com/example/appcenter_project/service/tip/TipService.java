@@ -2,6 +2,7 @@ package com.example.appcenter_project.service.tip;
 
 import com.example.appcenter_project.dto.request.tip.RequestTipDto;
 import com.example.appcenter_project.dto.response.tip.ResponseTipCommentDto;
+import com.example.appcenter_project.dto.response.tip.ResponseTipDetailDto;
 import com.example.appcenter_project.dto.response.tip.ResponseTipDto;
 import com.example.appcenter_project.dto.response.tip.TipImageDto;
 import com.example.appcenter_project.entity.Image;
@@ -11,7 +12,6 @@ import com.example.appcenter_project.entity.tip.TipComment;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.exception.CustomException;
-import com.example.appcenter_project.exception.ErrorCode;
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.like.TipLikeRepository;
 import com.example.appcenter_project.repository.tip.TipCommentRepository;
@@ -148,24 +148,25 @@ public class TipService {
         }
     }
 
-    public ResponseTipDto findTip(Long tipId) {
+    public ResponseTipDetailDto findTip(Long tipId) {
         Tip tip = tipRepository.findById(tipId)
                 .orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
         List<ResponseTipCommentDto> responseTipCommentDtoList = findTipComment(tip);
+        List<Long> tipLikeUserList = new ArrayList<>();
 
-        return ResponseTipDto.builder()
-                .title(tip.getTitle())
-                .content(tip.getContent())
-                .tipLike(tip.getTipLike())
-                .tipCommentDtoList(responseTipCommentDtoList)
-                .build();
+        List<TipLike> tipLikeList = tip.getTipLikeList();
+        for (TipLike tipLike : tipLikeList) {
+            Long tipLikeUserId = tipLike.getUser().getId();
+            tipLikeUserList.add(tipLikeUserId);
+        }
+        return ResponseTipDetailDto.entityToDto(tip, responseTipCommentDtoList, tipLikeUserList);
     }
 
     public List<ResponseTipDto> findAllTips() {
         List<ResponseTipDto> responseTipDtoList = new ArrayList<>();
         List<Tip> tips = tipRepository.findAll();
         for (Tip tip : tips) {
-            ResponseTipDto responseTipDto = ResponseTipDto.entityToDtoList(tip);
+            ResponseTipDto responseTipDto = ResponseTipDto.entityToDto(tip);
             responseTipDtoList.add(responseTipDto);
         }
 
@@ -182,16 +183,16 @@ public class TipService {
             for (TipComment childGroupOrderComment : childTipComments) {
                 ResponseTipCommentDto build = ResponseTipCommentDto.builder()
                         .tipCommentId(childGroupOrderComment.getId())
-                        .userId(tip.getUser().getId())
-                        .reply(childGroupOrderComment.getReply())
+                        .userId(childGroupOrderComment.getUser().getId())
+                        .reply(childGroupOrderComment.isDeleted() ? "삭제된 메시지입니다." : childGroupOrderComment.getReply())
                         .build();
 
                 childResponseComments.add(build);
             }
             ResponseTipCommentDto responseTipCommentDto = ResponseTipCommentDto.builder()
                     .tipCommentId(tipComment.getId())
-                    .userId(tip.getUser().getId())
-                    .reply(tipComment.getReply())
+                    .userId(tipComment.getUser().getId())
+                    .reply(tipComment.isDeleted() ? "삭제된 메시지입니다." : tipComment.getReply())
                     .childTipCommentList(childResponseComments)
                     .build();
             responseTipCommentDtoList.add(responseTipCommentDto);
@@ -204,6 +205,11 @@ public class TipService {
         Tip tip = tipRepository.findById(tipId)
                 .orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+        // 좋아요를 누른 유저가 또 좋아요를 할려는 경우 예외처리
+        if (tipLikeRepository.existsByUserAndTip(user, tip)) {
+            throw new CustomException(ALREADY_TIP_LIKE_USER);
+        }
 
         TipLike tipLike = TipLike.builder()
                 .user(user)
@@ -219,6 +225,31 @@ public class TipService {
         tip.getTipLikeList().add(tipLike);
 
         return tip.plusLike();
+    }
+
+    public Integer unlikePlusTip(Long userId, Long tipId) {
+        Tip tip = tipRepository.findById(tipId)
+                .orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+        // 좋아요를 누르지 않은 유저가 좋아요 취소를 할려는 경우 예외처리
+        if (!tipLikeRepository.existsByUserAndTip(user, tip)) {
+            throw new CustomException(TIP_LIKE_NOT_FOUND);
+        }
+
+        TipLike tipLike = tipLikeRepository.findByUserAndTip(user, tip)
+                .orElseThrow(() -> new CustomException(TIP_LIKE_NOT_FOUND));
+
+        // user에서 좋아요 정보 제거
+        user.removeLike(tipLike);
+
+        // tip에서 좋아요 정보 제거 (orphanRemoval)
+        tip.getTipLikeList().remove(tipLike);
+
+        tipLikeRepository.delete(tipLike);
+
+        return tip.minusLike();
     }
 
     public void updateTip(Long userId, RequestTipDto requestTipDto, List<MultipartFile> images, Long tipId) {
@@ -243,4 +274,6 @@ public class TipService {
 
         tipRepository.deleteById(tipId);
     }
+
+
 }
