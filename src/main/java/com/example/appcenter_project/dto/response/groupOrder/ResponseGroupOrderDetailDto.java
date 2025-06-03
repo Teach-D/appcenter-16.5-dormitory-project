@@ -23,6 +23,8 @@ public class ResponseGroupOrderDetailDto {
     private int groupOrderLike;
     private String description;
     private String link;
+
+    @Builder.Default
     private List<Long> groupOrderLikeUserList = new ArrayList<>();
 
     @Builder.Default
