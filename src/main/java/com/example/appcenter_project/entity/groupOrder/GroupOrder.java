@@ -67,6 +67,9 @@ public class GroupOrder extends BaseTimeEntity {
     @OneToMany(mappedBy = "groupOrder", orphanRemoval = true)
     private List<GroupOrderLike> groupOrderLikeList = new ArrayList<>();
 
+    @OneToMany(mappedBy = "groupOrder", orphanRemoval = true)
+    private List<GroupOrderComment> groupOrderCommentList = new ArrayList<>();
+
     @Builder
     public GroupOrder(String title, String groupOrderType, Integer price, String link, int currentPeople, int maxPeople, LocalDateTime deadline, int groupOrderLike, String description, User user, GroupOrderChatRoom groupOrderChatRoom) {        this.title = title;
         this.groupOrderType = GroupOrderType.valueOf(groupOrderType);

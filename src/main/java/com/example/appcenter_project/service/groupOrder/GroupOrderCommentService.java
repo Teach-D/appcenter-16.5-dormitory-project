@@ -54,6 +54,10 @@ public class GroupOrderCommentService {
                     .build();
             parentGroupOrderComment.addChildGroupOrderComments(groupOrderComment);
         }
+
+        // 양방향 매핑
+        groupOrder.getGroupOrderCommentList().add(groupOrderComment);
+
         groupOrderCommentRepository.save(groupOrderComment);
         return ResponseGroupOrderCommentDto.entityToDto(groupOrderComment, user);
     }
