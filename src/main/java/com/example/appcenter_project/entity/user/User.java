@@ -1,5 +1,6 @@
 package com.example.appcenter_project.entity.user;
 
+import com.example.appcenter_project.converter.StringListConverter;
 import com.example.appcenter_project.dto.request.user.RequestUserDto;
 import com.example.appcenter_project.entity.BaseTimeEntity;
 import com.example.appcenter_project.entity.Image;
@@ -47,6 +48,9 @@ public class User extends BaseTimeEntity {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    @Convert(converter = StringListConverter.class)
+    private List<String> searchLog;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "image_id")
@@ -100,5 +104,20 @@ public class User extends BaseTimeEntity {
 
     public void removeLike(TipLike tipLike) {
         this.tipLikeList.remove(tipLike);
+    }
+
+    public void addSearchKeyword(String keyword) {
+        if (searchLog == null) {
+            searchLog = new ArrayList<>();
+        }
+
+        // 기존에 있으면 삭제
+        searchLog.remove(keyword);
+        searchLog.add(keyword);
+
+        // 10개 초과 시, 가장 오래된 항목 제거
+        if (searchLog.size() > 5) {
+            searchLog.remove(0); // 맨 앞 요소 제거
+        }
     }
 }
