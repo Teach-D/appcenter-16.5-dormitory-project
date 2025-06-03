@@ -302,9 +302,9 @@ public class GroupOrderService {
             List<GroupOrderComment> childGroupOrderComments = groupOrderComment.getChildGroupOrderComments();
             for (GroupOrderComment childGroupOrderComment : childGroupOrderComments) {
                 ResponseGroupOrderCommentDto build = ResponseGroupOrderCommentDto.builder()
-                        .groupOrderCommentId(groupOrderComment.getId())
+                        .groupOrderCommentId(childGroupOrderComment.getId())
                         .userId(childGroupOrderComment.getUser().getId())
-                        .reply(childGroupOrderComment.getReply())
+                        .reply(childGroupOrderComment.isDeleted() ? "삭제된 메시지입니다." : childGroupOrderComment.getReply())
                         .build();
 
                 childResponseComments.add(build);
@@ -312,7 +312,7 @@ public class GroupOrderService {
             ResponseGroupOrderCommentDto responseGroupOrderCommentDto = ResponseGroupOrderCommentDto.builder()
                     .groupOrderCommentId(groupOrderComment.getId())
                     .userId(groupOrderComment.getUser().getId())
-                    .reply(groupOrderComment.getReply())
+                    .reply(groupOrderComment.isDeleted() ? "삭제된 메시지입니다." : groupOrderComment.getReply())
                     .childGroupOrderCommentList(childResponseComments)
                     .build();
             responseGroupOrderCommentDtoList.add(responseGroupOrderCommentDto);
