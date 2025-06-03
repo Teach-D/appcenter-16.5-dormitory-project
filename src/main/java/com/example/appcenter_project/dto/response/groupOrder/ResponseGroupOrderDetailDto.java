@@ -28,20 +28,6 @@ public class ResponseGroupOrderDetailDto {
     @Builder.Default
     private List<ResponseGroupOrderCommentDto> groupOrderCommentDtoList = new ArrayList<>();
 
-    public static ResponseGroupOrderDetailDto entityToDto(GroupOrder groupOrder) {
-        return ResponseGroupOrderDetailDto.builder()
-                .groupOrderId(groupOrder.getId())
-                .title(groupOrder.getTitle())
-                .deadline(String.valueOf(groupOrder.getDeadline()))
-                .price(groupOrder.getPrice())
-                .currentPeople(groupOrder.getCurrentPeople())
-                .maxPeople(groupOrder.getMaxPeople())
-                .groupOrderLike(groupOrder.getGroupOrderLike())
-                .description(groupOrder.getDescription())
-                .link(groupOrder.getLink())
-                .build();
-    }
-
     public static ResponseGroupOrderDetailDto detailEntityToDto(GroupOrder groupOrder, List<ResponseGroupOrderCommentDto> responseGroupOrderCommentDto, List<Long> groupOrderLikeUserList) {
         return ResponseGroupOrderDetailDto.builder()
                 .groupOrderId(groupOrder.getId())
