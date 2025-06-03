@@ -2,12 +2,16 @@ package com.example.appcenter_project.service.user;
 
 import com.example.appcenter_project.dto.request.user.RequestUserDto;
 import com.example.appcenter_project.dto.request.user.SignupUser;
+import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
 import com.example.appcenter_project.dto.response.like.ResponseLikeDto;
+import com.example.appcenter_project.dto.response.tip.ResponseTipDto;
+import com.example.appcenter_project.dto.response.user.ResponseBoardDto;
 import com.example.appcenter_project.dto.response.user.ResponseLoginDto;
 import com.example.appcenter_project.dto.response.user.ResponseUserDto;
 import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
+import com.example.appcenter_project.entity.tip.Tip;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.enums.user.Role;
@@ -25,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import static com.example.appcenter_project.exception.ErrorCode.*;
@@ -55,6 +60,7 @@ public class UserService {
                     .studentNumber(signupUser.getStudentNumber())
                     .image(defaultImage)
                     .role(Role.ROLE_USER)
+                    .penalty(0)
                     .build();
             userRepository.save(user);
         }
@@ -122,6 +128,28 @@ public class UserService {
         }
 
         return responseLikeDtoList;
+    }
+
+    public List<ResponseBoardDto> findBoardByUserId(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+        List<ResponseBoardDto> responseBoardDtoList = new ArrayList<>();
+
+        for (Tip tip : user.getTipList()) {
+            ResponseTipDto responseTipDto = ResponseTipDto.entityToDto(tip);
+            responseBoardDtoList.add(responseTipDto);
+        }
+
+        for (GroupOrder groupOrder : user.getGroupOrderList()) {
+            ResponseGroupOrderDto responseTipDto = ResponseGroupOrderDto.entityToDto(groupOrder);
+            responseBoardDtoList.add(responseTipDto);
+        }
+
+        // 최신순 정렬 (createTime이 가장 최근인 것부터)
+        responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateTime).reversed());
+
+        return responseBoardDtoList;
     }
 
     public String reissueAccessToken(String refreshToken) {
