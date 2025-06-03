@@ -90,7 +90,7 @@ public class User extends BaseTimeEntity {
         this.image =image;
     }
 
-    public void addLike(GroupOrderLike groupOrderLike) {
+    public void addGroupOrderLike(GroupOrderLike groupOrderLike) {
         this.groupOrderLikeList.add(groupOrderLike);
     }
 
@@ -104,6 +104,10 @@ public class User extends BaseTimeEntity {
 
     public void removeLike(TipLike tipLike) {
         this.tipLikeList.remove(tipLike);
+    }
+
+    public void removeGroupOrderLike(GroupOrderLike groupOrderLike) {
+        this.groupOrderLikeList.remove(groupOrderLike);
     }
 
     public void addSearchKeyword(String keyword) {
@@ -120,4 +124,5 @@ public class User extends BaseTimeEntity {
             searchLog.remove(0); // 맨 앞 요소 제거
         }
     }
+
 }
