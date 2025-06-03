@@ -21,7 +21,7 @@ import com.example.appcenter_project.repository.groupOrder.GroupOrderCommentRepo
 import com.example.appcenter_project.repository.groupOrder.GroupOrderRepository;
 import com.example.appcenter_project.repository.groupOrder.UserGroupOrderChatRoomRepository;
 import com.example.appcenter_project.repository.image.ImageRepository;
-import com.example.appcenter_project.repository.like.LikeRepository;
+import com.example.appcenter_project.repository.like.GroupOrderLikeRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +51,7 @@ public class GroupOrderService {
 
     private final GroupOrderRepository groupOrderRepository;
     private final UserRepository userRepository;
-    private final LikeRepository likeRepository;
+    private final GroupOrderLikeRepository groupOrderLikeRepository;
     private final GroupOrderChatRoomRepository groupOrderChatRoomRepository;
     private final UserGroupOrderChatRoomRepository userGroupOrderChatRoomRepository;
     private final GroupOrderCommentRepository groupOrderCommentRepository;
@@ -280,18 +280,50 @@ public class GroupOrderService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
+        // 좋아요를 누른 유저가 또 좋아요를 할려는 경우 예외처리
+        if (groupOrderLikeRepository.existsByUserAndGroupOrder(user, groupOrder)) {
+            throw new CustomException(ALREADY_GROUP_ORDER_LIKE_USER);
+        }
+
         GroupOrderLike groupOrderLike = GroupOrderLike.builder()
                 .user(user)
                 .groupOrder(groupOrder)
                 .build();
 
-        likeRepository.save(groupOrderLike);
+        groupOrderLikeRepository.save(groupOrderLike);
 
         // user에 좋아요 정보 추가
-        user.addLike(groupOrderLike);
+        user.addGroupOrderLike(groupOrderLike);
+
+        groupOrder.getGroupOrderLikeList().add(groupOrderLike);
 
         return groupOrder.plusLike();
     }
+
+    public Integer likeMinusGroupOrder(Long userId, Long groupOrderId) {
+        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
+                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+        // 좋아요를 누르지 않은 유저가 좋아요 취소를 시도한 경우 예외처리
+        if (!groupOrderLikeRepository.existsByUserAndGroupOrder(user, groupOrder)) {
+            throw new CustomException(GROUP_ORDER_LIKE_NOT_FOUND);
+        }
+
+        GroupOrderLike groupOrderLike = groupOrderLikeRepository.findByUserAndGroupOrder(user, groupOrder)
+                .orElseThrow(() -> new CustomException(GROUP_ORDER_LIKE_NOT_FOUND));
+
+        // user에서 좋아요 정보 제거
+        user.removeGroupOrderLike(groupOrderLike);
+
+        groupOrder.getGroupOrderLikeList().remove(groupOrderLike);
+
+        groupOrderLikeRepository.delete(groupOrderLike);
+
+        return groupOrder.minusLike();
+    }
+
 
     // 하나의 GroupOrder 게시판에 있는 모든 GroupOrderComment 조회
     private List<ResponseGroupOrderCommentDto> findGroupOrderComment(GroupOrder groupOrder) {
@@ -326,4 +358,5 @@ public class GroupOrderService {
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
         return user.getSearchLog();
     }
+
 }
