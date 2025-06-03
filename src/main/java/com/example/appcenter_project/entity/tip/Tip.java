@@ -37,6 +37,9 @@ public class Tip extends BaseTimeEntity {
     private List<Image> imageList = new ArrayList<>();
 
     @OneToMany(mappedBy = "tip", orphanRemoval = true)
+    private List<TipComment> tipCommentList = new ArrayList<>();
+
+    @OneToMany(mappedBy = "tip", orphanRemoval = true)
     private List<TipLike> tipLikeList = new ArrayList<>();
 
     @Builder
