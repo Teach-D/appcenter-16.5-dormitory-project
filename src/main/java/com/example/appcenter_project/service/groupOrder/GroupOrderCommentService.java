@@ -85,7 +85,8 @@ public class GroupOrderCommentService {
     }
 
     public void deleteGroupOrderComment(Long userId, Long groupOrderCommentId) {
-        groupOrderCommentRepository.findByIdAndUserId(groupOrderCommentId, userId)
+        GroupOrderComment groupOrderComment = groupOrderCommentRepository.findByIdAndUserId(groupOrderCommentId, userId)
                 .orElseThrow(() -> new CustomException(GROUP_ORDER_COMMENT_NOT_OWNED_BY_USER));
+        groupOrderComment.updateIsDeleted();
     }
 }
