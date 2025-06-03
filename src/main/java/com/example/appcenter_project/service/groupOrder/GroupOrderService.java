@@ -250,7 +250,17 @@ public class GroupOrderService {
 
         groupOrder.update(requestGroupOrderDto);
 
-        return ResponseGroupOrderDetailDto.entityToDto(groupOrder);
+        List<ResponseGroupOrderCommentDto> groupOrderCommentDtoList = findGroupOrderComment(groupOrder);
+
+        List<Long> groupOrderLikeUserList = new ArrayList<>();
+
+        List<GroupOrderLike> groupOrderLikeList = groupOrder.getGroupOrderLikeList();
+        for (GroupOrderLike groupOrderLike : groupOrderLikeList) {
+            Long groupOrderLikeUserId = groupOrderLike.getUser().getId();
+            groupOrderLikeUserList.add(groupOrderLikeUserId);
+        }
+
+        return ResponseGroupOrderDetailDto.detailEntityToDto(groupOrder, groupOrderCommentDtoList, groupOrderLikeUserList);
     }
 
     public void deleteGroupOrder(Long userId, Long groupOrderId) {
