@@ -11,6 +11,7 @@ import com.example.appcenter_project.entity.groupOrder.GroupOrderChatRoom;
 import com.example.appcenter_project.entity.groupOrder.GroupOrderComment;
 import com.example.appcenter_project.entity.groupOrder.UserGroupOrderChatRoom;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
+import com.example.appcenter_project.entity.like.TipLike;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
