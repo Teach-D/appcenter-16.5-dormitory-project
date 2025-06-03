@@ -72,9 +72,14 @@ public class GroupOrderController {
         return ResponseEntity.status(OK).body(groupOrderService.findGroupOrders(user.getId(), GroupOrderSort.valueOf(sort), GroupOrderType.valueOf(type), search));
     }
 
-    @PatchMapping("/like/{groupOrderId}")
+    @PatchMapping("/{groupOrderId}/like")
     public ResponseEntity<Integer> likePlusGroupOrder(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderId) {
         return ResponseEntity.status(OK).body(groupOrderService.likePlusGroupOrder(user.getId(), groupOrderId));
+    }
+
+    @PatchMapping("/{groupOrderId}/unlike")
+    public ResponseEntity<Integer> likeMinusGroupOrder(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderId) {
+        return ResponseEntity.status(OK).body(groupOrderService.likeMinusGroupOrder(user.getId(), groupOrderId));
     }
 
     @PutMapping("/{groupOrderId}")
