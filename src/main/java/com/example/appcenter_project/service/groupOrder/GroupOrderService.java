@@ -21,7 +21,7 @@ import com.example.appcenter_project.repository.groupOrder.GroupOrderCommentRepo
 import com.example.appcenter_project.repository.groupOrder.GroupOrderRepository;
 import com.example.appcenter_project.repository.groupOrder.UserGroupOrderChatRoomRepository;
 import com.example.appcenter_project.repository.image.ImageRepository;
-import com.example.appcenter_project.repository.like.LikeRepository;
+import com.example.appcenter_project.repository.like.GroupOrderLikeRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +51,7 @@ public class GroupOrderService {
 
     private final GroupOrderRepository groupOrderRepository;
     private final UserRepository userRepository;
-    private final LikeRepository likeRepository;
+    private final GroupOrderLikeRepository likeRepository;
     private final GroupOrderChatRoomRepository groupOrderChatRoomRepository;
     private final UserGroupOrderChatRoomRepository userGroupOrderChatRoomRepository;
     private final GroupOrderCommentRepository groupOrderCommentRepository;
@@ -241,7 +241,17 @@ public class GroupOrderService {
 
         groupOrder.update(requestGroupOrderDto);
 
-        return ResponseGroupOrderDetailDto.entityToDto(groupOrder);
+        List<ResponseGroupOrderCommentDto> groupOrderCommentDtoList = findGroupOrderComment(groupOrder);
+
+        List<Long> groupOrderLikeUserList = new ArrayList<>();
+
+        List<GroupOrderLike> groupOrderLikeList = groupOrder.getGroupOrderLikeList();
+        for (GroupOrderLike groupOrderLike : groupOrderLikeList) {
+            Long groupOrderLikeUserId = groupOrderLike.getUser().getId();
+            groupOrderLikeUserList.add(groupOrderLikeUserId);
+        }
+
+        return ResponseGroupOrderDetailDto.detailEntityToDto(groupOrder, groupOrderCommentDtoList, groupOrderLikeUserList);
     }
 
     public void deleteGroupOrder(Long userId, Long groupOrderId) {
@@ -288,7 +298,7 @@ public class GroupOrderService {
         likeRepository.save(groupOrderLike);
 
         // user에 좋아요 정보 추가
-        user.addLike(groupOrderLike);
+        user.addGroupOrderLike(groupOrderLike);
 
         return groupOrder.plusLike();
     }
