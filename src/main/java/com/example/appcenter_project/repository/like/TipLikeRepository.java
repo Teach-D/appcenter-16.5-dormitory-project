@@ -9,5 +9,6 @@ import java.util.Optional;
 
 public interface TipLikeRepository extends JpaRepository<TipLike, Long> {
     Optional<TipLike> findByUserAndTip(User user, Tip tip);
+    Boolean existsByUserAndTip(User user, Tip tip);
 
 }
