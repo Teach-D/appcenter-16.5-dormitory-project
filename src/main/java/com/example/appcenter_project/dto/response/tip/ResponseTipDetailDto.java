@@ -10,32 +10,27 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-public class ResponseTipDto {
+public class ResponseTipDetailDto {
 
     private Long tipId;
     private String title;
     private String content;
-    private Integer tipLike;
+    private Integer tipLikeCount;
     private String createTime;
 
     @Builder.Default
     private List<ResponseTipCommentDto> tipCommentDtoList = new ArrayList<>();
 
-    public static ResponseTipDto entityToDto(Tip tip) {
-        return ResponseTipDto.builder()
+    public static ResponseTipDetailDto entityToDto(Tip tip, List<ResponseTipCommentDto> responseTipCommentDtoList) {
+        return ResponseTipDetailDto.builder()
+                .tipId(tip.getId())
+                .createTime(String.valueOf(tip.getCreatedDate()))
                 .title(tip.getTitle())
                 .content(tip.getContent())
-                .tipLike(tip.getTipLike())
+                .tipLikeCount(tip.getTipLike())
+                .tipCommentDtoList(responseTipCommentDtoList)
                 .build();
     }
 
-    public static ResponseTipDto entityToDtoList(Tip tip) {
-        return ResponseTipDto.builder()
-                .title(tip.getTitle())
-                .content(tip.getContent())
-                .tipLike(tip.getTipLike())
-                .createTime(String.valueOf(tip.getCreatedDate()))
-                .build();
-    }
 
 }
