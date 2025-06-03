@@ -152,8 +152,14 @@ public class TipService {
         Tip tip = tipRepository.findById(tipId)
                 .orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
         List<ResponseTipCommentDto> responseTipCommentDtoList = findTipComment(tip);
+        List<Long> tipLikeUserList = new ArrayList<>();
 
-        return ResponseTipDetailDto.entityToDto(tip, responseTipCommentDtoList);
+        List<TipLike> tipLikeList = tip.getTipLikeList();
+        for (TipLike tipLike : tipLikeList) {
+            Long tipLikeUserId = tipLike.getUser().getId();
+            tipLikeUserList.add(tipLikeUserId);
+        }
+        return ResponseTipDetailDto.entityToDto(tip, responseTipCommentDtoList, tipLikeUserList);
     }
 
     public List<ResponseTipDto> findAllTips() {
@@ -238,4 +244,6 @@ public class TipService {
 
         tipRepository.deleteById(tipId);
     }
+
+
 }
