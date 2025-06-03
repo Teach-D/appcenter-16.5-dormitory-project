@@ -2,6 +2,7 @@ package com.example.appcenter_project.service.tip;
 
 import com.example.appcenter_project.dto.request.tip.RequestTipDto;
 import com.example.appcenter_project.dto.response.tip.ResponseTipCommentDto;
+import com.example.appcenter_project.dto.response.tip.ResponseTipDetailDto;
 import com.example.appcenter_project.dto.response.tip.ResponseTipDto;
 import com.example.appcenter_project.dto.response.tip.TipImageDto;
 import com.example.appcenter_project.entity.Image;
@@ -11,7 +12,6 @@ import com.example.appcenter_project.entity.tip.TipComment;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.exception.CustomException;
-import com.example.appcenter_project.exception.ErrorCode;
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.like.TipLikeRepository;
 import com.example.appcenter_project.repository.tip.TipCommentRepository;
@@ -148,24 +148,19 @@ public class TipService {
         }
     }
 
-    public ResponseTipDto findTip(Long tipId) {
+    public ResponseTipDetailDto findTip(Long tipId) {
         Tip tip = tipRepository.findById(tipId)
                 .orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
         List<ResponseTipCommentDto> responseTipCommentDtoList = findTipComment(tip);
 
-        return ResponseTipDto.builder()
-                .title(tip.getTitle())
-                .content(tip.getContent())
-                .tipLike(tip.getTipLike())
-                .tipCommentDtoList(responseTipCommentDtoList)
-                .build();
+        return ResponseTipDetailDto.entityToDto(tip, responseTipCommentDtoList);
     }
 
     public List<ResponseTipDto> findAllTips() {
         List<ResponseTipDto> responseTipDtoList = new ArrayList<>();
         List<Tip> tips = tipRepository.findAll();
         for (Tip tip : tips) {
-            ResponseTipDto responseTipDto = ResponseTipDto.entityToDtoList(tip);
+            ResponseTipDto responseTipDto = ResponseTipDto.entityToDto(tip);
             responseTipDtoList.add(responseTipDto);
         }
 
