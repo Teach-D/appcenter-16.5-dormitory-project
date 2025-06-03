@@ -12,25 +12,20 @@ import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.enums.user.Role;
 import com.example.appcenter_project.exception.CustomException;
-import com.example.appcenter_project.exception.ErrorCode;
 import com.example.appcenter_project.repository.image.ImageRepository;
-import com.example.appcenter_project.repository.like.LikeRepository;
+import com.example.appcenter_project.repository.like.GroupOrderLikeRepository;
 import com.example.appcenter_project.repository.user.SchoolLoginRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import com.example.appcenter_project.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static com.example.appcenter_project.exception.ErrorCode.*;
 
@@ -42,7 +37,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final ImageRepository imageRepository;
-    private final LikeRepository likeRepository;
+    private final GroupOrderLikeRepository groupOrderLikeRepository;
     private final AuthenticationManagerBuilder authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
@@ -108,7 +103,7 @@ public class UserService {
             throw new CustomException(USER_NOT_FOUND);
         }
 
-        List<GroupOrderLike> groupOrderLikeList = likeRepository.findByUser_Id(userId);
+        List<GroupOrderLike> groupOrderLikeList = groupOrderLikeRepository.findByUser_Id(userId);
         List<ResponseLikeDto> responseLikeDtoList = new ArrayList<>();
 
         for (GroupOrderLike groupOrderLike : groupOrderLikeList) {
