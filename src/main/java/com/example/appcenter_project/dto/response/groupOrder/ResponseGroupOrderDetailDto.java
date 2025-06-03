@@ -23,6 +23,7 @@ public class ResponseGroupOrderDetailDto {
     private int groupOrderLike;
     private String description;
     private String link;
+    private List<Long> groupOrderLikeUserList = new ArrayList<>();
 
     @Builder.Default
     private List<ResponseGroupOrderCommentDto> groupOrderCommentDtoList = new ArrayList<>();
@@ -41,7 +42,7 @@ public class ResponseGroupOrderDetailDto {
                 .build();
     }
 
-    public static ResponseGroupOrderDetailDto detailEntityToDto(GroupOrder groupOrder, List<ResponseGroupOrderCommentDto> responseGroupOrderCommentDto) {
+    public static ResponseGroupOrderDetailDto detailEntityToDto(GroupOrder groupOrder, List<ResponseGroupOrderCommentDto> responseGroupOrderCommentDto, List<Long> groupOrderLikeUserList) {
         return ResponseGroupOrderDetailDto.builder()
                 .groupOrderId(groupOrder.getId())
                 .title(groupOrder.getTitle())
@@ -55,6 +56,7 @@ public class ResponseGroupOrderDetailDto {
                 .description(groupOrder.getDescription())
                 .link(groupOrder.getLink())
                 .groupOrderCommentDtoList(responseGroupOrderCommentDto)
+                .groupOrderLikeUserList(groupOrderLikeUserList)
                 .build();
     }
 }
