@@ -214,9 +214,17 @@ public class GroupOrderService {
         }
     }
 
-    public List<ResponseGroupOrderDto> findGroupOrders(GroupOrderSort sort, GroupOrderType type, Optional<String> search) {
+    public List<ResponseGroupOrderDto> findGroupOrders(Long userId, GroupOrderSort sort, GroupOrderType type, Optional<String> search) {
         Specification<GroupOrder> spec = buildSpecification(type, search);
         Sort sortOption = getSortOption(sort);
+
+        // 검색어가 존재할 경우 유저의 검색 기록에 추가
+        search.filter(s -> !s.isBlank())
+                .ifPresent(keyword -> {
+                    User user = userRepository.findById(userId)
+                            .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+                    user.addSearchKeyword(keyword);
+                });
 
         List<GroupOrder> groupOrders = groupOrderRepository.findAll(spec, sortOption);
         return groupOrders.stream()
@@ -311,5 +319,11 @@ public class GroupOrderService {
 
         }
         return responseGroupOrderCommentDtoList;
+    }
+
+    public List<String> findGroupOrderSearchLog(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        return user.getSearchLog();
     }
 }

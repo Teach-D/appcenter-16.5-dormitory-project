@@ -48,6 +48,11 @@ public class GroupOrderController {
         return ResponseEntity.ok(images);
     }
 
+    @GetMapping("/searchLog")
+    public ResponseEntity<List<String>> findGroupOrderSearchLog(@AuthenticationPrincipal CustomUserDetails user) {
+        return ResponseEntity.status(OK).body(groupOrderService.findGroupOrderSearchLog(user.getId()));
+    }
+
     @GetMapping("/images/view")
     public ResponseEntity<Resource> viewImage(@RequestParam String filename) {
         Resource resource = groupOrderService.loadImageAsResource(filename);
@@ -61,9 +66,10 @@ public class GroupOrderController {
 
     @GetMapping
     public ResponseEntity<List<ResponseGroupOrderDto>> findGroupOrders(
+            @AuthenticationPrincipal CustomUserDetails user,
             @RequestParam(defaultValue = "DEADLINE") String sort, @RequestParam(defaultValue = "ALL") String type, @RequestParam(required = false) Optional<String> search
     ) {
-        return ResponseEntity.status(OK).body(groupOrderService.findGroupOrders(GroupOrderSort.valueOf(sort), GroupOrderType.valueOf(type), search));
+        return ResponseEntity.status(OK).body(groupOrderService.findGroupOrders(user.getId(), GroupOrderSort.valueOf(sort), GroupOrderType.valueOf(type), search));
     }
 
     @PatchMapping("/like/{groupOrderId}")
