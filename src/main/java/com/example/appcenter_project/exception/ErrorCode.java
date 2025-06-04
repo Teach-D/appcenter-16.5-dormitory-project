@@ -46,7 +46,7 @@ public enum ErrorCode {
     ALREADY_TIP_LIKE_USER(NOT_FOUND, 4006, "[Tip] 이미 팁에 좋아요를 누른 유저입니다"),
 
     // VALIDATION
-    VALIDATION_FAILED(BAD_REQUEST, 5001, "[Validation] DTO에서 요청한 값이 올바르지 않습니다."),
+    VALIDATION_FAILED(BAD_REQUEST, 5001, "[Validation] Request에서 요청한 값이 올바르지 않습니다."),
 
     // IMAGE
     DEFAULT_IMAGE_NOT_FOUND(NOT_FOUND, 6002, "[Image] 기본 이미지를 찾을 수 없습니다."),
