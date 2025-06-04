@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import javax.naming.AuthenticationException;
 import java.util.List;
@@ -32,7 +33,13 @@ public class GlobalExceptionHandler {
                 .toList();
 
         log.warn("MethodArgumentNotValidException 발생(DTO): {}", errors);
-        return ErrorResponseEntity.toResponseEntity(ErrorCode.VALIDATION_FAILED, "DTO에서 요청한 값이 올바르지 않습니다.", errors);
+        return ErrorResponseEntity.toResponseEntity(ErrorCode.VALIDATION_FAILED, "Request에서 요청한 값이 올바르지 않습니다.");
     }
 
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ErrorResponseEntity> handleMissingPart(MissingServletRequestPartException ex) {
+        log.warn("MissingServletRequestPartException 발생: {}", ex.getMessage());
+
+        return ErrorResponseEntity.toResponseEntity(ErrorCode.VALIDATION_FAILED, "Request에서 요청한 값이 올바르지 않습니다.");
+    }
 }
