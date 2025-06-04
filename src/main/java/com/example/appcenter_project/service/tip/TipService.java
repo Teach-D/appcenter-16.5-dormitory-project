@@ -55,6 +55,9 @@ public class TipService {
                 .user(user)
                 .build();
 
+        // 양방향 매핑
+        user.addTip(tip);
+
         saveImages(tip, images);
         tipRepository.save(tip);
     }
@@ -270,7 +273,10 @@ public class TipService {
     }
 
     public void deleteTip(Long userId, Long tipId) {
-        tipRepository.findByIdAndUserId(tipId, userId).orElseThrow(() -> new CustomException(TIP_NOT_OWNED_BY_USER));
+        Tip tip = tipRepository.findByIdAndUserId(tipId, userId).orElseThrow(() -> new CustomException(TIP_NOT_OWNED_BY_USER));
+        User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+        user.removeTip(tip);
 
         tipRepository.deleteById(tipId);
     }
