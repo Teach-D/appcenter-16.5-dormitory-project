@@ -11,6 +11,7 @@ import com.example.appcenter_project.dto.response.user.ResponseUserDto;
 import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
+import com.example.appcenter_project.entity.like.TipLike;
 import com.example.appcenter_project.entity.tip.Tip;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.image.ImageType;
@@ -104,30 +105,28 @@ public class UserService {
         return new ResponseLoginDto(accessToken, refreshToken);
     }
 
-    public List<ResponseLikeDto> findLikeByUserId(Long userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new CustomException(USER_NOT_FOUND);
+    public List<ResponseBoardDto> findLikeByUserId(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+        List<ResponseBoardDto> responseBoardDtoList = new ArrayList<>();
+
+        for (TipLike tipLike : user.getTipLikeList()) {
+            Tip tip = tipLike.getTip();
+            ResponseTipDto responseTipDto = ResponseTipDto.entityToDto(tip);
+            responseBoardDtoList.add(responseTipDto);
         }
 
-        List<GroupOrderLike> groupOrderLikeList = groupOrderLikeRepository.findByUser_Id(userId);
-        List<ResponseLikeDto> responseLikeDtoList = new ArrayList<>();
-
-        for (GroupOrderLike groupOrderLike : groupOrderLikeList) {
+        for (GroupOrderLike groupOrderLike : user.getGroupOrderLikeList()) {
             GroupOrder groupOrder = groupOrderLike.getGroupOrder();
-
-            ResponseLikeDto responseLikeDto = ResponseLikeDto.builder()
-                    .title(groupOrder.getTitle())
-                    .price(groupOrder.getPrice())
-                    .currentPeople(groupOrder.getCurrentPeople())
-                    .maxPeople(groupOrder.getMaxPeople())
-                    .boardId(groupOrder.getId())
-                    .deadline(groupOrder.getDeadline())
-                    .build();
-
-            responseLikeDtoList.add(responseLikeDto);
+            ResponseGroupOrderDto responseTipDto = ResponseGroupOrderDto.entityToDto(groupOrder);
+            responseBoardDtoList.add(responseTipDto);
         }
 
-        return responseLikeDtoList;
+        // 최신순 정렬 (createTime이 가장 최근인 것부터)
+        responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateTime).reversed());
+
+        return responseBoardDtoList;
     }
 
     public List<ResponseBoardDto> findBoardByUserId(Long userId) {
