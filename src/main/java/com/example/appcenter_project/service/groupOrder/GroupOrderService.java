@@ -208,7 +208,7 @@ public class GroupOrderService {
         File file = new File(projectPath + filename);
 
         if (!file.exists()) {
-            throw new RuntimeException("File not found: " + filename);
+            throw new CustomException(IMAGE_NOT_FOUND);
         }
 
         return new FileSystemResource(file);
