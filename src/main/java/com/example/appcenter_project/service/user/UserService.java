@@ -2,12 +2,17 @@ package com.example.appcenter_project.service.user;
 
 import com.example.appcenter_project.dto.request.user.RequestUserDto;
 import com.example.appcenter_project.dto.request.user.SignupUser;
+import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
 import com.example.appcenter_project.dto.response.like.ResponseLikeDto;
+import com.example.appcenter_project.dto.response.tip.ResponseTipDto;
+import com.example.appcenter_project.dto.response.user.ResponseBoardDto;
 import com.example.appcenter_project.dto.response.user.ResponseLoginDto;
 import com.example.appcenter_project.dto.response.user.ResponseUserDto;
 import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
+import com.example.appcenter_project.entity.like.TipLike;
+import com.example.appcenter_project.entity.tip.Tip;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.enums.user.Role;
@@ -25,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import static com.example.appcenter_project.exception.ErrorCode.*;
@@ -55,6 +61,7 @@ public class UserService {
                     .studentNumber(signupUser.getStudentNumber())
                     .image(defaultImage)
                     .role(Role.ROLE_USER)
+                    .penalty(0)
                     .build();
             userRepository.save(user);
         }
@@ -84,7 +91,7 @@ public class UserService {
     }
 
     public ResponseLoginDto login(SignupUser signupUser) {
-        schoolLoginRepository.loginCheck(signupUser.getStudentNumber(), signupUser.getPassword());
+        //schoolLoginRepository.loginCheck(signupUser.getStudentNumber(), signupUser.getPassword());
         String studentNumber = signupUser.getStudentNumber();
         log.info("[로그인 시도] loginId: {}", studentNumber);
 
@@ -98,30 +105,50 @@ public class UserService {
         return new ResponseLoginDto(accessToken, refreshToken);
     }
 
-    public List<ResponseLikeDto> findLikeByUserId(Long userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new CustomException(USER_NOT_FOUND);
+    public List<ResponseBoardDto> findLikeByUserId(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+        List<ResponseBoardDto> responseBoardDtoList = new ArrayList<>();
+
+        for (TipLike tipLike : user.getTipLikeList()) {
+            Tip tip = tipLike.getTip();
+            ResponseTipDto responseTipDto = ResponseTipDto.entityToDto(tip);
+            responseBoardDtoList.add(responseTipDto);
         }
 
-        List<GroupOrderLike> groupOrderLikeList = groupOrderLikeRepository.findByUser_Id(userId);
-        List<ResponseLikeDto> responseLikeDtoList = new ArrayList<>();
-
-        for (GroupOrderLike groupOrderLike : groupOrderLikeList) {
+        for (GroupOrderLike groupOrderLike : user.getGroupOrderLikeList()) {
             GroupOrder groupOrder = groupOrderLike.getGroupOrder();
-
-            ResponseLikeDto responseLikeDto = ResponseLikeDto.builder()
-                    .title(groupOrder.getTitle())
-                    .price(groupOrder.getPrice())
-                    .currentPeople(groupOrder.getCurrentPeople())
-                    .maxPeople(groupOrder.getMaxPeople())
-                    .boardId(groupOrder.getId())
-                    .deadline(groupOrder.getDeadline())
-                    .build();
-
-            responseLikeDtoList.add(responseLikeDto);
+            ResponseGroupOrderDto responseTipDto = ResponseGroupOrderDto.entityToDto(groupOrder);
+            responseBoardDtoList.add(responseTipDto);
         }
 
-        return responseLikeDtoList;
+        // 최신순 정렬 (createTime이 가장 최근인 것부터)
+        responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateTime).reversed());
+
+        return responseBoardDtoList;
+    }
+
+    public List<ResponseBoardDto> findBoardByUserId(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+        List<ResponseBoardDto> responseBoardDtoList = new ArrayList<>();
+
+        for (Tip tip : user.getTipList()) {
+            ResponseTipDto responseTipDto = ResponseTipDto.entityToDto(tip);
+            responseBoardDtoList.add(responseTipDto);
+        }
+
+        for (GroupOrder groupOrder : user.getGroupOrderList()) {
+            ResponseGroupOrderDto responseTipDto = ResponseGroupOrderDto.entityToDto(groupOrder);
+            responseBoardDtoList.add(responseTipDto);
+        }
+
+        // 최신순 정렬 (createTime이 가장 최근인 것부터)
+        responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateTime).reversed());
+
+        return responseBoardDtoList;
     }
 
     public String reissueAccessToken(String refreshToken) {

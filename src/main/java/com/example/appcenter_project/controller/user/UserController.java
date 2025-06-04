@@ -4,6 +4,7 @@ import com.example.appcenter_project.dto.ImageDto;
 import com.example.appcenter_project.dto.request.user.RequestUserDto;
 import com.example.appcenter_project.dto.request.user.SignupUser;
 import com.example.appcenter_project.dto.response.like.ResponseLikeDto;
+import com.example.appcenter_project.dto.response.user.ResponseBoardDto;
 import com.example.appcenter_project.dto.response.user.ResponseLoginDto;
 import com.example.appcenter_project.dto.response.user.ResponseUserDto;
 import com.example.appcenter_project.security.CustomUserDetails;
@@ -64,8 +65,13 @@ public class UserController {
                 .body(imageDto.getResource());
     }
 
+    @GetMapping("/board")
+    public ResponseEntity<List<ResponseBoardDto>> findBoardByUserId(@AuthenticationPrincipal CustomUserDetails user) {
+        return ResponseEntity.status(OK).body(userService.findBoardByUserId(user.getId()));
+    }
+
     @GetMapping("/like")
-    public ResponseEntity<List<ResponseLikeDto>> findLikeByUserId(@AuthenticationPrincipal CustomUserDetails user) {
+    public ResponseEntity<List<ResponseBoardDto>> findLikeByUserId(@AuthenticationPrincipal CustomUserDetails user) {
         return ResponseEntity.status(OK).body(userService.findLikeByUserId(user.getId()));
     }
 

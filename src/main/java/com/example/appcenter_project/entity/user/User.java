@@ -8,6 +8,7 @@ import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.entity.groupOrder.UserGroupOrderChatRoom;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
 import com.example.appcenter_project.entity.like.TipLike;
+import com.example.appcenter_project.entity.tip.Tip;
 import com.example.appcenter_project.enums.user.College;
 import com.example.appcenter_project.enums.user.DormType;
 import com.example.appcenter_project.enums.user.Role;
@@ -57,6 +58,9 @@ public class User extends BaseTimeEntity {
     private Image image;
 
     @OneToMany(mappedBy = "user")
+    private List<Tip> tipList = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user")
     private List<GroupOrderLike> groupOrderLikeList = new ArrayList<>();
 
     @OneToMany(mappedBy = "user")
@@ -90,6 +94,14 @@ public class User extends BaseTimeEntity {
         this.image =image;
     }
 
+    public void addTip(Tip tip) {
+        this.tipList.add(tip);
+    }
+
+    public void removeTip(Tip tip) {
+        this.tipList.remove(tip);
+    }
+  
     public void addGroupOrderLike(GroupOrderLike groupOrderLike) {
         this.groupOrderLikeList.add(groupOrderLike);
     }
