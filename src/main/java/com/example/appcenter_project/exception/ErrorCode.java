@@ -33,8 +33,8 @@ public enum ErrorCode {
     GROUP_ORDER_TITLE_DUPLICATE(CONFLICT, 3005, "[GroupOrder] 이미 존재하는 제목입니다."),
     GROUP_ORDER_NOT_OWNED_BY_USER(FORBIDDEN, 3006, "[GroupOrder] 공동구매 게시글을 생성한 유저가 아니기 때문에 수정 및 삭제할 권한이 없습니다."),
     GROUP_ORDER_COMMENT_NOT_OWNED_BY_USER(FORBIDDEN, 3006, "[GroupOrder] 공동구매 게시글의 댓글을 생성한 유저가 아니기 때문에 수정 및 삭제할 권한이 없습니다."),
-    GROUP_ORDER_LIKE_NOT_FOUND(NOT_FOUND, 3007, "[GroupOrder] 공동구매 게시글의 좋아요를 누른 유저가 아닙니다."),
-    ALREADY_GROUP_ORDER_LIKE_USER(UNAUTHORIZED, 3008, "[GroupOrder] 이미 공동구매 게시글에 좋아요를 누른 유저입니다"),
+    GROUP_ORDER_LIKE_NOT_FOUND(BAD_REQUEST, 3007, "[GroupOrder] 공동구매 게시글의 좋아요를 누른 유저가 아닙니다."),
+    ALREADY_GROUP_ORDER_LIKE_USER(BAD_REQUEST, 3008, "[GroupOrder] 이미 공동구매 게시글에 좋아요를 누른 유저입니다"),
 
 
     // TIP
