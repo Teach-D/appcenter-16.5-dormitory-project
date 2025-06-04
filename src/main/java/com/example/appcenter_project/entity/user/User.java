@@ -101,7 +101,7 @@ public class User extends BaseTimeEntity {
     public void removeTip(Tip tip) {
         this.tipList.remove(tip);
     }
-
+  
     public void addGroupOrderLike(GroupOrderLike groupOrderLike) {
         this.groupOrderLikeList.add(groupOrderLike);
     }
