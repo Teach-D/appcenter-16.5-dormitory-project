@@ -33,13 +33,13 @@ public class GlobalExceptionHandler {
                 .toList();
 
         log.warn("MethodArgumentNotValidException 발생(DTO): {}", errors);
-        return ErrorResponseEntity.toResponseEntity(ErrorCode.VALIDATION_FAILED, "Request에서 요청한 값이 올바르지 않습니다.");
+        return ErrorResponseEntity.toResponseEntity(ErrorCode.VALIDATION_FAILED, "Request에서 요청한 값이 올바르지 않습니다.", errors);
     }
 
     @ExceptionHandler(MissingServletRequestPartException.class)
     public ResponseEntity<ErrorResponseEntity> handleMissingPart(MissingServletRequestPartException ex) {
         log.warn("MissingServletRequestPartException 발생: {}", ex.getMessage());
 
-        return ErrorResponseEntity.toResponseEntity(ErrorCode.VALIDATION_FAILED, "Request에서 요청한 값이 올바르지 않습니다.");
+        return ErrorResponseEntity.toResponseEntity(ErrorCode.VALIDATION_FAILED);
     }
 }
