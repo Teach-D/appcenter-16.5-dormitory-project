@@ -71,7 +71,7 @@ public class UserController {
     }
 
     @GetMapping("/like")
-    public ResponseEntity<List<ResponseLikeDto>> findLikeByUserId(@AuthenticationPrincipal CustomUserDetails user) {
+    public ResponseEntity<List<ResponseBoardDto>> findLikeByUserId(@AuthenticationPrincipal CustomUserDetails user) {
         return ResponseEntity.status(OK).body(userService.findLikeByUserId(user.getId()));
     }
 
