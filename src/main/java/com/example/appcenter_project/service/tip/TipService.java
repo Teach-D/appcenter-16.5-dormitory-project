@@ -238,7 +238,7 @@ public class TipService {
 
         // 좋아요를 누르지 않은 유저가 좋아요 취소를 할려는 경우 예외처리
         if (!tipLikeRepository.existsByUserAndTip(user, tip)) {
-            throw new CustomException(TIP_LIKE_NOT_FOUND);
+            throw new CustomException(NOT_LIKED_TIP);
         }
 
         TipLike tipLike = tipLikeRepository.findByUserAndTip(user, tip)
