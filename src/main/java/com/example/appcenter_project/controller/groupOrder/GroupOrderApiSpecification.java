@@ -75,7 +75,7 @@ public interface GroupOrderApiSpecification {
 
     @Operation(
             summary = "공동구매 최근 검색어 조회",
-            description = "유저의 공동구매 최근 검색어를 최대 10개까지 조회합니다.",
+            description = "유저의 공동구매 최근 검색어를 최대 5개까지 조회합니다.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
