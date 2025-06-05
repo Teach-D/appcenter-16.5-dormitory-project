@@ -34,8 +34,7 @@ public enum ErrorCode {
     GROUP_ORDER_NOT_OWNED_BY_USER(FORBIDDEN, 3006, "[GroupOrder] 공동구매 게시글을 생성한 유저가 아니기 때문에 수정 및 삭제할 권한이 없습니다."),
     GROUP_ORDER_COMMENT_NOT_OWNED_BY_USER(FORBIDDEN, 3006, "[GroupOrder] 공동구매 게시글의 댓글을 생성한 유저가 아니기 때문에 수정 및 삭제할 권한이 없습니다."),
     GROUP_ORDER_LIKE_NOT_FOUND(NOT_FOUND, 3007, "[GroupOrder] 공동구매 게시글의 좋아요를 누른 유저가 아닙니다."),
-    ALREADY_GROUP_ORDER_LIKE_USER(NOT_FOUND, 3008, "[GroupOrder] 이미 공동구매 게시글에 좋아요를 누른 유저입니다"),
-
+    ALREADY_GROUP_ORDER_LIKE_USER(UNAUTHORIZED, 3008, "[GroupOrder] 이미 공동구매 게시글에 좋아요를 누른 유저입니다"),
 
     // TIP
     TIP_NOT_FOUND(NOT_FOUND, 4001, "[Tip] 팁 게시글을 찾을 수 없습니다."),
@@ -46,7 +45,7 @@ public enum ErrorCode {
     ALREADY_TIP_LIKE_USER(NOT_FOUND, 4006, "[Tip] 이미 팁에 좋아요를 누른 유저입니다"),
 
     // VALIDATION
-    VALIDATION_FAILED(BAD_REQUEST, 5001, "[Validation] DTO에서 요청한 값이 올바르지 않습니다."),
+    VALIDATION_FAILED(BAD_REQUEST, 5001, "[Validation] Request에서 요청한 값이 올바르지 않습니다."),
 
     // IMAGE
     DEFAULT_IMAGE_NOT_FOUND(NOT_FOUND, 6002, "[Image] 기본 이미지를 찾을 수 없습니다."),
