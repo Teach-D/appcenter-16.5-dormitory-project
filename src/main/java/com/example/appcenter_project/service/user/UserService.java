@@ -90,7 +90,7 @@ public class UserService {
     }
 
     public ResponseLoginDto login(SignupUser signupUser) {
-        schoolLoginRepository.loginCheck(signupUser.getStudentNumber(), signupUser.getPassword());
+        //schoolLoginRepository.loginCheck(signupUser.getStudentNumber(), signupUser.getPassword());
         String studentNumber = signupUser.getStudentNumber();
         log.info("[로그인 시도] loginId: {}", studentNumber);
 
