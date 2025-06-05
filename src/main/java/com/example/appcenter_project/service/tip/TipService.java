@@ -82,7 +82,7 @@ public class TipService {
                     contentType = "application/octet-stream";
                 }
             } catch (IOException e) {
-                throw new RuntimeException("Could not determine file type.", e);
+                throw new CustomException(IMAGE_NOT_FOUND);
             }
 
             String filename = file.getName();
@@ -136,7 +136,7 @@ public class TipService {
         File file = new File(projectPath + filename);
 
         if (!file.exists()) {
-            throw new RuntimeException("File not found: " + filename);
+            throw new CustomException(IMAGE_NOT_FOUND);
         }
 
         return new FileSystemResource(file);
