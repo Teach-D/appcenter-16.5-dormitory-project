@@ -18,7 +18,7 @@ import static org.springframework.http.HttpStatus.NO_CONTENT;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/group-order-comments")
-public class GroupOrderCommentController {
+public class GroupOrderCommentController implements GroupOrderCommentApiSpecification {
 
     private final GroupOrderCommentService groupOrderCommentService;
 
