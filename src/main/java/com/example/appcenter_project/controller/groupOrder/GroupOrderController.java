@@ -27,7 +27,7 @@ import static org.springframework.http.HttpStatus.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/group-orders")
-public class GroupOrderController {
+public class GroupOrderController implements GroupOrderApiSpecification {
 
     private final GroupOrderService groupOrderService;
 
