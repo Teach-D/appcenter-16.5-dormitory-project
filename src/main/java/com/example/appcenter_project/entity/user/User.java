@@ -131,7 +131,7 @@ public class User extends BaseTimeEntity {
         searchLog.remove(keyword);
         searchLog.add(keyword);
 
-        // 10개 초과 시, 가장 오래된 항목 제거
+        // 5개 초과 시, 가장 오래된 항목 제거
         if (searchLog.size() > 5) {
             searchLog.remove(0); // 맨 앞 요소 제거
         }
