@@ -82,7 +82,7 @@ public class TipService {
                     contentType = "application/octet-stream";
                 }
             } catch (IOException e) {
-                throw new RuntimeException("Could not determine file type.", e);
+                throw new CustomException(IMAGE_NOT_FOUND);
             }
 
             String filename = file.getName();
@@ -136,7 +136,7 @@ public class TipService {
         File file = new File(projectPath + filename);
 
         if (!file.exists()) {
-            throw new RuntimeException("File not found: " + filename);
+            throw new CustomException(IMAGE_NOT_FOUND);
         }
 
         return new FileSystemResource(file);
@@ -238,7 +238,7 @@ public class TipService {
 
         // 좋아요를 누르지 않은 유저가 좋아요 취소를 할려는 경우 예외처리
         if (!tipLikeRepository.existsByUserAndTip(user, tip)) {
-            throw new CustomException(TIP_LIKE_NOT_FOUND);
+            throw new CustomException(NOT_LIKED_TIP);
         }
 
         TipLike tipLike = tipLikeRepository.findByUserAndTip(user, tip)

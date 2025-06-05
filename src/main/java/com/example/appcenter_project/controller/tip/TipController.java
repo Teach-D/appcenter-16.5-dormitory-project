@@ -25,7 +25,7 @@ import static org.springframework.http.HttpStatus.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/tips")
-public class TipController {
+public class TipController implements TipApiSpecification {
 
     private final TipService tipService;
 

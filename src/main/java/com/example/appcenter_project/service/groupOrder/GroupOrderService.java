@@ -186,7 +186,7 @@ public class GroupOrderService {
                     contentType = "application/octet-stream";
                 }
             } catch (IOException e) {
-                throw new RuntimeException("Could not determine file type.", e);
+                throw new CustomException(IMAGE_NOT_FOUND);
             }
 
             String filename = file.getName();
