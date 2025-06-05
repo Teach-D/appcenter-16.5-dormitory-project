@@ -17,7 +17,7 @@ import static org.springframework.http.HttpStatus.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/group-order-chat-rooms")
-public class GroupOrderChatRoomController {
+public class GroupOrderChatRoomController implements GroupOrderChatRoomApiSpecification {
 
     private final GroupOrderChatRoomService groupOrderChatRoomService;
 
