@@ -29,8 +29,10 @@ public class GroupOrderCommentService {
     private final GroupOrderRepository groupOrderRepository;
 
     public ResponseGroupOrderCommentDto saveGroupOrderComment(Long userId, RequestGroupOrderCommentDto responseGroupOrderCommentDto) {
-        User user = userRepository.findById(userId).orElseThrow();
-        GroupOrder groupOrder = groupOrderRepository.findById(responseGroupOrderCommentDto.getGroupOrderId()).orElseThrow();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        GroupOrder groupOrder = groupOrderRepository.findById(responseGroupOrderCommentDto.getGroupOrderId())
+                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
         GroupOrderComment groupOrderComment;
         // 부모 댓글이 없을 때
         if (responseGroupOrderCommentDto.getParentCommentId() == null) {
@@ -45,7 +47,8 @@ public class GroupOrderCommentService {
         }
         // 부모 댓글이 있을 때
         else {
-            GroupOrderComment parentGroupOrderComment = groupOrderCommentRepository.findById(responseGroupOrderCommentDto.getParentCommentId()).orElseThrow();
+            GroupOrderComment parentGroupOrderComment = groupOrderCommentRepository
+                    .findById(responseGroupOrderCommentDto.getParentCommentId()).orElseThrow(() -> new CustomException(GROUP_ORDER_COMMENT_NOT_FOUND));
             groupOrderComment = GroupOrderComment.builder()
                     .reply(responseGroupOrderCommentDto.getReply())
                     .groupOrder(groupOrder)
