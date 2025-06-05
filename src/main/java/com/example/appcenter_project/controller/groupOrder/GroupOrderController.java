@@ -31,7 +31,7 @@ public class GroupOrderController implements GroupOrderApiSpecification {
 
     private final GroupOrderService groupOrderService;
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> saveGroupOrder(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestPart RequestGroupOrderDto requestGroupOrderDto, @RequestPart List<MultipartFile> images) {
         groupOrderService.saveGroupOrder(user.getId(), requestGroupOrderDto, images);
         return ResponseEntity.status(CREATED).build();
