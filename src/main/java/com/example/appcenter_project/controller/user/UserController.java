@@ -31,7 +31,7 @@ import static org.springframework.http.HttpStatus.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")
-public class UserController {
+public class UserController implements UserApiSpecification {
 
     private final UserService userService;
     private final ImageService imageService;
