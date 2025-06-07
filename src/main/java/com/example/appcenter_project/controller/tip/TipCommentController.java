@@ -17,7 +17,7 @@ import static org.springframework.http.HttpStatus.NO_CONTENT;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/tip-comments")
-public class TipCommentController {
+public class TipCommentController implements TipCommentApiSpecification {
 
     private final TipCommentService tipCommentService;
 
