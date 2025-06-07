@@ -92,7 +92,7 @@ public class ImageService {
 
         File file = new File(image.getFilePath());
         if (!file.exists()) {
-            throw new RuntimeException("Image file not found at path: " + image.getFilePath());
+            throw new CustomException(IMAGE_NOT_FOUND);
         }
 
         Resource resource = new FileSystemResource(file);
