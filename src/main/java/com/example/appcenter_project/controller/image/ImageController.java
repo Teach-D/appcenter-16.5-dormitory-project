@@ -12,7 +12,7 @@ import static org.springframework.http.HttpStatus.CREATED;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/images")
-public class ImageController {
+public class ImageController implements ImageApiSpecification {
 
     private final ImageService imageService;
 
