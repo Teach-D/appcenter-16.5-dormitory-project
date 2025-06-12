@@ -111,5 +111,30 @@ public class RoommateService {
                 .toList(); //만든 dto들을 모아서 리스트로 뭉쳐줌
     }
 
+    //단일 조회
+    public ResponseRoommatePostDto getRoommateBoardDetail(Long boardId){
+        RoommateBoard board = roommateBoardRepository.findById(boardId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
+
+        RoommateCheckList cl = board.getRoommateCheckList();
+
+        return ResponseRoommatePostDto.builder()
+                .boardId(board.getId())
+                .title(cl.getTitle())
+                .dormPeriod(cl.getDormPeriod())
+                .dormType(cl.getDormType())
+                .college(cl.getCollege())
+                .mbti(cl.getMbti())
+                .smoking(cl.getSmoking())
+                .snoring(cl.getSnoring())
+                .toothGrind(cl.getToothGrind())
+                .sleeper(cl.getSleeper())
+                .showerHour(cl.getShowerHour())
+                .showerTime(cl.getShowerTime())
+                .bedTime(cl.getBedTime())
+                .arrangement(cl.getArrangement())
+                .comment(cl.getComment())
+                .build();
+    }
 
 }
