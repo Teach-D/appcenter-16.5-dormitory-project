@@ -2,12 +2,15 @@ package com.example.appcenter_project.controller.roommate;
 
 import com.example.appcenter_project.dto.request.roommate.RequestRoommateFormDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommatePostDto;
+import com.example.appcenter_project.entity.roommate.RoommateBoard;
 import com.example.appcenter_project.service.roommate.RoommateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/roommate")
@@ -24,5 +27,11 @@ public class RoommateController {
         ResponseRoommatePostDto responseDto = roommateService.createRoommateCheckListandBoard(requestDto, userId);
         return ResponseEntity.ok(responseDto);
     }
+
+    @GetMapping("/list")
+    public ResponseEntity<List<ResponseRoommatePostDto>> getRoommateBoardList() {
+        return ResponseEntity.ok(roommateService.getRoommateBoardList());
+    }
+
 
 }
