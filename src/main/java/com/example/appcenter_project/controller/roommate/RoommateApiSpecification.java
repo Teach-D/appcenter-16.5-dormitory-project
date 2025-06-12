@@ -12,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.List;
+
 @Tag(name = "Roommate", description = "룸메이트 게시글 및 체크리스트 관련 API")
 public interface RoommateApiSpecification {
 
@@ -33,4 +35,18 @@ public interface RoommateApiSpecification {
             @RequestBody
             @Parameter(description = "룸메이트 체크리스트 요청 DTO", required = true)
             RequestRoommateFormDto requestDto);
+
+
+    @Operation(
+            summary = "룸메이트 게시글 최신순 조회",
+            description = "작성된 룸메이트 게시글을 최신순으로 조회합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "게시글 목록 조회 성공",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseRoommatePostDto.class))),
+                    @ApiResponse(responseCode = "404", description = "게시글이 존재하지 않습니다. (ROOMMATE_BOARD_NOT_FOUND)",
+                            content = @Content(examples = {}))
+            }
+    )
+    ResponseEntity<List<ResponseRoommatePostDto>> getRoommateBoardList();
 }
