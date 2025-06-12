@@ -1,5 +1,7 @@
 package com.example.appcenter_project.enums.user;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -24,5 +26,20 @@ public enum College {
     CONTRACT_DEPARTMENT("계약학과");
 
     private final String description;
+
+    @JsonCreator
+    public static College from(String value) {
+        for (College type : College.values()) {
+            if (type.getDescription().equals(value)) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("Invalid College: " + value);
+    }
+
+    @JsonValue
+    public String toValue() {
+        return this.description;
+    }
 }
 
