@@ -33,5 +33,10 @@ public class RoommateController {
         return ResponseEntity.ok(roommateService.getRoommateBoardList());
     }
 
+    @GetMapping("/{boardId}")
+    public ResponseEntity<ResponseRoommatePostDto> getRoommateBoardDetail(@PathVariable Long boardId){
+        return ResponseEntity.ok(roommateService.getRoommateBoardDetail(boardId));
+    }
+
 
 }
