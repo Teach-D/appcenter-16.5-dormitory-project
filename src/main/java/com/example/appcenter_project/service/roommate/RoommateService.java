@@ -2,6 +2,7 @@ package com.example.appcenter_project.service.roommate;
 
 import com.example.appcenter_project.dto.request.roommate.RequestRoommateFormDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommatePostDto;
+import com.example.appcenter_project.dto.response.roommate.ResponseRoommateSimilarityDto;
 import com.example.appcenter_project.entity.roommate.RoommateBoard;
 import com.example.appcenter_project.entity.roommate.RoommateCheckList;
 import com.example.appcenter_project.entity.user.User;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -136,5 +138,76 @@ public class RoommateService {
                 .comment(cl.getComment())
                 .build();
     }
+
+    public List<ResponseRoommateSimilarityDto> getSimilarRoommateBoards(Long userId) {
+        // 1. 내 체크리스트 가져오기
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
+
+        RoommateBoard myBoard = roommateBoardRepository.findByUserId(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
+
+        RoommateCheckList myChecklist = myBoard.getRoommateCheckList();
+
+        // 2. 다른 사람 게시글 가져오기
+        List<RoommateBoard> allBoards = roommateBoardRepository.findAll();
+        List<RoommateBoard> otherBoards = allBoards.stream()
+                .filter(b -> !b.getUser().getId().equals(userId))
+                .toList();
+
+        if (otherBoards.isEmpty()) {
+            throw new CustomException(ErrorCode.ROOMMATE_NO_SIMILAR_BOARD); // 새로 정의 필요
+        }
+
+        // 3. 유사도 계산 및 정렬
+        return otherBoards.stream()
+                .map(board -> {
+                    RoommateCheckList other = board.getRoommateCheckList();
+                    int score = 0;
+
+                    if (myChecklist.getDormType() == other.getDormType()) score++;
+                    if (myChecklist.getCollege() == other.getCollege()) score++;
+                    if (myChecklist.getMbti().equals(other.getMbti())) score++;
+                    if (myChecklist.getSmoking() == other.getSmoking()) score++;
+                    if (myChecklist.getSnoring() == other.getSnoring()) score++;
+                    if (myChecklist.getToothGrind() == other.getToothGrind()) score++;
+                    if (myChecklist.getSleeper() == other.getSleeper()) score++;
+                    if (myChecklist.getShowerHour() == other.getShowerHour()) score++;
+                    if (myChecklist.getShowerTime() == other.getShowerTime()) score++;
+                    if (myChecklist.getBedTime() == other.getBedTime()) score++;
+                    if (myChecklist.getArrangement() == other.getArrangement()) score++;
+
+                    int similarityPercentage = (int) ((score / 11.0) * 100);
+
+                    return Map.entry(board, similarityPercentage);
+                })
+                .sorted((e1, e2) -> {
+                    int compareSim = e2.getValue().compareTo(e1.getValue()); // 유사도 내림차순
+                    if (compareSim != 0) return compareSim;
+                    return e2.getKey().getCreatedDate().compareTo(e1.getKey().getCreatedDate()); // 유사도 같으면 최신순
+                })
+                .map(entry -> {
+                    RoommateCheckList cl = entry.getKey().getRoommateCheckList();
+                    return ResponseRoommateSimilarityDto.builder()
+                            .boardId(entry.getKey().getId())
+                            .title(cl.getTitle())
+                            .dormType(cl.getDormType())
+                            .college(cl.getCollege())
+                            .mbti(cl.getMbti())
+                            .smoking(cl.getSmoking())
+                            .snoring(cl.getSnoring())
+                            .toothGrind(cl.getToothGrind())
+                            .sleeper(cl.getSleeper())
+                            .showerHour(cl.getShowerHour())
+                            .showerTime(cl.getShowerTime())
+                            .bedTime(cl.getBedTime())
+                            .arrangement(cl.getArrangement())
+                            .comment(cl.getComment())
+                            .similarityPercentage(entry.getValue())
+                            .build();
+                })
+                .toList();
+    }
+
 
 }
