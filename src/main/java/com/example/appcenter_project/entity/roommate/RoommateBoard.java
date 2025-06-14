@@ -49,4 +49,8 @@ public class RoommateBoard extends BaseTimeEntity {
         this.roommateCheckList = roommateCheckList;
     }
 
+    public void updateTitle(String title){
+        this.title = title;
+    }
+
 }
