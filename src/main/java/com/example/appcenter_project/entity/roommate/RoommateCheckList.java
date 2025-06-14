@@ -100,5 +100,27 @@ public class RoommateCheckList {
         this.user = user; // 꼭 추가
     }
 
+    public void update(String title, Set<DormDay> dormPeriod, DormType dormType, College college, String mbti,
+                       SmokingType smoking, SnoringType snoring, TeethGrindingType toothGrind,
+                       SleepSensitivityType sleeper, ShowerTimeType showerHour, ShowerDurationType showerTime,
+                       BedTimeType bedTime, CleanlinessType arrangement, String comment) {
+        this.title = title;
+        this.dormPeriod = dormPeriod;
+        this.dormType = dormType;
+        this.college = college;
+        this.mbti = mbti;
+        this.smoking = smoking;
+        this.snoring = snoring;
+        this.toothGrind = toothGrind;
+        this.sleeper = sleeper;
+        this.showerHour = showerHour;
+        this.showerTime = showerTime;
+        this.bedTime = bedTime;
+        this.arrangement = arrangement;
+        this.comment = comment;
+    }
+
+
+
 
 }
