@@ -1,100 +1,113 @@
 package com.example.appcenter_project.security.jwt;
 
-import com.example.appcenter_project.entity.user.User;
-import com.example.appcenter_project.repository.user.UserRepository;
-import com.example.appcenter_project.security.CustomUserDetails;
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
-import java.util.Collections;
 import java.util.Date;
 
 @Component
-@RequiredArgsConstructor
 public class JwtTokenProvider {
 
-    public static final long ACCESS_TOKEN_EXPIRED_TIME = 60 * 60 * 1000L;
-    public static final long REFRESH_TOKEN_EXPIRED_TIME = 24 * 60 * 60 * 1000L;
+    public static final long ACCESS_TOKEN_EXPIRED_TIME = 1* 60 * 60 * 1000L;   // 1시간
+    public static final long REFRESH_TOKEN_EXPIRED_TIME = 1 * 24 * 60 * 60 * 1000L; // 1일
 
-    @Value("${jwt.secret}")
-    private String secret;
+    private final UserDetailsService userDetailsService;
+    private final Key key;
 
-    private final UserRepository userRepository;
-
-    private Key getKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+    public JwtTokenProvider(
+            @Value("${jwt.secret}") String secret,
+            UserDetailsService userDetailsService
+    ) {
+        this.key = Keys.hmacShaKeyFor(secret.getBytes());
+        this.userDetailsService = userDetailsService;
     }
 
+    // Access Token 생성
     public String generateAccessToken(Long id, String studentNumber, String role) {
         Date now = new Date();
         return Jwts.builder()
-                .setSubject(String.valueOf(id))
-                .claim("studentNumber", studentNumber)
+                .setSubject(String.valueOf(id))         // sub: id (PK)
+                .claim("studentNumber", studentNumber)              // 부가 정보
                 .claim("role", role)
                 .setIssuedAt(now)
                 .setExpiration(new Date(now.getTime() + ACCESS_TOKEN_EXPIRED_TIME))
-                .signWith(getKey(), SignatureAlgorithm.HS256)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
+    // Refresh Token 생성
     public String generateRefreshToken(Long id, String studentNumber, String role) {
         Date now = new Date();
         return Jwts.builder()
-                .setSubject(String.valueOf(id))
-                .claim("studentNumber", studentNumber)
+                .setSubject(String.valueOf(id))         // sub: id (PK)
+                .claim("studentNumber", studentNumber)              // 부가 정보
                 .claim("role", role)
                 .setIssuedAt(now)
                 .setExpiration(new Date(now.getTime() + REFRESH_TOKEN_EXPIRED_TIME))
-                .signWith(getKey(), SignatureAlgorithm.HS256)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
     public boolean validateToken(String token) {
+        if(token == null) {
+            throw new JwtException("Jwt AccessToken not found");
+        }
         try {
-            Jwts.parserBuilder().setSigningKey(getKey()).build().parseClaimsJws(token);
+            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
-            throw new JwtException("Invalid Jwt token", e);
+            throw new JwtException("Invalid Jwt token");
         }
-    }
-
-    public Authentication getAuthentication(String token) {
-        Long userId = Long.valueOf(parseUsername(token));
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new JwtException("해당 ID의 사용자가 존재하지 않습니다."));
-
-        CustomUserDetails customUserDetails = new CustomUserDetails(user);
-        return new UsernamePasswordAuthenticationToken(
-                customUserDetails,
-                null,
-                Collections.singletonList(new SimpleGrantedAuthority(user.getRole().name()))
-        );
-    }
-
-    public String parseUsername(String token) {
-        return Jwts.parserBuilder().setSigningKey(getKey()).build()
-                .parseClaimsJws(token).getBody().getSubject();
-    }
-
-    public String getRole(String token) {
-        return Jwts.parserBuilder().setSigningKey(getKey()).build()
-                .parseClaimsJws(token).getBody().get("role", String.class);
     }
 
     public boolean validateRefreshToken(String token) {
         try {
-            Jwts.parserBuilder().setSigningKey(getKey()).build().parseClaimsJws(token);
+            Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token);
             return true;
-        } catch (JwtException | IllegalArgumentException e) {
+        } catch (Exception e) {
             return false;
         }
+    }
+
+    // JWT에서 인증 정보 조회
+    public Authentication getAuthentication(String token) {
+        String username = parseUsername(token);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        return new UsernamePasswordAuthenticationToken(
+                userDetails,
+                null,
+                userDetails.getAuthorities()
+        );
+    }
+
+    public String parseUsername(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
+    }
+
+    public String getStudentNumber(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("studentNumber", String.class);
     }
 
 }
