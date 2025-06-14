@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class RoommateService {
@@ -79,5 +81,44 @@ public class RoommateService {
                 .build();
     }
 
+    //최신순 조회
+    public List<ResponseRoommatePostDto> getRoommateBoardList() {
+        List<RoommateBoard> boards = roommateBoardRepository.findAllByOrderByCreatedDateDesc();
+
+        if (boards.isEmpty()){
+            throw new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND);
+        }
+
+        return boards.stream() //게시글 목록을 하나 꺼내서 준비
+                .map(board -> { //꺼낸 게시글 하나를 꾸미기 시작
+                    RoommateCheckList cl = board.getRoommateCheckList(); //룸메이트 보드에있는 체크리스트를 꺼냄
+                    return ResponseRoommatePostDto.builder() //화면에 보여줄 정보를 담아줌
+                            .boardId(board.getId())
+                            .title(cl.getTitle())
+                            .dormPeriod(cl.getDormPeriod())
+                            .dormType(cl.getDormType())
+                            .college(cl.getCollege())
+                            .mbti(cl.getMbti())
+                            .smoking(cl.getSmoking())
+                            .snoring(cl.getSnoring())
+                            .toothGrind(cl.getToothGrind())
+                            .sleeper(cl.getSleeper())
+                            .showerHour(cl.getShowerHour())
+                            .showerTime(cl.getShowerTime())
+                            .bedTime(cl.getBedTime())
+                            .arrangement(cl.getArrangement())
+                            .comment(cl.getComment())
+                            .build(); //dto하나가 만들어짐
+                })
+                .toList(); //만든 dto들을 모아서 리스트로 뭉쳐줌
+    }
+
+    //단일 조회
+    public ResponseRoommatePostDto getRoommateBoardDetail(Long boardId){
+        RoommateBoard board = roommateBoardRepository.findById(boardId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
+
+        return ResponseRoommatePostDto.entityToDto(board);
+    }
 
 }
