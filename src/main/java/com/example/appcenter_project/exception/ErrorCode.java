@@ -3,6 +3,7 @@ package com.example.appcenter_project.exception;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import static org.springframework.http.HttpStatus.*;
 
 import static org.springframework.http.HttpStatus.*;
 
@@ -52,7 +53,14 @@ public enum ErrorCode {
 
     // IMAGE
     DEFAULT_IMAGE_NOT_FOUND(NOT_FOUND, 6002, "[Image] 기본 이미지를 찾을 수 없습니다."),
-    IMAGE_NOT_FOUND(NOT_FOUND, 6001, "[Image] 이미지를 찾을 수 없습니다.");
+    IMAGE_NOT_FOUND(NOT_FOUND, 6001, "[Image] 이미지를 찾을 수 없습니다."),
+
+    // ROOMMATE
+    ROOMMATE_USER_NOT_FOUND(NOT_FOUND, 7001, "[Roommate] 해당 유저가 존재하지 않습니다."),
+    ROOMMATE_BOARD_NOT_FOUND(NOT_FOUND, 7002, "[Roommate] 게시글을 찾을 수 없습니다."),
+    ROOMMATE_CHECKLIST_NOT_FOUND(NOT_FOUND, 7003, "[Roommate] 체크리스트를 찾을 수 없습니다."),
+    ROOMMATE_BOARD_ALREADY_EXISTS(CONFLICT, 7004, "[Roommate] 이미 작성된 게시글이 있습니다."),
+    ROOMMATE_FORBIDDEN_ACCESS(FORBIDDEN, 7005, "[Roommate] 접근 권한이 없습니다.");
 
     private final HttpStatus httpStatus;
     private final Integer code;

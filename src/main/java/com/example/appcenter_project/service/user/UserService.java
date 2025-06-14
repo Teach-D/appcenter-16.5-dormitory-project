@@ -52,13 +52,15 @@ public class UserService {
     public ResponseLoginDto saveUser(SignupUser signupUser) {
         boolean existsByStudentNumber = userRepository.existsByStudentNumber(signupUser.getStudentNumber());
 
-        Image defaultImage = imageRepository.findByImageTypeAndIsDefault(ImageType.USER, true)
+        Image defaultImage = imageRepository.findAllByImageTypeAndIsDefault(ImageType.USER, true)
                 .orElseThrow(() -> new CustomException(DEFAULT_IMAGE_NOT_FOUND));
 
         // 회원정보가 db에 없는 경우 db에 저장 후 로그인
         if (!existsByStudentNumber) {
             User user = User.builder()
                     .studentNumber(signupUser.getStudentNumber())
+                    .password(passwordEncoder.encode(signupUser.getPassword())) // null 방지 + 인코딩 필수
+                    .penalty(0) // null 방지
                     .image(defaultImage)
                     .role(Role.ROLE_USER)
                     .build();
