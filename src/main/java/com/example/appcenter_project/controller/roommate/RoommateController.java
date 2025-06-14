@@ -31,4 +31,14 @@ public class RoommateController implements RoommateApiSpecification{
         return ResponseEntity.status(201).body(responseDto);
     }
 
+    @GetMapping("/list")
+    public ResponseEntity<List<ResponseRoommatePostDto>> getRoommateBoardList() {
+        return ResponseEntity.ok(roommateService.getRoommateBoardList());
+    }
+
+    @GetMapping("/{boardId}")
+    public ResponseEntity<ResponseRoommatePostDto> getRoommateBoardDetail(@PathVariable Long boardId){
+        return ResponseEntity.ok(roommateService.getRoommateBoardDetail(boardId));
+    }
+
 }
