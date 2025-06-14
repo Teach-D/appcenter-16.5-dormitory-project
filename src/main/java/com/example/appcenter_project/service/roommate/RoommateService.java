@@ -13,6 +13,9 @@ import com.example.appcenter_project.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 public class RoommateService {
@@ -26,7 +29,7 @@ public class RoommateService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
 
-        // 체크리스트 생성 및 저장
+        // 2. 체크리스트 생성 + user 설정
         RoommateCheckList roommateCheckList = RoommateCheckList.builder()
                 .title(requestDto.getTitle())
                 .dormPeriod(requestDto.getDormPeriod())
@@ -42,38 +45,40 @@ public class RoommateService {
                 .bedTime(requestDto.getBedTime())
                 .arrangement(requestDto.getArrangement())
                 .comment(requestDto.getComment())
-                .title(requestDto.getTitle())
+                .user(user) // 필수!
                 .build();
 
-        roommateCheckListRepository.save(roommateCheckList);
+        RoommateCheckList savedCheckList = roommateCheckListRepository.save(roommateCheckList);
 
-        // 게시글 생성 및 저장
+        // 3. 게시글 생성 및 저장
         RoommateBoard roommateBoard = RoommateBoard.builder()
                 .title(requestDto.getTitle())
                 .user(user)
                 .roommateBoardLike(0)
-                .roommateCheckList(roommateCheckList)
+                .roommateCheckList(savedCheckList)
                 .build();
 
         roommateBoardRepository.save(roommateBoard);
 
-        // 응답 DTO 반환
+        // 4. 응답
         return ResponseRoommatePostDto.builder()
                 .boardId(roommateBoard.getId())
-                .title(roommateCheckList.getTitle())
-                .dormPeriod(roommateCheckList.getDormPeriod())
-                .dormType(roommateCheckList.getDormType())
-                .college(roommateCheckList.getCollege())
-                .mbti(roommateCheckList.getMbti())
-                .smoking(roommateCheckList.getSmoking())
-                .snoring(roommateCheckList.getSnoring())
-                .toothGrind(roommateCheckList.getToothGrind())
-                .sleeper(roommateCheckList.getSleeper())
-                .showerHour(roommateCheckList.getShowerHour())
-                .showerTime(roommateCheckList.getShowerTime())
-                .bedTime(roommateCheckList.getBedTime())
-                .arrangement(roommateCheckList.getArrangement())
-                .comment(roommateCheckList.getComment())
+                .title(savedCheckList.getTitle())
+                .dormPeriod(savedCheckList.getDormPeriod())
+                .dormType(savedCheckList.getDormType())
+                .college(savedCheckList.getCollege())
+                .mbti(savedCheckList.getMbti())
+                .smoking(savedCheckList.getSmoking())
+                .snoring(savedCheckList.getSnoring())
+                .toothGrind(savedCheckList.getToothGrind())
+                .sleeper(savedCheckList.getSleeper())
+                .showerHour(savedCheckList.getShowerHour())
+                .showerTime(savedCheckList.getShowerTime())
+                .bedTime(savedCheckList.getBedTime())
+                .arrangement(savedCheckList.getArrangement())
+                .comment(savedCheckList.getComment())
                 .build();
     }
+
+
 }
