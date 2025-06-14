@@ -2,6 +2,7 @@ package com.example.appcenter_project.controller.roommate;
 
 import com.example.appcenter_project.dto.request.roommate.RequestRoommateFormDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommatePostDto;
+import com.example.appcenter_project.dto.response.roommate.ResponseRoommateSimilarityDto;
 import com.example.appcenter_project.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -65,4 +66,20 @@ public interface RoommateApiSpecification {
             @Parameter(description = "조회할 게시글 ID", example = "1")
             @PathVariable Long boardId
     );
+
+    @Operation(
+            summary = "유사한 룸메이트 게시글 추천",
+            description = "로그인한 사용자의 체크리스트 기준으로 유사한 게시글을 추천합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "추천 게시글 목록 조회 성공",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseRoommateSimilarityDto.class))),
+                    @ApiResponse(responseCode = "404", description = "유사도 비교할 게시글이 없습니다 (ROOMMATE_NO_SIMILAR_BOARD)",
+                            content = @Content(examples = {}))
+            }
+    )
+    ResponseEntity<List<ResponseRoommateSimilarityDto>> getSimilarRoommates(
+            @Parameter(hidden = true) CustomUserDetails userDetails
+    );
+
 }
