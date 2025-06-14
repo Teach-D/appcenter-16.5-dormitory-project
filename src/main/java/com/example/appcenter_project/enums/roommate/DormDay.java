@@ -18,10 +18,10 @@ public enum DormDay {
 
     private final String description;
 
-    @JsonCreator
+    @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public static DormDay from(String value) {
         for (DormDay day : DormDay.values()) {
-            if (day.getDescription().equals(value)) {
+            if (day.getDescription().equals(value) || day.name().equalsIgnoreCase(value)) {
                 return day;
             }
         }
