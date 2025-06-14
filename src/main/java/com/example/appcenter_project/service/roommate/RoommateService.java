@@ -12,9 +12,7 @@ import com.example.appcenter_project.repository.roommate.RoommateCheckListReposi
 import com.example.appcenter_project.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Map;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +22,7 @@ public class RoommateService {
     private final RoommateCheckListRepository roommateCheckListRepository;
     private final RoommateBoardRepository roommateBoardRepository;
 
+    @Transactional
     public ResponseRoommatePostDto createRoommateCheckListandBoard(RequestRoommateFormDto requestDto, Long userId) {
         // 1. 유저 확인
         User user = userRepository.findById(userId)
