@@ -45,3 +45,5 @@ application.yml
 
 ### image ###
 src/main/resources/static/images
+
+src/main/java/com/example/appcenter_project/config/SwaggerConfig.java
