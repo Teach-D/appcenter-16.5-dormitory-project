@@ -3,11 +3,8 @@ package com.example.appcenter_project.controller.roommate;
 import com.example.appcenter_project.dto.request.roommate.RequestRoommateFormDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommatePostDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommateSimilarityDto;
-import com.example.appcenter_project.entity.roommate.RoommateBoard;
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.roommate.RoommateService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -16,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/roommate")
+@RequestMapping("/roommates")
 @RequiredArgsConstructor
 public class RoommateController implements RoommateApiSpecification{
 
@@ -49,5 +46,15 @@ public class RoommateController implements RoommateApiSpecification{
         Long userId = userDetails.getId(); // 로그인된 사용자의 ID 가져오기
         List<ResponseRoommateSimilarityDto> similarList = roommateService.getSimilarRoommateBoards(userId);
         return ResponseEntity.ok(similarList);
+    }
+
+    @PutMapping
+    public ResponseEntity<ResponseRoommatePostDto> updateRoommateCheckListAndBoard(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody RequestRoommateFormDto requestDto) {
+
+        Long userId = userDetails.getId();
+        ResponseRoommatePostDto updated = roommateService.updateRoommateChecklistAndBoard(requestDto, userId);
+        return ResponseEntity.ok(updated);
     }
 }
