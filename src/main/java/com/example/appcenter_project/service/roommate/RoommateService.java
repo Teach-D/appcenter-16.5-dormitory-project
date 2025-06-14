@@ -192,4 +192,46 @@ public class RoommateService {
                 })
                 .toList();
     }
+
+    @Transactional
+    public ResponseRoommatePostDto updateRoommateChecklistAndBoard(RequestRoommateFormDto requestDto, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
+
+        RoommateBoard board = roommateBoardRepository.findByUserId(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
+
+        RoommateCheckList checkList = board.getRoommateCheckList();
+
+        if (!checkList.getUser().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.ROOMMATE_UPDATE_NOT_ALLOWED);
+        }
+
+        try {
+            checkList.update(
+                    requestDto.getTitle(),
+                    requestDto.getDormPeriod(),
+                    requestDto.getDormType(),
+                    requestDto.getCollege(),
+                    requestDto.getMbti(),
+                    requestDto.getSmoking(),
+                    requestDto.getSnoring(),
+                    requestDto.getToothGrind(),
+                    requestDto.getSleeper(),
+                    requestDto.getShowerHour(),
+                    requestDto.getShowerTime(),
+                    requestDto.getBedTime(),
+                    requestDto.getArrangement(),
+                    requestDto.getComment()
+            );
+            board.updateTitle(requestDto.getTitle());
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.ROOMMATE_CHECKLIST_UPDATE_FAILED);
+        }
+
+        return ResponseRoommatePostDto.entityToDto(board);
+    }
+
+
+
 }
