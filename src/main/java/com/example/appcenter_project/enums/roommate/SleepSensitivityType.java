@@ -14,10 +14,10 @@ public enum SleepSensitivityType {
 
     private final String description;
 
-    @JsonCreator
+    @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public static SleepSensitivityType from(String value) {
         for (SleepSensitivityType type : SleepSensitivityType.values()) {
-            if (type.getDescription().equals(value)) {
+            if (type.getDescription().equals(value) || type.name().equalsIgnoreCase(value)) {
                 return type;
             }
         }
