@@ -34,7 +34,7 @@ public class SwaggerConfig {
                 .description("배포 서버");
 
         Server localServer = new Server()
-                .url("http://localhost:8080")
+                .url("http://localhost:8081")
                 .description("로컬 개발 서버");
 
         // 보안 스키마 (JWT Bearer Token)
@@ -50,7 +50,7 @@ public class SwaggerConfig {
 
         return new OpenAPI()
                 .info(info)
-                .servers(List.of(server))
+                .servers(List.of(localServer))
                 .components(new Components().addSecuritySchemes("bearerAuth", bearerAuth))
                 .addSecurityItem(securityRequirement);
     }
