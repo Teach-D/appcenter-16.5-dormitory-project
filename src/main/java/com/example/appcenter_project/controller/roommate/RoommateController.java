@@ -17,18 +17,18 @@ import java.util.List;
 @RestController
 @RequestMapping("/roommate")
 @RequiredArgsConstructor
-public class RoommateController {
+public class RoommateController implements RoommateApiSpecification{
 
     private final RoommateService roommateService;
 
-    @PostMapping("/post")
+    @PostMapping
     public ResponseEntity<ResponseRoommatePostDto> createRoommatePost(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody RequestRoommateFormDto requestDto
     ) {
         Long userId = userDetails.getId(); // 인증된 사용자 ID 가져오기
         ResponseRoommatePostDto responseDto = roommateService.createRoommateCheckListandBoard(requestDto, userId);
-        return ResponseEntity.ok(responseDto);
+        return ResponseEntity.status(201).body(responseDto);
     }
 
 }
