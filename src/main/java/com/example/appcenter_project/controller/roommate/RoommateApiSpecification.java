@@ -82,4 +82,28 @@ public interface RoommateApiSpecification {
             @Parameter(hidden = true) CustomUserDetails userDetails
     );
 
+    @Operation(
+            summary = "룸메이트 체크리스트 및 게시글 수정",
+            description = "기존에 작성한 룸메이트 체크리스트 및 게시글을 수정합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "수정 성공",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseRoommatePostDto.class))),
+                    @ApiResponse(responseCode = "404", description = "해당 유저 또는 게시글/체크리스트가 존재하지 않음 (ROOMMATE_USER_NOT_FOUND, ROOMMATE_BOARD_NOT_FOUND, ROOMMATE_CHECKLIST_NOT_FOUND)",
+                            content = @Content(examples = {})),
+                    @ApiResponse(responseCode = "403", description = "본인이 작성한 체크리스트가 아님 (ROOMMATE_UPDATE_NOT_ALLOWED)",
+                            content = @Content(examples = {})),
+                    @ApiResponse(responseCode = "500", description = "체크리스트 수정 실패 (ROOMMATE_CHECKLIST_UPDATE_FAILED)",
+                            content = @Content(examples = {}))
+            }
+    )
+    ResponseEntity<ResponseRoommatePostDto> updateRoommateCheckListAndBoard(
+            @Parameter(hidden = true) CustomUserDetails userDetails,
+
+            @RequestBody
+            @Parameter(description = "수정할 룸메이트 체크리스트 요청 DTO", required = true)
+            RequestRoommateFormDto requestDto
+    );
+
+
 }
