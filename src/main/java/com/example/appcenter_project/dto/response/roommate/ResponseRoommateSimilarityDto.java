@@ -5,7 +5,9 @@ import com.example.appcenter_project.enums.user.College;
 import com.example.appcenter_project.enums.user.DormType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 
+@Getter
 @Builder
 @AllArgsConstructor
 public class ResponseRoommateSimilarityDto {

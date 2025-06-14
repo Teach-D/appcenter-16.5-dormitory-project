@@ -14,10 +14,10 @@ public enum ShowerTimeType {
 
     private final String description;
 
-    @JsonCreator
+    @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public static ShowerTimeType from(String value) {
         for (ShowerTimeType type : ShowerTimeType.values()) {
-            if (type.getDescription().equals(value)) {
+            if (type.getDescription().equals(value) || type.name().equalsIgnoreCase(value)) {
                 return type;
             }
         }

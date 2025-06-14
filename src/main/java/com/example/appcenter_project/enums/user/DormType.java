@@ -13,10 +13,10 @@ public enum DormType {
 
     private final String description;
 
-    @JsonCreator
+    @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public static DormType from(String value) {
         for (DormType type : DormType.values()) {
-            if (type.getDescription().equals(value)) {
+            if (type.getDescription().equals(value) || type.name().equalsIgnoreCase(value)) {
                 return type;
             }
         }

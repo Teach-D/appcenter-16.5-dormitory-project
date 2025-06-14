@@ -13,10 +13,10 @@ public enum TeethGrindingType {
 
     private final String description;
 
-    @JsonCreator
+    @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public static TeethGrindingType from(String value) {
         for (TeethGrindingType type : TeethGrindingType.values()) {
-            if (type.getDescription().equals(value)) {
+            if (type.getDescription().equals(value) || type.name().equalsIgnoreCase(value)) {
                 return type;
             }
         }

@@ -14,10 +14,11 @@ public enum BedTimeType {
 
     private final String description;
 
-    @JsonCreator
+    @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public static BedTimeType from(String value) {
         for (BedTimeType type : BedTimeType.values()) {
-            if (type.getDescription().equals(value)) {
+            // 한글 설명 또는 enum name(대소문자 무시) 둘 다 허용
+            if (type.getDescription().equals(value) || type.name().equalsIgnoreCase(value)) {
                 return type;
             }
         }

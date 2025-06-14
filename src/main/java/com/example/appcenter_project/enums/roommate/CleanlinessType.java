@@ -14,10 +14,11 @@ public enum CleanlinessType {
 
     private final String description;
 
-    @JsonCreator
+    @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public static CleanlinessType from(String value) {
         for (CleanlinessType type : CleanlinessType.values()) {
-            if (type.getDescription().equals(value)) {
+            // 한글 설명 또는 enum 이름(대소문자 무시) 모두 처리
+            if (type.getDescription().equals(value) || type.name().equalsIgnoreCase(value)) {
                 return type;
             }
         }

@@ -13,10 +13,10 @@ public enum SnoringType {
 
     private final String description;
 
-    @JsonCreator
+    @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public static SnoringType from(String value) {
         for (SnoringType type : SnoringType.values()) {
-            if (type.getDescription().equals(value)) {
+            if (type.getDescription().equals(value) || type.name().equalsIgnoreCase(value)) {
                 return type;
             }
         }
