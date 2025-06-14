@@ -13,10 +13,10 @@ public enum SmokingType {
 
     private final String description;
 
-    @JsonCreator
+    @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public static SmokingType from(String value) {
         for (SmokingType type : SmokingType.values()) {
-            if (type.getDescription().equals(value)) {
+            if (type.getDescription().equals(value) || type.name().equalsIgnoreCase(value)) {
                 return type;
             }
         }
