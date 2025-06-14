@@ -18,8 +18,10 @@ public class RoommateCheckList {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(length = 20)
     private Long id;
 
+    @Column(length = 20)
     private String title;
 
     @ElementCollection(targetClass = DormDay.class)
@@ -28,35 +30,46 @@ public class RoommateCheckList {
     private Set<DormDay> dormPeriod;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private DormType dormType;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private College college;
 
+    @Column(length = 20)
     private String mbti;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private SmokingType smoking; // SMOKER, NON_SMOKER
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private SnoringType snoring; // SNORER, NON_SNORER
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private TeethGrindingType toothGrind; // GRINDER, NON_GRINDER
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private SleepSensitivityType sleeper; // SENSITIVE_TO_LIGHT, PREFER_DARKNESS, NOT_SURE
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private ShowerTimeType showerHour; // MORNING, EVENING, BOTH
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private ShowerDurationType showerTime; // WITHIN_10_MINUTES, ...
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private BedTimeType bedTime; // EARLY_SLEEPER, ...
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private CleanlinessType arrangement; // NEAT, EASYGOING, UNCERTAIN
 
     private String comment;
@@ -65,15 +78,11 @@ public class RoommateCheckList {
     @JoinColumn(name="user_id")
     private User user;
 
-    @OneToOne
-    @JoinColumn(name = "roommate_checklist_id")
-    private RoommateCheckList roommateCheckList;
-
     @Builder
     public RoommateCheckList(Set<DormDay> dormPeriod, DormType dormType, College college, String mbti,
                              SmokingType smoking, SnoringType snoring, TeethGrindingType toothGrind,
                              SleepSensitivityType sleeper, ShowerTimeType showerHour, ShowerDurationType showerTime,
-                             BedTimeType bedTime, CleanlinessType arrangement, String comment, String title) {
+                             BedTimeType bedTime, CleanlinessType arrangement, String comment, String title, User user) {
         this.dormPeriod = dormPeriod;
         this.dormType = dormType;
         this.college = college;
@@ -88,6 +97,8 @@ public class RoommateCheckList {
         this.arrangement = arrangement;
         this.comment = comment;
         this.title = title;
+        this.user = user; // 꼭 추가
     }
+
 
 }
