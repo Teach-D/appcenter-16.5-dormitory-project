@@ -62,7 +62,9 @@ public enum ErrorCode {
     ROOMMATE_CHECKLIST_NOT_FOUND(NOT_FOUND, 7003, "[Roommate] 체크리스트를 찾을 수 없습니다."),
     ROOMMATE_BOARD_ALREADY_EXISTS(CONFLICT, 7004, "[Roommate] 이미 작성된 게시글이 있습니다."),
     ROOMMATE_FORBIDDEN_ACCESS(FORBIDDEN, 7005, "[Roommate] 접근 권한이 없습니다."),
-    ROOMMATE_NO_SIMILAR_BOARD(NOT_FOUND, 7006, "[Roommate] 유사도 비교할 게시글이 없습니다.");
+    ROOMMATE_NO_SIMILAR_BOARD(NOT_FOUND, 7006, "[Roommate] 유사도 비교할 게시글이 없습니다."),
+    ROOMMATE_UPDATE_NOT_ALLOWED(FORBIDDEN, 7007, "[Roommate] 수정 권한이 없습니다."),
+    ROOMMATE_CHECKLIST_UPDATE_FAILED(BAD_REQUEST, 7008, "[Roommate] 체크리스트 수정에 실패했습니다."),;
 
     private final HttpStatus httpStatus;
     private final Integer code;
