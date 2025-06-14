@@ -2,6 +2,7 @@ package com.example.appcenter_project.controller.roommate;
 
 import com.example.appcenter_project.dto.request.roommate.RequestRoommateFormDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommatePostDto;
+import com.example.appcenter_project.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -10,7 +11,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "Roommate", description = "룸메이트 게시글 및 체크리스트 관련 API")
 public interface RoommateApiSpecification {
@@ -27,10 +27,10 @@ public interface RoommateApiSpecification {
             }
     )
     ResponseEntity<ResponseRoommatePostDto> createRoommatePost(
-            @RequestParam
-            @Parameter(description = "유저 ID", required = true, example = "1") Long userId,
+            @Parameter(hidden = true) CustomUserDetails userDetails,
 
             @RequestBody
             @Parameter(description = "룸메이트 체크리스트 요청 DTO", required = true)
-            RequestRoommateFormDto requestDto);
+            RequestRoommateFormDto requestDto
+    );
 }
