@@ -5,6 +5,8 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+**/application.yml
+
 ### STS ###
 .apt_generated
 .classpath
@@ -33,6 +35,8 @@ out/
 /nbdist/
 /.nb-gradle/
 
+src/main/resources/application.yml
+
 ### VS Code ###
 .vscode/
 
@@ -41,3 +45,5 @@ application.yml
 
 ### image ###
 src/main/resources/static/images
+
+src/main/java/com/example/appcenter_project/config/SwaggerConfig.java
