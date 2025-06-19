@@ -12,7 +12,7 @@ import java.util.List;
 @Getter
 public class ResponseGroupOrderDetailDto {
 
-    private Long groupOrderId;
+    private Long id;
     private String title;
     private String deadline;
     private String createTime;
@@ -32,7 +32,7 @@ public class ResponseGroupOrderDetailDto {
 
     public static ResponseGroupOrderDetailDto detailEntityToDto(GroupOrder groupOrder, List<ResponseGroupOrderCommentDto> responseGroupOrderCommentDto, List<Long> groupOrderLikeUserList) {
         return ResponseGroupOrderDetailDto.builder()
-                .groupOrderId(groupOrder.getId())
+                .id(groupOrder.getId())
                 .title(groupOrder.getTitle())
                 .deadline(String.valueOf(groupOrder.getDeadline()))
                 .createTime(String.valueOf(groupOrder.getCreatedDate()))
