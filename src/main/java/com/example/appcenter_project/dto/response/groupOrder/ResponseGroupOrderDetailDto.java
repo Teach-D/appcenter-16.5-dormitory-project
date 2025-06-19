@@ -47,4 +47,8 @@ public class ResponseGroupOrderDetailDto {
                 .groupOrderLikeUserList(groupOrderLikeUserList)
                 .build();
     }
+
+    public void updateGroupOrderCommentDtoList(List<ResponseGroupOrderCommentDto> groupedList) {
+        this.groupOrderCommentDtoList = groupedList;
+    }
 }

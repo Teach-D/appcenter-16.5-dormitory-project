@@ -38,10 +38,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.example.appcenter_project.exception.ErrorCode.*;
@@ -87,19 +84,40 @@ public class GroupOrderService {
     }
 
     public ResponseGroupOrderDetailDto findGroupOrderById(Long groupOrderId) {
-        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
-                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
-        List<ResponseGroupOrderCommentDto> groupOrderCommentDtoList = findGroupOrderComment(groupOrder);
+        ResponseGroupOrderDetailDto dto = groupOrderMapper.findGroupOrderById(groupOrderId);
 
-        List<Long> groupOrderLikeUserList = new ArrayList<>();
+        List<ResponseGroupOrderCommentDto> flatList = dto.getGroupOrderCommentDtoList();
+        List<ResponseGroupOrderCommentDto> groupedList = groupCommentHierarchy(flatList);
+        dto.updateGroupOrderCommentDtoList(groupedList); // 트리 구조로 다시 세팅
 
-        List<GroupOrderLike> groupOrderLikeList = groupOrder.getGroupOrderLikeList();
-        for (GroupOrderLike groupOrderLike : groupOrderLikeList) {
-            Long groupOrderLikeUserId = groupOrderLike.getUser().getId();
-            groupOrderLikeUserList.add(groupOrderLikeUserId);
+        return dto;
+    }
+
+    private List<ResponseGroupOrderCommentDto> groupCommentHierarchy(List<ResponseGroupOrderCommentDto> flatList) {
+        Map<Long, ResponseGroupOrderCommentDto> commentMap = new HashMap<>();
+        List<ResponseGroupOrderCommentDto> topLevelComments = new ArrayList<>();
+
+        // 먼저 map 에 commentId로 매핑
+        for (ResponseGroupOrderCommentDto comment : flatList) {
+            commentMap.put(comment.getGroupOrderCommentId(), comment);
         }
 
-        return ResponseGroupOrderDetailDto.detailEntityToDto(groupOrder, groupOrderCommentDtoList, groupOrderLikeUserList);
+        // 부모/자식 구조 구성
+        for (ResponseGroupOrderCommentDto comment : flatList) {
+            Long parentId = comment.getParentId();
+            if (parentId == null) {
+                // 부모 댓글이면 상위 리스트에 추가
+                topLevelComments.add(comment);
+            } else {
+                // 자식 댓글이면 부모에 추가
+                ResponseGroupOrderCommentDto parent = commentMap.get(parentId);
+                if (parent != null) {
+                    parent.getChildGroupOrderCommentList().add(comment);
+                }
+            }
+        }
+
+        return topLevelComments;
     }
 
     // 이미지와 함께 공동구매 생성
