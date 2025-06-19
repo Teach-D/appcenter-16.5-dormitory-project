@@ -58,8 +58,9 @@ public class TipService {
         // 양방향 매핑
         user.addTip(tip);
 
-        saveImages(tip, images);
         tipRepository.save(tip);
+
+        saveImages(tip, images);
     }
 
     public List<TipImageDto> findTipImages(Long tipId) {
@@ -119,6 +120,7 @@ public class TipService {
                             .filePath(destinationFile.getAbsolutePath())
                             .isDefault(false)
                             .imageType(ImageType.TIP)
+                            .boardId(tip.getId())
                             .build();
 
                     imageRepository.save(image);
