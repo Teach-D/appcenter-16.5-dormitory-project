@@ -16,7 +16,7 @@ public class ResponseGroupOrderDetailDto {
     private String title;
     private String deadline;
     private String createDate;
-    private String category;
+    private String groupOrderType;
     private int price;
     private int currentPeople;
     private int maxPeople;
@@ -36,7 +36,7 @@ public class ResponseGroupOrderDetailDto {
                 .title(groupOrder.getTitle())
                 .deadline(String.valueOf(groupOrder.getDeadline()))
                 .createDate(String.valueOf(groupOrder.getCreatedDate()))
-                .category(String.valueOf(groupOrder.getGroupOrderType()))
+                .groupOrderType(String.valueOf(groupOrder.getGroupOrderType()))
                 .price(groupOrder.getPrice())
                 .currentPeople(groupOrder.getCurrentPeople())
                 .maxPeople(groupOrder.getMaxPeople())
