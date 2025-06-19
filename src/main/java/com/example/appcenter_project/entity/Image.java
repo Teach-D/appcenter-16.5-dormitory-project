@@ -24,11 +24,15 @@ public class Image {
     @Column(nullable = false)
     private Boolean isDefault = false;
 
+    @Column(nullable = false)
+    private Long boardId;
+
     @Builder
-    public Image(String filePath, ImageType imageType, Boolean isDefault) {
+    public Image(String filePath, ImageType imageType, Boolean isDefault, Long boardId) {
         this.filePath = filePath;
         this.imageType = imageType;
         this.isDefault = isDefault;
+        this.boardId = boardId;
     }
 
     public void updateFilePath(String filePath) {
