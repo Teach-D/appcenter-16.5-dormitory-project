@@ -17,6 +17,7 @@ import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.exception.CustomException;
+import com.example.appcenter_project.mapper.GroupOrderMapper;
 import com.example.appcenter_project.repository.groupOrder.GroupOrderChatRoomRepository;
 import com.example.appcenter_project.repository.groupOrder.GroupOrderCommentRepository;
 import com.example.appcenter_project.repository.groupOrder.GroupOrderRepository;
@@ -57,6 +58,7 @@ public class GroupOrderService {
     private final UserGroupOrderChatRoomRepository userGroupOrderChatRoomRepository;
     private final GroupOrderCommentRepository groupOrderCommentRepository;
     private final ImageRepository imageRepository;
+    private final GroupOrderMapper groupOrderMapper;
 
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto) {
         // GroupOrder 저장
@@ -111,11 +113,11 @@ public class GroupOrderService {
 
         GroupOrder groupOrder = RequestGroupOrderDto.dtoToEntity(requestGroupOrderDto, user);
 
-        saveImages(groupOrder, images);
-
         user.getGroupOrderList().add(groupOrder);
 
         groupOrderRepository.save(groupOrder);
+
+        saveImages(groupOrder, images);
 
         // GroupOrderChatRoom 저장
         GroupOrderChatRoom groupOrderChatRoom = new GroupOrderChatRoom(groupOrder.getTitle());
@@ -154,6 +156,7 @@ public class GroupOrderService {
                             .filePath(destinationFile.getAbsolutePath())
                             .isDefault(false)
                             .imageType(ImageType.GROUP_ORDER)
+                            .boardId(groupOrder.getId())
                             .build();
 
                     imageRepository.save(image);
@@ -224,10 +227,6 @@ public class GroupOrderService {
     }
 
     public List<ResponseGroupOrderDto> findGroupOrders(Long userId, GroupOrderSort sort, GroupOrderType type, Optional<String> search) {
-        Specification<GroupOrder> spec = buildSpecification(type, search);
-        Sort sortOption = getSortOption(sort);
-
-        // 검색어가 존재할 경우 유저의 검색 기록에 추가
         search.filter(s -> !s.isBlank())
                 .ifPresent(keyword -> {
                     User user = userRepository.findById(userId)
@@ -235,10 +234,11 @@ public class GroupOrderService {
                     user.addSearchKeyword(keyword);
                 });
 
-        List<GroupOrder> groupOrders = groupOrderRepository.findAll(spec, sortOption);
-        return groupOrders.stream()
-                .map(ResponseGroupOrderDto::entityToDto)
-                .collect(Collectors.toList());
+        String searchKeyword = search.filter(s -> !s.isBlank()).orElse(null);
+        String typeParam = (type == GroupOrderType.ALL) ? "ALL" : type.name();
+        String sortParam = sort.name();
+
+        return groupOrderMapper.findGroupOrders(typeParam, searchKeyword, sortParam);
     }
 
     public ResponseGroupOrderDetailDto updateGroupOrder(Long userId, Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto) {

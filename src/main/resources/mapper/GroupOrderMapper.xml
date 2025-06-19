@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.appcenter_project.mapper.GroupOrderMapper">
+
+    <resultMap id="GroupOrderResultMap" type="com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="type" column="group_order_type"/>
+        <result property="createDate" column="create_date"/>
+        <result property="filePath" column="file_path"/>
+
+        <result property="price" column="price"/>
+        <result property="currentPeople" column="current_people"/>
+        <result property="maxPeople" column="max_people"/>
+        <result property="deadline" column="deadline"/>
+    </resultMap>
+
+    <select id="findGroupOrders" resultMap="GroupOrderResultMap">
+        SELECT
+            go.id,
+            go.title,
+            go.group_order_type,
+            go.price,
+            go.link,
+            go.current_people,
+            go.max_people,
+            go.deadline,
+            go.group_order_like,
+            go.description,
+            go.created_date,
+            img.file_path
+        FROM group_order go
+        LEFT JOIN (
+            SELECT *
+            FROM image i
+            WHERE i.id IN (
+                SELECT MIN(id)
+                FROM image
+                GROUP BY board_id
+            )
+        ) img ON go.id = img.board_id
+        <where>
+            <if test="groupOrderType != null and groupOrderType != 'ALL'">
+                go.group_order_type = #{groupOrderType}
+            </if>
+            <if test="search != null and search != ''">
+                AND go.title LIKE CONCAT('%', #{search}, '%')
+            </if>
+        </where>
+
+        <choose>
+            <when test="sort == 'PRICE'">
+                ORDER BY go.price ASC
+            </when>
+            <when test="sort == 'POPULARITY'">
+                ORDER BY go.group_order_like DESC
+            </when>
+            <otherwise>
+                ORDER BY go.deadline ASC
+            </otherwise>
+        </choose>
+    </select>
+
+</mapper>
