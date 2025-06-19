@@ -37,9 +37,7 @@ public class ResponseTipDto extends ResponseBoardDto {
                 .type("TIP")
                 .content(tip.getContent())
                 .tipLikeCount(tip.getTipLike())
-                .tipCommentCount(
-                        tip.getTipCommentList() != null ? tip.getTipCommentList().size() : 0
-                )
+                .tipCommentCount(tip.getTipCommentCount())
                 .createTime(tip.getCreatedDate())
                 .fileName(fileName)
                 .build();
