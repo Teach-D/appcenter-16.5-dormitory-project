@@ -9,9 +9,9 @@ import java.time.LocalDateTime;
 @Getter
 public abstract class ResponseBoardDto {
 
-    private Long boardId;
+    private Long id;
     private String title;
     private String type;
-    private LocalDateTime createTime;
-    private String fileName;
+    private LocalDateTime createDate;
+    private String filePath;
 }
