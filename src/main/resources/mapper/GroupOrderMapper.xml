@@ -3,7 +3,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.appcenter_project.mapper.GroupOrderMapper">
 
-    <resultMap id="GroupOrderResultMap" type="com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto">
+    <resultMap id="groupOrderResultMap" type="com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto">
         <id property="id" column="id"/>
         <result property="title" column="title"/>
         <result property="type" column="group_order_type"/>
@@ -16,7 +16,7 @@
         <result property="deadline" column="deadline"/>
     </resultMap>
 
-    <select id="findGroupOrders" resultMap="GroupOrderResultMap">
+    <select id="findGroupOrders" resultMap="groupOrderResultMap">
         SELECT
             go.id,
             go.title,
@@ -60,6 +60,63 @@
                 ORDER BY go.deadline ASC
             </otherwise>
         </choose>
+    </select>
+
+    <resultMap id="groupOrderDetailMap" type="com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDetailDto">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="deadline" column="deadline"/>
+        <result property="createDate" column="create_date"/>
+        <result property="groupOrderType" column="group_order_type"/>
+        <result property="price" column="price"/>
+        <result property="currentPeople" column="current_people"/>
+        <result property="maxPeople" column="max_people"/>
+        <result property="groupOrderLike" column="group_order_like"/>
+        <result property="description" column="description"/>
+        <result property="link" column="link"/>
+
+        <!-- 좋아요 누른 유저 id -->
+        <collection property="groupOrderLikeUserList" ofType="Long" javaType="java.util.List">
+            <result column="like_user_id"/>
+        </collection>
+
+        <!-- 댓글 -->
+        <collection property="groupOrderCommentDtoList"
+                    ofType="com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderCommentDto"
+                    javaType="java.util.List">
+            <id property="groupOrderCommentId" column="group_order_comment_id"/>
+            <result property="userId" column="user_id"/>
+            <result property="reply" column="reply"/>
+            <result property="parentId" column="parent_id"/>
+        </collection>
+    </resultMap>
+
+    <select id="findGroupOrderById" resultMap="groupOrderDetailMap">
+        SELECT
+            go.id,
+            go.title,
+            go.deadline,
+            go.created_date,
+            go.group_order_type,
+            go.price,
+            go.current_people,
+            go.max_people,
+            go.group_order_like,
+            go.description,
+            go.link,
+
+            gol.user_id AS like_user_id,
+
+            goc.id AS group_order_comment_id,
+            goc.user_id,
+            goc.reply,
+            goc.parent_id
+
+        FROM
+            group_order go
+    LEFT JOIN group_order_like gol ON go.id = gol.group_order_id
+            LEFT JOIN group_order_comment goc ON go.id = goc.group_order_id
+        WHERE go.id = #{groupOrderId}
     </select>
 
 </mapper>

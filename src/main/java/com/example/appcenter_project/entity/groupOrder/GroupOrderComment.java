@@ -25,7 +25,7 @@ public class GroupOrderComment extends BaseTimeEntity {
     private boolean isDeleted = false;
 
     @ManyToOne
-    @JoinColumn(name = "group_order_board_id")
+    @JoinColumn(name = "group_order_id")
     private GroupOrder groupOrder;
 
     @ManyToOne

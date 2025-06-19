@@ -12,11 +12,11 @@ import java.util.List;
 @Getter
 public class ResponseGroupOrderDetailDto {
 
-    private Long groupOrderId;
+    private Long id;
     private String title;
     private String deadline;
-    private String createTime;
-    private String category;
+    private String createDate;
+    private String groupOrderType;
     private int price;
     private int currentPeople;
     private int maxPeople;
@@ -32,11 +32,11 @@ public class ResponseGroupOrderDetailDto {
 
     public static ResponseGroupOrderDetailDto detailEntityToDto(GroupOrder groupOrder, List<ResponseGroupOrderCommentDto> responseGroupOrderCommentDto, List<Long> groupOrderLikeUserList) {
         return ResponseGroupOrderDetailDto.builder()
-                .groupOrderId(groupOrder.getId())
+                .id(groupOrder.getId())
                 .title(groupOrder.getTitle())
                 .deadline(String.valueOf(groupOrder.getDeadline()))
-                .createTime(String.valueOf(groupOrder.getCreatedDate()))
-                .category(String.valueOf(groupOrder.getGroupOrderType()))
+                .createDate(String.valueOf(groupOrder.getCreatedDate()))
+                .groupOrderType(String.valueOf(groupOrder.getGroupOrderType()))
                 .price(groupOrder.getPrice())
                 .currentPeople(groupOrder.getCurrentPeople())
                 .maxPeople(groupOrder.getMaxPeople())
@@ -46,5 +46,9 @@ public class ResponseGroupOrderDetailDto {
                 .groupOrderCommentDtoList(responseGroupOrderCommentDto)
                 .groupOrderLikeUserList(groupOrderLikeUserList)
                 .build();
+    }
+
+    public void updateGroupOrderCommentDtoList(List<ResponseGroupOrderCommentDto> groupedList) {
+        this.groupOrderCommentDtoList = groupedList;
     }
 }
