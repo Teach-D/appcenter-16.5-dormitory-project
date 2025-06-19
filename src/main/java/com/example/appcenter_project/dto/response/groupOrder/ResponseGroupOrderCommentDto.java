@@ -16,6 +16,7 @@ public class ResponseGroupOrderCommentDto {
     private Long groupOrderCommentId;
     private Long userId;
     private String reply;
+    private Long parentId;
 
     @Builder.Default
     private List<ResponseGroupOrderCommentDto> childGroupOrderCommentList = new ArrayList<>();
