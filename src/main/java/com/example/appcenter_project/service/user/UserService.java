@@ -61,6 +61,7 @@ public class UserService {
                     .studentNumber(signupUser.getStudentNumber())
                     .image(defaultImage)
                     .role(Role.ROLE_USER)
+                    .penalty(0)
                     .build();
             userRepository.save(user);
         }
@@ -123,7 +124,7 @@ public class UserService {
         }
 
         // 최신순 정렬 (createTime이 가장 최근인 것부터)
-        responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateTime).reversed());
+        responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateDate).reversed());
 
         return responseBoardDtoList;
     }
@@ -145,7 +146,7 @@ public class UserService {
         }
 
         // 최신순 정렬 (createTime이 가장 최근인 것부터)
-        responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateTime).reversed());
+        responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateDate).reversed());
 
         return responseBoardDtoList;
     }
