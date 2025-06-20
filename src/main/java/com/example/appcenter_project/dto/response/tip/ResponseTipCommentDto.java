@@ -13,11 +13,13 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-public class ResponseTipCommentDto {
+public class
+ResponseTipCommentDto {
 
     private Long tipCommentId;
     private Long userId;
     private String reply;
+    private Long parentId;
 
     @Builder.Default
     private List<ResponseTipCommentDto> childTipCommentList = new ArrayList<>();
