@@ -12,7 +12,7 @@ import java.util.List;
 @Getter
 public class ResponseTipDetailDto {
 
-    private Long tipId;
+    private Long id;
     private String title;
     private String content;
     private Integer tipLikeCount;
@@ -27,7 +27,7 @@ public class ResponseTipDetailDto {
 
     public static ResponseTipDetailDto entityToDto(Tip tip, List<ResponseTipCommentDto> responseTipCommentDtoList, List<Long> tipLikeUserList) {
         return ResponseTipDetailDto.builder()
-                .tipId(tip.getId())
+                .id(tip.getId())
                 .createTime(String.valueOf(tip.getCreatedDate()))
                 .title(tip.getTitle())
                 .content(tip.getContent())
