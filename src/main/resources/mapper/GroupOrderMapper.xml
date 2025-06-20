@@ -35,8 +35,9 @@
             SELECT *
             FROM image i
             WHERE i.id IN (
-                SELECT MIN(id)
+                SELECT MIN(id) <!--하나만 선택-->
                 FROM image
+                WHERE image.image_type = 'GROUP_ORDER'
                 GROUP BY board_id
             )
         ) img ON go.id = img.board_id
@@ -60,6 +61,51 @@
                 ORDER BY go.deadline ASC
             </otherwise>
         </choose>
+    </select>
+
+    <select id="findLikeGroupOrders" resultMap="groupOrderResultMap">
+        SELECT
+            go.id,
+            go.title,
+            'GROUP_ORDER' AS type,
+            gol.created_date AS create_date,
+            (
+                SELECT i.file_path
+                FROM image i
+                WHERE i.image_type = 'GROUP_ORDER' AND i.board_id = go.id
+                LIMIT 1 <!--하나만 선택-->
+            ) AS file_path,
+
+            go.deadline,
+            go.price,
+            go.current_people,
+            go.max_people
+
+        FROM group_order_like gol
+        LEFT JOIN group_order go ON gol.group_order_id = go.id
+        WHERE gol.user_id = #{userId}
+    </select>
+
+    <select id="findGroupOrdersByUserId" resultMap="groupOrderResultMap">
+        SELECT
+        go.id,
+        go.title,
+        'GROUP_ORDER' AS type,
+        go.created_date AS create_date,
+        (
+        SELECT i.file_path
+        FROM image i
+        WHERE i.image_type = 'GROUP_ORDER' AND i.board_id = go.id
+        LIMIT 1 <!--하나만 선택-->
+        ) AS file_path,
+
+        go.deadline,
+        go.price,
+        go.current_people,
+        go.max_people
+
+        FROM group_order go
+        WHERE go.user_id = #{userId}
     </select>
 
     <resultMap id="groupOrderDetailMap" type="com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDetailDto">

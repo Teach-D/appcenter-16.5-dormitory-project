@@ -4,6 +4,7 @@ import com.example.appcenter_project.dto.request.user.RequestUserDto;
 import com.example.appcenter_project.dto.request.user.SignupUser;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
 import com.example.appcenter_project.dto.response.like.ResponseLikeDto;
+import com.example.appcenter_project.dto.response.tip.ResponseTipDetailDto;
 import com.example.appcenter_project.dto.response.tip.ResponseTipDto;
 import com.example.appcenter_project.dto.response.user.ResponseBoardDto;
 import com.example.appcenter_project.dto.response.user.ResponseLoginDto;
@@ -17,6 +18,8 @@ import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.enums.user.Role;
 import com.example.appcenter_project.exception.CustomException;
+import com.example.appcenter_project.mapper.GroupOrderMapper;
+import com.example.appcenter_project.mapper.TipMapper;
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.like.GroupOrderLikeRepository;
 import com.example.appcenter_project.repository.user.SchoolLoginRepository;
@@ -48,6 +51,8 @@ public class UserService {
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final SchoolLoginRepository schoolLoginRepository;
+    private final GroupOrderMapper groupOrderMapper;
+    private final TipMapper tipMapper;
 
     public ResponseLoginDto saveUser(SignupUser signupUser) {
         boolean existsByStudentNumber = userRepository.existsByStudentNumber(signupUser.getStudentNumber());
@@ -106,22 +111,13 @@ public class UserService {
     }
 
     public List<ResponseBoardDto> findLikeByUserId(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-
         List<ResponseBoardDto> responseBoardDtoList = new ArrayList<>();
 
-        for (TipLike tipLike : user.getTipLikeList()) {
-            Tip tip = tipLike.getTip();
-            ResponseTipDto responseTipDto = ResponseTipDto.entityToDto(tip);
-            responseBoardDtoList.add(responseTipDto);
-        }
+        List<ResponseGroupOrderDto> likeGroupOrders = groupOrderMapper.findLikeGroupOrders(userId);
+        List<ResponseTipDto> likeTips = tipMapper.findLikeTips(userId);
 
-        for (GroupOrderLike groupOrderLike : user.getGroupOrderLikeList()) {
-            GroupOrder groupOrder = groupOrderLike.getGroupOrder();
-            ResponseGroupOrderDto responseTipDto = ResponseGroupOrderDto.entityToDto(groupOrder);
-            responseBoardDtoList.add(responseTipDto);
-        }
+        responseBoardDtoList.addAll(likeGroupOrders);
+        responseBoardDtoList.addAll(likeTips);
 
         // 최신순 정렬 (createTime이 가장 최근인 것부터)
         responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateDate).reversed());
@@ -130,20 +126,13 @@ public class UserService {
     }
 
     public List<ResponseBoardDto> findBoardByUserId(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-
         List<ResponseBoardDto> responseBoardDtoList = new ArrayList<>();
 
-        for (Tip tip : user.getTipList()) {
-            ResponseTipDto responseTipDto = ResponseTipDto.entityToDto(tip);
-            responseBoardDtoList.add(responseTipDto);
-        }
+        List<ResponseGroupOrderDto> groupOrdersByUserId = groupOrderMapper.findGroupOrdersByUserId(userId);
+        List<ResponseTipDto> tipsByUserId = tipMapper.findTipsByUserId(userId);
 
-        for (GroupOrder groupOrder : user.getGroupOrderList()) {
-            ResponseGroupOrderDto responseTipDto = ResponseGroupOrderDto.entityToDto(groupOrder);
-            responseBoardDtoList.add(responseTipDto);
-        }
+        responseBoardDtoList.addAll(groupOrdersByUserId);
+        responseBoardDtoList.addAll(tipsByUserId);
 
         // 최신순 정렬 (createTime이 가장 최근인 것부터)
         responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateDate).reversed());

@@ -14,5 +14,6 @@ public interface TipMapper {
 
     List<ResponseTipDto> findTips();
     ResponseTipDetailDto findTip(@Param("tipId") Long tipId);
-
+    List<ResponseTipDto> findLikeTips(@Param("userId") Long userId);
+    List<ResponseTipDto> findTipsByUserId(@Param("userId") Long userId);
 }
