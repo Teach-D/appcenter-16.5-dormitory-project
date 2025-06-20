@@ -69,7 +69,7 @@ public class User extends BaseTimeEntity {
     @OneToMany(mappedBy = "user")
     private List<GroupOrder> groupOrderList = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", orphanRemoval = true)
     private List<UserGroupOrderChatRoom> userGroupOrderChatRoomList = new ArrayList<>();
 
     @Builder

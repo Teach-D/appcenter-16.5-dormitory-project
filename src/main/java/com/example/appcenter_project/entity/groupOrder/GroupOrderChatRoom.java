@@ -21,10 +21,10 @@ public class GroupOrderChatRoom extends BaseTimeEntity {
     @Column(nullable = false, unique = true, length = 30)
     private String title;
 
-    @OneToMany(mappedBy = "groupOrderChatRoom")
+    @OneToMany(mappedBy = "groupOrderChatRoom", orphanRemoval = true)
     private List<UserGroupOrderChatRoom> userGroupOrderChatRoomList = new ArrayList<>();
 
-    @OneToMany(mappedBy = "groupOrderChatRoom")
+    @OneToMany(mappedBy = "groupOrderChatRoom", orphanRemoval = true)
     private List<GroupOrderChat> groupOrderChatList = new ArrayList<>();
 
     @OneToOne(mappedBy = "groupOrderChatRoom")
