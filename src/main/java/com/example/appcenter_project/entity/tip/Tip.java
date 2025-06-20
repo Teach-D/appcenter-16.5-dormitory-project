@@ -28,8 +28,9 @@ public class Tip extends BaseTimeEntity {
     @Column(nullable = false, length = 100)
     private String content;
     private Integer tipLike;
+    private Integer tipCommentCount;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
@@ -48,6 +49,7 @@ public class Tip extends BaseTimeEntity {
         this.content = content;
         this.user = user;
         this.tipLike = 0;
+        this.tipCommentCount = 0;
         this.imageList.add(image);
     }
 
@@ -62,5 +64,13 @@ public class Tip extends BaseTimeEntity {
 
     public Integer minusLike() {
         return this.tipLike -= 1;
+    }
+
+    public void plusTipCommentCount() {
+        this.tipCommentCount += 1;
+    }
+
+    public void minusTipCommentCount() {
+        this.tipCommentCount -= 1;
     }
 }

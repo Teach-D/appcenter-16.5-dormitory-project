@@ -6,7 +6,7 @@
     <resultMap id="groupOrderResultMap" type="com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto">
         <id property="id" column="id"/>
         <result property="title" column="title"/>
-        <result property="type" column="group_order_type"/>
+        <result property="type" column="type"/>
         <result property="createDate" column="create_date"/>
         <result property="filePath" column="file_path"/>
 
@@ -20,7 +20,7 @@
         SELECT
             go.id,
             go.title,
-            go.group_order_type,
+            'GROUP_ORDER' as type,
             go.price,
             go.link,
             go.current_people,

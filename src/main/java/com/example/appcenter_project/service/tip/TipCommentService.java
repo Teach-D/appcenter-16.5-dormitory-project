@@ -58,6 +58,9 @@ public class TipCommentService {
         }
 
         tipCommentRepository.save(tipComment);
+
+        tip.plusTipCommentCount();
+
         return ResponseTipCommentDto.entityToDto(tipComment, user);
     }
 
@@ -87,6 +90,9 @@ public class TipCommentService {
 
     public void deleteTipComment(Long userId, Long tipCommentId) {
         TipComment tipComment = tipCommentRepository.findByIdAndUserId(tipCommentId, userId).orElseThrow(() -> new CustomException(TIP_COMMENT_NOT_OWNED_BY_USER));
+        Tip tip = tipComment.getTip();
+
         tipComment.updateIsDeleted();
+        tip.minusTipCommentCount();
     }
 }

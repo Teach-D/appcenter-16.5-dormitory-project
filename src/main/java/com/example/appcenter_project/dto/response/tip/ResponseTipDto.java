@@ -17,6 +17,14 @@ public class ResponseTipDto extends ResponseBoardDto {
     private Integer tipLikeCount;
     private Integer tipCommentCount;
 
+    public ResponseTipDto(Long id, String title, String type, LocalDateTime createDate, String filePath,
+                          String content, Integer tipLikeCount, Integer tipCommentCount) {
+        super(id, title, type, createDate, filePath);
+        this.content = content;
+        this.tipLikeCount = tipLikeCount;
+        this.tipCommentCount = tipCommentCount;
+    }
+
     @Builder
     public ResponseTipDto(Long boardId, String title, String content, Integer tipLikeCount, Integer tipCommentCount,
                           LocalDateTime createTime, String type, String fileName) {
@@ -37,9 +45,7 @@ public class ResponseTipDto extends ResponseBoardDto {
                 .type("TIP")
                 .content(tip.getContent())
                 .tipLikeCount(tip.getTipLike())
-                .tipCommentCount(
-                        tip.getTipCommentList() != null ? tip.getTipCommentList().size() : 0
-                )
+                .tipCommentCount(tip.getTipCommentCount())
                 .createTime(tip.getCreatedDate())
                 .fileName(fileName)
                 .build();

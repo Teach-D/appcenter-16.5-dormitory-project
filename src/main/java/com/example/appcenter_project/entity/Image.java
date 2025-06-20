@@ -24,7 +24,6 @@ public class Image {
     @Column(nullable = false)
     private Boolean isDefault = false;
 
-    @Column(nullable = false)
     private Long boardId;
 
     @Builder
