@@ -31,9 +31,51 @@
             t.tip_like,
             t.tip_comment_count
         FROM tip t
-
     </select>
 
+    <resultMap id="tipDetailMap" type="com.example.appcenter_project.dto.response.tip.ResponseTipDetailDto">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="tipLikeCount" column="tip_like"/>
+        <result property="createDate" column="created_date"/>
 
+        <!-- 좋아요 누른 유저 id -->
+        <collection property="tipLikeUserList" ofType="Long" javaType="java.util.List">
+            <result column="like_user_id"/>
+        </collection>
 
+        <!-- 댓글 -->
+        <collection property="tipCommentDtoList"
+                    ofType="com.example.appcenter_project.dto.response.tip.ResponseTipCommentDto"
+                    javaType="java.util.List">
+            <id property="tipCommentId" column="tip_comment_id"/>
+            <result property="userId" column="user_id"/>
+            <result property="reply" column="reply"/>
+            <result property="parentId" column="parent_id"/>
+            <result property="isDeleted" column="is_deleted"/>
+        </collection>
+    </resultMap>
+
+    <select id="findTip" resultMap="tipDetailMap">
+        SELECT
+            t.id,
+            t.title,
+            t.content,
+            t.tip_like,
+            t.created_date,
+
+            tl.user_id AS like_user_id,
+
+            tc.id AS tip_comment_id,
+            tc.user_id,
+            tc.reply,
+            tc.parent_id,
+            tc.is_deleted
+
+        FROM tip t
+        LEFT JOIN tip_like tl ON t.id = tl.tip_id
+        LEFT JOIN tip_comment tc ON t.id =tc.tip_id
+        WHERE t.id = #{tipId}
+    </select>
 </mapper>

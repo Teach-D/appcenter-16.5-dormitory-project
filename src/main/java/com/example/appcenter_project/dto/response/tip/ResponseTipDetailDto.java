@@ -38,4 +38,8 @@ public class ResponseTipDetailDto {
     }
 
 
+    public void updateTipCommentDtoList(List<ResponseTipCommentDto> topLevelComments) {
+        this.tipCommentDtoList = topLevelComments;
+    }
+
 }

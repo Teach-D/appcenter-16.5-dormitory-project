@@ -13,13 +13,13 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-public class
-ResponseTipCommentDto {
+public class ResponseTipCommentDto {
 
     private Long tipCommentId;
     private Long userId;
     private String reply;
     private Long parentId;
+    private Boolean isDeleted;
 
     @Builder.Default
     private List<ResponseTipCommentDto> childTipCommentList = new ArrayList<>();
@@ -39,5 +39,13 @@ ResponseTipCommentDto {
                 .reply(tip.getContent())
                 .childTipCommentList(responseTipCommentDtoList)
                 .build();
+    }
+
+    public void updateReply(String reply) {
+        this.reply = reply;
+    }
+
+    public void updateChildTipCommentList(List childTipCommentList) {
+        this.childTipCommentList = childTipCommentList;
     }
 }
