@@ -34,7 +34,7 @@ public class Tip extends BaseTimeEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @OneToMany
+    @OneToMany(orphanRemoval = true)
     private List<Image> imageList = new ArrayList<>();
 
     @OneToMany(mappedBy = "tip", orphanRemoval = true)
