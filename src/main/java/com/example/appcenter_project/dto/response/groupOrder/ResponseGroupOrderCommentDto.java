@@ -17,6 +17,7 @@ public class ResponseGroupOrderCommentDto {
     private Long userId;
     private String reply;
     private Long parentId;
+    private Boolean isDeleted;
 
     @Builder.Default
     private List<ResponseGroupOrderCommentDto> childGroupOrderCommentList = new ArrayList<>();
@@ -29,4 +30,11 @@ public class ResponseGroupOrderCommentDto {
                 .build();
     }
 
+    public void updateReply(String reply) {
+        this.reply = reply;
+    }
+
+    public void updateChildGroupOrderCommentList(List childGroupOrderCommentList) {
+        this.childGroupOrderCommentList = childGroupOrderCommentList;
+    }
 }

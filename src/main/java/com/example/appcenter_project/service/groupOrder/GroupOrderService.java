@@ -84,41 +84,41 @@ public class GroupOrderService {
     }
 
     public ResponseGroupOrderDetailDto findGroupOrderById(Long groupOrderId) {
-        ResponseGroupOrderDetailDto dto = groupOrderMapper.findGroupOrderById(groupOrderId);
-
-        List<ResponseGroupOrderCommentDto> flatList = dto.getGroupOrderCommentDtoList();
-        List<ResponseGroupOrderCommentDto> groupedList = groupCommentHierarchy(flatList);
-        dto.updateGroupOrderCommentDtoList(groupedList); // 트리 구조로 다시 세팅
-
-        return dto;
-    }
-
-    private List<ResponseGroupOrderCommentDto> groupCommentHierarchy(List<ResponseGroupOrderCommentDto> flatList) {
-        Map<Long, ResponseGroupOrderCommentDto> commentMap = new HashMap<>();
-        List<ResponseGroupOrderCommentDto> topLevelComments = new ArrayList<>();
-
-        // 먼저 map 에 commentId로 매핑
-        for (ResponseGroupOrderCommentDto comment : flatList) {
-            commentMap.put(comment.getGroupOrderCommentId(), comment);
+        ResponseGroupOrderDetailDto flatDto = groupOrderMapper.findGroupOrderById(groupOrderId);
+        if (flatDto == null) {
+            throw new CustomException(GROUP_ORDER_NOT_FOUND);
         }
 
-        // 부모/자식 구조 구성
-        for (ResponseGroupOrderCommentDto comment : flatList) {
-            Long parentId = comment.getParentId();
-            if (parentId == null) {
-                // 부모 댓글이면 상위 리스트에 추가
+        List<ResponseGroupOrderCommentDto> flatComments = flatDto.getGroupOrderCommentDtoList();
+        Map<Long, ResponseGroupOrderCommentDto> parentMap = new LinkedHashMap<>();
+        List<ResponseGroupOrderCommentDto> topLevelComments = new ArrayList<>();
+
+        for (ResponseGroupOrderCommentDto comment : flatComments) {
+            // 삭제된 댓글 처리
+            if (Boolean.TRUE.equals(comment.getIsDeleted())) {
+                comment.updateReply("삭제된 메시지입니다.");
+            }
+
+            // 계층 구조 구성
+            if (comment.getParentId() == null) {
+                comment.updateChildGroupOrderCommentList(new ArrayList<>());
+                parentMap.put(comment.getGroupOrderCommentId(), comment);
                 topLevelComments.add(comment);
             } else {
-                // 자식 댓글이면 부모에 추가
-                ResponseGroupOrderCommentDto parent = commentMap.get(parentId);
+                ResponseGroupOrderCommentDto parent = parentMap.get(comment.getParentId());
                 if (parent != null) {
+                    if (parent.getChildGroupOrderCommentList() == null) {
+                        parent.updateChildGroupOrderCommentList(new ArrayList<>());
+                    }
                     parent.getChildGroupOrderCommentList().add(comment);
                 }
             }
         }
 
-        return topLevelComments;
+        flatDto.updateGroupOrderCommentDtoList(topLevelComments);
+        return flatDto;
     }
+
 
     // 이미지와 함께 공동구매 생성
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto, List<MultipartFile> images) {

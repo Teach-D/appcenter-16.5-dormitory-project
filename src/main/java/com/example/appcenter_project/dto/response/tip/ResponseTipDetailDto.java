@@ -12,7 +12,7 @@ import java.util.List;
 @Getter
 public class ResponseTipDetailDto {
 
-    private Long tipId;
+    private Long id;
     private String title;
     private String content;
     private Integer tipLikeCount;
@@ -20,15 +20,15 @@ public class ResponseTipDetailDto {
     @Builder.Default
     private List<Long> tipLikeUserList = new ArrayList<>();
 
-    private String createTime;
+    private String createDate;
 
     @Builder.Default
     private List<ResponseTipCommentDto> tipCommentDtoList = new ArrayList<>();
 
     public static ResponseTipDetailDto entityToDto(Tip tip, List<ResponseTipCommentDto> responseTipCommentDtoList, List<Long> tipLikeUserList) {
         return ResponseTipDetailDto.builder()
-                .tipId(tip.getId())
-                .createTime(String.valueOf(tip.getCreatedDate()))
+                .id(tip.getId())
+                .createDate(String.valueOf(tip.getCreatedDate()))
                 .title(tip.getTitle())
                 .content(tip.getContent())
                 .tipLikeCount(tip.getTipLike())
@@ -37,5 +37,9 @@ public class ResponseTipDetailDto {
                 .build();
     }
 
+
+    public void updateTipCommentDtoList(List<ResponseTipCommentDto> topLevelComments) {
+        this.tipCommentDtoList = topLevelComments;
+    }
 
 }
