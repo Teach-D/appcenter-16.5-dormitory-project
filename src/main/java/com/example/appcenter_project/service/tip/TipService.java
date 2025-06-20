@@ -12,6 +12,7 @@ import com.example.appcenter_project.entity.tip.TipComment;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.exception.CustomException;
+import com.example.appcenter_project.mapper.TipMapper;
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.like.TipLikeRepository;
 import com.example.appcenter_project.repository.tip.TipCommentRepository;
@@ -45,6 +46,7 @@ public class TipService {
     private final ImageRepository imageRepository;
     private final TipCommentRepository tipCommentRepository;
     private final TipLikeRepository tipLikeRepository;
+    private final TipMapper tipMapper;
 
     public void saveTip(Long userId, RequestTipDto requestTipDto, List<MultipartFile> images) {
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
@@ -168,14 +170,15 @@ public class TipService {
     }
 
     public List<ResponseTipDto> findAllTips() {
-        List<ResponseTipDto> responseTipDtoList = new ArrayList<>();
+        return tipMapper.findTips();
+/*        List<ResponseTipDto> responseTipDtoList = new ArrayList<>();
         List<Tip> tips = tipRepository.findAll();
         for (Tip tip : tips) {
             ResponseTipDto responseTipDto = ResponseTipDto.entityToDto(tip);
             responseTipDtoList.add(responseTipDto);
         }
 
-        return responseTipDtoList;
+        return responseTipDtoList;*/
     }
 
     // 하나의 tip 게시판에 있는 모든 tip 댓글 조회
