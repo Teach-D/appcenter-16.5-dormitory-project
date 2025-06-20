@@ -15,4 +15,6 @@ public interface GroupOrderMapper {
 
     ResponseGroupOrderDetailDto findGroupOrderById(@Param("groupOrderId") Long groupOrderId);
 
+    List<ResponseGroupOrderDto> findLikeGroupOrders(@Param("userId") Long userId);
+
 }

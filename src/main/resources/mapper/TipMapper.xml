@@ -24,13 +24,35 @@
             (
                 SELECT i.file_path
                 FROM image i
-                WHERE i.board_id = t.id
-                LIMIT 1
+                WHERE i.board_id = t.id AND i.image_type = 'TIP'
+                LIMIT 1 <!--하나만 선택-->
             ) AS file_path,
             SUBSTRING(t.content, 1, 10) AS content,
             t.tip_like,
             t.tip_comment_count
         FROM tip t
+    </select>
+
+    <select id="findLikeTips" resultMap="tipResultMap">
+        SELECT
+            t.id,
+            t.title,
+            'TIP' AS type,
+            tl.created_date AS create_date,
+            (
+                SELECT i.file_path
+                FROM image i
+                WHERE i.image_type = 'TIP' AND i.board_id = t.id
+                LIMIT 1 <!--하나만 선택-->
+            ) AS file_path,
+
+            SUBSTRING(t.content, 1, 10) AS content,
+            t.tip_like,
+            t.tip_comment_count
+
+        FROM tip_like tl
+            LEFT JOIN tip t ON tl.tip_id = t.id
+        WHERE tl.user_id = #{userId}
     </select>
 
     <resultMap id="tipDetailMap" type="com.example.appcenter_project.dto.response.tip.ResponseTipDetailDto">
