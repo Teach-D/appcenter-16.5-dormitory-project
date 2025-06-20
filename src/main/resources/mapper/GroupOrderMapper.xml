@@ -88,6 +88,7 @@
             <result property="userId" column="user_id"/>
             <result property="reply" column="reply"/>
             <result property="parentId" column="parent_id"/>
+            <result property="isDeleted" column="is_deleted"/>
         </collection>
     </resultMap>
 
@@ -110,7 +111,8 @@
             goc.id AS group_order_comment_id,
             goc.user_id,
             goc.reply,
-            goc.parent_id
+            goc.parent_id,
+            goc.is_deleted
 
         FROM
             group_order go
