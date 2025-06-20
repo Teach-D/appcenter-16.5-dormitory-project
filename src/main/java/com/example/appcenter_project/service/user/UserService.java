@@ -126,20 +126,13 @@ public class UserService {
     }
 
     public List<ResponseBoardDto> findBoardByUserId(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-
         List<ResponseBoardDto> responseBoardDtoList = new ArrayList<>();
 
-        for (Tip tip : user.getTipList()) {
-            ResponseTipDto responseTipDto = ResponseTipDto.entityToDto(tip);
-            responseBoardDtoList.add(responseTipDto);
-        }
+        List<ResponseGroupOrderDto> groupOrdersByUserId = groupOrderMapper.findGroupOrdersByUserId(userId);
+        List<ResponseTipDto> tipsByUserId = tipMapper.findTipsByUserId(userId);
 
-        for (GroupOrder groupOrder : user.getGroupOrderList()) {
-            ResponseGroupOrderDto responseTipDto = ResponseGroupOrderDto.entityToDto(groupOrder);
-            responseBoardDtoList.add(responseTipDto);
-        }
+        responseBoardDtoList.addAll(groupOrdersByUserId);
+        responseBoardDtoList.addAll(tipsByUserId);
 
         // 최신순 정렬 (createTime이 가장 최근인 것부터)
         responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateDate).reversed());
