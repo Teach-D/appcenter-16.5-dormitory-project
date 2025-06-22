@@ -100,5 +100,9 @@ public class RoommateCheckList {
         this.user = user; // 꼭 추가
     }
 
+    public void setUser(User user) {
+        this.user = user;
+    }
+
 
 }
