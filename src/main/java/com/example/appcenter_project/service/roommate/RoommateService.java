@@ -192,4 +192,29 @@ public class RoommateService {
                 })
                 .toList();
     }
+
+    @Transactional
+    public void deleteRoommateBoard(Long boardId, Long userId){
+        RoommateBoard board = roommateBoardRepository.findById(boardId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
+
+        if(!board.getUser().getId().equals(userId)){
+            throw new CustomException(ErrorCode.ROOMMATE_UNAUTHORIZED);
+        }
+
+        RoommateCheckList checkList = board.getRoommateCheckList();
+        User user = board.getUser();
+
+
+        // 1. 관계 끊기
+        checkList.setUser(null);             // 체크리스트 → 유저 끊기
+        user.setRoommateCheckList(null);     // 유저 → 체크리스트 끊기
+
+        board.setUser(null);                 // 보드 → 유저 끊기
+        board.setRoommateCheckList(null);    // 보드 → 체크리스트 끊기
+        user.setRoommateBoard(null);         // 유저 → 보드 끊기
+
+        // 2. 삭제 (orphanRemoval 덕분에 체크리스트도 같이 삭제됨)
+        roommateBoardRepository.delete(board);
+    }
 }
