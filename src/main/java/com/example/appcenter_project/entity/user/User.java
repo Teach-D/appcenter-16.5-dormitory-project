@@ -145,4 +145,13 @@ public class User extends BaseTimeEntity {
         }
     }
 
+    public void setRoommateCheckList(RoommateCheckList roommateCheckList) {
+        this.roommateCheckList = roommateCheckList;
+    }
+
+    public void setRoommateBoard(RoommateBoard roommateBoard) {
+        this.roommateBoard = roommateBoard;
+    }
+
+
 }
