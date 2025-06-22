@@ -25,7 +25,7 @@ public class RoommateBoard extends BaseTimeEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "roommate_checklist_id")
     private RoommateCheckList roommateCheckList;
 
@@ -48,5 +48,15 @@ public class RoommateBoard extends BaseTimeEntity {
         this.roommateBoardLike = roommateBoardLike;
         this.roommateCheckList = roommateCheckList;
     }
+
+    public void setRoommateCheckList(RoommateCheckList roommateCheckList) {
+        this.roommateCheckList = roommateCheckList;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+
 
 }
