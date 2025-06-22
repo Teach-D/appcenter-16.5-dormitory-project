@@ -82,4 +82,24 @@ public interface RoommateApiSpecification {
             @Parameter(hidden = true) CustomUserDetails userDetails
     );
 
+    @Operation(
+            summary = "룸메이트 게시글 삭제",
+            description = "현재 로그인한 사용자가 작성한 룸메이트 게시글을 삭제합니다..",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "삭제 성공",
+                            content = @Content(mediaType = "application/json")),
+                    @ApiResponse(responseCode = "403", description = "작성자가 아니므로 삭제할 수 없습니다 (ROOMMATE_UNAUTHORIZED)",
+                            content = @Content),
+                    @ApiResponse(responseCode = "404", description = "게시글을 찾을 수 없습니다 (ROOMMATE_BOARD_NOT_FOUND)",
+                            content = @Content)
+            }
+    )
+    ResponseEntity<String> deleteRoommateBoard(
+            @Parameter(description = "삭제할 게시글 ID", example = "1")
+            @PathVariable Long boardId,
+
+            @Parameter(hidden = true)
+            CustomUserDetails userDetails
+    );
+
 }
