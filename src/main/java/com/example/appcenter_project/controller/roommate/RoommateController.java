@@ -3,11 +3,8 @@ package com.example.appcenter_project.controller.roommate;
 import com.example.appcenter_project.dto.request.roommate.RequestRoommateFormDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommatePostDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommateSimilarityDto;
-import com.example.appcenter_project.entity.roommate.RoommateBoard;
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.roommate.RoommateService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -49,5 +46,13 @@ public class RoommateController implements RoommateApiSpecification{
         Long userId = userDetails.getId(); // 로그인된 사용자의 ID 가져오기
         List<ResponseRoommateSimilarityDto> similarList = roommateService.getSimilarRoommateBoards(userId);
         return ResponseEntity.ok(similarList);
+    }
+
+    @DeleteMapping("/{boardId}")
+    public ResponseEntity<String> deleteRoommateBoard(@PathVariable Long boardId,
+                                                      @AuthenticationPrincipal CustomUserDetails userDetails){
+        Long userId = userDetails.getId();
+        roommateService.deleteRoommateBoard(boardId, userId);
+        return ResponseEntity.ok("삭제 완료");
     }
 }
