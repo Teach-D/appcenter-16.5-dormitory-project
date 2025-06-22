@@ -208,23 +208,7 @@ public class RoommateService {
         }
 
         try {
-            checkList.update(
-                    requestDto.getTitle(),
-                    requestDto.getDormPeriod(),
-                    requestDto.getDormType(),
-                    requestDto.getCollege(),
-                    requestDto.getMbti(),
-                    requestDto.getSmoking(),
-                    requestDto.getSnoring(),
-                    requestDto.getToothGrind(),
-                    requestDto.getSleeper(),
-                    requestDto.getShowerHour(),
-                    requestDto.getShowerTime(),
-                    requestDto.getBedTime(),
-                    requestDto.getArrangement(),
-                    requestDto.getComment()
-            );
-            board.updateTitle(requestDto.getTitle());
+            checkList.update(requestDto);
         } catch (Exception e) {
             throw new CustomException(ErrorCode.ROOMMATE_CHECKLIST_UPDATE_FAILED);
         }
