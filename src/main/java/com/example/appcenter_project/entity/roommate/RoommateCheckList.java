@@ -1,5 +1,6 @@
 package com.example.appcenter_project.entity.roommate;
 
+import com.example.appcenter_project.dto.request.roommate.RequestRoommateFormDto;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.roommate.*;
 import com.example.appcenter_project.enums.user.College;
@@ -100,24 +101,21 @@ public class RoommateCheckList {
         this.user = user; // 꼭 추가
     }
 
-    public void update(String title, Set<DormDay> dormPeriod, DormType dormType, College college, String mbti,
-                       SmokingType smoking, SnoringType snoring, TeethGrindingType toothGrind,
-                       SleepSensitivityType sleeper, ShowerTimeType showerHour, ShowerDurationType showerTime,
-                       BedTimeType bedTime, CleanlinessType arrangement, String comment) {
-        this.title = title;
-        this.dormPeriod = dormPeriod;
-        this.dormType = dormType;
-        this.college = college;
-        this.mbti = mbti;
-        this.smoking = smoking;
-        this.snoring = snoring;
-        this.toothGrind = toothGrind;
-        this.sleeper = sleeper;
-        this.showerHour = showerHour;
-        this.showerTime = showerTime;
-        this.bedTime = bedTime;
-        this.arrangement = arrangement;
-        this.comment = comment;
+    public void update(RequestRoommateFormDto dto) {
+        this.title = dto.getTitle();
+        this.dormPeriod = dto.getDormPeriod();
+        this.dormType = dto.getDormType();
+        this.college = dto.getCollege();
+        this.mbti = dto.getMbti();
+        this.smoking = dto.getSmoking();
+        this.snoring = dto.getSnoring();
+        this.toothGrind = dto.getToothGrind();
+        this.sleeper = dto.getSleeper();
+        this.showerHour = dto.getShowerHour();
+        this.showerTime = dto.getShowerTime();
+        this.bedTime = dto.getBedTime();
+        this.arrangement = dto.getArrangement();
+        this.comment = dto.getComment();
     }
 
 
