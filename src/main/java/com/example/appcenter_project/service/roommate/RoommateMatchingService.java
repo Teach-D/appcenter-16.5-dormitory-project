@@ -81,8 +81,16 @@ public class RoommateMatchingService {
         matching.complete();
     }
 
+    // 매칭 거절
+    public void rejectMatching(Long matchingId) {
+        RoommateMatching matching = roommateMatchingRepository.findById(matchingId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_MATCHING_NOT_FOUND));
 
+        if (matching.getStatus() != MatchingStatus.REQUEST) {
+            throw new CustomException(ErrorCode.ROOMMATE_MATCHING_ALREADY_COMPLETED);
+        }
 
-
+        matching.fail();
+    }
 
 }
