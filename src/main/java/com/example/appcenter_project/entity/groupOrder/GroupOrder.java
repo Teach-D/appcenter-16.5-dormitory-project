@@ -71,8 +71,8 @@ public class GroupOrder extends BaseTimeEntity {
     private List<GroupOrderComment> groupOrderCommentList = new ArrayList<>();
 
     @Builder
-    public GroupOrder(String title, String groupOrderType, Integer price, String link, int currentPeople, int maxPeople, LocalDateTime deadline, int groupOrderLike, String description, User user, GroupOrderChatRoom groupOrderChatRoom) {        this.title = title;
-        this.groupOrderType = GroupOrderType.valueOf(groupOrderType);
+    public GroupOrder(String title, GroupOrderType groupOrderType, Integer price, String link, int currentPeople, int maxPeople, LocalDateTime deadline, int groupOrderLike, String description, User user, GroupOrderChatRoom groupOrderChatRoom) {        this.title = title;
+        this.groupOrderType = groupOrderType;
         this.price = price;
         this.link = link;
         this.currentPeople = currentPeople;
@@ -86,7 +86,7 @@ public class GroupOrder extends BaseTimeEntity {
 
     public void update(RequestGroupOrderDto requestGroupOrderDto) {
         this.title = requestGroupOrderDto.getTitle();
-        this.groupOrderType = GroupOrderType.valueOf(requestGroupOrderDto.getGroupOrderType());
+        this.groupOrderType = requestGroupOrderDto.getGroupOrderType();
         this.price = requestGroupOrderDto.getPrice();
         this.link = requestGroupOrderDto.getLink();
         this.maxPeople = requestGroupOrderDto.getMaxPeople();

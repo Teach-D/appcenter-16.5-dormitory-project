@@ -1,6 +1,7 @@
 package com.example.appcenter_project.dto.response.groupOrder;
 
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
+import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import lombok.*;
 
 import java.util.ArrayList;
@@ -16,7 +17,7 @@ public class ResponseGroupOrderDetailDto {
     private String title;
     private String deadline;
     private String createDate;
-    private String groupOrderType;
+    private GroupOrderType groupOrderType;
     private int price;
     private int currentPeople;
     private int maxPeople;
@@ -36,7 +37,7 @@ public class ResponseGroupOrderDetailDto {
                 .title(groupOrder.getTitle())
                 .deadline(String.valueOf(groupOrder.getDeadline()))
                 .createDate(String.valueOf(groupOrder.getCreatedDate()))
-                .groupOrderType(String.valueOf(groupOrder.getGroupOrderType()))
+                .groupOrderType(groupOrder.getGroupOrderType())
                 .price(groupOrder.getPrice())
                 .currentPeople(groupOrder.getCurrentPeople())
                 .maxPeople(groupOrder.getMaxPeople())
