@@ -17,6 +17,7 @@ import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.exception.CustomException;
+import com.example.appcenter_project.mapper.GroupOrderMapper;
 import com.example.appcenter_project.repository.groupOrder.GroupOrderChatRoomRepository;
 import com.example.appcenter_project.repository.groupOrder.GroupOrderCommentRepository;
 import com.example.appcenter_project.repository.groupOrder.GroupOrderRepository;
@@ -37,10 +38,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.example.appcenter_project.exception.ErrorCode.*;
@@ -57,6 +55,7 @@ public class GroupOrderService {
     private final UserGroupOrderChatRoomRepository userGroupOrderChatRoomRepository;
     private final GroupOrderCommentRepository groupOrderCommentRepository;
     private final ImageRepository imageRepository;
+    private final GroupOrderMapper groupOrderMapper;
 
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto) {
         // GroupOrder 저장
@@ -85,20 +84,41 @@ public class GroupOrderService {
     }
 
     public ResponseGroupOrderDetailDto findGroupOrderById(Long groupOrderId) {
-        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
-                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
-        List<ResponseGroupOrderCommentDto> groupOrderCommentDtoList = findGroupOrderComment(groupOrder);
-
-        List<Long> groupOrderLikeUserList = new ArrayList<>();
-
-        List<GroupOrderLike> groupOrderLikeList = groupOrder.getGroupOrderLikeList();
-        for (GroupOrderLike groupOrderLike : groupOrderLikeList) {
-            Long groupOrderLikeUserId = groupOrderLike.getUser().getId();
-            groupOrderLikeUserList.add(groupOrderLikeUserId);
+        ResponseGroupOrderDetailDto flatDto = groupOrderMapper.findGroupOrderById(groupOrderId);
+        if (flatDto == null) {
+            throw new CustomException(GROUP_ORDER_NOT_FOUND);
         }
 
-        return ResponseGroupOrderDetailDto.detailEntityToDto(groupOrder, groupOrderCommentDtoList, groupOrderLikeUserList);
+        List<ResponseGroupOrderCommentDto> flatComments = flatDto.getGroupOrderCommentDtoList();
+        Map<Long, ResponseGroupOrderCommentDto> parentMap = new LinkedHashMap<>();
+        List<ResponseGroupOrderCommentDto> topLevelComments = new ArrayList<>();
+
+        for (ResponseGroupOrderCommentDto comment : flatComments) {
+            // 삭제된 댓글 처리
+            if (Boolean.TRUE.equals(comment.getIsDeleted())) {
+                comment.updateReply("삭제된 메시지입니다.");
+            }
+
+            // 계층 구조 구성
+            if (comment.getParentId() == null) {
+                comment.updateChildGroupOrderCommentList(new ArrayList<>());
+                parentMap.put(comment.getGroupOrderCommentId(), comment);
+                topLevelComments.add(comment);
+            } else {
+                ResponseGroupOrderCommentDto parent = parentMap.get(comment.getParentId());
+                if (parent != null) {
+                    if (parent.getChildGroupOrderCommentList() == null) {
+                        parent.updateChildGroupOrderCommentList(new ArrayList<>());
+                    }
+                    parent.getChildGroupOrderCommentList().add(comment);
+                }
+            }
+        }
+
+        flatDto.updateGroupOrderCommentDtoList(topLevelComments);
+        return flatDto;
     }
+
 
     // 이미지와 함께 공동구매 생성
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto, List<MultipartFile> images) {
@@ -111,11 +131,11 @@ public class GroupOrderService {
 
         GroupOrder groupOrder = RequestGroupOrderDto.dtoToEntity(requestGroupOrderDto, user);
 
-        saveImages(groupOrder, images);
-
         user.getGroupOrderList().add(groupOrder);
 
         groupOrderRepository.save(groupOrder);
+
+        saveImages(groupOrder, images);
 
         // GroupOrderChatRoom 저장
         GroupOrderChatRoom groupOrderChatRoom = new GroupOrderChatRoom(groupOrder.getTitle());
@@ -154,6 +174,7 @@ public class GroupOrderService {
                             .filePath(destinationFile.getAbsolutePath())
                             .isDefault(false)
                             .imageType(ImageType.GROUP_ORDER)
+                            .boardId(groupOrder.getId())
                             .build();
 
                     imageRepository.save(image);
@@ -224,10 +245,6 @@ public class GroupOrderService {
     }
 
     public List<ResponseGroupOrderDto> findGroupOrders(Long userId, GroupOrderSort sort, GroupOrderType type, Optional<String> search) {
-        Specification<GroupOrder> spec = buildSpecification(type, search);
-        Sort sortOption = getSortOption(sort);
-
-        // 검색어가 존재할 경우 유저의 검색 기록에 추가
         search.filter(s -> !s.isBlank())
                 .ifPresent(keyword -> {
                     User user = userRepository.findById(userId)
@@ -235,10 +252,11 @@ public class GroupOrderService {
                     user.addSearchKeyword(keyword);
                 });
 
-        List<GroupOrder> groupOrders = groupOrderRepository.findAll(spec, sortOption);
-        return groupOrders.stream()
-                .map(ResponseGroupOrderDto::entityToDto)
-                .collect(Collectors.toList());
+        String searchKeyword = search.filter(s -> !s.isBlank()).orElse(null);
+        String typeParam = (type == GroupOrderType.ALL) ? "ALL" : type.name();
+        String sortParam = sort.name();
+
+        return groupOrderMapper.findGroupOrders(typeParam, searchKeyword, sortParam);
     }
 
     public ResponseGroupOrderDetailDto updateGroupOrder(Long userId, Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto) {

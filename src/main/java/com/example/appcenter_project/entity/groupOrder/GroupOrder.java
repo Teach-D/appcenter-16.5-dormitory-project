@@ -53,15 +53,15 @@ public class GroupOrder extends BaseTimeEntity {
     @Column(nullable = false, length = 100)
     private String description;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_order_chat_room_id")
     private GroupOrderChatRoom groupOrderChatRoom;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    @OneToMany
+    @OneToMany(orphanRemoval = true)
     private List<Image> imageList = new ArrayList<>();
 
     @OneToMany(mappedBy = "groupOrder", orphanRemoval = true)

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.appcenter_project.mapper.GroupOrderMapper">
+
+    <resultMap id="groupOrderResultMap" type="com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="type" column="type"/>
+        <result property="createDate" column="create_date"/>
+        <result property="filePath" column="file_path"/>
+
+        <result property="price" column="price"/>
+        <result property="currentPeople" column="current_people"/>
+        <result property="maxPeople" column="max_people"/>
+        <result property="deadline" column="deadline"/>
+    </resultMap>
+
+    <select id="findGroupOrders" resultMap="groupOrderResultMap">
+        SELECT
+            go.id,
+            go.title,
+            'GROUP_ORDER' as type,
+            go.price,
+            go.link,
+            go.current_people,
+            go.max_people,
+            go.deadline,
+            go.group_order_like,
+            go.description,
+            go.created_date,
+            img.file_path
+        FROM group_order go
+        LEFT JOIN (
+            SELECT *
+            FROM image i
+            WHERE i.id IN (
+                SELECT MIN(id) <!--하나만 선택-->
+                FROM image
+                WHERE image.image_type = 'GROUP_ORDER'
+                GROUP BY board_id
+            )
+        ) img ON go.id = img.board_id
+        <where>
+            <if test="groupOrderType != null and groupOrderType != 'ALL'">
+                go.group_order_type = #{groupOrderType}
+            </if>
+            <if test="search != null and search != ''">
+                AND go.title LIKE CONCAT('%', #{search}, '%')
+            </if>
+        </where>
+
+        <choose>
+            <when test="sort == 'PRICE'">
+                ORDER BY go.price ASC
+            </when>
+            <when test="sort == 'POPULARITY'">
+                ORDER BY go.group_order_like DESC
+            </when>
+            <otherwise>
+                ORDER BY go.deadline ASC
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="findLikeGroupOrders" resultMap="groupOrderResultMap">
+        SELECT
+            go.id,
+            go.title,
+            'GROUP_ORDER' AS type,
+            gol.created_date AS create_date,
+            (
+                SELECT i.file_path
+                FROM image i
+                WHERE i.image_type = 'GROUP_ORDER' AND i.board_id = go.id
+                LIMIT 1 <!--하나만 선택-->
+            ) AS file_path,
+
+            go.deadline,
+            go.price,
+            go.current_people,
+            go.max_people
+
+        FROM group_order_like gol
+        LEFT JOIN group_order go ON gol.group_order_id = go.id
+        WHERE gol.user_id = #{userId}
+    </select>
+
+    <select id="findGroupOrdersByUserId" resultMap="groupOrderResultMap">
+        SELECT
+        go.id,
+        go.title,
+        'GROUP_ORDER' AS type,
+        go.created_date AS create_date,
+        (
+        SELECT i.file_path
+        FROM image i
+        WHERE i.image_type = 'GROUP_ORDER' AND i.board_id = go.id
+        LIMIT 1 <!--하나만 선택-->
+        ) AS file_path,
+
+        go.deadline,
+        go.price,
+        go.current_people,
+        go.max_people
+
+        FROM group_order go
+        WHERE go.user_id = #{userId}
+    </select>
+
+    <resultMap id="groupOrderDetailMap" type="com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDetailDto">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="deadline" column="deadline"/>
+        <result property="createDate" column="create_date"/>
+        <result property="groupOrderType" column="group_order_type"/>
+        <result property="price" column="price"/>
+        <result property="currentPeople" column="current_people"/>
+        <result property="maxPeople" column="max_people"/>
+        <result property="groupOrderLike" column="group_order_like"/>
+        <result property="description" column="description"/>
+        <result property="link" column="link"/>
+
+        <!-- 좋아요 누른 유저 id -->
+        <collection property="groupOrderLikeUserList" ofType="Long" javaType="java.util.List">
+            <result column="like_user_id"/>
+        </collection>
+
+        <!-- 댓글 -->
+        <collection property="groupOrderCommentDtoList"
+                    ofType="com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderCommentDto"
+                    javaType="java.util.List">
+            <id property="groupOrderCommentId" column="group_order_comment_id"/>
+            <result property="userId" column="user_id"/>
+            <result property="reply" column="reply"/>
+            <result property="parentId" column="parent_id"/>
+            <result property="isDeleted" column="is_deleted"/>
+        </collection>
+    </resultMap>
+
+    <select id="findGroupOrderById" resultMap="groupOrderDetailMap">
+        SELECT
+            go.id,
+            go.title,
+            go.deadline,
+            go.created_date,
+            go.group_order_type,
+            go.price,
+            go.current_people,
+            go.max_people,
+            go.group_order_like,
+            go.description,
+            go.link,
+
+            gol.user_id AS like_user_id,
+
+            goc.id AS group_order_comment_id,
+            goc.user_id,
+            goc.reply,
+            goc.parent_id,
+            goc.is_deleted
+
+        FROM
+            group_order go
+    LEFT JOIN group_order_like gol ON go.id = gol.group_order_id
+            LEFT JOIN group_order_comment goc ON go.id = goc.group_order_id
+        WHERE go.id = #{groupOrderId}
+    </select>
+
+</mapper>
