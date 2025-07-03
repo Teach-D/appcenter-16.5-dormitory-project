@@ -2,6 +2,7 @@ package com.example.appcenter_project.mapper;
 
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDetailDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
+import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
