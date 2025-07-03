@@ -13,6 +13,7 @@
         <result property="price" column="price"/>
         <result property="currentPeople" column="current_people"/>
         <result property="maxPeople" column="max_people"/>
+        <result property="groupOrderType" column="group_order_type"/>
         <result property="deadline" column="deadline"/>
     </resultMap>
 
@@ -29,7 +30,8 @@
             go.group_order_like,
             go.description,
             go.created_date,
-            img.file_path
+            img.file_path,
+            go.group_order_type
         FROM group_order go
         LEFT JOIN (
             SELECT *

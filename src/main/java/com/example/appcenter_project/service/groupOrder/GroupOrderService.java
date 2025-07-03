@@ -27,6 +27,7 @@ import com.example.appcenter_project.repository.like.GroupOrderLikeRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Sort;
@@ -253,10 +254,9 @@ public class GroupOrderService {
                 });
 
         String searchKeyword = search.filter(s -> !s.isBlank()).orElse(null);
-        String typeParam = (type == GroupOrderType.ALL) ? "ALL" : type.name();
         String sortParam = sort.name();
-
-        return groupOrderMapper.findGroupOrders(typeParam, searchKeyword, sortParam);
+        String typeString = String.valueOf(GroupOrderType.from(String.valueOf(type)));
+        return groupOrderMapper.findGroupOrders(typeString, searchKeyword, sortParam);
     }
 
     public ResponseGroupOrderDetailDto updateGroupOrder(Long userId, Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto) {

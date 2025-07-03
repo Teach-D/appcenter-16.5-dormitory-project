@@ -27,7 +27,7 @@ import static org.springframework.http.HttpStatus.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/group-orders")
-public class GroupOrderController implements GroupOrderApiSpecification {
+public class GroupOrderController {
 
     private final GroupOrderService groupOrderService;
 
@@ -69,7 +69,7 @@ public class GroupOrderController implements GroupOrderApiSpecification {
             @AuthenticationPrincipal CustomUserDetails user,
             @RequestParam(defaultValue = "DEADLINE") String sort, @RequestParam(defaultValue = "ALL") String type, @RequestParam(required = false) Optional<String> search
     ) {
-        return ResponseEntity.status(OK).body(groupOrderService.findGroupOrders(user.getId(), GroupOrderSort.valueOf(sort), GroupOrderType.valueOf(type), search));
+        return ResponseEntity.status(OK).body(groupOrderService.findGroupOrders(user.getId(), GroupOrderSort.from(sort), GroupOrderType.from(type), search));
     }
 
     @PatchMapping("/{groupOrderId}/like")

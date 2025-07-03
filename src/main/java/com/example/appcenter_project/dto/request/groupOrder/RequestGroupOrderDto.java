@@ -2,6 +2,7 @@ package com.example.appcenter_project.dto.request.groupOrder;
 
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.entity.user.User;
+import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -16,8 +17,8 @@ public class RequestGroupOrderDto {
     @NotBlank(message = "제목은 필수 입력 값입니다.")
     private String title;
 
-    @NotBlank(message = "공동구매 유형은 필수 입력 값입니다.")
-    private String groupOrderType;
+    @NotNull(message = "공동구매 유형은 필수 입력 값입니다.")
+    private GroupOrderType groupOrderType;
 
     @NotNull(message = "가격은 필수 입력 값입니다.")
     @Min(value = 1, message = "가격은 1원 이상이어야 합니다.")
