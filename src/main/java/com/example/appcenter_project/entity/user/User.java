@@ -10,6 +10,7 @@ import com.example.appcenter_project.entity.like.GroupOrderLike;
 import com.example.appcenter_project.entity.like.TipLike;
 import com.example.appcenter_project.entity.roommate.RoommateBoard;
 import com.example.appcenter_project.entity.roommate.RoommateCheckList;
+import com.example.appcenter_project.entity.roommate.MyRoommate;
 import com.example.appcenter_project.entity.tip.Tip;
 import com.example.appcenter_project.enums.user.College;
 import com.example.appcenter_project.enums.user.DormType;
@@ -80,6 +81,10 @@ public class User extends BaseTimeEntity {
     @OneToOne(mappedBy = "user")
     private RoommateBoard roommateBoard;
 
+    @OneToOne(mappedBy = "user")
+    private MyRoommate myRoommate;
+
+
     @Builder
     public User(String studentNumber, String name, String password, DormType dormType, Integer penalty, Role role, Image image) {
         this.name = name;
@@ -144,5 +149,7 @@ public class User extends BaseTimeEntity {
             searchLog.remove(0); // 맨 앞 요소 제거
         }
     }
+
+
 
 }
