@@ -1,6 +1,7 @@
 package com.example.appcenter_project.controller.roommate;
 
 import com.example.appcenter_project.dto.request.roommate.RequestRoommateFormDto;
+import com.example.appcenter_project.dto.request.roommate.RequestRoommateRuleDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseMyRoommateInfoDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommatePostDto;
 import com.example.appcenter_project.security.CustomUserDetails;
@@ -22,6 +23,14 @@ public class MyRoommateController implements MyRoommateApiSpecification {
         Long userId = userDetails.getId();
         ResponseMyRoommateInfoDto response = myRoommateService.getMyRoommateInfo(userId);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping
+    public ResponseEntity<Void> createRule(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody RequestRoommateRuleDto dto) {
+        myRoommateService.createRule(userDetails.getId(), dto.getRules());
+        return ResponseEntity.ok().build();
     }
 
 }
