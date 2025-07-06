@@ -49,4 +49,15 @@ public interface MyRoommateApiSpecification {
             @Parameter(hidden = true) CustomUserDetails userDetails,
             RequestRoommateRuleDto dto
     );
+
+    @Operation(
+            summary = "방 규칙 삭제",
+            description = "등록된 방 규칙을 삭제합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "삭제 성공"),
+                    @ApiResponse(responseCode = "404", description = "룸메이트 정보 없음 (MY_ROOMMATE_NOT_REGISTERED)")
+            }
+    )
+    ResponseEntity<Void> deleteRule(@Parameter(hidden = true) CustomUserDetails userDetails);
+
 }
