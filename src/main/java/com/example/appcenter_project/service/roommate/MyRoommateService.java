@@ -1,6 +1,7 @@
 package com.example.appcenter_project.service.roommate;
 
 import com.example.appcenter_project.dto.response.roommate.ResponseMyRoommateInfoDto;
+import com.example.appcenter_project.dto.response.roommate.ResponseRuleDto;
 import com.example.appcenter_project.entity.roommate.MyRoommate;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.exception.CustomException;
@@ -40,6 +41,7 @@ public class MyRoommateService {
         MyRoommate myRoommate = myRoommateRepository.findByUserId(userId)
                 .orElseThrow(() -> new CustomException(MY_ROOMMATE_NOT_REGISTERED));
 
+        myRoommate.updateRules(rules);
     }
 
     //룸메이트 규칙 삭제
@@ -49,6 +51,14 @@ public class MyRoommateService {
                 .orElseThrow(() -> new CustomException(MY_ROOMMATE_NOT_REGISTERED));
 
         myRoommate.updateRules(null);
+    }
+
+    @Transactional(readOnly = true)
+    public ResponseRuleDto getRules(Long userId) {
+        MyRoommate myRoommate = myRoommateRepository.findByUserId(userId)
+                .orElseThrow(() -> new CustomException(MY_ROOMMATE_NOT_REGISTERED));
+
+        return new ResponseRuleDto(myRoommate.getRule());
     }
 
 
