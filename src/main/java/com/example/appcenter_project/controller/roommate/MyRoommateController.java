@@ -33,4 +33,11 @@ public class MyRoommateController implements MyRoommateApiSpecification {
         return ResponseEntity.ok().build();
     }
 
+    @DeleteMapping
+    public ResponseEntity<Void> deleteRule(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        myRoommateService.deleteRule(userDetails.getId());
+        return ResponseEntity.ok().build();
+    }
+
+
 }
