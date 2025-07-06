@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 import static com.example.appcenter_project.exception.ErrorCode.MY_ROOMMATE_NOT_REGISTERED;
 
 @Service
@@ -31,5 +33,15 @@ public class MyRoommateService {
                 .imagePath(roommate.getImage() != null ? roommate.getImage().getFilePath() : null)
                 .build();
     }
+
+    //룸메이트 규칙 생성
+    @Transactional
+    public void createRule(Long userId, List<String> rules) {
+        MyRoommate myRoommate = myRoommateRepository.findByUserId(userId)
+                .orElseThrow(() -> new CustomException(MY_ROOMMATE_NOT_REGISTERED));
+
+    }
+
+
 
 }
