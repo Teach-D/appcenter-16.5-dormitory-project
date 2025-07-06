@@ -2,6 +2,7 @@ package com.example.appcenter_project.controller.roommate;
 
 import com.example.appcenter_project.dto.request.roommate.RequestRoommateRuleDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseMyRoommateInfoDto;
+import com.example.appcenter_project.dto.response.roommate.ResponseRuleDto;
 import com.example.appcenter_project.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -59,5 +60,18 @@ public interface MyRoommateApiSpecification {
             }
     )
     ResponseEntity<Void> deleteRule(@Parameter(hidden = true) CustomUserDetails userDetails);
+
+    @Operation(
+            summary = "방 규칙 조회",
+            description = "현재 로그인한 사용자의 방 규칙을 조회합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "조회 성공",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseRuleDto.class))),
+                    @ApiResponse(responseCode = "404", description = "룸메이트 정보 없음 (MY_ROOMMATE_NOT_REGISTERED)")
+            }
+    )
+    ResponseEntity<ResponseRuleDto> getRules(@Parameter(hidden = true) CustomUserDetails userDetails);
+
 
 }
