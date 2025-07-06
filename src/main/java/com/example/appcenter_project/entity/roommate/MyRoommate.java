@@ -37,5 +37,10 @@ public class MyRoommate {
         this.user = user;
     }
 
+    public void updateRules(List<String> newRules) {
+        this.rule = newRules;
+    }
+
+
 
 }
