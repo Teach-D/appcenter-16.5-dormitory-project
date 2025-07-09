@@ -73,5 +73,24 @@ public interface MyRoommateApiSpecification {
     )
     ResponseEntity<ResponseRuleDto> getRules(@Parameter(hidden = true) CustomUserDetails userDetails);
 
+    @Operation(
+            summary = "방 규칙 수정",
+            description = "등록된 방 규칙이 있을 경우 이를 수정합니다. 규칙이 등록되지 않은 경우 404 에러(RULE_NOT_FOUND)를 반환합니다.",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = RequestRoommateRuleDto.class)
+                    )
+            ),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "수정 성공"),
+                    @ApiResponse(responseCode = "404", description = "룸메이트 정보 없음 또는 수정할 룰 없음 (MY_ROOMMATE_NOT_REGISTERED, RULE_NOT_FOUND)")
+            }
+    )
+    ResponseEntity<Void> updateRules(
+            @Parameter(hidden = true) CustomUserDetails userDetails,
+            RequestRoommateRuleDto dto
+    );
 
 }
