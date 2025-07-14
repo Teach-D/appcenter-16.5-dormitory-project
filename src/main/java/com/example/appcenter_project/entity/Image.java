@@ -24,7 +24,7 @@ public class Image {
     @Column(nullable = false)
     private Boolean isDefault = false;
 
-    private Long boardId;
+    private Long boardId = 0L;
 
     @Builder
     public Image(String filePath, ImageType imageType, Boolean isDefault, Long boardId) {
