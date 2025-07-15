@@ -8,6 +8,7 @@ import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.exception.ErrorCode;
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
+import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,39 @@ public class ImageService {
 
     private final ImageRepository imageRepository;
     private final UserRepository userRepository;
+
+    @PostConstruct
+    public void initializeDefaultUserImage() {
+        // 이미 기본 유저 이미지가 존재하는지 확인
+        boolean defaultImageExists = imageRepository.existsByImageTypeAndIsDefault(ImageType.USER, true);
+
+        if (!defaultImageExists) {
+            createDefaultUserImage();
+        }
+    }
+
+    private void createDefaultUserImage() {
+        String projectPath = System.getProperty("user.dir") + "\\src\\main\\resources\\static\\images\\user\\";
+
+        // 기본 이미지 파일명 (프로젝트 리소스에 미리 준비된 기본 이미지)
+        String defaultImageFileName = "default_user_image.png";
+        String defaultImagePath = projectPath + defaultImageFileName;
+
+        // 기본 이미지 파일이 존재하는지 확인
+        File defaultImageFile = new File(defaultImagePath);
+        if (!defaultImageFile.exists()) {
+            throw new CustomException(IMAGE_NOT_FOUND);
+        }
+
+        // 이미지 객체 생성 후 저장
+        Image image = Image.builder()
+                .filePath(defaultImagePath)
+                .imageType(ImageType.USER)
+                .isDefault(true)
+                .build();
+
+        imageRepository.save(image);
+    }
 
     public void updateUserImage(Long userId, MultipartFile file) {
         User user = userRepository.findById(userId)
