@@ -1,66 +1,66 @@
-name: Build and (conditionally) Deploy
-
-on:
-  push:
-    branches:
-      - '**'
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up Java
-        uses: actions/setup-java@v3
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Create application.yml
-        run: |
-          mkdir -p ./src/main/resources
-          echo "${{ secrets.APPLICATION_YML }}" > ./src/main/resources/application.yml
-
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Build project
-        run: ./gradlew clean build
-
-      - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGE }}:latest .
-
-      - name: Log in to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-
-      - name: Push Docker image
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGE }}:latest
-
-  deploy:
-    if: github.ref == 'refs/heads/dev'
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: SSH to server & deploy
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGE }}:latest
-            docker stop ${{ secrets.DOCKER_IMAGE }} || true
-            docker rm ${{ secrets.DOCKER_IMAGE }} || true
-            docker network create inu-network || true
-            docker network connect inu-network inu-dormitory-dev-mysql || true
-            docker run -d --name ${{ secrets.DOCKER_IMAGE }} \
-              --network inu-network \
-              -p 8055:8080 \
-              ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGE }}:latest
+#name: Build and (conditionally) Deploy
+#
+#on:
+#  push:
+#    branches:
+#      - '**'
+#
+#jobs:
+#  build:
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v3
+#
+#      - name: Set up Java
+#        uses: actions/setup-java@v3
+#        with:
+#          java-version: '17'
+#          distribution: 'temurin'
+#
+#      - name: Create application.yml
+#        run: |
+#          mkdir -p ./src/main/resources
+#          echo "${{ secrets.APPLICATION_YML }}" > ./src/main/resources/application.yml
+#
+#      - name: Setup Gradle
+#        uses: gradle/gradle-build-action@v2
+#
+#      - name: Grant execute permission for gradlew
+#        run: chmod +x gradlew
+#
+#      - name: Build project
+#        run: ./gradlew clean build
+#
+#      - name: Build Docker image
+#        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGE }}:latest .
+#
+#      - name: Log in to Docker Hub
+#        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+#
+#      - name: Push Docker image
+#        run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGE }}:latest
+#
+#  deploy:
+#    if: github.ref == 'refs/heads/dev'
+#    needs: build
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: SSH to server & deploy
+#        uses: appleboy/ssh-action@v1
+#        with:
+#          host: ${{ secrets.SSH_HOST }}
+#          username: ${{ secrets.SSH_USER }}
+#          key: ${{ secrets.SSH_KEY }}
+#          script: |
+#            docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGE }}:latest
+#            docker stop ${{ secrets.DOCKER_IMAGE }} || true
+#            docker rm ${{ secrets.DOCKER_IMAGE }} || true
+#            docker network create inu-network || true
+#            docker network connect inu-network inu-dormitory-dev-mysql || true
+#            docker run -d --name ${{ secrets.DOCKER_IMAGE }} \
+#              --network inu-network \
+#              -p 8055:8080 \
+#              ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGE }}:latest
