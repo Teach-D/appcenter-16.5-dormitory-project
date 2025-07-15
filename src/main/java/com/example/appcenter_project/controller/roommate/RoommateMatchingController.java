@@ -28,6 +28,15 @@ public class RoommateMatchingController implements RoommateMatchingApiSpecificat
         ResponseRoommateMatchingDto responseDto = roommateMatchingService.requestMatching(senderId, requestDto.getReceiverStudentNumber());
         return ResponseEntity.status(201).body(responseDto);
     }
+
+    @PatchMapping("/{matchingId}/accept")
+    public ResponseEntity<Void> acceptMatching(
+            @PathVariable Long matchingId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        roommateMatchingService.acceptMatching(matchingId, userDetails.getId());
+        return ResponseEntity.ok().build();
+    }
 }
 
 

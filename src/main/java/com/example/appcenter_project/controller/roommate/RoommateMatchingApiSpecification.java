@@ -33,4 +33,19 @@ public interface RoommateMatchingApiSpecification {
                     content = @Content(schema = @Schema(implementation = RequestMatchingDto.class))
             ) RequestMatchingDto requestDto
     );
+
+    @Operation(
+            summary = "룸메이트 매칭 수락",
+            description = "룸메이트 매칭 요청을 수락합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "매칭 수락 성공"),
+                    @ApiResponse(responseCode = "404", description = "매칭 요청을 찾을 수 없습니다. (ROOMMATE_MATCHING_NOT_FOUND)", content = @Content),
+                    @ApiResponse(responseCode = "409", description = "이미 처리된 매칭입니다. (ROOMMATE_MATCHING_ALREADY_COMPLETED)", content = @Content)
+            }
+    )
+    ResponseEntity<Void> acceptMatching(
+            @Parameter(description = "매칭 ID", example = "1") @PathVariable Long matchingId,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
+    );
+
 }
