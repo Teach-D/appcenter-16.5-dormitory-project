@@ -80,7 +80,7 @@ public class UserController implements UserApiSpecification {
         return ResponseEntity.status(OK).body(userService.updateUser(user.getId(), requestUserDto));
     }
 
-    @PutMapping("/image")
+    @PutMapping(value = "/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> updateUserImage(@AuthenticationPrincipal CustomUserDetails user, @RequestPart MultipartFile image) {
         imageService.updateUserImage(user.getId(), image);
         return ResponseEntity.status(OK).build();
