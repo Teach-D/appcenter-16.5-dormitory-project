@@ -6,6 +6,7 @@ import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,6 +16,8 @@ import org.springframework.core.annotation.Order;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 
 @Entity
 @NoArgsConstructor
@@ -61,13 +64,13 @@ public class GroupOrder extends BaseTimeEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @OneToMany(orphanRemoval = true)
+    @OneToMany(orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Image> imageList = new ArrayList<>();
 
-    @OneToMany(mappedBy = "groupOrder", orphanRemoval = true)
+    @OneToMany(mappedBy = "groupOrder", orphanRemoval = true, fetch = FetchType.EAGER)
     private List<GroupOrderLike> groupOrderLikeList = new ArrayList<>();
 
-    @OneToMany(mappedBy = "groupOrder", orphanRemoval = true)
+    @OneToMany(mappedBy = "groupOrder", orphanRemoval = true, fetch = FetchType.EAGER)
     private List<GroupOrderComment> groupOrderCommentList = new ArrayList<>();
 
     @Builder

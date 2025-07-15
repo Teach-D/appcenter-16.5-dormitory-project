@@ -1,5 +1,7 @@
 package com.example.appcenter_project.service.groupOrder;
 
+import com.example.appcenter_project.dto.cache.GroupOrderCacheDto1;
+import com.example.appcenter_project.dto.cache.GroupOrderCommentCacheDto;
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
 import com.example.appcenter_project.dto.response.groupOrder.GroupOrderImageDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderCommentDto;
@@ -40,10 +42,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.example.appcenter_project.exception.ErrorCode.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -57,6 +61,7 @@ public class GroupOrderService {
     private final GroupOrderCommentRepository groupOrderCommentRepository;
     private final ImageRepository imageRepository;
     private final GroupOrderMapper groupOrderMapper;
+    private final DeliveryCacheService deliveryCacheService;
 
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto) {
         // GroupOrder 저장
@@ -82,6 +87,40 @@ public class GroupOrderService {
 
         groupOrderChatRoomRepository.save(groupOrderChatRoom);
         userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);
+    }
+
+    public GroupOrderCacheDto1 findGroupOrderCacheById(Long groupOrderId) {
+        GroupOrderCacheDto1 cacheDelivery = deliveryCacheService.getAllCacheDelivery(groupOrderId).get(0);
+        List<GroupOrderCommentCacheDto> groupOrderCommentList = cacheDelivery.getGroupOrderCommentList();
+        groupOrderCommentList = groupOrderCommentList.stream()
+                .sorted(Comparator.comparing(GroupOrderCommentCacheDto::getId))
+                .collect(Collectors.toList());
+
+        Map<Long, GroupOrderCommentCacheDto> parentMap = new LinkedHashMap<>();
+        List<GroupOrderCommentCacheDto> topLevelComments = new ArrayList<>();
+
+        for (GroupOrderCommentCacheDto comment : groupOrderCommentList) {
+            if (Boolean.TRUE.equals(comment.getDeleted())) {
+                comment.setReply("삭제된 메시지입니다.");
+            }
+
+            if (comment.getParentGroupOrderComment() == null) {
+                comment.setChildComments(new ArrayList<>());
+                parentMap.put(comment.getId(), comment);
+                topLevelComments.add(comment);
+            } else {
+                GroupOrderCommentCacheDto parent = parentMap.get(comment.getParentGroupOrderComment().getId());
+
+                if (parent != null) {
+                    if (parent.getChildComments() == null) {
+                        parent.setChildComments(new ArrayList<>());
+                    }
+                    parent.getChildComments().add(comment);
+                }
+            }
+        }
+        cacheDelivery.setGroupOrderCommentList(topLevelComments);
+        return cacheDelivery;
     }
 
     public ResponseGroupOrderDetailDto findGroupOrderById(Long groupOrderId) {
@@ -120,6 +159,111 @@ public class GroupOrderService {
         return flatDto;
     }
 
+
+    /**
+     * GroupOrder 중에 Delivery만 조회
+     */
+    @Transactional(readOnly = true)
+    public List<GroupOrder> findGroupOrdersDelivery() {
+        return groupOrderMapper.findAllGroupOrdersWithDetails();
+        // 1단계: 기본 정보와 이미지 로딩
+        //return findAllGroupOrders();
+    }
+
+    public List<GroupOrder> findAllGroupOrders() {
+        log.info("단계별 조회 시작");
+
+        // 1단계: 기본 정보 + 이미지 + 유저 + 채팅방 조회
+        List<GroupOrder> groupOrders = groupOrderRepository.findAllWithBasicInfo();
+        log.info("1단계 완료: {} 개의 GroupOrder 조회", groupOrders.size());
+
+        if (groupOrders.isEmpty()) {
+            return groupOrders;
+        }
+
+        // ID 리스트 추출
+        List<Long> groupOrderIds = groupOrders.stream()
+                .map(GroupOrder::getId)
+                .collect(Collectors.toList());
+
+        // 빠른 조회를 위한 Map 생성
+        Map<Long, GroupOrder> groupOrderMap = groupOrders.stream()
+                .collect(Collectors.toMap(GroupOrder::getId, Function.identity()));
+
+        // 2단계: 좋아요 정보 조회 및 병합
+        List<GroupOrder> withLikes = groupOrderRepository.findAllWithLikes(groupOrderIds);
+        log.info("2단계 완료: {} 개의 좋아요 정보 조회", withLikes.size());
+
+        withLikes.forEach(go -> {
+            GroupOrder original = groupOrderMap.get(go.getId());
+            if (original != null) {
+                // 기존 리스트를 클리어하고 새로운 데이터로 교체
+                original.getGroupOrderLikeList().clear();
+                original.getGroupOrderLikeList().addAll(go.getGroupOrderLikeList());
+            }
+        });
+
+        // 3단계: 댓글 정보 조회 및 병합
+        List<GroupOrder> withComments = groupOrderRepository.findAllWithComments(groupOrderIds);
+        log.info("3단계 완료: {} 개의 댓글 정보 조회", withComments.size());
+
+        withComments.forEach(go -> {
+            GroupOrder original = groupOrderMap.get(go.getId());
+            if (original != null) {
+                // 기존 리스트를 클리어하고 새로운 데이터로 교체
+                original.getGroupOrderCommentList().clear();
+                original.getGroupOrderCommentList().addAll(go.getGroupOrderCommentList());
+            }
+        });
+
+        // Redis 직렬화를 위한 컬렉션 초기화
+        groupOrders.forEach(this::initializeCollectionsForRedis);
+
+        log.info("단계별 조회 완료: 총 {} 개 GroupOrder 반환", groupOrders.size());
+        return groupOrders;
+    }
+
+    /**
+     * Redis 직렬화를 위한 컬렉션 초기화
+     */
+    private void initializeCollectionsForRedis(GroupOrder groupOrder) {
+        try {
+            // 이미지 리스트 초기화
+            groupOrder.getImageList().size();
+
+            // 좋아요 리스트 초기화
+            groupOrder.getGroupOrderLikeList().size();
+            groupOrder.getGroupOrderLikeList().forEach(like -> {
+                if (like.getUser() != null) {
+                    like.getUser().getId(); // User 정보 초기화
+                }
+            });
+
+            // 댓글 리스트 초기화
+            groupOrder.getGroupOrderCommentList().size();
+            groupOrder.getGroupOrderCommentList().forEach(comment -> {
+                if (comment.getUser() != null) {
+                    comment.getUser().getId(); // User 정보 초기화
+                }
+                if (comment.getChildGroupOrderComments() != null) {
+                    comment.getChildGroupOrderComments().size(); // 중첩 댓글 초기화
+                }
+            });
+
+            // 유저 정보 초기화
+            if (groupOrder.getUser() != null) {
+                groupOrder.getUser().getId();
+            }
+
+            // 채팅방 정보 초기화
+            if (groupOrder.getGroupOrderChatRoom() != null) {
+                groupOrder.getGroupOrderChatRoom().getId();
+            }
+
+        } catch (Exception e) {
+            log.warn("컬렉션 초기화 중 에러 발생: {}", e.getMessage());
+        }
+    }
 
     // 이미지와 함께 공동구매 생성
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto, List<MultipartFile> images) {

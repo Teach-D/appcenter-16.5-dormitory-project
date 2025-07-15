@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+/*
 @Component
 @Slf4j
 public class SchoolLoginRepository {
@@ -29,4 +30,4 @@ public class SchoolLoginRepository {
             return false;
         }
     }
-}
+}*/

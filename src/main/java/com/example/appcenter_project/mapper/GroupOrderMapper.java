@@ -2,9 +2,11 @@ package com.example.appcenter_project.mapper;
 
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDetailDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
+import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
@@ -18,5 +20,5 @@ public interface GroupOrderMapper {
 
     List<ResponseGroupOrderDto> findLikeGroupOrders(@Param("userId") Long userId);
     List<ResponseGroupOrderDto> findGroupOrdersByUserId(@Param("userId") Long userId);
-
+    List<GroupOrder> findAllGroupOrdersWithDetails();
 }

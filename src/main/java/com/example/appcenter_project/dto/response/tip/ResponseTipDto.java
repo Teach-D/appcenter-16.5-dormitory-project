@@ -17,9 +17,9 @@ public class ResponseTipDto extends ResponseBoardDto {
     private Integer tipLikeCount;
     private Integer tipCommentCount;
 
-    public ResponseTipDto(Long id, String title, String type, LocalDateTime createDate, String filePath,
+    public ResponseTipDto(Long id, String title, String type, LocalDateTime createdDatee, String filePath,
                           String content, Integer tipLikeCount, Integer tipCommentCount) {
-        super(id, title, type, createDate, filePath);
+        super(id, title, type, createdDatee, filePath);
         this.content = content;
         this.tipLikeCount = tipLikeCount;
         this.tipCommentCount = tipCommentCount;
