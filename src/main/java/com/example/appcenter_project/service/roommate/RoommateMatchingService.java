@@ -1,11 +1,13 @@
 package com.example.appcenter_project.service.roommate;
 
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommateMatchingDto;
+import com.example.appcenter_project.entity.roommate.MyRoommate;
 import com.example.appcenter_project.entity.roommate.RoommateMatching;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.roommate.MatchingStatus;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.exception.ErrorCode;
+import com.example.appcenter_project.repository.roommate.MyRoommateRepository;
 import com.example.appcenter_project.repository.roommate.RoommateMatchingRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ public class RoommateMatchingService {
 
     private final RoommateMatchingRepository roommateMatchingRepository;
     private final UserRepository userRepository;
+    private final MyRoommateRepository myRoommateRepository;
 
     // 매칭 요청
     @Transactional
@@ -79,6 +82,23 @@ public class RoommateMatchingService {
         }
 
         matching.complete();
+
+        //myRoommate 저장 로직 추가
+        User sender = matching.getSender();
+        User receiver = matching.getReceiver();
+
+        MyRoommate myRoommate1 = MyRoommate.builder()
+                .user(sender)
+                .roommate(receiver)
+                .build();
+
+        MyRoommate myRoommate2 = MyRoommate.builder()
+                .user(receiver)
+                .roommate(sender)
+                .build();
+
+        myRoommateRepository.save(myRoommate1);
+        myRoommateRepository.save(myRoommate2);
     }
 
     // 매칭 거절

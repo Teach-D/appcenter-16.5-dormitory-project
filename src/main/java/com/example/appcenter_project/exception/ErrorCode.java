@@ -67,11 +67,14 @@ public enum ErrorCode {
     ROOMMATE_CHECKLIST_UPDATE_FAILED(BAD_REQUEST, 7008, "[Roommate] 체크리스트 수정에 실패했습니다."),
 
     // ROOMMATE_MATCHING
-    ROOMMATE_MATCHING_ALREADY_REQUESTED(CONFLICT, 7101, "[RoommateMatching] 이미 해당 사용자에게 매칭 요청을 보냈습니다."),
-    ROOMMATE_MATCHING_NOT_FOUND(NOT_FOUND, 7102, "[RoommateMatching] 해당 매칭 요청을 찾을 수 없습니다."),
-    ROOMMATE_MATCHING_ALREADY_COMPLETED(BAD_REQUEST, 7103, "[RoommateMatching] 이미 수락되었거나 실패한 요청입니다."),
-    ROOMMATE_MATCHING_NOT_FOR_USER(FORBIDDEN, 7104, "[RoommateMatching] 해당 매칭 요청은 현재 사용자와 관련이 없습니다."),
-    ROOMMATE_ALREADY_MATCHED(HttpStatus.CONFLICT,7105,"[RoommateMatching] 이미 매칭된 사람이 있습니다.");
+    ROOMMATE_MATCHING_ALREADY_REQUESTED(CONFLICT, 8101, "[RoommateMatching] 이미 해당 사용자에게 매칭 요청을 보냈습니다."),
+    ROOMMATE_MATCHING_NOT_FOUND(NOT_FOUND, 8102, "[RoommateMatching] 해당 매칭 요청을 찾을 수 없습니다."),
+    ROOMMATE_MATCHING_ALREADY_COMPLETED(BAD_REQUEST, 8103, "[RoommateMatching] 이미 수락되었거나 실패한 요청입니다."),
+    ROOMMATE_MATCHING_NOT_FOR_USER(FORBIDDEN, 8104, "[RoommateMatching] 해당 매칭 요청은 현재 사용자와 관련이 없습니다."),
+    ROOMMATE_ALREADY_MATCHED(HttpStatus.CONFLICT,8105,"[RoommateMatching] 이미 매칭된 사람이 있습니다."),
+
+    // ROOMMATE_MYROOMMATE
+    MY_ROOMMATE_NOT_REGISTERED(NOT_FOUND, 9201, "[MyRoommate] 해당 사용자의 룸메이트 정보를 찾을 수 없습니다"),;
 
     private final HttpStatus httpStatus;
     private final Integer code;

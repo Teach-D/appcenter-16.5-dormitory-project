@@ -1,0 +1,27 @@
+package com.example.appcenter_project.controller.roommate;
+
+import com.example.appcenter_project.dto.request.roommate.RequestRoommateFormDto;
+import com.example.appcenter_project.dto.response.roommate.ResponseMyRoommateInfoDto;
+import com.example.appcenter_project.dto.response.roommate.ResponseRoommatePostDto;
+import com.example.appcenter_project.security.CustomUserDetails;
+import com.example.appcenter_project.service.roommate.MyRoommateService;
+import com.example.appcenter_project.service.roommate.RoommateService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/my-roommate")
+@RequiredArgsConstructor
+public class MyRoommateController implements MyRoommateApiSpecification {
+
+    private final MyRoommateService myRoommateService;
+    @GetMapping("/informations")
+    public ResponseEntity<ResponseMyRoommateInfoDto> getMyRoommate(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = userDetails.getId();
+        ResponseMyRoommateInfoDto response = myRoommateService.getMyRoommateInfo(userId);
+        return ResponseEntity.ok(response);
+    }
+
+}
