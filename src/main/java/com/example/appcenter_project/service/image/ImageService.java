@@ -12,13 +12,16 @@ import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.UUID;
 
@@ -35,25 +38,61 @@ public class ImageService {
 
     @PostConstruct
     public void initializeDefaultUserImage() {
-        // 이미 기본 유저 이미지가 존재하는지 확인
-        boolean defaultImageExists = imageRepository.existsByImageTypeAndIsDefault(ImageType.USER, true);
+        try {
+            // 이미 기본 유저 이미지가 존재하는지 확인
+            boolean defaultImageExists = imageRepository.existsByImageTypeAndIsDefault(ImageType.USER, true);
 
-        if (!defaultImageExists) {
-            createDefaultUserImage();
+            if (!defaultImageExists) {
+                createDefaultUserImage();
+            }
+        } catch (Exception e) {
+            log.error("Failed to initialize default user image", e);
+            // 기본 이미지 초기화 실패 시에도 애플리케이션이 시작되도록 함
         }
     }
 
     private void createDefaultUserImage() {
-        String projectPath = System.getProperty("user.dir") + "\\src\\main\\resources\\static\\images\\user\\";
+        String storagePath = System.getProperty("user.dir") + "/images/user/";
 
-        // 기본 이미지 파일명 (프로젝트 리소스에 미리 준비된 기본 이미지)
+        // 기본 이미지 파일명
         String defaultImageFileName = "default_user_image.png";
-        String defaultImagePath = projectPath + defaultImageFileName;
+        String defaultImagePath = storagePath + defaultImageFileName;
+
+        // 디렉토리가 없으면 생성
+        File directory = new File(storagePath);
+        if (!directory.exists()) {
+            boolean created = directory.mkdirs();
+            if (!created) {
+                log.error("Failed to create directory: {}", storagePath);
+                throw new CustomException(IMAGE_NOT_FOUND);
+            }
+        }
 
         // 기본 이미지 파일이 존재하는지 확인
         File defaultImageFile = new File(defaultImagePath);
         if (!defaultImageFile.exists()) {
-            throw new CustomException(IMAGE_NOT_FOUND);
+            // 클래스패스에서 기본 이미지 복사
+            try {
+                ClassPathResource resource = new ClassPathResource("static/images/user/default_user_image.png");
+                if (resource.exists()) {
+                    try (InputStream inputStream = resource.getInputStream();
+                         FileOutputStream outputStream = new FileOutputStream(defaultImageFile)) {
+
+                        byte[] buffer = new byte[1024];
+                        int bytesRead;
+                        while ((bytesRead = inputStream.read(buffer)) != -1) {
+                            outputStream.write(buffer, 0, bytesRead);
+                        }
+                        log.info("Default image copied from classpath to: {}", defaultImagePath);
+                    }
+                } else {
+                    log.warn("Default image not found in classpath, skipping default image creation");
+                    return; // 기본 이미지가 없으면 그냥 건너뛰기
+                }
+            } catch (IOException e) {
+                log.error("Failed to copy default image from classpath", e);
+                return; // 예외 발생 시 건너뛰기
+            }
         }
 
         // 이미지 객체 생성 후 저장
@@ -156,9 +195,9 @@ public class ImageService {
             // 이미지 객체 생성 후 저장
             Image image = Image.builder()
                     .filePath(projectPath + imageFileName)
-                            .imageType(ImageType.USER)
-                                    .isDefault(true)
-                                            .build();
+                    .imageType(ImageType.USER)
+                    .isDefault(true)
+                    .build();
             imageRepository.save(image);
 
         } catch (IOException e) {

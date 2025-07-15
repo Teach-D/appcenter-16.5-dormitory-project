@@ -37,4 +37,8 @@ public class Image {
     public void updateFilePath(String filePath) {
         this.filePath = filePath;
     }
+
+    public void setIsDefault(boolean b) {
+        this.isDefault = b;
+    }
 }
