@@ -9,4 +9,5 @@ import java.util.Optional;
 public interface ImageRepository extends JpaRepository<Image, Long> {
     Optional<Image> findByFilePath(String filePath);
     Optional<Image> findAllByImageTypeAndIsDefault(ImageType imageType, Boolean isDefault);
+    boolean existsByImageTypeAndIsDefault(ImageType imageType, boolean isDefault);
 }
