@@ -42,6 +42,16 @@ public class MyRoommateService {
 
     }
 
+    //룸메이트 규칙 삭제
+    @Transactional
+    public void deleteRule(Long userId) {
+        MyRoommate myRoommate = myRoommateRepository.findByUserId(userId)
+                .orElseThrow(() -> new CustomException(MY_ROOMMATE_NOT_REGISTERED));
+
+        myRoommate.updateRules(null);
+    }
+
+
 
 
 }
