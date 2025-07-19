@@ -50,7 +50,6 @@ public class MealTimeDeliveryScheduler {
             log.info("schedule start");
             // 모든 주문을 하나의 키에 캐시
             List<GroupOrder> groupOrdersDeliveries = groupOrderService.findGroupOrdersDelivery();
-            log.info(groupOrdersDeliveries.toString());
             deliveryCacheService.cacheAllDeliveries(groupOrdersDeliveries);
 
             log.info("식사시간 시작: 주문 데이터를 Redis에 캐시했습니다. (총 {}개 주문)", groupOrdersDeliveries.size());

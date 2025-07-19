@@ -1,7 +1,5 @@
 package com.example.appcenter_project.service.groupOrder;
 
-import com.example.appcenter_project.dto.cache.GroupOrderCacheDto1;
-import com.example.appcenter_project.dto.cache.GroupOrderCommentCacheDto;
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
 import com.example.appcenter_project.dto.response.groupOrder.GroupOrderImageDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderCommentDto;
@@ -13,7 +11,6 @@ import com.example.appcenter_project.entity.groupOrder.GroupOrderChatRoom;
 import com.example.appcenter_project.entity.groupOrder.GroupOrderComment;
 import com.example.appcenter_project.entity.groupOrder.UserGroupOrderChatRoom;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
-import com.example.appcenter_project.entity.like.TipLike;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
@@ -89,7 +86,11 @@ public class GroupOrderService {
         userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);
     }
 
-
+    /**
+     * groupOrderId로 GroupOrder 조회
+     * 해당 GroupOrder가 redis에 캐싱되어 있으면 redis에서 조회
+     * 해당 GroupOrder가 redis에 캐싱되어 있지 않으면 db에서 조회
+     */
     public ResponseGroupOrderDetailDto findGroupOrderById(Long groupOrderId) {
         ResponseGroupOrderDetailDto dto;
 
@@ -112,6 +113,9 @@ public class GroupOrderService {
         return buildHierarchicalComments(dto, false);
     }
 
+    /**
+     * GroupOrder의 comment를 트리 형태로 계층화
+     */
     private ResponseGroupOrderDetailDto buildHierarchicalComments(ResponseGroupOrderDetailDto dto, boolean isFromCache) {
         List<ResponseGroupOrderCommentDto> comments = dto.getGroupOrderCommentDtoList();
 
@@ -415,6 +419,11 @@ public class GroupOrderService {
         return groupOrderMapper.findGroupOrders(typeString, searchKeyword, sortParam);
     }
 
+    /**
+     * groupOrderId, RequestGroupOrderDto로 GroupOrder 수정
+     * 해당 GroupOrder가 redis에 캐싱되어 있으면 redis에서 수정
+     * 해당 GroupOrder가 redis에 캐싱되어 있는 것과 상관없이 db에서 수정
+     */
     public ResponseGroupOrderDetailDto updateGroupOrder(Long userId, Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto) {
         ResponseGroupOrderDetailDto dto;
 
@@ -449,6 +458,11 @@ public class GroupOrderService {
         return dto;
     }
 
+    /**
+     * groupOrderId, GroupOrder 삭제
+     * 해당 GroupOrder가 redis에 캐싱되어 있으면 redis에서 삭제
+     * 해당 GroupOrder가 redis에 캐싱되어 있는 것과 상관없이 db에서 삭제
+     */
     public void deleteGroupOrder(Long userId, Long groupOrderId) {
         if (deliveryCacheService.existsGroupOrderInCache(groupOrderId)) {
             log.info("redis 삭제");

@@ -1,6 +1,5 @@
 package com.example.appcenter_project.controller.groupOrder;
 
-import com.example.appcenter_project.dto.cache.GroupOrderCacheDto1;
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
 import com.example.appcenter_project.dto.response.groupOrder.GroupOrderImageDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDetailDto;
