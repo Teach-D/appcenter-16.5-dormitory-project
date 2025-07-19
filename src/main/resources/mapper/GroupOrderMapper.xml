@@ -366,6 +366,7 @@
             LEFT JOIN group_order_comment goc ON go.id = goc.group_order_id
             LEFT JOIN user cu ON goc.user_id = cu.id
             LEFT JOIN group_order_comment pgoc ON goc.parent_id = pgoc.id
+        WHERE go.group_order_type = 'DELIVERY'
         ORDER BY go.created_date DESC
     </select>
 

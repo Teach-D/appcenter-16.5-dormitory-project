@@ -25,7 +25,7 @@ public class MealTimeDeliveryScheduler {
     }
 
     // 저녁시간 시작 (18:00) - cron 표현식 수정
-    @Scheduled(cron = "* * 1 * * ?")
+    @Scheduled(cron = "0 0 18 * * ?")
     public void onDinnerTimeStart() {
         preloadOrdersToCache();
     }
@@ -37,7 +37,7 @@ public class MealTimeDeliveryScheduler {
     }
 
     // 저녁시간 종료 (20:00) - cron 표현식 수정
-    @Scheduled(cron = "* * 1 * * ?")
+    @Scheduled(cron = "0 0 20 * * ?")
     public void onDinnerTimeEnd() {
         clearOrderCache();
     }
