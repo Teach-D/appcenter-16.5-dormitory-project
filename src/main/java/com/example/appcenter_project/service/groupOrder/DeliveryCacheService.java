@@ -166,9 +166,9 @@ public class DeliveryCacheService {
     }
 
     // 모든 캐시된 GroupOrder 조회
-    public List<GroupOrderCacheDto1> getAllCacheDelivery(Long id) {
+    public ResponseGroupOrderDetailDto getAllCacheDelivery(Long id) {
         String pattern = ORDER_CACHE_KEY + id.toString();
-        return getEntitiesByPattern(pattern, GroupOrderCacheDto1.class);
+        return getEntityByPattern(pattern, ResponseGroupOrderDetailDto.class);
     }
 
     // 캐시에서 GroupOrder 삭제
@@ -182,9 +182,7 @@ public class DeliveryCacheService {
         }
     }
 
-    public <T> List<T> getEntitiesByPattern(String pattern, Class<T> entityClass) {
-        List<T> entities = new ArrayList<>();
-
+    public <T> T getEntityByPattern(String pattern, Class<T> entityClass) {
         ObjectMapper mapper = new ObjectMapper()
                 .registerModule(new JavaTimeModule())
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
@@ -193,27 +191,26 @@ public class DeliveryCacheService {
         try {
             Set<String> keys = redisTemplate.keys(pattern);
             if (keys != null && !keys.isEmpty()) {
-                for (String key : keys) {
-                    try {
-                        Object cachedObject = redisTemplate.opsForValue().get(key);
-                        log.info("cachedObject = {}", cachedObject);
+                // 첫 번째 키만 사용
+                String key = keys.iterator().next();
+                try {
+                    Object cachedObject = redisTemplate.opsForValue().get(key);
+                    log.info("cachedObject = {}", cachedObject);
 
-                        if (cachedObject instanceof LinkedHashMap) {
-                            T entity = mapper.convertValue(cachedObject, entityClass);
-                            entities.add(entity);
-                        } else {
-                            log.warn("Unexpected type for key {}: {}", key, cachedObject.getClass().getName());
-                        }
-                    } catch (Exception e) {
-                        log.warn("Entity conversion failed for key {}: {}", key, e.getMessage());
+                    if (cachedObject instanceof LinkedHashMap) {
+                        return mapper.convertValue(cachedObject, entityClass);
+                    } else {
+                        log.warn("Unexpected type for key {}: {}", key, cachedObject.getClass().getName());
                     }
+                } catch (Exception e) {
+                    log.warn("Entity conversion failed for key {}: {}", key, e.getMessage());
                 }
             }
         } catch (Exception e) {
             log.error("Redis pattern scan error: {}", e.getMessage(), e);
         }
 
-        return entities;
+        return null;
     }
 
 }

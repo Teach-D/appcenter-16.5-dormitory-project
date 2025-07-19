@@ -7,6 +7,7 @@ import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
 
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
@@ -26,7 +27,10 @@ public class ResponseGroupOrderCommentDto {
         return ResponseGroupOrderCommentDto.builder()
                 .reply(groupOrderComment.getReply())
                 .groupOrderCommentId(groupOrderComment.getId())
+                .parentId(groupOrderComment.getParentGroupOrderComment() != null ?
+                        groupOrderComment.getParentGroupOrderComment().getId() : null)
                 .userId(user.getId())
+                .isDeleted(groupOrderComment.isDeleted())
                 .build();
     }
 

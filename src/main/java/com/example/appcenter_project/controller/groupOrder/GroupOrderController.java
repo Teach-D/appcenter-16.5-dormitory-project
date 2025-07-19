@@ -40,8 +40,8 @@ public class GroupOrderController {
     }
 
     @GetMapping("/cache/{id}")
-    public ResponseEntity<GroupOrderCacheDto1> getCacheDelivery(@PathVariable Long id) {
-        GroupOrderCacheDto1 groupOrderCacheById = groupOrderService.findGroupOrderCacheById(id);
+    public ResponseEntity<ResponseGroupOrderDetailDto> getCacheDelivery(@PathVariable Long id) {
+        ResponseGroupOrderDetailDto groupOrderCacheById = groupOrderService.findGroupOrderCacheById(id);
         return ResponseEntity.status(OK).body(groupOrderCacheById);
     }
 

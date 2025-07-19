@@ -89,37 +89,37 @@ public class GroupOrderService {
         userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);
     }
 
-    public GroupOrderCacheDto1 findGroupOrderCacheById(Long groupOrderId) {
-        GroupOrderCacheDto1 cacheDelivery = deliveryCacheService.getAllCacheDelivery(groupOrderId).get(0);
-        List<GroupOrderCommentCacheDto> groupOrderCommentList = cacheDelivery.getGroupOrderCommentList();
+    public ResponseGroupOrderDetailDto findGroupOrderCacheById(Long groupOrderId) {
+        ResponseGroupOrderDetailDto cacheDelivery = deliveryCacheService.getAllCacheDelivery(groupOrderId);
+        List<ResponseGroupOrderCommentDto> groupOrderCommentList = cacheDelivery.getGroupOrderCommentDtoList();
         groupOrderCommentList = groupOrderCommentList.stream()
-                .sorted(Comparator.comparing(GroupOrderCommentCacheDto::getId))
+                .sorted(Comparator.comparing(ResponseGroupOrderCommentDto::getGroupOrderCommentId))
                 .collect(Collectors.toList());
 
-        Map<Long, GroupOrderCommentCacheDto> parentMap = new LinkedHashMap<>();
-        List<GroupOrderCommentCacheDto> topLevelComments = new ArrayList<>();
+        Map<Long, ResponseGroupOrderCommentDto> parentMap = new LinkedHashMap<>();
+        List<ResponseGroupOrderCommentDto> topLevelComments = new ArrayList<>();
 
-        for (GroupOrderCommentCacheDto comment : groupOrderCommentList) {
-            if (Boolean.TRUE.equals(comment.getDeleted())) {
+        for (ResponseGroupOrderCommentDto comment : groupOrderCommentList) {
+            if (Boolean.TRUE.equals(comment.getIsDeleted())) {
                 comment.setReply("삭제된 메시지입니다.");
             }
 
-            if (comment.getParentGroupOrderComment() == null) {
-                comment.setChildComments(new ArrayList<>());
-                parentMap.put(comment.getId(), comment);
+            if (comment.getParentId() == null) {
+                comment.setChildGroupOrderCommentList(new ArrayList<>());
+                parentMap.put(comment.getGroupOrderCommentId(), comment);
                 topLevelComments.add(comment);
             } else {
-                GroupOrderCommentCacheDto parent = parentMap.get(comment.getParentGroupOrderComment().getId());
+                ResponseGroupOrderCommentDto parent = parentMap.get(comment.getParentId());
 
                 if (parent != null) {
-                    if (parent.getChildComments() == null) {
+/*                    if (parent.getChildGroupOrderCommentList() == null) {
                         parent.setChildComments(new ArrayList<>());
-                    }
-                    parent.getChildComments().add(comment);
+                    }*/
+                    parent.getChildGroupOrderCommentList().add(comment);
                 }
             }
         }
-        cacheDelivery.setGroupOrderCommentList(topLevelComments);
+        cacheDelivery.setGroupOrderCommentDtoList(topLevelComments);
         return cacheDelivery;
     }
 

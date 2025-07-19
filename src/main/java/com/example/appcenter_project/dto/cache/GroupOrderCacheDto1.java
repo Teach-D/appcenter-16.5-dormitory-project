@@ -28,7 +28,7 @@ public class GroupOrderCacheDto1 {
     private Long userId;
     private List<ImageCacheDto> imageList;
     private List<GroupOrderLikeCacheDto> groupOrderLikeList;
-    private List<GroupOrderCommentCacheDto> groupOrderCommentList;
+    private List<GroupOrderCommentCacheDto> groupOrderCommentDtoList;
 
     /*public static GroupOrderCacheDto1 fromEntity(GroupOrder groupOrder) {
         GroupOrderCacheDto1 dto = new GroupOrderCacheDto1();
