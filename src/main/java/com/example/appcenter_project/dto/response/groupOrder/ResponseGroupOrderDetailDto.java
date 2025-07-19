@@ -1,5 +1,6 @@
 package com.example.appcenter_project.dto.response.groupOrder;
 
+import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import lombok.*;
@@ -7,6 +8,7 @@ import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
 
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
@@ -16,7 +18,7 @@ public class ResponseGroupOrderDetailDto {
     private Long id;
     private String title;
     private String deadline;
-    private String createDate;
+    private String createdDatee;
     private GroupOrderType groupOrderType;
     private int price;
     private int currentPeople;
@@ -36,7 +38,7 @@ public class ResponseGroupOrderDetailDto {
                 .id(groupOrder.getId())
                 .title(groupOrder.getTitle())
                 .deadline(String.valueOf(groupOrder.getDeadline()))
-                .createDate(String.valueOf(groupOrder.getCreatedDate()))
+                .createdDatee(String.valueOf(groupOrder.getCreatedDate()))
                 .groupOrderType(groupOrder.getGroupOrderType())
                 .price(groupOrder.getPrice())
                 .currentPeople(groupOrder.getCurrentPeople())
@@ -46,6 +48,18 @@ public class ResponseGroupOrderDetailDto {
                 .link(groupOrder.getLink())
                 .groupOrderCommentDtoList(responseGroupOrderCommentDto)
                 .groupOrderLikeUserList(groupOrderLikeUserList)
+                .build();
+    }
+
+    public static ResponseGroupOrderDetailDto updateDto(RequestGroupOrderDto requestGroupOrderDto) {
+        return ResponseGroupOrderDetailDto.builder()
+                .title(requestGroupOrderDto.getTitle())
+                .groupOrderType(requestGroupOrderDto.getGroupOrderType())
+                .price(requestGroupOrderDto.getPrice())
+                .link(requestGroupOrderDto.getLink())
+                .maxPeople(requestGroupOrderDto.getMaxPeople())
+                .deadline(String.valueOf(requestGroupOrderDto.getDeadline()))
+                .description(requestGroupOrderDto.getDescription())
                 .build();
     }
 

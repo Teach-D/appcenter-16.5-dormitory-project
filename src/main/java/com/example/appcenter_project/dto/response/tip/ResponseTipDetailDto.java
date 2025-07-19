@@ -20,7 +20,7 @@ public class ResponseTipDetailDto {
     @Builder.Default
     private List<Long> tipLikeUserList = new ArrayList<>();
 
-    private String createDate;
+    private String createdDatee;
 
     @Builder.Default
     private List<ResponseTipCommentDto> tipCommentDtoList = new ArrayList<>();
@@ -28,7 +28,7 @@ public class ResponseTipDetailDto {
     public static ResponseTipDetailDto entityToDto(Tip tip, List<ResponseTipCommentDto> responseTipCommentDtoList, List<Long> tipLikeUserList) {
         return ResponseTipDetailDto.builder()
                 .id(tip.getId())
-                .createDate(String.valueOf(tip.getCreatedDate()))
+                .createdDatee(String.valueOf(tip.getCreatedDate()))
                 .title(tip.getTitle())
                 .content(tip.getContent())
                 .tipLikeCount(tip.getTipLike())
