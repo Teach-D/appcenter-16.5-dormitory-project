@@ -450,6 +450,12 @@ public class GroupOrderService {
     }
 
     public void deleteGroupOrder(Long userId, Long groupOrderId) {
+        if (deliveryCacheService.existsGroupOrderInCache(groupOrderId)) {
+            log.info("redis 삭제");
+            deliveryCacheService.evictDelivery(groupOrderId);
+        }
+
+        log.info("db 삭제");
         GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_OWNED_BY_USER));
 
         GroupOrderChatRoom groupOrderChatRoom = groupOrder.getGroupOrderChatRoom();
