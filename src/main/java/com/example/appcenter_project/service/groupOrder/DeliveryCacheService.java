@@ -148,6 +148,17 @@ public class DeliveryCacheService {
         }
     }
 
+    public boolean existsGroupOrderInCache(Long groupOrderId) {
+        try {
+            String key = ORDER_CACHE_KEY + groupOrderId;
+            Boolean exists = redisTemplate.hasKey(key);
+            return exists != null && exists;
+        } catch (Exception e) {
+            log.error("GroupOrder 캐시 키 존재 여부 확인 중 오류 발생: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
     // 캐시에서 GroupOrder DTO 조회
     public GroupOrderCacheDto1 getGroupOrderFromCache(Long groupOrderId) {
         try {
