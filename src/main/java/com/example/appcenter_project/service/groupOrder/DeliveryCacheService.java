@@ -6,6 +6,7 @@ import com.example.appcenter_project.dto.GroupOrderLikeListCacheDto;
 import com.example.appcenter_project.dto.ImageListCacheDto;
 import com.example.appcenter_project.dto.cache.GroupOrderCacheDto1;
 import com.example.appcenter_project.dto.cache.GroupOrderCommentCacheDto;
+import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderCommentDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDetailDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
@@ -224,4 +225,13 @@ public class DeliveryCacheService {
         return null;
     }
 
+    public ResponseGroupOrderDetailDto updateCacheDelivery(Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto) {
+        String key = ORDER_CACHE_KEY + groupOrderId;
+        ResponseGroupOrderDetailDto allCacheDelivery = getAllCacheDelivery(groupOrderId);
+        ResponseGroupOrderDetailDto responseGroupOrderDetailDto = ResponseGroupOrderDetailDto.updateDto(requestGroupOrderDto);
+        responseGroupOrderDetailDto.setGroupOrderCommentDtoList(allCacheDelivery.getGroupOrderCommentDtoList());
+
+        redisTemplate.opsForValue().set(key, responseGroupOrderDetailDto);
+        return responseGroupOrderDetailDto;
+    }
 }

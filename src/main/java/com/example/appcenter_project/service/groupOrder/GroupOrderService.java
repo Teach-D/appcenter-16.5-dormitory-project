@@ -416,6 +416,17 @@ public class GroupOrderService {
     }
 
     public ResponseGroupOrderDetailDto updateGroupOrder(Long userId, Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto) {
+        ResponseGroupOrderDetailDto dto;
+
+        if (deliveryCacheService.existsGroupOrderInCache(groupOrderId)) {
+            ResponseGroupOrderDetailDto responseGroupOrderDetailDto = deliveryCacheService.updateCacheDelivery(groupOrderId, requestGroupOrderDto);
+            log.info("redis 수정");
+            if (responseGroupOrderDetailDto != null) {
+                dto = buildHierarchicalComments(responseGroupOrderDetailDto, true);
+            }
+        }
+
+        log.info("db 수정");
         GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_OWNED_BY_USER));
 
         if (groupOrderRepository.existsByTitle(requestGroupOrderDto.getTitle())) {
@@ -434,7 +445,8 @@ public class GroupOrderService {
             groupOrderLikeUserList.add(groupOrderLikeUserId);
         }
 
-        return ResponseGroupOrderDetailDto.detailEntityToDto(groupOrder, groupOrderCommentDtoList, groupOrderLikeUserList);
+        dto = ResponseGroupOrderDetailDto.detailEntityToDto(groupOrder, groupOrderCommentDtoList, groupOrderLikeUserList);
+        return dto;
     }
 
     public void deleteGroupOrder(Long userId, Long groupOrderId) {

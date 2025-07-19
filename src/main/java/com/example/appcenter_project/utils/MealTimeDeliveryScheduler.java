@@ -37,7 +37,7 @@ public class MealTimeDeliveryScheduler {
     }
 
     // 저녁시간 종료 (20:00) - cron 표현식 수정
-    @Scheduled(cron = "0 0 20 * * ?")
+    @Scheduled(cron = "* * 1 * * ?")
     public void onDinnerTimeEnd() {
         clearOrderCache();
     }
