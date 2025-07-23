@@ -118,6 +118,9 @@ public class RoommateCheckList {
         this.comment = dto.getComment();
     }
 
+    public void setUser(User user) {
+        this.user = user;
+    }
 
 
 
