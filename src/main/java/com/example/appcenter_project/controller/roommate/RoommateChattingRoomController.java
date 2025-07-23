@@ -15,9 +15,9 @@ import java.util.List;
 import static org.springframework.http.HttpStatus.CREATED;
 
 @RestController
-@RequestMapping("/api/roommate-chatting-room")
+@RequestMapping("/roommate-chatting-room")
 @RequiredArgsConstructor
-public class RoommateChattingRoomController {
+public class RoommateChattingRoomController implements RoommateChattingRoomApiSpecification{
 
     private final RoommateChattingRoomService roommateChattingRoomService;
 
