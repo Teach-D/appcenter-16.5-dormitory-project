@@ -31,12 +31,13 @@ public class RoommateChattingChat extends BaseTimeEntity {
     private boolean readByReceiver = false; // 읽음 여부
 
     @Builder
-    public RoommateChattingChat(RoommateChattingRoom roommateChattingRoom, User member, String content) {
+    public RoommateChattingChat(RoommateChattingRoom roommateChattingRoom, User member, String content, boolean readByReceiver) {
         this.roommateChattingRoom = roommateChattingRoom;
         this.member = member;
         this.content = content;
-        this.readByReceiver = false;
+        this.readByReceiver = readByReceiver;
     }
+
 
     public void markAsRead() {
         this.readByReceiver = true;
