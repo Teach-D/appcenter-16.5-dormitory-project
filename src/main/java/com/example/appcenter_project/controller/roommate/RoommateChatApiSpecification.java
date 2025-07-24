@@ -67,4 +67,22 @@ public interface RoommateChatApiSpecification  {
             @Parameter(hidden = true) CustomUserDetails userDetails,
             @Parameter(description = "읽음 처리할 채팅방 ID", example = "1") @PathVariable Long roomId
     );
+
+    @Operation(
+            summary = "[WebSocket] 채팅 메시지 전송",
+            description = """
+                    WebSocket을 통해 채팅 메시지를 전송합니다.  
+                    STOMP 엔드포인트: `/pub/roommate/chat`  
+                    메시지 형식:
+                    ```json
+                    {
+                      "roommateChattingRoomId": 1,
+                      "content": "안녕하세요"
+                    }
+                    ```
+                    """
+    )
+    default void sendChatViaWebSocket() {
+        // 설명용으로 Swagger UI에만 노출되며 실제 구현은 컨트롤러에 있음.
+    }
 }

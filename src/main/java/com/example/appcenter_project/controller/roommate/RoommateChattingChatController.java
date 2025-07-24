@@ -5,15 +5,17 @@ import com.example.appcenter_project.dto.response.roommate.ResponseRoommateChatD
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.roommate.RoommateChattingChatService;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.messaging.handler.annotation.MessageMapping;
 
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/roommate/chat")
+@RequestMapping("/roommate/chat")
 public class RoommateChattingChatController implements RoommateChatApiSpecification {
 
     private final RoommateChattingChatService chatService;
@@ -50,4 +52,16 @@ public class RoommateChattingChatController implements RoommateChatApiSpecificat
         chatService.markAsRead(roomId, userId);
         return ResponseEntity.ok().build();
     }
+
+    // WebSocket 방식 채팅 보내기
+    @MessageMapping("/roommate/socketchat")
+    public void sendChatViaWebSocket(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid RequestRoommateChatDto request
+    ) {
+        Long userId = userDetails.getId();
+        chatService.sendChat(userId, request);
+    }
+
+
 }
