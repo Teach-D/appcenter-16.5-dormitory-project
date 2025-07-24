@@ -5,6 +5,7 @@ import com.example.appcenter_project.dto.response.roommate.ResponseRuleDto;
 import com.example.appcenter_project.entity.roommate.MyRoommate;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.exception.CustomException;
+import com.example.appcenter_project.exception.ErrorCode;
 import com.example.appcenter_project.repository.roommate.MyRoommateRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -35,7 +36,7 @@ public class MyRoommateService {
                 .build();
     }
 
-    //룸메이트 규칙 생성
+    //룸메이트 규칙 생성,수정
     @Transactional
     public void createRule(Long userId, List<String> rules) {
         MyRoommate myRoommate = myRoommateRepository.findByUserId(userId)
@@ -61,7 +62,18 @@ public class MyRoommateService {
         return new ResponseRuleDto(myRoommate.getRule());
     }
 
+    //규칙 수정
+    @Transactional
+    public void updateRules(Long userId, List<String> rules) {
+        MyRoommate myRoommate = myRoommateRepository.findByUserId(userId)
+                .orElseThrow(() -> new CustomException(MY_ROOMMATE_NOT_REGISTERED));
 
+        if (myRoommate.getRule() == null || myRoommate.getRule().isEmpty()) {
+            throw new CustomException(ErrorCode.RULE_NOT_FOUND); // 예외는 정의 필요
+        }
+
+        myRoommate.updateRules(rules);
+    }
 
 
 }

@@ -46,5 +46,12 @@ public class MyRoommateController implements MyRoommateApiSpecification {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/rules")
+    public ResponseEntity<Void> updateRules(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody RequestRoommateRuleDto dto) {
+        myRoommateService.updateRules(userDetails.getId(), dto.getRules());
+        return ResponseEntity.ok().build();
+    }
 
 }
