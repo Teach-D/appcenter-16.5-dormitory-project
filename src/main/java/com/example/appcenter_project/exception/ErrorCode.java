@@ -74,7 +74,16 @@ public enum ErrorCode {
     ROOMMATE_ALREADY_MATCHED(HttpStatus.CONFLICT,8105,"[RoommateMatching] 이미 매칭된 사람이 있습니다."),
 
     // ROOMMATE_MYROOMMATE
-    MY_ROOMMATE_NOT_REGISTERED(NOT_FOUND, 9201, "[MyRoommate] 해당 사용자의 룸메이트 정보를 찾을 수 없습니다"),;
+    MY_ROOMMATE_NOT_REGISTERED(NOT_FOUND, 9201, "[MyRoommate] 해당 사용자의 룸메이트 정보를 찾을 수 없습니다"),
+    RULE_NOT_FOUND(NOT_FOUND, 9203, "[MyRoommate] 수정할 규칙이 존재하지 않습니다."),
+
+    // ROOMMATE_CHAT
+    ROOMMATE_CHAT_CANNOT_CHAT_WITH_SELF(BAD_REQUEST, 10001, "[RoommateChat] 자신에게는 채팅을 보낼 수 없습니다."),
+    DUPLICATE_CHAT_ROOM(CONFLICT, 10001, "[RoommateChat] 이미 존재하는 채팅방입니다."),
+    ROOMMATE_CHAT_ROOM_NOT_FOUND(NOT_FOUND, 7013, "[RoommateChat] 채팅방을 찾을 수 없습니다.");
+
+
+
 
     private final HttpStatus httpStatus;
     private final Integer code;
