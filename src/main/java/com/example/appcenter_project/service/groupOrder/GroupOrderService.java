@@ -110,6 +110,8 @@ public class GroupOrderService {
             throw new CustomException(GROUP_ORDER_NOT_FOUND);
         }
 
+        groupOrderMapper.plusViewCount(groupOrderId);
+
         return buildHierarchicalComments(dto, false);
     }
 
