@@ -469,4 +469,10 @@
         WHERE go.id = #{id}
     </select>
 
+    <!-- GroupOrder 조회수 증가 메서드 -->
+    <select id="plusViewCount">
+        UPDATE group_order go
+        SET go.group_order_view_count = go.group_order_view_count + 1
+        WHERE go.id = #{id}
+    </select>
 </mapper>
