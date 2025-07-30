@@ -24,6 +24,7 @@ import com.example.appcenter_project.repository.groupOrder.UserGroupOrderChatRoo
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.like.GroupOrderLikeRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
+import com.example.appcenter_project.utils.MealTimeChecker;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -59,6 +60,7 @@ public class GroupOrderService {
     private final ImageRepository imageRepository;
     private final GroupOrderMapper groupOrderMapper;
     private final DeliveryCacheService deliveryCacheService;
+    private final GroupOrderLockFacade groupOrderLockFacade;
 
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto) {
         // GroupOrder 저장
@@ -110,7 +112,12 @@ public class GroupOrderService {
             throw new CustomException(GROUP_ORDER_NOT_FOUND);
         }
 
-        groupOrderMapper.plusViewCount(groupOrderId);
+        // GroupOrder 조회수 증가
+        if (MealTimeChecker.isDinnerTime() || MealTimeChecker.isLunchTime()){
+            groupOrderLockFacade.plusGroupOrderViewCount(groupOrderId);
+        } else {
+            groupOrderMapper.plusViewCount(groupOrderId);
+        }
 
         return buildHierarchicalComments(dto, false);
     }

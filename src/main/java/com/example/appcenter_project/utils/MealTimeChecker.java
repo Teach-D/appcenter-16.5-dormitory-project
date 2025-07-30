@@ -25,19 +25,19 @@ public class MealTimeChecker {
         return isLunchTime(currentHour) || isDinnerTime(currentHour);
     }
 
-    public boolean isLunchTime() {
+    public static boolean isLunchTime() {
         return isLunchTime(LocalTime.now().getHour());
     }
 
-    public boolean isDinnerTime() {
+    public static boolean isDinnerTime() {
         return isDinnerTime(LocalTime.now().getHour());
     }
 
-    private boolean isLunchTime(int hour) {
+    private static boolean isLunchTime(int hour) {
         return hour >= LUNCH_START_HOUR && hour < LUNCH_END_HOUR;
     }
 
-    private boolean isDinnerTime(int hour) {
+    private static boolean isDinnerTime(int hour) {
         return hour >= DINNER_START_HOUR && hour < DINNER_END_HOUR;
     }
 
