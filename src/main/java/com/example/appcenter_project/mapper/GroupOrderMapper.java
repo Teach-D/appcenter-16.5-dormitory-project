@@ -22,5 +22,5 @@ public interface GroupOrderMapper {
     List<ResponseGroupOrderDto> findGroupOrdersByUserId(@Param("userId") Long userId);
     List<GroupOrder> findAllGroupOrdersWithDetails();
 
-    void plusViewCount(@Param("id") Long groupOrderId);
+    void plusViewCount(@Param("id") Long groupOrderId, @Param("count") int count);
 }

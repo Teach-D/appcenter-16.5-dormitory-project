@@ -114,9 +114,14 @@ public class GroupOrderService {
 
         // GroupOrder 조회수 증가
         if (MealTimeChecker.isDinnerTime() || MealTimeChecker.isLunchTime()){
-            groupOrderLockFacade.plusGroupOrderViewCount(groupOrderId);
+            // Redisson 분산락 활용 조회수 증가
+            //groupOrderLockFacade.plusGroupOrderViewCount(groupOrderId);
+
+            // Redis 스케줄링 조회수 증가
+            groupOrderLockFacade.plusGroupOrderScheduledViewCount(groupOrderId);
+
         } else {
-            groupOrderMapper.plusViewCount(groupOrderId);
+            groupOrderMapper.plusViewCount(groupOrderId, 1);
         }
 
         return buildHierarchicalComments(dto, false);
