@@ -1,6 +1,7 @@
 package com.example.appcenter_project.controller.roommate;
 
 import com.example.appcenter_project.dto.request.roommate.RequestMatchingDto;
+import com.example.appcenter_project.dto.response.roommate.ResponseReceivedRoommateMatchingDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommateMatchingDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommatePostDto;
 import com.example.appcenter_project.entity.user.User;
@@ -11,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/roommate-matching")
@@ -43,6 +46,18 @@ public class RoommateMatchingController implements RoommateMatchingApiSpecificat
         roommateMatchingService.rejectMatching(matchingId);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/received")
+    public ResponseEntity<List<ResponseReceivedRoommateMatchingDto>> getReceivedMatchings(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long receiverId = userDetails.getId();
+        List<ResponseReceivedRoommateMatchingDto> responseDtos = roommateMatchingService.getReceivedMatchings(receiverId);
+        return ResponseEntity.ok(responseDtos);
+    }
+
+
+
 
 }
 
