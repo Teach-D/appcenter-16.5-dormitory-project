@@ -17,6 +17,7 @@ public class ResponseRoommateSimilarityDto {
     private String title;
     private DormType dormType;
     private College college;
+    private ReligionType religion;
     private String mbti;
     private SmokingType smoking;
     private SnoringType snoring;
