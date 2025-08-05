@@ -30,6 +30,7 @@ public class ResponseRoommatePostDto {
     private BedTimeType bedTime;
     private CleanlinessType arrangement;
     private String comment;
+    private int roommateBoardLike;
 
     public static ResponseRoommatePostDto entityToDto(RoommateBoard board) {
         RoommateCheckList cl = board.getRoommateCheckList();
@@ -50,6 +51,7 @@ public class ResponseRoommatePostDto {
                 .bedTime(cl.getBedTime())
                 .arrangement(cl.getArrangement())
                 .comment(cl.getComment())
+                .roommateBoardLike(board.getRoommateBoardLike())
                 .build();
     }
 }
