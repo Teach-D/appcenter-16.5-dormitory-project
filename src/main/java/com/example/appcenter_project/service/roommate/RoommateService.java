@@ -3,11 +3,13 @@ package com.example.appcenter_project.service.roommate;
 import com.example.appcenter_project.dto.request.roommate.RequestRoommateFormDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommatePostDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommateSimilarityDto;
+import com.example.appcenter_project.entity.like.RoommateBoardLike;
 import com.example.appcenter_project.entity.roommate.RoommateBoard;
 import com.example.appcenter_project.entity.roommate.RoommateCheckList;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.exception.ErrorCode;
+import com.example.appcenter_project.repository.like.RoommateBoardLikeRepository;
 import com.example.appcenter_project.repository.roommate.RoommateBoardRepository;
 import com.example.appcenter_project.repository.roommate.RoommateCheckListRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
@@ -25,6 +27,7 @@ public class RoommateService {
     private final UserRepository userRepository;
     private final RoommateCheckListRepository roommateCheckListRepository;
     private final RoommateBoardRepository roommateBoardRepository;
+    private final RoommateBoardLikeRepository roommateBoardLikeRepository;
 
     @Transactional
     public ResponseRoommatePostDto createRoommateCheckListandBoard(RequestRoommateFormDto requestDto, Long userId) {
@@ -110,6 +113,7 @@ public class RoommateService {
                             .bedTime(cl.getBedTime())
                             .arrangement(cl.getArrangement())
                             .comment(cl.getComment())
+                            .roommateBoardLike(board.getRoommateBoardLike())
                             .build(); //dto하나가 만들어짐
                 })
                 .toList(); //만든 dto들을 모아서 리스트로 뭉쳐줌
@@ -214,6 +218,64 @@ public class RoommateService {
         }
 
         return ResponseRoommatePostDto.entityToDto(board);
+    }
+
+    // 좋아요 추가 (Like)
+    @Transactional
+    public Integer likePlusRoommateBoard(Long userId, Long boardId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
+        RoommateBoard board = roommateBoardRepository.findById(boardId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
+
+        // 이미 좋아요 누른 경우 예외처리
+        if (roommateBoardLikeRepository.existsByUserAndRoommateBoard(user, board)) {
+            throw new CustomException(ErrorCode.ALREADY_ROOMMATE_BOARD_LIKE_USER);
+        }
+
+        RoommateBoardLike roommateBoardLike = RoommateBoardLike.builder()
+                .user(user)
+                .roommateBoard(board)
+                .build();
+
+        roommateBoardLikeRepository.save(roommateBoardLike);
+
+        // user에 좋아요 정보 추가 (양방향 연관관계 유지 시)
+        user.addRoommateBoardLike(roommateBoardLike);
+
+        // board에 좋아요 정보 추가
+        board.getRoommateBoardLikeList().add(roommateBoardLike);
+
+        // 좋아요 카운트 증가
+        return board.plusLike();
+    }
+
+    // 좋아요 취소 (Unlike)
+    @Transactional
+    public Integer likeMinusRoommateBoard(Long userId, Long boardId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
+        RoommateBoard board = roommateBoardRepository.findById(boardId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
+
+        if (!roommateBoardLikeRepository.existsByUserAndRoommateBoard(user, board)) {
+            throw new CustomException(ErrorCode.ROOMMATE_BOARD_LIKE_NOT_FOUND);
+        }
+
+        RoommateBoardLike roommateBoardLike = roommateBoardLikeRepository.findByUserAndRoommateBoard(user, board)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_LIKE_NOT_FOUND));
+
+        // user에서 좋아요 정보 제거
+        user.removeRoommateBoardLike(roommateBoardLike);
+
+        // board에서 좋아요 정보 제거
+        board.getRoommateBoardLikeList().remove(roommateBoardLike);
+
+        // 좋아요 DB에서 삭제
+        roommateBoardLikeRepository.delete(roommateBoardLike);
+
+        // 좋아요 카운트 감소
+        return board.minusLike();
     }
 
 
