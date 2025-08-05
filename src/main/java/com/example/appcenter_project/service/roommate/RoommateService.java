@@ -192,6 +192,7 @@ public class RoommateService {
                             .arrangement(cl.getArrangement())
                             .comment(cl.getComment())
                             .similarityPercentage(entry.getValue())
+                            .roommateBoardLike(entry.getKey().getRoommateBoardLike())
                             .build();
                 })
                 .toList();
