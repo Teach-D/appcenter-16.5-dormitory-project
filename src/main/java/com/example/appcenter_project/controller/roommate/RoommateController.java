@@ -76,4 +76,11 @@ public class RoommateController implements RoommateApiSpecification{
         return ResponseEntity.ok(likeCount);
     }
 
+    @GetMapping("/{boardId}/owner-matched")
+    public ResponseEntity<Boolean> isBoardOwnerMatched(@PathVariable Long boardId) {
+        boolean matched = roommateService.isRoommateBoardOwnerMatched(boardId);
+        return ResponseEntity.ok(matched);
+    }
+
+
 }
