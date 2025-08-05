@@ -41,6 +41,7 @@ public class RoommateService {
                 .dormPeriod(requestDto.getDormPeriod())
                 .dormType(requestDto.getDormType())
                 .college(requestDto.getCollege())
+                .religion(requestDto.getReligion())
                 .mbti(requestDto.getMbti())
                 .smoking(requestDto.getSmoking())
                 .snoring(requestDto.getSnoring())
@@ -73,6 +74,7 @@ public class RoommateService {
                 .dormPeriod(savedCheckList.getDormPeriod())
                 .dormType(savedCheckList.getDormType())
                 .college(savedCheckList.getCollege())
+                .religion(savedCheckList.getReligion())
                 .mbti(savedCheckList.getMbti())
                 .smoking(savedCheckList.getSmoking())
                 .snoring(savedCheckList.getSnoring())
@@ -107,6 +109,7 @@ public class RoommateService {
                             .dormPeriod(cl.getDormPeriod())
                             .dormType(cl.getDormType())
                             .college(cl.getCollege())
+                            .religion(cl.getReligion())
                             .mbti(cl.getMbti())
                             .smoking(cl.getSmoking())
                             .snoring(cl.getSnoring())
@@ -162,6 +165,7 @@ public class RoommateService {
 
                     if (myChecklist.getDormType() == other.getDormType()) score++;
                     if (myChecklist.getCollege() == other.getCollege()) score++;
+                    if (myChecklist.getReligion() == other.getReligion()) score++;
                     if (myChecklist.getMbti().equals(other.getMbti())) score++;
                     if (myChecklist.getSmoking() == other.getSmoking()) score++;
                     if (myChecklist.getSnoring() == other.getSnoring()) score++;
@@ -172,7 +176,7 @@ public class RoommateService {
                     if (myChecklist.getBedTime() == other.getBedTime()) score++;
                     if (myChecklist.getArrangement() == other.getArrangement()) score++;
 
-                    int similarityPercentage = (int) ((score / 11.0) * 100);
+                    int similarityPercentage = (int) ((score / 12.0) * 100);
 
                     return Map.entry(board, similarityPercentage);
                 })
@@ -191,6 +195,7 @@ public class RoommateService {
                             .title(cl.getTitle())
                             .dormType(cl.getDormType())
                             .college(cl.getCollege())
+                            .religion(cl.getReligion())
                             .mbti(cl.getMbti())
                             .smoking(cl.getSmoking())
                             .snoring(cl.getSnoring())
