@@ -82,5 +82,14 @@ public class RoommateController implements RoommateApiSpecification{
         return ResponseEntity.ok(matched);
     }
 
+    @GetMapping("/{boardId}/liked")
+    public ResponseEntity<Boolean> isRoommateBoardLiked(
+            @PathVariable Long boardId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long userId = userDetails.getId();
+        boolean isLiked = roommateService.isRoommateBoardLikedByUser(boardId, userId);
+        return ResponseEntity.ok(isLiked);
+    }
 
 }
