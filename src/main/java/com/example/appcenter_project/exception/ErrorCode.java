@@ -66,6 +66,10 @@ public enum ErrorCode {
     ROOMMATE_UPDATE_NOT_ALLOWED(FORBIDDEN, 7007, "[Roommate] 수정 권한이 없습니다."),
     ROOMMATE_CHECKLIST_UPDATE_FAILED(BAD_REQUEST, 7008, "[Roommate] 체크리스트 수정에 실패했습니다."),
 
+    // ROOMMATE_BOARD_LIKE
+    ROOMMATE_BOARD_LIKE_NOT_FOUND(NOT_FOUND, 7501, "[RoommateBoard] 좋아요 정보를 찾을 수 없습니다."),
+    ALREADY_ROOMMATE_BOARD_LIKE_USER(UNAUTHORIZED, 7502, "[RoommateBoard] 이미 해당 게시글에 좋아요를 누른 유저입니다."),
+
     // ROOMMATE_MATCHING
     ROOMMATE_MATCHING_ALREADY_REQUESTED(CONFLICT, 8101, "[RoommateMatching] 이미 해당 사용자에게 매칭 요청을 보냈습니다."),
     ROOMMATE_MATCHING_NOT_FOUND(NOT_FOUND, 8102, "[RoommateMatching] 해당 매칭 요청을 찾을 수 없습니다."),
