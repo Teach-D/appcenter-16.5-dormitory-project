@@ -57,4 +57,23 @@ public class RoommateController implements RoommateApiSpecification{
         ResponseRoommatePostDto updated = roommateService.updateRoommateChecklistAndBoard(requestDto, userId);
         return ResponseEntity.ok(updated);
     }
+
+    @PostMapping("/{boardId}/like")
+    public ResponseEntity<Integer> plusLike(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long boardId
+    ) {
+        Integer likeCount = roommateService.likePlusRoommateBoard(userDetails.getId(), boardId);
+        return ResponseEntity.ok(likeCount);
+    }
+
+    @DeleteMapping("/{boardId}/like")
+    public ResponseEntity<Integer> minusLike(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long boardId
+    ) {
+        Integer likeCount = roommateService.likeMinusRoommateBoard(userDetails.getId(), boardId);
+        return ResponseEntity.ok(likeCount);
+    }
+
 }
