@@ -74,6 +74,8 @@ public class TipService {
         if (images != null) {
             saveImages(tip, images);
         }
+
+        log.info("Tip 저장 성공 userId : {}, tipId : {}", userId, tip.getId());
     }
 
     public List<TipImageDto> findTipImages(Long tipId) {
@@ -198,6 +200,8 @@ public class TipService {
     }
 
     public ResponseTipDetailDto findTip(CustomUserDetails user, Long tipId, HttpServletRequest request) {
+        log.info("[findTip] tipId={} 조회 시작", tipId);
+
         ResponseTipDetailDto flatDto = tipMapper.findTip(tipId);
         Tip tip = tipRepository.findById(tipId).orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
         Long tipWriterId = tip.getUser().getId();
@@ -207,6 +211,8 @@ public class TipService {
         String writerImageName = userImageUrlByUserId.getFileName();
         flatDto.updateFileName(writerImageName);
 
+        log.debug("[findTip] Tip 작성자 ID: {}", tipWriterId);
+
         // 현재 유저가 해당 팁 게시글의 좋아요를 누른 유저인지 확인
         // 로그인 한 경우일 때
         if (user != null) {
@@ -214,10 +220,12 @@ public class TipService {
 
             // 로그인한 유저가 해당 게시글의 좋아요를 누른 경우 true 반환
             if(tipLikeRepository.existsByUserIdAndTipId(loginUser.getId(), tipId) == true) {
+                log.info("[findTip] 로그인 유저가 해당 Tip에 좋아요를 누른 경우");
                 flatDto.updateIsCheckLikeCurrentUser(true);
             }
             // 로그인한 유저가 해당 게시글의 좋아요를 누르지 않은 경우 false 반환
             else {
+                log.info("[findTip] 로그인 유저가 해당 Tip에 좋아요를 누르지 않은 경우");
                 flatDto.updateIsCheckLikeCurrentUser(false);
             }
         }
@@ -254,6 +262,9 @@ public class TipService {
         }
 
         flatDto.updateTipCommentDtoList(topLevelComments);
+
+        log.info("[findTip] tipId={} 조회 완료", tipId);
+
         return flatDto;
     }
 
@@ -278,6 +289,9 @@ public class TipService {
     public List<ResponseTipDto> findAllTips() {
         List<ResponseTipDto> tips = tipMapper.findTips();
         Collections.reverse(tips);
+
+        log.info("모든 Tip 조회 성공");
+
         return tips;
 /*        List<ResponseTipDto> responseTipDtoList = new ArrayList<>();
         List<Tip> tips = tipRepository.findAll();
@@ -300,7 +314,7 @@ public class TipService {
 
         // Tip이 3개 미만인 경우 빈 리스트 반환
         if (allTips.size() < 3) {
-            log.info("Available tips count: {}. Need at least 3 tips for daily random selection.", allTips.size());
+            log.info("사용 가능한 팁 수: {}개. 일일 무작위 선정을 위해 최소 3개 이상의 팁이 필요합니다.", allTips.size());
             return new ArrayList<>();
         }
 
@@ -317,8 +331,8 @@ public class TipService {
         // 첫 3개 선택
         List<ResponseTipDto> dailyRandomTips = shuffledTips.subList(0, 3);
 
-        log.info("Daily random tips selected for date {}: {} tips selected from {} total tips",
-                today, dailyRandomTips.size(), allTips.size());
+        log.info("{} 날짜에 대해 일일 무작위 팁이 선택되었습니다: 전체 {}개 중 {}개가 선택되었습니다.",
+                today, allTips.size(), dailyRandomTips.size());
 
         return dailyRandomTips;
     }
@@ -352,6 +366,8 @@ public class TipService {
     }
 
     public Integer likePlusTip(Long userId, Long tipId) {
+        log.info("[likePlusTip] userId={}가 tipId={}에 좋아요 요청", userId, tipId);
+
         Tip tip = tipRepository.findById(tipId)
                 .orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
@@ -374,10 +390,15 @@ public class TipService {
         // tip에 좋아요 정보 추가 orphanRemoval 위한 설정
         tip.getTipLikeList().add(tipLike);
 
-        return tip.plusLike();
+        Integer likeCount = tip.plusLike();
+        log.info("[likePlusTip] tipId={}의 좋아요 수 증가: {}", tipId, likeCount);
+
+        return likeCount;
     }
 
     public Integer unlikePlusTip(Long userId, Long tipId) {
+        log.info("[unlikePlusTip] userId={}가 tipId={}에 대한 좋아요 취소 요청", userId, tipId);
+
         Tip tip = tipRepository.findById(tipId)
                 .orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
         User user = userRepository.findById(userId)
@@ -399,13 +420,18 @@ public class TipService {
 
         tipLikeRepository.delete(tipLike);
 
+        log.info("[unlikePlusTip] userId={}가 tipId={}에 대한 좋아요 취소 성공", userId, tipId);
+
         return tip.minusLike();
     }
 
     public void updateTip(Long userId, RequestTipDto requestTipDto, List<MultipartFile> images, Long tipId) {
+        log.info("[updateTip] userId={}가 tipId={}에 대한 팁 수정 요청", userId, tipId);
+
         Tip tip = tipRepository.findByIdAndUserId(tipId, userId).orElseThrow(() -> new CustomException(TIP_NOT_OWNED_BY_USER));
 
         tip.update(requestTipDto);
+        log.debug("[updateTip] tipId={} 내용 업데이트 성공", tipId);
 
         // 이미지가 제공된 경우에만 기존 이미지를 삭제하고 새로운 이미지를 저장
         if (images != null && !images.isEmpty()) {
@@ -426,19 +452,25 @@ public class TipService {
 
             // 새로운 이미지들 저장
             saveImages(tip, images);
+            log.info("[updateTip] tipId={}의 새로운 이미지 저장 완료", tipId);
         }
     }
 
     public void deleteTip(Long userId, Long tipId) {
+        log.info("[deleteTip] userId={}가 tipId={} 삭제 요청", userId, tipId);
+
         Tip tip = tipRepository.findByIdAndUserId(tipId, userId).orElseThrow(() -> new CustomException(TIP_NOT_OWNED_BY_USER));
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
         user.removeTip(tip);
         tipRepository.deleteById(tipId);
+        log.info("[deleteTip] tipId={} 삭제 완료", tipId);
     }
 
     // Tip 이미지 URL 목록 조회
     public List<ImageLinkDto> findTipImageUrlsByTipId(Long tipId, HttpServletRequest request) {
+        log.info("[findTipImageUrlsByTipId] tipId={}에 대한 이미지 URL 목록 조회 요청", tipId);
+
         // 팁 존재 확인
         Tip tip = tipRepository.findById(tipId)
                 .orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
@@ -446,7 +478,7 @@ public class TipService {
         List<Image> tipImages = imageRepository.findAllByBoardIdAndImageType(tipId, ImageType.TIP);
 
         if (tipImages.isEmpty()) {
-            log.info("No images found for tip {}", tipId);
+            log.info("[findTipImageUrlsByTipId] tipId={}에 연결된 이미지가 없음", tipId);
             return new ArrayList<>(); // 빈 리스트 반환
         }
 
@@ -474,11 +506,11 @@ public class TipService {
 
                 imageLinkDtos.add(imageLinkDto);
             } else {
-                log.warn("Tip image file not found: {}", image.getFilePath());
+                log.warn("[findTipImageUrlsByTipId] 파일이 존재하지 않음 - path={}", image.getFilePath());
             }
         }
 
-        log.info("Found {} valid images for tip {}", imageLinkDtos.size(), tipId);
+        log.info("[findTipImageUrlsByTipId] tipId={}에 대해 {}개의 유효한 이미지 URL 반환", tipId, imageLinkDtos.size());
         return imageLinkDtos;
     }
 
