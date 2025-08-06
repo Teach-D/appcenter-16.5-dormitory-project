@@ -38,6 +38,10 @@ public class RoommateCheckList {
     @Column(length = 20)
     private College college;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private ReligionType religion;
+
     @Column(length = 20)
     private String mbti;
 
@@ -73,6 +77,7 @@ public class RoommateCheckList {
     @Column(length = 20)
     private CleanlinessType arrangement; // NEAT, EASYGOING, UNCERTAIN
 
+
     private String comment;
 
     @OneToOne
@@ -80,13 +85,14 @@ public class RoommateCheckList {
     private User user;
 
     @Builder
-    public RoommateCheckList(Set<DormDay> dormPeriod, DormType dormType, College college, String mbti,
+    public RoommateCheckList(Set<DormDay> dormPeriod, DormType dormType, College college, ReligionType religion, String mbti,
                              SmokingType smoking, SnoringType snoring, TeethGrindingType toothGrind,
                              SleepSensitivityType sleeper, ShowerTimeType showerHour, ShowerDurationType showerTime,
                              BedTimeType bedTime, CleanlinessType arrangement, String comment, String title, User user) {
         this.dormPeriod = dormPeriod;
         this.dormType = dormType;
         this.college = college;
+        this.religion = religion;
         this.mbti = mbti;
         this.smoking = smoking;
         this.snoring = snoring;
@@ -106,6 +112,7 @@ public class RoommateCheckList {
         this.dormPeriod = dto.getDormPeriod();
         this.dormType = dto.getDormType();
         this.college = dto.getCollege();
+        this.religion = dto.getReligion();
         this.mbti = dto.getMbti();
         this.smoking = dto.getSmoking();
         this.snoring = dto.getSnoring();
@@ -118,9 +125,6 @@ public class RoommateCheckList {
         this.comment = dto.getComment();
     }
 
-    public void setUser(User user) {
-        this.user = user;
-    }
 
 
 

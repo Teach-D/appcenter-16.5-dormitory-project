@@ -1,5 +1,6 @@
 package com.example.appcenter_project.service.roommate;
 
+import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseMyRoommateInfoDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRuleDto;
 import com.example.appcenter_project.entity.roommate.MyRoommate;
@@ -7,6 +8,8 @@ import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.exception.ErrorCode;
 import com.example.appcenter_project.repository.roommate.MyRoommateRepository;
+import com.example.appcenter_project.service.image.ImageService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,9 +23,10 @@ import static com.example.appcenter_project.exception.ErrorCode.MY_ROOMMATE_NOT_
 public class MyRoommateService {
 
     private final MyRoommateRepository myRoommateRepository;
+    private final ImageService imageService;
 
     @Transactional(readOnly = true)
-    public ResponseMyRoommateInfoDto getMyRoommateInfo(Long userId){
+    public ResponseMyRoommateInfoDto getMyRoommateInfo(Long userId, HttpServletRequest request){
         MyRoommate myRoommate = myRoommateRepository.findByUserId(userId)
                 .orElseThrow(() -> new CustomException(MY_ROOMMATE_NOT_REGISTERED));
 
@@ -31,8 +35,8 @@ public class MyRoommateService {
         return ResponseMyRoommateInfoDto.builder()
                 .name(roommate.getName())
                 .dormType(roommate.getDormType() != null ? roommate.getDormType().name() : null)
-                .college(roommate.getCollege() != null ? roommate.getCollege().name() : null)
-                .imagePath(roommate.getImage() != null ? roommate.getImage().getFilePath() : null)
+                .college(roommate.getCollege() != null ? roommate.getCollege().toValue() : null)
+                .imagePath(imageService.findUserImageUrlByUserId(roommate.getId(), request).getFileName())
                 .build();
     }
 
@@ -75,5 +79,17 @@ public class MyRoommateService {
         myRoommate.updateRules(rules);
     }
 
+    @Transactional
+    public ImageLinkDto findMyRoommateImageByUserId(Long userId, HttpServletRequest request) {
+        MyRoommate myRoommate = myRoommateRepository.findByUserId(userId)
+                .orElseThrow(() -> new CustomException(MY_ROOMMATE_NOT_REGISTERED));
+        Long myRoommateId = myRoommate.getRoommate().getId();
 
+        ImageLinkDto imageLinkDto = imageService.findUserTimeTableImageUrlByUserId(myRoommateId, request);
+        return imageLinkDto;
+    }
+
+    public ImageLinkDto getMyRoommateImage(Long userId, HttpServletRequest request) {
+        return imageService.findUserImageUrlByUserId(userId, request);
+    }
 }

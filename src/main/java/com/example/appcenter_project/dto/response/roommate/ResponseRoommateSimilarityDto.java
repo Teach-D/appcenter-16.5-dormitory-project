@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Builder
 @AllArgsConstructor
@@ -15,6 +17,7 @@ public class ResponseRoommateSimilarityDto {
     private String title;
     private DormType dormType;
     private College college;
+    private ReligionType religion;
     private String mbti;
     private SmokingType smoking;
     private SnoringType snoring;
@@ -25,6 +28,11 @@ public class ResponseRoommateSimilarityDto {
     private BedTimeType bedTime;
     private CleanlinessType arrangement;
     private String comment;
+    private Long userId;
+    private String userName;
+    private LocalDateTime createdDate;
+    private boolean isMatched;
 
+    private int roommateBoardLike;
     private Integer similarityPercentage;
 }

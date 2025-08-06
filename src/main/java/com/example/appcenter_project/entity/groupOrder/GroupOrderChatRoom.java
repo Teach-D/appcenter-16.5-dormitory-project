@@ -18,7 +18,7 @@ public class GroupOrderChatRoom extends BaseTimeEntity {
     private Long id;
 
     // GroupOrder의 title과 같은 문자열
-    @Column(nullable = false, unique = true, length = 30)
+    @Column(nullable = false, length = 30)
     private String title;
 
     @OneToMany(mappedBy = "groupOrderChatRoom", orphanRemoval = true)

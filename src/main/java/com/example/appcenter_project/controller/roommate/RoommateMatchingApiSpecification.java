@@ -1,6 +1,8 @@
 package com.example.appcenter_project.controller.roommate;
 
 import com.example.appcenter_project.dto.request.roommate.RequestMatchingDto;
+import com.example.appcenter_project.dto.response.roommate.ResponseReceivedRoommateMatchingDto;
+import com.example.appcenter_project.dto.response.roommate.ResponseRoommateMatchingDto;
 import com.example.appcenter_project.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -61,5 +63,42 @@ public interface RoommateMatchingApiSpecification {
             @Parameter(description = "매칭 ID", example = "1") @PathVariable Long matchingId
     );
 
+    @Operation(
+            summary = "나에게 온 룸메이트 매칭 요청 리스트 조회",
+            description = "나에게 요청된 모든 룸메이트 매칭 요청(수락 대기 상태) 리스트를 조회합니다.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "매칭 요청 리스트 조회 성공",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseReceivedRoommateMatchingDto.class) // ← 여기!
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "사용자를 찾을 수 없습니다. (ROOMMATE_USER_NOT_FOUND)",
+                            content = @Content
+                    )
+            }
+    )
+    ResponseEntity<?> getReceivedMatchings(
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
+    );
+
+    @Operation(
+            summary = "룸메이트 매칭 취소",
+            description = "내가 요청한 룸메이트 매칭을 취소(삭제)합니다. (매칭 완료 상태일 때만 가능)",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "매칭 취소 성공"),
+                    @ApiResponse(responseCode = "404", description = "매칭 요청을 찾을 수 없습니다. (ROOMMATE_MATCHING_NOT_FOUND)", content = @Content),
+                    @ApiResponse(responseCode = "400", description = "매칭이 완료된 상태가 아닙니다. (ROOMMATE_MATCHING_NOT_COMPLETED)", content = @Content),
+                    @ApiResponse(responseCode = "403", description = "본인이 요청한 매칭이 아닙니다. (ROOMMATE_MATCHING_NOT_FOR_USER)", content = @Content)
+            }
+    )
+    ResponseEntity<Void> cancelMatching(
+            @Parameter(description = "매칭 ID", example = "1") @PathVariable Long matchingId,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
+    );
 
 }

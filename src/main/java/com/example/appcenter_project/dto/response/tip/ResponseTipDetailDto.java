@@ -16,11 +16,14 @@ public class ResponseTipDetailDto {
     private String title;
     private String content;
     private Integer tipLikeCount;
+    private String name;
+    private boolean isCheckLikeCurrentUser = false;
+    private String writerImageFile;
 
     @Builder.Default
     private List<Long> tipLikeUserList = new ArrayList<>();
 
-    private String createdDatee;
+    private String createDate;
 
     @Builder.Default
     private List<ResponseTipCommentDto> tipCommentDtoList = new ArrayList<>();
@@ -28,10 +31,11 @@ public class ResponseTipDetailDto {
     public static ResponseTipDetailDto entityToDto(Tip tip, List<ResponseTipCommentDto> responseTipCommentDtoList, List<Long> tipLikeUserList) {
         return ResponseTipDetailDto.builder()
                 .id(tip.getId())
-                .createdDatee(String.valueOf(tip.getCreatedDate()))
+                .createDate(String.valueOf(tip.getCreatedDate()))
                 .title(tip.getTitle())
                 .content(tip.getContent())
                 .tipLikeCount(tip.getTipLike())
+                .name(tip.getUser().getName())
                 .tipLikeUserList(tipLikeUserList)
                 .tipCommentDtoList(responseTipCommentDtoList)
                 .build();
@@ -40,6 +44,14 @@ public class ResponseTipDetailDto {
 
     public void updateTipCommentDtoList(List<ResponseTipCommentDto> topLevelComments) {
         this.tipCommentDtoList = topLevelComments;
+    }
+
+    public void updateIsCheckLikeCurrentUser(boolean check) {
+        this.isCheckLikeCurrentUser = check;
+    }
+
+    public void updateFileName(String fileName) {
+        this.writerImageFile = fileName;
     }
 
 }

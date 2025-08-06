@@ -4,13 +4,10 @@ import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface GroupOrderRepository extends JpaRepository<GroupOrder, Long>, JpaSpecificationExecutor<GroupOrder> {
     Optional<GroupOrder> findByGroupOrderChatRoom_id(Long id);
     boolean existsByTitle(String title);
     Optional<GroupOrder> findByIdAndUserId(Long id, Long userId);
-
 }
-

@@ -6,7 +6,6 @@ import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,8 +15,6 @@ import org.springframework.core.annotation.Order;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
-@JsonIgnoreProperties(ignoreUnknown = true)
 
 @Entity
 @NoArgsConstructor
@@ -53,6 +50,9 @@ public class GroupOrder extends BaseTimeEntity {
     @Column(nullable = false)
     private int groupOrderLike = 0;
 
+    @Column(nullable = false)
+    private int groupOrderViewCount = 0;
+
     @Column(nullable = false, length = 100)
     private String description;
 
@@ -64,17 +64,18 @@ public class GroupOrder extends BaseTimeEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @OneToMany(orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(orphanRemoval = true)
     private List<Image> imageList = new ArrayList<>();
 
-    @OneToMany(mappedBy = "groupOrder", orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "groupOrder", orphanRemoval = true)
     private List<GroupOrderLike> groupOrderLikeList = new ArrayList<>();
 
-    @OneToMany(mappedBy = "groupOrder", orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "groupOrder", orphanRemoval = true)
     private List<GroupOrderComment> groupOrderCommentList = new ArrayList<>();
 
     @Builder
-    public GroupOrder(String title, GroupOrderType groupOrderType, Integer price, String link, int currentPeople, int maxPeople, LocalDateTime deadline, int groupOrderLike, String description, User user, GroupOrderChatRoom groupOrderChatRoom) {        this.title = title;
+    public GroupOrder(String title, GroupOrderType groupOrderType, Integer price, String link, int currentPeople, int maxPeople, LocalDateTime deadline, int groupOrderLike, String description, User user, GroupOrderChatRoom groupOrderChatRoom, int groupOrderViewCount) {
+        this.title = title;
         this.groupOrderType = groupOrderType;
         this.price = price;
         this.link = link;
@@ -82,6 +83,7 @@ public class GroupOrder extends BaseTimeEntity {
         this.maxPeople = maxPeople;
         this.deadline = deadline;
         this.groupOrderLike = groupOrderLike;
+        this.groupOrderViewCount = groupOrderViewCount;
         this.description = description;
         this.user = user;
         this.groupOrderChatRoom = groupOrderChatRoom;
@@ -111,5 +113,9 @@ public class GroupOrder extends BaseTimeEntity {
 
     public Integer minusLike() {
         return this.groupOrderLike -= 1;
+    }
+
+    public void plusViewCount() {
+        this.groupOrderViewCount += 1;
     }
 }

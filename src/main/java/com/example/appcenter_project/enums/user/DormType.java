@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum DormType {
+    DORM_1("1기숙사"),
     DORM_2("2기숙사"),
     DORM_3("3기숙사");
 

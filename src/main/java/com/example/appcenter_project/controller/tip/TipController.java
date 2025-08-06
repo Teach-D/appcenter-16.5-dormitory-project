@@ -1,15 +1,18 @@
 package com.example.appcenter_project.controller.tip;
 
+import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.dto.request.tip.RequestTipDto;
 import com.example.appcenter_project.dto.response.tip.ResponseTipDetailDto;
 import com.example.appcenter_project.dto.response.tip.ResponseTipDto;
 import com.example.appcenter_project.dto.response.tip.TipImageDto;
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.tip.TipService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -33,7 +36,7 @@ public class TipController implements TipApiSpecification {
     public ResponseEntity<Void> saveTip(
             @AuthenticationPrincipal CustomUserDetails user,
             @Valid @RequestPart("requestTipDto") RequestTipDto requestTipDto,
-            @RequestPart("images") List<MultipartFile> images) {
+            @RequestPart(value = "images", required = false) List<MultipartFile> images) {
         tipService.saveTip(user.getId(), requestTipDto, images);
         return ResponseEntity.status(CREATED).build();
 
@@ -45,13 +48,22 @@ public class TipController implements TipApiSpecification {
         return ResponseEntity.status(OK).body(tipService.findAllTips());
     }
 
-    // 2. 특정 Tip의 이미지를 제외한 정보 하나 조회
-    @GetMapping("/{tipId}")
-    public ResponseEntity<ResponseTipDetailDto> findTip(@PathVariable Long tipId) {
-        return ResponseEntity.status(OK).body(tipService.findTip(tipId));
+    // 일일 랜덤 Tip 3개 조회
+    @GetMapping("/daily-random")
+    public ResponseEntity<List<ResponseTipDto>> findDailyRandomTips() {
+        List<ResponseTipDto> dailyRandomTips = tipService.findDailyRandomTips();
+        if (dailyRandomTips.isEmpty()) {
+            return ResponseEntity.status(NO_CONTENT).build();
+        }
+        return ResponseEntity.status(OK).body(dailyRandomTips);
     }
 
-    // 3. 특정 Tip의 이미지 메타 정보 목록 조회
+    // 2. 특정 Tip의 이미지를 제외한 정보 하나 조회
+    @GetMapping("/{tipId}")
+    public ResponseEntity<ResponseTipDetailDto> findTip(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long tipId, HttpServletRequest request) {
+        return ResponseEntity.status(OK).body(tipService.findTip(user, tipId, request));
+    }
+/*    // 3. 특정 Tip의 이미지 메타 정보 목록 조회
     @GetMapping("/{tipId}/images")
     public ResponseEntity<List<TipImageDto>> getTipImages(@PathVariable Long tipId) {
         List<TipImageDto> images = tipService.findTipImages(tipId);
@@ -68,7 +80,7 @@ public class TipController implements TipApiSpecification {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
                 .body(resource);
-    }
+    }*/
 
     @PatchMapping("/{tipId}/like")
     public ResponseEntity<Integer> likePlusTip(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long tipId) {
@@ -80,8 +92,8 @@ public class TipController implements TipApiSpecification {
         return ResponseEntity.status(OK).body(tipService.unlikePlusTip(user.getId(), tipId));
     }
 
-    @PutMapping("/{tipId}")
-    public ResponseEntity<Void> updateTip(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestPart RequestTipDto requestTipDto, @RequestPart List<MultipartFile> images, @PathVariable Long tipId) {
+    @PutMapping(value = "/{tipId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> updateTip(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestPart RequestTipDto requestTipDto, @RequestPart(value = "images", required = false) List<MultipartFile> images, @PathVariable Long tipId) {
         tipService.updateTip(user.getId(), requestTipDto, images, tipId);
         return ResponseEntity.status(ACCEPTED).build();
     }
@@ -89,6 +101,31 @@ public class TipController implements TipApiSpecification {
     @DeleteMapping("/{tipId}")
     public ResponseEntity<Void> deleteTip(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long tipId) {
         tipService.deleteTip(user.getId(), tipId);
+        return ResponseEntity.status(NO_CONTENT).build();
+    }
+
+    // Tip 이미지 조회 (다중 이미지)
+    @GetMapping("/{tipId}/image")
+    public ResponseEntity<List<ImageLinkDto>> findTipImagesByTipId(
+            @PathVariable Long tipId,
+            HttpServletRequest request) {
+        try {
+            List<ImageLinkDto> imageLinkDtos = tipService.findTipImageUrlsByTipId(tipId, request);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .body(imageLinkDtos);
+        } catch (Exception e) {
+            log.error("Error retrieving tip images: ", e);
+            throw e;
+        }
+    }
+
+    // Tip 이미지 삭제 (모든 이미지)
+    @DeleteMapping("/{tipId}/image")
+    public ResponseEntity<Void> deleteTipImages(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long tipId) {
+        tipService.deleteTipImages(user.getId(), tipId);
         return ResponseEntity.status(NO_CONTENT).build();
     }
 }

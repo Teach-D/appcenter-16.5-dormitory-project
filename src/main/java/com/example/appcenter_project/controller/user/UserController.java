@@ -1,6 +1,8 @@
 package com.example.appcenter_project.controller.user;
 
 import com.example.appcenter_project.dto.ImageDto;
+import com.example.appcenter_project.dto.ImageLinkDto;
+import com.example.appcenter_project.dto.request.user.RequestTokenDto;
 import com.example.appcenter_project.dto.request.user.RequestUserDto;
 import com.example.appcenter_project.dto.request.user.SignupUser;
 import com.example.appcenter_project.dto.response.like.ResponseLikeDto;
@@ -10,10 +12,12 @@ import com.example.appcenter_project.dto.response.user.ResponseUserDto;
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.image.ImageService;
 import com.example.appcenter_project.service.user.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -42,9 +46,9 @@ public class UserController implements UserApiSpecification {
     }
 
     @PostMapping("/refreshToken")
-    public ResponseEntity<?> reissueAccessToken(@RequestHeader("Authorization") String authorizationHeader) {
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            String refreshToken = authorizationHeader.substring(7);
+    public ResponseEntity<?> reissueAccessToken(@RequestBody RequestTokenDto requestTokenDto) {
+        if (requestTokenDto.getRefreshToken() != null && requestTokenDto.getRefreshToken().startsWith("Bearer ")) {
+            String refreshToken = requestTokenDto.getRefreshToken().substring(7);
             String newAccessToken = userService.reissueAccessToken(refreshToken);
             return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
         }
@@ -56,6 +60,7 @@ public class UserController implements UserApiSpecification {
         return ResponseEntity.status(OK).body(userService.findUserByUserId(user.getId()));
     }
 
+/*
     @GetMapping("/image")
     public ResponseEntity<Resource> findUserImageByUserId(@AuthenticationPrincipal CustomUserDetails user) {
         ImageDto imageDto = imageService.findUserImageByUserId(user.getId());
@@ -63,6 +68,23 @@ public class UserController implements UserApiSpecification {
         return ResponseEntity.status(OK)
                 .contentType(MediaType.parseMediaType(imageDto.getContentType()))
                 .body(imageDto.getResource());
+    }
+*/
+
+    @GetMapping(value = "/image")
+    public ResponseEntity<ImageLinkDto> findUserImageByUserId(
+            @AuthenticationPrincipal CustomUserDetails user,
+            HttpServletRequest request) {
+        try {
+            ImageLinkDto imageLinkDto = imageService.findUserImageUrlByUserId(user.getId(), request);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .body(imageLinkDto);
+        } catch (Exception e) {
+            log.error("Error retrieving user image: ", e);
+            throw e;
+        }
     }
 
     @GetMapping("/board")
@@ -84,6 +106,33 @@ public class UserController implements UserApiSpecification {
     public ResponseEntity<Void> updateUserImage(@AuthenticationPrincipal CustomUserDetails user, @RequestPart MultipartFile image) {
         imageService.updateUserImage(user.getId(), image);
         return ResponseEntity.status(OK).build();
+    }
+
+    @PutMapping(value = "/time-table-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> updateUserTimeTableImage(@AuthenticationPrincipal CustomUserDetails user, @RequestPart MultipartFile image) {
+        imageService.updateUserTimeTableImage(user.getId(), image);
+        return ResponseEntity.status(OK).build();
+    }
+
+    @GetMapping("/time-table-image")
+    public ResponseEntity<ImageLinkDto> findUserTimeTableImageByUserId(
+            @AuthenticationPrincipal CustomUserDetails user,
+            HttpServletRequest request) {
+        try {
+            ImageLinkDto imageLinkDto = imageService.findUserTimeTableImageUrlByUserId(user.getId(), request);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .body(imageLinkDto);
+        } catch (Exception e) {
+            log.error("Error retrieving user timetable image: ", e);
+            throw e;
+        }
+    }
+
+    @DeleteMapping("/time-table-image")
+    public ResponseEntity<Void> deleteUserTimeTableImage(@AuthenticationPrincipal CustomUserDetails user) {
+        imageService.deleteUserTimeTableImage(user.getId());
+        return ResponseEntity.status(NO_CONTENT).build();
     }
 
     @DeleteMapping

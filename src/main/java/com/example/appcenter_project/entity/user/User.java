@@ -7,6 +7,7 @@ import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.entity.groupOrder.UserGroupOrderChatRoom;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
+import com.example.appcenter_project.entity.like.RoommateBoardLike;
 import com.example.appcenter_project.entity.like.TipLike;
 import com.example.appcenter_project.entity.roommate.RoommateBoard;
 import com.example.appcenter_project.entity.roommate.RoommateCheckList;
@@ -60,29 +61,44 @@ public class User extends BaseTimeEntity {
     @JoinColumn(name = "image_id")
     private Image image;
 
-    @OneToMany(mappedBy = "user")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "time_table_image_id")
+    private Image timeTableImage;
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Tip> tipList = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<GroupOrderLike> groupOrderLikeList = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<TipLike> tipLikeList = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<GroupOrder> groupOrderList = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user", orphanRemoval = true)
+    @OneToMany(mappedBy = "user", orphanRemoval = true, fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<UserGroupOrderChatRoom> userGroupOrderChatRoomList = new ArrayList<>();
 
-    @OneToOne(mappedBy = "user")
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private RoommateCheckList roommateCheckList;
 
-    @OneToOne(mappedBy = "user")
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private RoommateBoard roommateBoard;
 
-    @OneToOne(mappedBy = "user")
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private MyRoommate myRoommate;
+
+    @OneToMany(mappedBy = "user")
+    private List<RoommateBoardLike> roommateBoardLikeList = new ArrayList<>();
+
+    public void addRoommateBoardLike(RoommateBoardLike roommateBoardLike) {
+        this.roommateBoardLikeList.add(roommateBoardLike);
+    }
+
+    public void removeRoommateBoardLike(RoommateBoardLike roommateBoardLike) {
+        this.roommateBoardLikeList.remove(roommateBoardLike);
+    }
 
 
     @Builder
@@ -98,13 +114,21 @@ public class User extends BaseTimeEntity {
 
     public void update(RequestUserDto requestUserDto) {
         this.name = requestUserDto.getName();
-        this.dormType = DormType.valueOf(requestUserDto.getDormType());
-        this.college = College.valueOf(requestUserDto.getCollege());
+        this.dormType = DormType.from(requestUserDto.getDormType());
+        this.college = College.from(requestUserDto.getCollege());
         this.penalty = requestUserDto.getPenalty();
     }
 
     public void updateImage(Image image) {
         this.image =image;
+    }
+
+    public void updateTimeTableImage(Image timeTableImage) {
+        this.timeTableImage = timeTableImage;
+    }
+
+    public void removeTimeTableImage() {
+        this.timeTableImage = null;
     }
 
     public void addTip(Tip tip) {

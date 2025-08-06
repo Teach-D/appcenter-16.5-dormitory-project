@@ -1,6 +1,7 @@
 package com.example.appcenter_project.controller.roommate;
 
 import com.example.appcenter_project.dto.request.roommate.RequestRoommateFormDto;
+import com.example.appcenter_project.dto.response.roommate.ResponseRoommateCheckListDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommatePostDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommateSimilarityDto;
 import com.example.appcenter_project.security.CustomUserDetails;
@@ -57,4 +58,48 @@ public class RoommateController implements RoommateApiSpecification{
         ResponseRoommatePostDto updated = roommateService.updateRoommateChecklistAndBoard(requestDto, userId);
         return ResponseEntity.ok(updated);
     }
+
+    @PostMapping("/{boardId}/like")
+    public ResponseEntity<Integer> plusLike(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long boardId
+    ) {
+        Integer likeCount = roommateService.likePlusRoommateBoard(userDetails.getId(), boardId);
+        return ResponseEntity.ok(likeCount);
+    }
+
+    @DeleteMapping("/{boardId}/like")
+    public ResponseEntity<Integer> minusLike(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long boardId
+    ) {
+        Integer likeCount = roommateService.likeMinusRoommateBoard(userDetails.getId(), boardId);
+        return ResponseEntity.ok(likeCount);
+    }
+
+    @GetMapping("/{boardId}/owner-matched")
+    public ResponseEntity<Boolean> isBoardOwnerMatched(@PathVariable Long boardId) {
+        boolean matched = roommateService.isRoommateBoardOwnerMatched(boardId);
+        return ResponseEntity.ok(matched);
+    }
+
+    @GetMapping("/{boardId}/liked")
+    public ResponseEntity<Boolean> isRoommateBoardLiked(
+            @PathVariable Long boardId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long userId = userDetails.getId();
+        boolean isLiked = roommateService.isRoommateBoardLikedByUser(boardId, userId);
+        return ResponseEntity.ok(isLiked);
+    }
+
+    @GetMapping("/my-checklist")
+    public ResponseEntity<ResponseRoommateCheckListDto> getMyRoommateCheckList(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long userId = userDetails.getId();
+        ResponseRoommateCheckListDto response = roommateService.getMyRoommateCheckList(userId);
+        return ResponseEntity.ok(response);
+    }
+
 }

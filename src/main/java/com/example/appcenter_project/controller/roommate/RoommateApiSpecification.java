@@ -1,6 +1,7 @@
 package com.example.appcenter_project.controller.roommate;
 
 import com.example.appcenter_project.dto.request.roommate.RequestRoommateFormDto;
+import com.example.appcenter_project.dto.response.roommate.ResponseRoommateCheckListDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommatePostDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommateSimilarityDto;
 import com.example.appcenter_project.security.CustomUserDetails;
@@ -103,6 +104,80 @@ public interface RoommateApiSpecification {
             @RequestBody
             @Parameter(description = "수정할 룸메이트 체크리스트 요청 DTO", required = true)
             RequestRoommateFormDto requestDto
+    );
+
+    @Operation(
+            summary = "룸메이트 게시글 좋아요",
+            description = "특정 게시글에 좋아요를 추가합니다. 이미 좋아요를 누른 경우 에러가 발생합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "좋아요 성공, 현재 좋아요 개수 반환",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Integer.class))),
+                    @ApiResponse(responseCode = "404", description = "해당 유저 또는 게시글이 존재하지 않음 (ROOMMATE_USER_NOT_FOUND, ROOMMATE_BOARD_NOT_FOUND)", content = @Content),
+                    @ApiResponse(responseCode = "401", description = "이미 좋아요를 누른 유저 (ALREADY_ROOMMATE_BOARD_LIKE_USER)", content = @Content)
+            }
+    )
+    ResponseEntity<Integer> plusLike(
+            @Parameter(hidden = true) CustomUserDetails userDetails,
+            @Parameter(description = "좋아요를 누를 게시글 ID", example = "1")
+            @PathVariable Long boardId
+    );
+
+    @Operation(
+            summary = "룸메이트 게시글 좋아요 취소",
+            description = "특정 게시글의 좋아요를 취소합니다. 좋아요를 누르지 않은 경우 에러가 발생합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "좋아요 취소 성공, 현재 좋아요 개수 반환",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Integer.class))),
+                    @ApiResponse(responseCode = "404", description = "해당 유저, 게시글 또는 좋아요 정보가 없음 (ROOMMATE_USER_NOT_FOUND, ROOMMATE_BOARD_NOT_FOUND, ROOMMATE_BOARD_LIKE_NOT_FOUND)", content = @Content)
+            }
+    )
+    ResponseEntity<Integer> minusLike(
+            @Parameter(hidden = true) CustomUserDetails userDetails,
+            @Parameter(description = "좋아요 취소할 게시글 ID", example = "1")
+            @PathVariable Long boardId
+    );
+
+    @Operation(
+            summary = "룸메이트 게시글 주인의 매칭 여부 조회",
+            description = "특정 게시글의 작성자가 이미 매칭(COMPLETED) 상태인지 확인합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "매칭 여부 반환",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Boolean.class))),
+                    @ApiResponse(responseCode = "404", description = "게시글이 존재하지 않음 (ROOMMATE_BOARD_NOT_FOUND)", content = @Content)
+            }
+    )
+    ResponseEntity<Boolean> isBoardOwnerMatched(
+            @Parameter(description = "조회할 게시글 ID", example = "1")
+            @PathVariable Long boardId
+    );
+
+    @Operation(
+            summary = "룸메이트 게시글 좋아요 여부 조회",
+            description = "특정 게시글에 로그인한 사용자가 좋아요를 눌렀는지 여부를 반환합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "좋아요 여부 반환 (true: 좋아요 누름, false: 안 누름)",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Boolean.class))),
+                    @ApiResponse(responseCode = "404", description = "해당 게시글이 존재하지 않음 (ROOMMATE_BOARD_NOT_FOUND)", content = @Content),
+                    @ApiResponse(responseCode = "404", description = "해당 유저가 존재하지 않음 (ROOMMATE_USER_NOT_FOUND)", content = @Content)
+            }
+    )
+    ResponseEntity<Boolean> isRoommateBoardLiked(
+            @Parameter(description = "조회할 게시글 ID", example = "1")
+            @PathVariable Long boardId,
+            @Parameter(hidden = true) CustomUserDetails userDetails
+    );
+
+    @Operation(
+            summary = "내 룸메이트 체크리스트 단일 조회",
+            description = "로그인한 사용자가 작성한 체크리스트를 단일 조회합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "내 체크리스트 조회 성공",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ResponseRoommateCheckListDto.class))),
+                    @ApiResponse(responseCode = "404", description = "체크리스트 없음", content = @Content)
+            }
+    )
+    ResponseEntity<ResponseRoommateCheckListDto> getMyRoommateCheckList(
+            @Parameter(hidden = true) CustomUserDetails userDetails
     );
 
 
