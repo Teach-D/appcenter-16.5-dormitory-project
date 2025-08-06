@@ -18,44 +18,5 @@ public interface GroupOrderRepository extends JpaRepository<GroupOrder, Long>, J
     boolean existsByTitle(String title);
     Optional<GroupOrder> findByIdAndUserId(Long id, Long userId);
 
-
-    // 방법 1: MultipleBagFetchException 해결 - 단계별 조회
-    // 1-1. 기본 정보 + 단일 컬렉션(이미지) + 단일 객체들 조회
-    @Query("SELECT DISTINCT go FROM GroupOrder go " +
-            "LEFT JOIN FETCH go.imageList " +
-            "LEFT JOIN FETCH go.user " +
-            "LEFT JOIN FETCH go.groupOrderChatRoom " +
-            "ORDER BY go.id DESC")
-    List<GroupOrder> findAllWithBasicAssociations();
-
-    // 방법 2: 페이징을 고려한 조회 (대용량 데이터 처리)
-    @Query("SELECT DISTINCT go FROM GroupOrder go " +
-            "LEFT JOIN FETCH go.imageList " +
-            "LEFT JOIN FETCH go.user " +
-            "ORDER BY go.id DESC")
-    Page<GroupOrder> findAllWithImagesAndUser(Pageable pageable);
-
-    // 1-2. 좋아요 정보만 별도 조회
-    @Query("SELECT DISTINCT go FROM GroupOrder go " +
-            "LEFT JOIN FETCH go.groupOrderLikeList gol " +
-            "LEFT JOIN FETCH gol.user " +
-            "WHERE go.id IN :ids")
-    List<GroupOrder> findAllWithLikes(@Param("ids") List<Long> ids);
-
-    // 1-3. 댓글 정보만 별도 조회 (중첩 댓글 포함)
-    @Query("SELECT DISTINCT go FROM GroupOrder go " +
-            "LEFT JOIN FETCH go.groupOrderCommentList goc " +
-            "LEFT JOIN FETCH goc.user " +
-            "LEFT JOIN FETCH goc.parentGroupOrderComment " +
-            "WHERE go.id IN :ids")
-    List<GroupOrder> findAllWithComments(@Param("ids") List<Long> ids);
-
-    @Query("SELECT DISTINCT go FROM GroupOrder go " +
-            "LEFT JOIN FETCH go.imageList " +
-            "LEFT JOIN FETCH go.user " +
-            "LEFT JOIN FETCH go.groupOrderChatRoom " +
-            "ORDER BY go.id DESC")
-    List<GroupOrder> findAllWithBasicInfo();
-
 }
 
