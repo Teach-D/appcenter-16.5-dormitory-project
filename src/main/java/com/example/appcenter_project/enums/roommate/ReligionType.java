@@ -12,6 +12,8 @@ public enum ReligionType {
     BUDDHIST("불교"),
     CATHOLIC("천주교"),
     ISLAM("이슬람교"),
+    HINDU("힌두교"),
+    JEWISH("유대교"),
     NONE("무교"),
     OTHER("기타");
 
