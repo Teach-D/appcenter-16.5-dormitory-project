@@ -99,8 +99,8 @@ public class User extends BaseTimeEntity {
 
     public void update(RequestUserDto requestUserDto) {
         this.name = requestUserDto.getName();
-        this.dormType = DormType.valueOf(requestUserDto.getDormType());
-        this.college = College.valueOf(requestUserDto.getCollege());
+        this.dormType = DormType.from(requestUserDto.getDormType());
+        this.college = College.from(requestUserDto.getCollege());
         this.penalty = requestUserDto.getPenalty();
     }
 
