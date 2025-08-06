@@ -248,6 +248,13 @@ public class TipService {
             // 댓글 계층 구조 구성
             if (comment.getParentId() == null) {
                 comment.updateChildTipCommentList(new ArrayList<>());
+
+                // 대댓글 작성자 이미지 url
+                Long userId = comment.getUserId();
+                ImageLinkDto userImageUrlByUserIdComment = imageService.findUserImageUrlByUserId(userId, request);
+                String writerImageNameComment = userImageUrlByUserIdComment.getFileName();
+                comment.updateWriterImageFile(writerImageNameComment);
+
                 parentMap.put(comment.getTipCommentId(), comment);
                 topLevelComments.add(comment);
             } else {
