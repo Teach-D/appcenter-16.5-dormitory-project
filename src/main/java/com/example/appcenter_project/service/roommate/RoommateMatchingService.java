@@ -12,11 +12,13 @@ import com.example.appcenter_project.repository.roommate.MyRoommateRepository;
 import com.example.appcenter_project.repository.roommate.RoommateMatchingRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RoommateMatchingService {
@@ -163,6 +165,9 @@ public class RoommateMatchingService {
         // MyRoommate 관계도 해제
         User sender = matching.getSender();
         User receiver = matching.getReceiver();
+
+        log.info("cancelMatching senderId : {}, receiverId:{}", sender.getId(), receiver.getId());
+
         myRoommateRepository.deleteByUserAndRoommate(sender, receiver);
         myRoommateRepository.deleteByUserAndRoommate(receiver, sender);
     }
