@@ -66,6 +66,10 @@ public enum ErrorCode {
     ROOMMATE_UPDATE_NOT_ALLOWED(FORBIDDEN, 7007, "[Roommate] 수정 권한이 없습니다."),
     ROOMMATE_CHECKLIST_UPDATE_FAILED(BAD_REQUEST, 7008, "[Roommate] 체크리스트 수정에 실패했습니다."),
 
+    // ROOMMATE_BOARD_LIKE
+    ROOMMATE_BOARD_LIKE_NOT_FOUND(NOT_FOUND, 7501, "[RoommateBoard] 좋아요 정보를 찾을 수 없습니다."),
+    ALREADY_ROOMMATE_BOARD_LIKE_USER(UNAUTHORIZED, 7502, "[RoommateBoard] 이미 해당 게시글에 좋아요를 누른 유저입니다."),
+
     // ROOMMATE_MATCHING
     ROOMMATE_MATCHING_ALREADY_REQUESTED(CONFLICT, 8101, "[RoommateMatching] 이미 해당 사용자에게 매칭 요청을 보냈습니다."),
     ROOMMATE_MATCHING_NOT_FOUND(NOT_FOUND, 8102, "[RoommateMatching] 해당 매칭 요청을 찾을 수 없습니다."),
@@ -81,9 +85,21 @@ public enum ErrorCode {
     ROOMMATE_CHAT_CANNOT_CHAT_WITH_SELF(BAD_REQUEST, 10001, "[RoommateChat] 자신에게는 채팅을 보낼 수 없습니다."),
     DUPLICATE_CHAT_ROOM(CONFLICT, 10001, "[RoommateChat] 이미 존재하는 채팅방입니다."),
     ROOMMATE_CHAT_ROOM_NOT_FOUND(NOT_FOUND, 7013, "[RoommateChat] 채팅방을 찾을 수 없습니다."),
-    ROOMMATE_CHAT_ROOM_FORBIDDEN(FORBIDDEN, 10004, "[RoommateChat] 이 채팅방에 속하지 않은 사용자입니다.");
+    ROOMMATE_CHAT_ROOM_FORBIDDEN(FORBIDDEN, 10004, "[RoommateChat] 이 채팅방에 속하지 않은 사용자입니다."),
+    ROOMMATE_CHAT_ROOM_DENIED(PRECONDITION_FAILED, 10004, "[RoommateChat] 양방향 채팅방 생성은 할 수 없습니다."),
 
 
+    // REPORT
+    REPORT_NOT_REGISTERED(NOT_FOUND, 11001, "[Report] 해당 신고 정보를 찾을 수 없습니다"),
+
+    // ANNOUNCEMENT
+    ANNOUNCEMENT_NOT_REGISTERED(NOT_FOUND, 12001, "[ANNOUNCEMENT] 해당 공지사항 정보를 찾을 수 없습니다"),
+
+    // ATTACHEDFILE
+    ATTACHEDFILE_NOT_REGISTERED(NOT_FOUND, 13001, "[ATTACHEDFILE] 해당 파일을 찾을 수 없습니다"),
+
+    // CALENDER
+    CALENDER_NOT_REGISTERED(NOT_FOUND, 13001, "[CALENDER] 해당 캘린더 정보를 찾을 수 없습니다");
 
 
     private final HttpStatus httpStatus;
