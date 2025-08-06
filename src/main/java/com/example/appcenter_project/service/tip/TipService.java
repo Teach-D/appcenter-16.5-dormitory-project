@@ -1,5 +1,6 @@
 package com.example.appcenter_project.service.tip;
 
+import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.dto.request.tip.RequestTipDto;
 import com.example.appcenter_project.dto.response.tip.ResponseTipCommentDto;
 import com.example.appcenter_project.dto.response.tip.ResponseTipDetailDto;
@@ -18,6 +19,8 @@ import com.example.appcenter_project.repository.like.TipLikeRepository;
 import com.example.appcenter_project.repository.tip.TipCommentRepository;
 import com.example.appcenter_project.repository.tip.TipRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
+import com.example.appcenter_project.security.CustomUserDetails;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.FileSystemResource;
@@ -29,6 +32,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -61,7 +67,9 @@ public class TipService {
 
         tipRepository.save(tip);
 
-        saveImages(tip, images);
+        if (images != null) {
+            saveImages(tip, images);
+        }
     }
 
     public List<TipImageDto> findTipImages(Long tipId) {
@@ -103,19 +111,35 @@ public class TipService {
 
     private void saveImages(Tip tip, List<MultipartFile> files) {
         if (files != null && !files.isEmpty()) {
-            String projectPath = System.getProperty("user.dir") + "/src/main/resources/static/images/tip/";
-            File directory = new File(projectPath);
+            // 개발 환경에 맞는 경로 설정
+            String basePath = System.getProperty("user.dir");
+            String imagePath = basePath + "/images/tip/";
+
+            // 디렉토리 생성 (존재하지 않으면)
+            File directory = new File(imagePath);
             if (!directory.exists()) {
-                directory.mkdirs();
+                boolean created = directory.mkdirs();
+                if (!created) {
+                    log.error("Failed to create tip directory: {}", imagePath);
+                    throw new CustomException(IMAGE_NOT_FOUND);
+                }
             }
 
             for (MultipartFile file : files) {
+                if (file == null || file.isEmpty()) {
+                    log.warn("Empty file skipped during tip image save");
+                    continue;
+                }
+
+                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                String fileExtension = getFileExtension(file.getOriginalFilename());
                 String uuid = UUID.randomUUID().toString();
-                String imageFileName = uuid + "_" + file.getOriginalFilename();
-                File destinationFile = new File(projectPath + imageFileName);
+                String imageFileName = "tip_" + tip.getId() + "_" + uuid + timestamp + fileExtension;
+                File destinationFile = new File(imagePath + imageFileName);
 
                 try {
                     file.transferTo(destinationFile);
+                    log.info("Tip image saved successfully: {}", destinationFile.getAbsolutePath());
 
                     Image image = Image.builder()
                             .filePath(destinationFile.getAbsolutePath())
@@ -128,10 +152,25 @@ public class TipService {
                     tip.getImageList().add(image);
 
                 } catch (IOException e) {
-                    throw new RuntimeException("Failed to save image", e);
+                    log.error("Failed to save tip image file for tip {}: ", tip.getId(), e);
+                    throw new CustomException(IMAGE_NOT_FOUND);
                 }
             }
         }
+    }
+
+    // 파일 확장자 추출 헬퍼 메소드
+    private String getFileExtension(String fileName) {
+        if (fileName == null || fileName.isEmpty()) {
+            return ".jpg"; // 기본 확장자
+        }
+
+        int lastDotIndex = fileName.lastIndexOf(".");
+        if (lastDotIndex == -1) {
+            return ".jpg"; // 확장자가 없으면 기본값
+        }
+
+        return fileName.substring(lastDotIndex).toLowerCase();
     }
 
     public Resource loadImageAsResource(String filename) {
@@ -154,8 +193,25 @@ public class TipService {
         }
     }
 
-    public ResponseTipDetailDto findTip(Long tipId) {
+    public ResponseTipDetailDto findTip(CustomUserDetails user, Long tipId) {
         ResponseTipDetailDto flatDto = tipMapper.findTip(tipId);
+
+        // 현재 유저가 해당 팁 게시글의 좋아요를 누른 유저인지 확인
+        // 로그인 한 경우일 때
+        if (user != null) {
+            User loginUser = userRepository.findById(user.getId()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+            // 로그인한 유저가 해당 게시글의 좋아요를 누른 경우 true 반환
+            if(tipLikeRepository.existsByUserIdAndTipId(loginUser.getId(), tipId) == true) {
+                flatDto.updateIsCheckLikeCurrentUser(true);
+            }
+            // 로그인한 유저가 해당 게시글의 좋아요를 누르지 않은 경우 false 반환
+            else {
+                flatDto.updateIsCheckLikeCurrentUser(false);
+            }
+        }
+
+
         if (flatDto == null) {
             throw new CustomException(TIP_NOT_FOUND);
         }
@@ -192,6 +248,7 @@ public class TipService {
 
 
 
+
     /*public ResponseTipDetailDto findTip(Long tipId) {
         ResponseTipDetailDto tip1 = tipMapper.findTip(tipId);
         Tip tip = tipRepository.findById(tipId)
@@ -208,7 +265,9 @@ public class TipService {
     }*/
 
     public List<ResponseTipDto> findAllTips() {
-        return tipMapper.findTips();
+        List<ResponseTipDto> tips = tipMapper.findTips();
+        Collections.reverse(tips);
+        return tips;
 /*        List<ResponseTipDto> responseTipDtoList = new ArrayList<>();
         List<Tip> tips = tipRepository.findAll();
         for (Tip tip : tips) {
@@ -217,6 +276,40 @@ public class TipService {
         }
 
         return responseTipDtoList;*/
+    }
+
+    /**
+     * 하루 동안 고정된 랜덤 Tip 3개를 조회합니다.
+     * 날짜를 기준으로 시드값을 생성하여 같은 날에는 항상 같은 3개의 Tip이 반환됩니다.
+     *
+     * @return 일일 랜덤 Tip 3개 목록
+     */
+    public List<ResponseTipDto> findDailyRandomTips() {
+        List<ResponseTipDto> allTips = tipMapper.findTips();
+
+        // Tip이 3개 미만인 경우 빈 리스트 반환
+        if (allTips.size() < 3) {
+            log.info("Available tips count: {}. Need at least 3 tips for daily random selection.", allTips.size());
+            return new ArrayList<>();
+        }
+
+        // 현재 날짜를 기준으로 시드값 생성 (YYYY-MM-DD 형태)
+        java.time.LocalDate today = java.time.LocalDate.now();
+        long seed = today.toEpochDay(); // 1970-01-01부터의 일수를 시드로 사용
+
+        Random random = new Random(seed);
+
+        // 전체 Tip 목록을 복사하여 섞기
+        List<ResponseTipDto> shuffledTips = new ArrayList<>(allTips);
+        Collections.shuffle(shuffledTips, random);
+
+        // 첫 3개 선택
+        List<ResponseTipDto> dailyRandomTips = shuffledTips.subList(0, 3);
+
+        log.info("Daily random tips selected for date {}: {} tips selected from {} total tips",
+                today, dailyRandomTips.size(), allTips.size());
+
+        return dailyRandomTips;
     }
 
     // 하나의 tip 게시판에 있는 모든 tip 댓글 조회
@@ -303,16 +396,26 @@ public class TipService {
 
         tip.update(requestTipDto);
 
-        List<Image> imageList = tip.getImageList();
-        for (Image image : imageList) {
-            File file = new File(image.getFilePath());
-            if (file.exists()) {
-                file.delete(); // resources에서 파일 삭제
+        // 이미지가 제공된 경우에만 기존 이미지를 삭제하고 새로운 이미지를 저장
+        if (images != null && !images.isEmpty()) {
+            // 기존 이미지들이 있다면 파일 및 DB에서 삭제
+            List<Image> existingImages = tip.getImageList();
+            for (Image existingImage : existingImages) {
+                File oldFile = new File(existingImage.getFilePath());
+                if (oldFile.exists()) {
+                    boolean deleted = oldFile.delete();
+                    if (!deleted) {
+                        log.warn("Failed to delete old tip image file: {}", existingImage.getFilePath());
+                    }
+                }
+                // 기존 이미지 엔티티 삭제
+                imageRepository.delete(existingImage);
             }
-        }
-        tip.getImageList().clear(); // Tip에서 이미지 목록 비우기
+            tip.getImageList().clear(); // Tip에서 이미지 목록 비우기
 
-        saveImages(tip, images);
+            // 새로운 이미지들 저장
+            saveImages(tip, images);
+        }
     }
 
     public void deleteTip(Long userId, Long tipId) {
@@ -323,5 +426,145 @@ public class TipService {
         tipRepository.deleteById(tipId);
     }
 
+    // Tip 이미지 URL 목록 조회
+    public List<ImageLinkDto> findTipImageUrlsByTipId(Long tipId, HttpServletRequest request) {
+        // 팁 존재 확인
+        Tip tip = tipRepository.findById(tipId)
+                .orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
 
+        List<Image> tipImages = imageRepository.findAllByBoardIdAndImageType(tipId, ImageType.TIP);
+
+        if (tipImages.isEmpty()) {
+            log.info("No images found for tip {}", tipId);
+            return new ArrayList<>(); // 빈 리스트 반환
+        }
+
+        // BaseURL 생성
+        String baseUrl = getBaseUrl(request);
+        List<ImageLinkDto> imageLinkDtos = new ArrayList<>();
+
+        for (Image image : tipImages) {
+            File file = new File(image.getFilePath());
+            if (file.exists()) {
+                String imageUrl = baseUrl + "/api/images/tip/" + image.getId();
+
+                // 정적 리소스 URL 생성 (User와 동일한 방식)
+                String staticImageUrl = getStaticTipImageUrl(image.getFilePath(), baseUrl);
+                String changeUrl = staticImageUrl.replace("http", "https");
+
+                String contentType = getSafeContentType(file);
+
+                ImageLinkDto imageLinkDto = ImageLinkDto.builder()
+                        .imageUrl(imageUrl)
+                        .fileName(changeUrl)  // 정적 리소스로 직접 접근 가능한 URL
+                        .contentType(contentType)
+                        .fileSize(file.length())
+                        .build();
+
+                imageLinkDtos.add(imageLinkDto);
+            } else {
+                log.warn("Tip image file not found: {}", image.getFilePath());
+            }
+        }
+
+        log.info("Found {} valid images for tip {}", imageLinkDtos.size(), tipId);
+        return imageLinkDtos;
+    }
+
+    // 정적 Tip 이미지 URL 생성 헬퍼 메소드
+    private String getStaticTipImageUrl(String filePath, String baseUrl) {
+        try {
+            String fileName = Paths.get(filePath).getFileName().toString();
+            return baseUrl + "/images/tip/" + fileName;
+        } catch (Exception e) {
+            log.warn("Could not generate static URL for tip image path: {}", filePath);
+            return null;
+        }
+    }
+
+    // BaseURL 생성 헬퍼 메서드
+    private String getBaseUrl(HttpServletRequest request) {
+        String scheme = request.getScheme();
+        String serverName = request.getServerName();
+        int serverPort = request.getServerPort();
+        String contextPath = request.getContextPath();
+
+        StringBuilder baseUrl = new StringBuilder();
+        baseUrl.append(scheme).append("://").append(serverName);
+
+        if ((scheme.equals("http") && serverPort != 80) ||
+                (scheme.equals("https") && serverPort != 443)) {
+            baseUrl.append(":").append(serverPort);
+        }
+        baseUrl.append(contextPath);
+
+        return baseUrl.toString();
+    }
+
+    // 안전한 Content Type 확인 헬퍼 메서드
+    private String getSafeContentType(File file) {
+        try {
+            String fileName = file.getName().toLowerCase();
+
+            // 확장자 기반으로 먼저 판단 (더 안정적)
+            if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) {
+                return "image/jpeg";
+            } else if (fileName.endsWith(".png")) {
+                return "image/png";
+            } else if (fileName.endsWith(".gif")) {
+                return "image/gif";
+            } else if (fileName.endsWith(".webp")) {
+                return "image/webp";
+            } else if (fileName.endsWith(".svg")) {
+                return "image/svg+xml";
+            }
+
+            // Files.probeContentType이 실패할 수 있으므로 try-catch
+            try {
+                String detectedType = Files.probeContentType(file.toPath());
+                if (detectedType != null && detectedType.startsWith("image/")) {
+                    return detectedType;
+                }
+            } catch (Exception e) {
+                log.warn("Could not probe content type for file: {}", file.getName());
+            }
+
+            // 기본값
+            return "image/jpeg";
+
+        } catch (Exception e) {
+            log.error("Error determining content type for file: {}", file.getName(), e);
+            return "image/jpeg"; // 안전한 기본값
+        }
+    }
+
+    // Tip의 모든 이미지 삭제
+    public void deleteTipImages(Long userId, Long tipId) {
+        // 팁 소유자 확인
+        Tip tip = tipRepository.findByIdAndUserId(tipId, userId)
+                .orElseThrow(() -> new CustomException(TIP_NOT_OWNED_BY_USER));
+
+        List<Image> tipImages = imageRepository.findAllByBoardIdAndImageType(tipId, ImageType.TIP);
+
+        for (Image image : tipImages) {
+            // 파일 삭제
+            File file = new File(image.getFilePath());
+            if (file.exists()) {
+                boolean deleted = file.delete();
+                if (!deleted) {
+                    log.warn("Failed to delete tip image file: {}", image.getFilePath());
+                }
+            } else {
+                log.warn("Tip image file not found: {}", image.getFilePath());
+            }
+
+            // 데이터베이스에서 이미지 삭제
+            imageRepository.delete(image);
+        }
+
+        // Tip 엔티티에서도 이미지 목록 정리
+        tip.getImageList().clear();
+
+        log.info("Successfully deleted {} images for tip {}", tipImages.size(), tipId);
+    }
 }
