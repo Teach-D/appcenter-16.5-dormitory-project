@@ -110,4 +110,14 @@ public class JwtTokenProvider {
                 .get("studentNumber", String.class);
     }
 
+    // JWT에서 사용자 ID 추출 메서드 추가
+    public String getUserId(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject(); // subject가 userId로 설정되어 있음
+    }
+
 }

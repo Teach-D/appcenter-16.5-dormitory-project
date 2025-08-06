@@ -55,12 +55,24 @@
 #          username: ${{ secrets.SSH_USER }}
 #          key: ${{ secrets.SSH_KEY }}
 #          script: |
+#            # Docker 이미지 Pull
 #            docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGE }}:latest
+#
+#            # 기존 컨테이너 중지 및 제거
 #            docker stop ${{ secrets.DOCKER_IMAGE }} || true
 #            docker rm ${{ secrets.DOCKER_IMAGE }} || true
+#
+#            # Docker Volume 생성 (이미 존재하면 무시됨)
+#            docker volume create inu-dormitory-images || true
+#            docker volume create inu-dormitory-uploads || true
+#
 #            docker network create inu-network || true
 #            docker network connect inu-network inu-dormitory-dev-mysql || true
+#
 #            docker run -d --name ${{ secrets.DOCKER_IMAGE }} \
 #              --network inu-network \
 #              -p 8055:8080 \
+#              -v inu-dormitory-images:/app/images \
+#              -v inu-dormitory-uploads:/app/files \
+#              --restart unless-stopped \
 #              ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGE }}:latest

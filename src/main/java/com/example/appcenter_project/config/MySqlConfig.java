@@ -3,6 +3,7 @@ package com.example.appcenter_project.config;
 import com.zaxxer.hikari.HikariDataSource;
 import jakarta.persistence.EntityManagerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
@@ -25,6 +26,10 @@ import java.util.Map;
 @EnableJpaRepositories(basePackages = {"com.example.appcenter_project"})
 @Profile("!test")
 public class MySqlConfig {
+
+    @Value("${spring.jpa.hibernate.ddl-auto}")
+    private String ddlAuto;
+
     @Bean(name = "dataSource")
     @Primary
     @ConfigurationProperties(prefix = "spring.datasource")
@@ -36,7 +41,7 @@ public class MySqlConfig {
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(EntityManagerFactoryBuilder builder, @Qualifier("dataSource") DataSource dataSource) {
 
         Map<String, String> properties = new HashMap<String, String>();
-        properties.put("hibernate.hbm2ddl.auto", "update");
+        properties.put("hibernate.hbm2ddl.auto", ddlAuto);
 
         return builder.dataSource(dataSource).packages("com.example.appcenter_project").persistenceUnit("primary").properties(properties).build();
     }

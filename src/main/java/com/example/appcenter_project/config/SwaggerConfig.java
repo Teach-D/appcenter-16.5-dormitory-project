@@ -15,6 +15,9 @@ import java.util.List;
 @Configuration
 public class SwaggerConfig {
 
+    @Value("${app.urls.production}")
+    private String productionServer;
+
     @Value("${devServer}")
     private String devServer;
 
@@ -29,8 +32,12 @@ public class SwaggerConfig {
 
         // 서버 정보
         Server server = new Server()
+                .url(productionServer)  // production URL 사용
+                .description("운영 서버");
+
+        Server devServerInstance = new Server()
                 .url(devServer)
-                .description("배포 서버");
+                .description("개발 서버");
 
         Server localServer = new Server()
                 .url("http://localhost:8080")
@@ -49,7 +56,7 @@ public class SwaggerConfig {
 
         return new OpenAPI()
                 .info(info)
-                .servers(List.of(localServer))
+                .servers(List.of(server, devServerInstance, localServer))  // 여러 서버 옵션 제공
                 .components(new Components().addSecuritySchemes("bearerAuth", bearerAuth))
                 .addSecurityItem(securityRequirement);
     }
