@@ -31,6 +31,7 @@ public class ResponseRoommateSimilarityDto {
     private Long userId;
     private String userName;
     private LocalDateTime createdDate;
+    private boolean isMatched;
 
     private int roommateBoardLike;
     private Integer similarityPercentage;

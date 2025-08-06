@@ -37,8 +37,9 @@ public class ResponseRoommatePostDto {
     private Long userId;
     private String userName;
     private LocalDateTime createdDate;
+    private boolean isMatched;
 
-    public static ResponseRoommatePostDto entityToDto(RoommateBoard board) {
+    public static ResponseRoommatePostDto entityToDto(RoommateBoard board, boolean isMatched) {
         RoommateCheckList cl = board.getRoommateCheckList();
         User user = board.getUser();
 
@@ -63,6 +64,7 @@ public class ResponseRoommatePostDto {
                 .userId(user.getId())
                 .userName(user.getName())
                 .createdDate(board.getCreatedDate())
+                .isMatched(isMatched)
                 .build();
     }
 }
