@@ -68,6 +68,7 @@ jobs:
             # Docker Volume 생성 (이미 존재하면 무시됨)
             docker volume create inu-dormitory-images || true
             docker volume create inu-dormitory-uploads || true
+            docker volume create inu-dormitory-logs || true
             
             docker network create inu-network || true
             docker network connect inu-network inu-dormitory-dev-mysql || true
@@ -77,5 +78,6 @@ jobs:
               -p 8055:8080 \
               -v inu-dormitory-images:/app/images \
               -v inu-dormitory-uploads:/app/files \
+              -v inu-dormitory-logs:/app/logs \
               --restart unless-stopped \
               ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGE }}:latest
