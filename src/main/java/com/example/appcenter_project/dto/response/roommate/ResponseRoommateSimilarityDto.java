@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Builder
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 public class ResponseRoommateSimilarityDto {
     private Long boardId;
     private String title;
+    private List<DormDay> dormPeriod; // Set → List로 타입 변경
     private DormType dormType;
     private College college;
     private ReligionType religion;
