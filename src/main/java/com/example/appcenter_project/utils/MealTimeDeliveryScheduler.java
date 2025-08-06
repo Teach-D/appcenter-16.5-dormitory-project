@@ -1,5 +1,6 @@
 package com.example.appcenter_project.utils;
 
+/*
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.service.groupOrder.DeliveryCacheService;
 import com.example.appcenter_project.service.groupOrder.GroupOrderService;
@@ -42,9 +43,11 @@ public class MealTimeDeliveryScheduler {
         clearOrderCache();
     }
 
-    /**
+    */
+/**
      * GroupOrder 중 모든 Delivery를 캐싱
-     */
+     *//*
+
     private void preloadOrdersToCache() {
         try {
             log.info("schedule start");
@@ -58,9 +61,11 @@ public class MealTimeDeliveryScheduler {
         }
     }
 
-    /**
+    */
+/**
      * 캐싱되어 있는 모든 Delivery를 redis에서 삭제
-     */
+     *//*
+
     private void clearOrderCache() {
         try {
             deliveryCacheService.evictAllDeliveryCaches();
@@ -69,3 +74,4 @@ public class MealTimeDeliveryScheduler {
         }
     }
 }
+*/

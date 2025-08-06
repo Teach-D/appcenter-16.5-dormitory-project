@@ -58,7 +58,7 @@ public class GroupOrderService {
     private final GroupOrderCommentRepository groupOrderCommentRepository;
     private final ImageRepository imageRepository;
     private final GroupOrderMapper groupOrderMapper;
-    private final DeliveryCacheService deliveryCacheService;
+//    private final DeliveryCacheService deliveryCacheService;
 
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto) {
         // GroupOrder 저장
@@ -95,13 +95,13 @@ public class GroupOrderService {
         ResponseGroupOrderDetailDto dto;
 
         // 캐시에서 먼저 조회
-        if (deliveryCacheService.existsGroupOrderInCache(groupOrderId)) {
+/*        if (deliveryCacheService.existsGroupOrderInCache(groupOrderId)) {
             dto = deliveryCacheService.getAllCacheDelivery(groupOrderId);
             log.info("redis 조회");
             if (dto != null) {
                 return buildHierarchicalComments(dto, true);
             }
-        }
+        }*/
 
         log.info("db 조회");
         // DB에서 조회
@@ -427,13 +427,13 @@ public class GroupOrderService {
     public ResponseGroupOrderDetailDto updateGroupOrder(Long userId, Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto) {
         ResponseGroupOrderDetailDto dto;
 
-        if (deliveryCacheService.existsGroupOrderInCache(groupOrderId)) {
+/*        if (deliveryCacheService.existsGroupOrderInCache(groupOrderId)) {
             ResponseGroupOrderDetailDto responseGroupOrderDetailDto = deliveryCacheService.updateCacheDelivery(groupOrderId, requestGroupOrderDto);
             log.info("redis 수정");
             if (responseGroupOrderDetailDto != null) {
                 dto = buildHierarchicalComments(responseGroupOrderDetailDto, true);
             }
-        }
+        }*/
 
         log.info("db 수정");
         GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_OWNED_BY_USER));
@@ -464,10 +464,10 @@ public class GroupOrderService {
      * 해당 GroupOrder가 redis에 캐싱되어 있는 것과 상관없이 db에서 삭제
      */
     public void deleteGroupOrder(Long userId, Long groupOrderId) {
-        if (deliveryCacheService.existsGroupOrderInCache(groupOrderId)) {
+/*        if (deliveryCacheService.existsGroupOrderInCache(groupOrderId)) {
             log.info("redis 삭제");
             deliveryCacheService.evictDelivery(groupOrderId);
-        }
+        }*/
 
         log.info("db 삭제");
         GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_OWNED_BY_USER));

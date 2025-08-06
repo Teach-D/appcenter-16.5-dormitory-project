@@ -56,10 +56,10 @@ dependencies {
 	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
 
 	// redis
-	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-	implementation 'org.redisson:redisson-spring-boot-starter:3.24.3'
-	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate6'
-	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+//	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+//	implementation 'org.redisson:redisson-spring-boot-starter:3.24.3'
+//	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate6'
+//	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
 }
 
