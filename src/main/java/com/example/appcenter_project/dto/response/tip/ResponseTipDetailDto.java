@@ -1,0 +1,45 @@
+package com.example.appcenter_project.dto.response.tip;
+
+import com.example.appcenter_project.entity.tip.Tip;
+import lombok.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
+public class ResponseTipDetailDto {
+
+    private Long id;
+    private String title;
+    private String content;
+    private Integer tipLikeCount;
+
+    @Builder.Default
+    private List<Long> tipLikeUserList = new ArrayList<>();
+
+    private String createdDatee;
+
+    @Builder.Default
+    private List<ResponseTipCommentDto> tipCommentDtoList = new ArrayList<>();
+
+    public static ResponseTipDetailDto entityToDto(Tip tip, List<ResponseTipCommentDto> responseTipCommentDtoList, List<Long> tipLikeUserList) {
+        return ResponseTipDetailDto.builder()
+                .id(tip.getId())
+                .createdDatee(String.valueOf(tip.getCreatedDate()))
+                .title(tip.getTitle())
+                .content(tip.getContent())
+                .tipLikeCount(tip.getTipLike())
+                .tipLikeUserList(tipLikeUserList)
+                .tipCommentDtoList(responseTipCommentDtoList)
+                .build();
+    }
+
+
+    public void updateTipCommentDtoList(List<ResponseTipCommentDto> topLevelComments) {
+        this.tipCommentDtoList = topLevelComments;
+    }
+
+}

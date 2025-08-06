@@ -1,0 +1,472 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.appcenter_project.mapper.GroupOrderMapper">
+
+    <resultMap id="groupOrderResultMap" type="com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="type" column="type"/>
+        <result property="createdDate" column="create_date"/>
+        <result property="filePath" column="file_path"/>
+
+        <result property="price" column="price"/>
+        <result property="currentPeople" column="current_people"/>
+        <result property="maxPeople" column="max_people"/>
+        <result property="groupOrderType" column="group_order_type"/>
+        <result property="deadline" column="deadline"/>
+    </resultMap>
+
+    <select id="findGroupOrders" resultMap="groupOrderResultMap">
+        SELECT
+            go.id,
+            go.title,
+            'GROUP_ORDER' as type,
+            go.price,
+            go.link,
+            go.current_people,
+            go.max_people,
+            go.deadline,
+            go.group_order_like,
+            go.description,
+            go.created_date,
+            img.file_path,
+            go.group_order_type
+        FROM group_order go
+        LEFT JOIN (
+            SELECT *
+            FROM image i
+            WHERE i.id IN (
+                SELECT MIN(id) <!--하나만 선택-->
+                FROM image
+                WHERE image.image_type = 'GROUP_ORDER'
+                GROUP BY board_id
+            )
+        ) img ON go.id = img.board_id
+        <where>
+            <if test="groupOrderType != null and groupOrderType != 'ALL'">
+                go.group_order_type = #{groupOrderType}
+            </if>
+            <if test="search != null and search != ''">
+                AND go.title LIKE CONCAT('%', #{search}, '%')
+            </if>
+        </where>
+
+        <choose>
+            <when test="sort == 'PRICE'">
+                ORDER BY go.price ASC
+            </when>
+            <when test="sort == 'POPULARITY'">
+                ORDER BY go.group_order_like DESC
+            </when>
+            <otherwise>
+                ORDER BY go.deadline ASC
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="findLikeGroupOrders" resultMap="groupOrderResultMap">
+        SELECT
+            go.id,
+            go.title,
+            'GROUP_ORDER' AS type,
+            gol.created_date AS create_date,
+            (
+                SELECT i.file_path
+                FROM image i
+                WHERE i.image_type = 'GROUP_ORDER' AND i.board_id = go.id
+                LIMIT 1 <!--하나만 선택-->
+            ) AS file_path,
+
+            go.deadline,
+            go.price,
+            go.current_people,
+            go.max_people
+
+        FROM group_order_like gol
+        LEFT JOIN group_order go ON gol.group_order_id = go.id
+        WHERE gol.user_id = #{userId}
+    </select>
+
+    <select id="findGroupOrdersByUserId" resultMap="groupOrderResultMap">
+        SELECT
+        go.id,
+        go.title,
+        'GROUP_ORDER' AS type,
+        go.created_date AS create_date,
+        (
+        SELECT i.file_path
+        FROM image i
+        WHERE i.image_type = 'GROUP_ORDER' AND i.board_id = go.id
+        LIMIT 1 <!--하나만 선택-->
+        ) AS file_path,
+
+        go.deadline,
+        go.price,
+        go.current_people,
+        go.max_people
+
+        FROM group_order go
+        WHERE go.user_id = #{userId}
+    </select>
+
+    <resultMap id="groupOrderDetailMap" type="com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDetailDto">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="deadline" column="deadline"/>
+        <result property="createdDatee" column="create_date"/>
+        <result property="groupOrderType" column="group_order_type"/>
+        <result property="price" column="price"/>
+        <result property="currentPeople" column="current_people"/>
+        <result property="maxPeople" column="max_people"/>
+        <result property="groupOrderLike" column="group_order_like"/>
+        <result property="description" column="description"/>
+        <result property="link" column="link"/>
+
+        <!-- 좋아요 누른 유저 id -->
+        <collection property="groupOrderLikeUserList" ofType="Long" javaType="java.util.List">
+            <result column="like_user_id"/>
+        </collection>
+
+        <!-- 댓글 -->
+        <collection property="groupOrderCommentDtoList"
+                    ofType="com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderCommentDto"
+                    javaType="java.util.List">
+            <id property="groupOrderCommentId" column="group_order_comment_id"/>
+            <result property="userId" column="user_id"/>
+            <result property="reply" column="reply"/>
+            <result property="parentId" column="parent_id"/>
+            <result property="isDeleted" column="is_deleted"/>
+        </collection>
+    </resultMap>
+
+    <select id="findGroupOrderById" resultMap="groupOrderDetailMap">
+        SELECT
+            go.id,
+            go.title,
+            go.deadline,
+            go.created_date,
+            go.group_order_type,
+            go.price,
+            go.current_people,
+            go.max_people,
+            go.group_order_like,
+            go.description,
+            go.link,
+
+            gol.user_id AS like_user_id,
+
+            goc.id AS group_order_comment_id,
+            goc.user_id,
+            goc.reply,
+            goc.parent_id,
+            goc.is_deleted
+
+        FROM
+            group_order go
+    LEFT JOIN group_order_like gol ON go.id = gol.group_order_id
+            LEFT JOIN group_order_comment goc ON go.id = goc.group_order_id
+        WHERE go.id = #{groupOrderId}
+    </select>
+
+
+    <!-- GroupOrder ResultMap -->
+    <resultMap id="GroupOrderResultMap" type="com.example.appcenter_project.entity.groupOrder.GroupOrder">
+        <id property="id" column="go_id"/>
+        <result property="title" column="go_title"/>
+        <result property="groupOrderType" column="go_group_order_type"/>
+        <result property="price" column="go_price"/>
+        <result property="link" column="go_link"/>
+        <result property="currentPeople" column="go_current_people"/>
+        <result property="maxPeople" column="go_max_people"/>
+        <result property="deadline" column="go_deadline"/>
+        <result property="groupOrderLike" column="go_group_order_like"/>
+        <result property="description" column="go_description"/>
+        <result property="createdDate" column="go_created_date"/>
+        <result property="modifiedDate" column="go_modified_date"/>
+
+        <!-- User (작성자) -->
+        <association property="user" javaType="com.example.appcenter_project.entity.user.User">
+            <id property="id" column="user_id"/>
+            <result property="studentNumber" column="user_student_number"/>
+            <result property="name" column="user_name"/>
+            <result property="dormType" column="user_dorm_type"/>
+            <result property="college" column="user_college"/>
+            <result property="penalty" column="user_penalty"/>
+            <result property="role" column="user_role"/>
+            <result property="createdDate" column="user_created_date"/>
+            <result property="modifiedDate" column="user_modified_date"/>
+
+            <!-- User의 프로필 이미지 -->
+            <association property="image" javaType="com.example.appcenter_project.entity.Image">
+                <id property="id" column="user_image_id"/>
+                <result property="filePath" column="user_image_file_path"/>
+                <result property="imageType" column="user_image_type"/>
+                <result property="isDefault" column="user_image_is_default"/>
+                <result property="boardId" column="user_image_board_id"/>
+            </association>
+        </association>
+
+        <!-- GroupOrderChatRoom -->
+        <association property="groupOrderChatRoom" javaType="com.example.appcenter_project.entity.groupOrder.GroupOrderChatRoom">
+            <id property="id" column="chat_room_id"/>
+            <result property="title" column="chat_room_title"/>
+            <result property="createdDate" column="chat_room_created_date"/>
+            <result property="modifiedDate" column="chat_room_modified_date"/>
+        </association>
+
+        <!-- GroupOrder 이미지 목록 -->
+        <collection property="imageList" ofType="com.example.appcenter_project.entity.Image">
+            <id property="id" column="go_image_id"/>
+            <result property="filePath" column="go_image_file_path"/>
+            <result property="imageType" column="go_image_type"/>
+            <result property="isDefault" column="go_image_is_default"/>
+            <result property="boardId" column="go_image_board_id"/>
+        </collection>
+
+        <!-- GroupOrder 좋아요 목록 -->
+        <collection property="groupOrderLikeList" ofType="com.example.appcenter_project.entity.like.GroupOrderLike">
+            <id property="id" column="like_id"/>
+            <result property="createdDate" column="like_created_date"/>
+            <result property="modifiedDate" column="like_modified_date"/>
+
+            <association property="user" javaType="com.example.appcenter_project.entity.user.User">
+                <id property="id" column="like_user_id"/>
+                <result property="studentNumber" column="like_user_student_number"/>
+                <result property="name" column="like_user_name"/>
+                <result property="dormType" column="like_user_dorm_type"/>
+                <result property="college" column="like_user_college"/>
+                <result property="penalty" column="like_user_penalty"/>
+                <result property="role" column="like_user_role"/>
+            </association>
+        </collection>
+
+        <!-- GroupOrder 댓글 목록 -->
+        <collection property="groupOrderCommentList" ofType="com.example.appcenter_project.entity.groupOrder.GroupOrderComment">
+            <id property="id" column="comment_id"/>
+            <result property="reply" column="comment_reply"/>
+            <result property="isDeleted" column="comment_is_deleted"/>
+            <result property="createdDate" column="comment_created_date"/>
+            <result property="modifiedDate" column="comment_modified_date"/>
+
+            <association property="user" javaType="com.example.appcenter_project.entity.user.User">
+                <id property="id" column="comment_user_id"/>
+                <result property="studentNumber" column="comment_user_student_number"/>
+                <result property="name" column="comment_user_name"/>
+                <result property="dormType" column="comment_user_dorm_type"/>
+                <result property="college" column="comment_user_college"/>
+                <result property="penalty" column="comment_user_penalty"/>
+                <result property="role" column="comment_user_role"/>
+            </association>
+
+            <!-- 부모 댓글 -->
+            <association property="parentGroupOrderComment" javaType="com.example.appcenter_project.entity.groupOrder.GroupOrderComment">
+                <id property="id" column="parent_comment_id"/>
+                <result property="reply" column="parent_comment_reply"/>
+                <result property="isDeleted" column="parent_comment_is_deleted"/>
+                <result property="createdDate" column="parent_comment_created_date"/>
+                <result property="modifiedDate" column="parent_comment_modified_date"/>
+            </association>
+        </collection>
+    </resultMap>
+
+    <!-- 모든 GroupOrder 조회 쿼리 -->
+    <select id="findAllGroupOrdersWithDetails" resultMap="GroupOrderResultMap">
+        SELECT
+            -- GroupOrder 필드
+            go.id AS go_id,
+            go.title AS go_title,
+            go.group_order_type AS go_group_order_type,
+            go.price AS go_price,
+            go.link AS go_link,
+            go.current_people AS go_current_people,
+            go.max_people AS go_max_people,
+            go.deadline AS go_deadline,
+            go.group_order_like AS go_group_order_like,
+            go.description AS go_description,
+            go.created_date AS go_created_date,
+            go.modified_date AS go_modified_date,
+
+            -- User (작성자) 필드
+            u.id AS user_id,
+            u.student_number AS user_student_number,
+            u.name AS user_name,
+            u.dorm_type AS user_dorm_type,
+            u.college AS user_college,
+            u.penalty AS user_penalty,
+            u.role AS user_role,
+            u.created_date AS user_created_date,
+            u.modified_date AS user_modified_date,
+
+            -- User 프로필 이미지
+            ui.id AS user_image_id,
+            ui.file_path AS user_image_file_path,
+            ui.image_type AS user_image_type,
+            ui.is_default AS user_image_is_default,
+            ui.board_id AS user_image_board_id,
+
+            -- GroupOrderChatRoom 필드
+            gocr.id AS chat_room_id,
+            gocr.title AS chat_room_title,
+            gocr.created_date AS chat_room_created_date,
+            gocr.modified_date AS chat_room_modified_date,
+
+            -- GroupOrder 이미지 필드
+            goi.id AS go_image_id,
+            goi.file_path AS go_image_file_path,
+            goi.image_type AS go_image_type,
+            goi.is_default AS go_image_is_default,
+            goi.board_id AS go_image_board_id,
+
+            -- GroupOrder 좋아요 필드
+            gol.id AS like_id,
+            gol.created_date AS like_created_date,
+            gol.modified_date AS like_modified_date,
+
+            -- 좋아요 누른 사용자 정보
+            lu.id AS like_user_id,
+            lu.student_number AS like_user_student_number,
+            lu.name AS like_user_name,
+            lu.dorm_type AS like_user_dorm_type,
+            lu.college AS like_user_college,
+            lu.penalty AS like_user_penalty,
+            lu.role AS like_user_role,
+
+            -- GroupOrder 댓글 필드
+            goc.id AS comment_id,
+            goc.reply AS comment_reply,
+            goc.is_deleted AS comment_is_deleted,
+            goc.created_date AS comment_created_date,
+            goc.modified_date AS comment_modified_date,
+
+            -- 댓글 작성자 정보
+            cu.id AS comment_user_id,
+            cu.student_number AS comment_user_student_number,
+            cu.name AS comment_user_name,
+            cu.dorm_type AS comment_user_dorm_type,
+            cu.college AS comment_user_college,
+            cu.penalty AS comment_user_penalty,
+            cu.role AS comment_user_role,
+
+            -- 부모 댓글 정보
+            pgoc.id AS parent_comment_id,
+            pgoc.reply AS parent_comment_reply,
+            pgoc.is_deleted AS parent_comment_is_deleted,
+            pgoc.created_date AS parent_comment_created_date,
+            pgoc.modified_date AS parent_comment_modified_date
+
+        FROM group_order go
+        LEFT JOIN user u ON go.user_id = u.id
+            LEFT JOIN image ui ON u.image_id = ui.id
+            LEFT JOIN group_order_chat_room gocr ON go.group_order_chat_room_id = gocr.id
+            LEFT JOIN group_order_image_list goil ON go.id = goil.group_order_id
+            LEFT JOIN image goi ON goil.image_list_id = goi.id
+            LEFT JOIN group_order_like gol ON go.id = gol.group_order_id
+            LEFT JOIN user lu ON gol.user_id = lu.id
+            LEFT JOIN group_order_comment goc ON go.id = goc.group_order_id
+            LEFT JOIN user cu ON goc.user_id = cu.id
+            LEFT JOIN group_order_comment pgoc ON goc.parent_id = pgoc.id
+        WHERE go.group_order_type = 'DELIVERY'
+        ORDER BY go.created_date DESC
+    </select>
+
+    <!-- 특정 GroupOrder 조회 쿼리 -->
+    <select id="findGroupOrderWithDetailsById" resultMap="GroupOrderResultMap">
+        SELECT
+            -- GroupOrder 필드
+            go.id AS go_id,
+            go.title AS go_title,
+            go.group_order_type AS go_group_order_type,
+            go.price AS go_price,
+            go.link AS go_link,
+            go.current_people AS go_current_people,
+            go.max_people AS go_max_people,
+            go.deadline AS go_deadline,
+            go.group_order_like AS go_group_order_like,
+            go.description AS go_description,
+            go.created_at AS go_created_at,
+            go.updated_at AS go_updated_at,
+
+            -- User (작성자) 필드
+            u.id AS user_id,
+            u.student_number AS user_student_number,
+            u.name AS user_name,
+            u.dorm_type AS user_dorm_type,
+            u.college AS user_college,
+            u.penalty AS user_penalty,
+            u.role AS user_role,
+            u.created_at AS user_created_at,
+            u.updated_at AS user_updated_at,
+
+            -- User 프로필 이미지
+            ui.id AS user_image_id,
+            ui.file_path AS user_image_file_path,
+            ui.image_type AS user_image_type,
+            ui.is_default AS user_image_is_default,
+            ui.board_id AS user_image_board_id,
+
+            -- GroupOrderChatRoom 필드
+            gocr.id AS chat_room_id,
+            gocr.title AS chat_room_title,
+            gocr.created_at AS chat_room_created_at,
+            gocr.updated_at AS chat_room_updated_at,
+
+            -- GroupOrder 이미지 필드
+            goi.id AS go_image_id,
+            goi.file_path AS go_image_file_path,
+            goi.image_type AS go_image_type,
+            goi.is_default AS go_image_is_default,
+            goi.board_id AS go_image_board_id,
+
+            -- GroupOrder 좋아요 필드
+            gol.id AS like_id,
+            gol.created_at AS like_created_at,
+            gol.updated_at AS like_updated_at,
+
+            -- 좋아요 누른 사용자 정보
+            lu.id AS like_user_id,
+            lu.student_number AS like_user_student_number,
+            lu.name AS like_user_name,
+            lu.dorm_type AS like_user_dorm_type,
+            lu.college AS like_user_college,
+            lu.penalty AS like_user_penalty,
+            lu.role AS like_user_role,
+
+            -- GroupOrder 댓글 필드
+            goc.id AS comment_id,
+            goc.reply AS comment_reply,
+            goc.is_deleted AS comment_is_deleted,
+            goc.created_at AS comment_created_at,
+            goc.updated_at AS comment_updated_at,
+
+            -- 댓글 작성자 정보
+            cu.id AS comment_user_id,
+            cu.student_number AS comment_user_student_number,
+            cu.name AS comment_user_name,
+            cu.dorm_type AS comment_user_dorm_type,
+            cu.college AS comment_user_college,
+            cu.penalty AS comment_user_penalty,
+            cu.role AS comment_user_role,
+
+            -- 부모 댓글 정보
+            pgoc.id AS parent_comment_id,
+            pgoc.reply AS parent_comment_reply,
+            pgoc.is_deleted AS parent_comment_is_deleted,
+            pgoc.created_at AS parent_comment_created_at,
+            pgoc.updated_at AS parent_comment_updated_at
+
+        FROM group_order go
+        LEFT JOIN user u ON go.user_id = u.id
+            LEFT JOIN image ui ON u.image_id = ui.id
+            LEFT JOIN group_order_chat_room gocr ON go.group_order_chat_room_id = gocr.id
+            LEFT JOIN group_order_image_list goil ON go.id = goil.group_order_id
+            LEFT JOIN image goi ON goil.image_list_id = goi.id
+            LEFT JOIN group_order_like gol ON go.id = gol.group_order_id
+            LEFT JOIN user lu ON gol.user_id = lu.id
+            LEFT JOIN group_order_comment goc ON go.id = goc.group_order_id
+            LEFT JOIN user cu ON goc.user_id = cu.id
+            LEFT JOIN group_order_comment pgoc ON goc.parent_id = pgoc.id
+        WHERE go.id = #{id}
+    </select>
+
+</mapper>
