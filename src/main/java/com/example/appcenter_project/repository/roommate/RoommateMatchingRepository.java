@@ -7,6 +7,7 @@ import com.example.appcenter_project.enums.roommate.MatchingStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface RoommateMatchingRepository extends JpaRepository<RoommateMatching, Long> {
 
@@ -15,5 +16,6 @@ public interface RoommateMatchingRepository extends JpaRepository<RoommateMatchi
     boolean existsBySenderAndStatus(User sender, MatchingStatus status);
     boolean existsByReceiverAndStatus(User receiver, MatchingStatus status);
 
+    Optional<RoommateMatching> findBySenderAndReceiverAndStatus(User sender, User receiver, MatchingStatus status);
 
 }
