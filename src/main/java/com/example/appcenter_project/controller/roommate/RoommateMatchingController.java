@@ -1,5 +1,6 @@
 package com.example.appcenter_project.controller.roommate;
 
+import com.example.appcenter_project.dto.request.roommate.RequestMatchingByChatRoomDto;
 import com.example.appcenter_project.dto.request.roommate.RequestMatchingDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseReceivedRoommateMatchingDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommateMatchingDto;
@@ -26,6 +27,16 @@ public class RoommateMatchingController implements RoommateMatchingApiSpecificat
     public ResponseEntity<ResponseRoommateMatchingDto> requestMatching(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody RequestMatchingDto requestDto
+    ) {
+        Long senderId = userDetails.getId(); // 인증된 사용자 ID
+        ResponseRoommateMatchingDto responseDto = roommateMatchingService.requestMatching(senderId, requestDto.getReceiverStudentNumber());
+        return ResponseEntity.status(201).body(responseDto);
+    }
+
+    @PostMapping("/request-by-chatroom")
+    public ResponseEntity<ResponseRoommateMatchingDto> requestMatchingByChatRoom(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody RequestMatchingByChatRoomDto requestDto
     ) {
         Long senderId = userDetails.getId(); // 인증된 사용자 ID
         ResponseRoommateMatchingDto responseDto = roommateMatchingService.requestMatchingByChatRoom(senderId, requestDto.getChatRoomId());
