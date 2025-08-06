@@ -1,5 +1,7 @@
 package com.example.appcenter_project.controller.user;
 
+import com.example.appcenter_project.dto.ImageLinkDto;
+import com.example.appcenter_project.dto.request.user.RequestTokenDto;
 import com.example.appcenter_project.dto.request.user.RequestUserDto;
 import com.example.appcenter_project.dto.request.user.SignupUser;
 import com.example.appcenter_project.dto.response.user.ResponseBoardDto;
@@ -14,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
@@ -61,9 +64,9 @@ public interface UserApiSpecification {
             }
     )
     ResponseEntity<?> reissueAccessToken(
-            @RequestHeader("Authorization")
-            @Parameter(description = "Bearer {refreshToken} 형식의 리프레시 토큰", required = true,
-                    example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...") String authorizationHeader);
+            @RequestBody
+            @Parameter RequestTokenDto requestTokenDto
+    );
 
     @Operation(
             summary = "사용자 정보 조회",
@@ -95,7 +98,7 @@ public interface UserApiSpecification {
                     )
             }
     )
-    ResponseEntity<Resource> findUserImageByUserId(@AuthenticationPrincipal CustomUserDetails user);
+    ResponseEntity<ImageLinkDto> findUserImageByUserId(@AuthenticationPrincipal CustomUserDetails user, HttpServletRequest request);
 
     @Operation(
             summary = "사용자가 작성한 게시글 조회",
@@ -161,6 +164,66 @@ public interface UserApiSpecification {
             @AuthenticationPrincipal CustomUserDetails user,
             @RequestPart
             @Parameter(description = "업로드할 이미지 파일", required = true) MultipartFile image);
+
+    @Operation(
+            summary = "사용자 시간표 이미지 업로드/수정",
+            description = "현재 로그인한 사용자의 시간표 이미지를 업로드하거나 수정합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "시간표 이미지 저장/수정 성공"),
+                    @ApiResponse(responseCode = "400", description = "잘못된 이미지 파일입니다.", content = @Content(examples = {})),
+                    @ApiResponse(responseCode = "403", description = "인증되지 않은 사용자입니다.", content = @Content(examples = {})),
+                    @ApiResponse(responseCode = "404",
+                            description = """
+                            다음 중 하나일 수 있습니다:
+                            - 사용자를 찾을 수 없습니다. (USER_NOT_FOUND)
+                            - 이미지를 찾을 수 없습니다. (IMAGE_NOT_FOUND)
+                            """,
+                            content = @Content(examples = {})
+                    )
+            }
+    )
+    ResponseEntity<Void> updateUserTimeTableImage(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestPart
+            @Parameter(description = "업로드할 시간표 이미지 파일", required = true) MultipartFile image);
+
+    @Operation(
+            summary = "사용자 시간표 이미지 조회",
+            description = "현재 로그인한 사용자의 시간표 이미지를 조회합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "시간표 이미지 조회 성공",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ImageLinkDto.class))),
+                    @ApiResponse(responseCode = "403", description = "인증되지 않은 사용자입니다.", content = @Content(examples = {})),
+                    @ApiResponse(responseCode = "404",
+                            description = """
+                            다음 중 하나일 수 있습니다:
+                            - 사용자를 찾을 수 없습니다. (USER_NOT_FOUND)
+                            - 시간표 이미지를 찾을 수 없습니다. (IMAGE_NOT_FOUND)
+                            """,
+                            content = @Content(examples = {})
+                    )
+            }
+    )
+    ResponseEntity<ImageLinkDto> findUserTimeTableImageByUserId(@AuthenticationPrincipal CustomUserDetails user, HttpServletRequest request);
+
+    @Operation(
+            summary = "사용자 시간표 이미지 삭제",
+            description = "현재 로그인한 사용자의 시간표 이미지를 삭제합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "204", description = "시간표 이미지 삭제 성공"),
+                    @ApiResponse(responseCode = "403", description = "인증되지 않은 사용자입니다.", content = @Content(examples = {})),
+                    @ApiResponse(responseCode = "404",
+                            description = """
+                            다음 중 하나일 수 있습니다:
+                            - 사용자를 찾을 수 없습니다. (USER_NOT_FOUND)
+                            - 시간표 이미지를 찾을 수 없습니다. (IMAGE_NOT_FOUND)
+                            """,
+                            content = @Content(examples = {})
+                    )
+            }
+    )
+    ResponseEntity<Void> deleteUserTimeTableImage(@AuthenticationPrincipal CustomUserDetails user);
 
     @Operation(
             summary = "사용자 탈퇴",

@@ -169,4 +169,5 @@
             LEFT JOIN group_order_comment goc ON go.id = goc.group_order_id
         WHERE go.id = #{groupOrderId}
     </select>
+
 </mapper>

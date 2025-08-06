@@ -73,7 +73,7 @@ public class RoommateService {
 
         // 4. 응답
         return ResponseRoommatePostDto.builder()
-                .boardId(roommateBoard.getId())
+                .id(roommateBoard.getId())
                 .title(savedCheckList.getTitle())
                 .dormPeriod(savedCheckList.getDormPeriod())
                 .dormType(savedCheckList.getDormType())
@@ -91,7 +91,7 @@ public class RoommateService {
                 .comment(savedCheckList.getComment())
                 .userId(user.getId())
                 .userName(user.getName())
-                .createdDate(roommateBoard.getCreatedDate())
+                .createDate(roommateBoard.getCreatedDate())
                 .isMatched(false)
                 .build();
     }
@@ -110,7 +110,7 @@ public class RoommateService {
                     RoommateCheckList cl = board.getRoommateCheckList(); //룸메이트 보드에있는 체크리스트를 꺼냄
                     User writer = board.getUser();
                     return ResponseRoommatePostDto.builder() //화면에 보여줄 정보를 담아줌
-                            .boardId(board.getId())
+                            .id(board.getId())
                             .title(cl.getTitle())
                             .dormPeriod(cl.getDormPeriod())
                             .dormType(cl.getDormType())
@@ -129,7 +129,7 @@ public class RoommateService {
                             .roommateBoardLike(board.getRoommateBoardLike())
                             .userId(writer.getId())
                             .userName(writer.getName())
-                            .createdDate(board.getCreatedDate())
+                            .createDate(board.getCreatedDate())
                             .isMatched(isMatched)
                             .build(); //dto하나가 만들어짐
                 })

@@ -12,4 +12,6 @@ public class ResponseRoommateChatRoomDto {
     private String opponentNickname;
     private String lastMessage;
     private LocalDateTime lastMessageTime;
+    private Long partnerId;
+    private String partnerName;
 }

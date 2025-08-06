@@ -5,6 +5,7 @@ import com.example.appcenter_project.dto.response.report.ResponseReportDto;
 import com.example.appcenter_project.entity.report.Report;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.exception.CustomException;
+import com.example.appcenter_project.exception.ErrorCode;
 import com.example.appcenter_project.repository.report.ReportRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,8 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.example.appcenter_project.exception.ErrorCode.REPORT_NOT_REGISTERED;
-import static com.example.appcenter_project.exception.ErrorCode.USER_NOT_FOUND;
+import static com.example.appcenter_project.exception.ErrorCode.*;
 
 @Slf4j
 @Service

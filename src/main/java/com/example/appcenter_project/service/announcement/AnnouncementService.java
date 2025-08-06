@@ -1,12 +1,17 @@
 package com.example.appcenter_project.service.announcement;
 
 import com.example.appcenter_project.dto.AttachedFileDto;
+import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.dto.request.announement.RequestAnnouncementDto;
 import com.example.appcenter_project.dto.response.announcement.ResponseAnnouncementDetailDto;
 import com.example.appcenter_project.dto.response.announcement.ResponseAnnouncementDto;
+import com.example.appcenter_project.dto.response.tip.ResponseTipDto;
+import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.announcement.Announcement;
 import com.example.appcenter_project.entity.announcement.AttachedFile;
+import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.exception.CustomException;
+import com.example.appcenter_project.exception.ErrorCode;
 import com.example.appcenter_project.repository.announcement.AnnouncementRepository;
 import com.example.appcenter_project.repository.announcement.AttachedFileRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,6 +31,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.example.appcenter_project.exception.ErrorCode.*;
+import static com.example.appcenter_project.exception.ErrorCode.IMAGE_NOT_FOUND;
 
 @Slf4j
 @Service
