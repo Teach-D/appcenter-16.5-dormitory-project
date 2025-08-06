@@ -1,6 +1,8 @@
 package com.example.appcenter_project.controller.roommate;
 
 import com.example.appcenter_project.dto.request.roommate.RequestMatchingDto;
+import com.example.appcenter_project.dto.response.roommate.ResponseReceivedRoommateMatchingDto;
+import com.example.appcenter_project.dto.response.roommate.ResponseRoommateMatchingDto;
 import com.example.appcenter_project.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -60,6 +62,30 @@ public interface RoommateMatchingApiSpecification {
     ResponseEntity<Void> rejectMatching(
             @Parameter(description = "매칭 ID", example = "1") @PathVariable Long matchingId
     );
+
+    @Operation(
+            summary = "나에게 온 룸메이트 매칭 요청 리스트 조회",
+            description = "나에게 요청된 모든 룸메이트 매칭 요청(수락 대기 상태) 리스트를 조회합니다.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "매칭 요청 리스트 조회 성공",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseReceivedRoommateMatchingDto.class) // ← 여기!
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "사용자를 찾을 수 없습니다. (ROOMMATE_USER_NOT_FOUND)",
+                            content = @Content
+                    )
+            }
+    )
+    ResponseEntity<?> getReceivedMatchings(
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
+    );
+
 
 
 }

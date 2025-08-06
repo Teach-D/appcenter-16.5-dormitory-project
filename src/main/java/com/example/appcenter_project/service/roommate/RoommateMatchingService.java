@@ -1,5 +1,6 @@
 package com.example.appcenter_project.service.roommate;
 
+import com.example.appcenter_project.dto.response.roommate.ResponseReceivedRoommateMatchingDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommateMatchingDto;
 import com.example.appcenter_project.entity.roommate.MyRoommate;
 import com.example.appcenter_project.entity.roommate.RoommateMatching;
@@ -13,6 +14,8 @@ import com.example.appcenter_project.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -31,7 +34,12 @@ public class RoommateMatchingService {
         User receiver = userRepository.findByStudentNumber(receiverStudentNumber)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
 
-        if (receiver.getRoommateBoard() != null) {
+        // "이미 매칭된 사람" 체크 기준 개선!
+        boolean receiverAlreadyMatched =
+                roommateMatchingRepository.existsBySenderAndStatus(receiver, MatchingStatus.COMPLETED) ||
+                        roommateMatchingRepository.existsByReceiverAndStatus(receiver, MatchingStatus.COMPLETED);
+
+        if (receiverAlreadyMatched) {
             throw new CustomException(ErrorCode.ROOMMATE_ALREADY_MATCHED);
         }
 
@@ -64,20 +72,22 @@ public class RoommateMatchingService {
         RoommateMatching matching = roommateMatchingRepository.findById(matchingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_MATCHING_NOT_FOUND));
 
-
         // 매칭 요청의 수신자가 현재 로그인한 사용자인지 확인
         if (!matching.getReceiver().getId().equals(user.getId())) {
             throw new CustomException(ErrorCode.ROOMMATE_MATCHING_NOT_FOR_USER);
         }
-
 
         // 이미 완료된 요청인지 확인
         if (matching.getStatus() != MatchingStatus.REQUEST) {
             throw new CustomException(ErrorCode.ROOMMATE_MATCHING_ALREADY_COMPLETED);
         }
 
-        // 이미 매칭 완료된 사람인지 확인
-        if (user.getRoommateBoard() != null) {
+        // "이미 매칭된 사람" 체크 기준 개선!
+        boolean userAlreadyMatched =
+                roommateMatchingRepository.existsBySenderAndStatus(user, MatchingStatus.COMPLETED) ||
+                        roommateMatchingRepository.existsByReceiverAndStatus(user, MatchingStatus.COMPLETED);
+
+        if (userAlreadyMatched) {
             throw new CustomException(ErrorCode.ROOMMATE_ALREADY_MATCHED);
         }
 
@@ -112,5 +122,24 @@ public class RoommateMatchingService {
 
         matching.fail();
     }
+
+    // 매칭조회
+    @Transactional(readOnly = true)
+    public List<ResponseReceivedRoommateMatchingDto> getReceivedMatchings(Long receiverId) {
+        User receiver = userRepository.findById(receiverId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
+
+        List<RoommateMatching> matchings = roommateMatchingRepository.findAllByReceiverAndStatus(receiver, MatchingStatus.REQUEST);
+
+        return matchings.stream()
+                .map(matching -> ResponseReceivedRoommateMatchingDto.builder()
+                        .matchingId(matching.getId())
+                        .senderId(matching.getSender().getId())
+                        .senderName(matching.getSender().getName())
+                        .status(matching.getStatus())
+                        .build())
+                .toList();
+    }
+
 
 }

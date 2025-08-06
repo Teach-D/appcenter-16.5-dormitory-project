@@ -25,6 +25,7 @@ import com.example.appcenter_project.repository.groupOrder.UserGroupOrderChatRoo
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.like.GroupOrderLikeRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
+import com.example.appcenter_project.utils.MealTimeChecker;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -89,8 +90,6 @@ public class GroupOrderService {
         if (flatDto == null) {
             throw new CustomException(GROUP_ORDER_NOT_FOUND);
         }
-
-        List<ResponseGroupOrderCommentDto> flatComments = flatDto.getGroupOrderCommentDtoList();
         Map<Long, ResponseGroupOrderCommentDto> parentMap = new LinkedHashMap<>();
         List<ResponseGroupOrderCommentDto> topLevelComments = new ArrayList<>();
 
