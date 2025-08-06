@@ -2,21 +2,21 @@ package com.example.appcenter_project.dto.response.roommate;
 
 import com.example.appcenter_project.dto.response.user.ResponseBoardDto;
 import com.example.appcenter_project.entity.roommate.RoommateCheckList;
+import com.example.appcenter_project.entity.roommate.RoommateBoard;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.roommate.*;
 import com.example.appcenter_project.enums.user.College;
 import com.example.appcenter_project.enums.user.DormType;
-import com.example.appcenter_project.entity.roommate.RoommateBoard;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import com.example.appcenter_project.utils.DormDayUtil;
 import lombok.Getter;
+import lombok.Builder;
 
 import java.time.LocalDateTime;
-import java.util.Set;
+import java.util.List;
 
 @Getter
 public class ResponseRoommatePostDto extends ResponseBoardDto {
-    private Set<DormDay> dormPeriod;
+    private List<DormDay> dormPeriod; // Set → List로 타입 변경
     private DormType dormType;
     private College college;
     private ReligionType religion;
@@ -37,7 +37,7 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
 
     @Builder
     public ResponseRoommatePostDto(Long id, String title, String type, LocalDateTime createDate, String filePath,
-                                   Set<DormDay> dormPeriod, DormType dormType, College college, ReligionType religion,
+                                   List<DormDay> dormPeriod, DormType dormType, College college, ReligionType religion,
                                    String mbti, SmokingType smoking, SnoringType snoring, TeethGrindingType toothGrind,
                                    SleepSensitivityType sleeper, ShowerTimeType showerHour, ShowerDurationType showerTime,
                                    BedTimeType bedTime, CleanlinessType arrangement, String comment,
@@ -73,7 +73,7 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
                 .type("ROOMMATE")
                 .createDate(board.getCreatedDate())
                 .filePath(null) // 필요시 이미지 경로 설정
-                .dormPeriod(cl.getDormPeriod())
+                .dormPeriod(DormDayUtil.sortDormDays(cl.getDormPeriod()))
                 .dormType(cl.getDormType())
                 .college(cl.getCollege())
                 .religion(cl.getReligion())
