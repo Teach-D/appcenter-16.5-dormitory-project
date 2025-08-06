@@ -31,7 +31,7 @@ public class MyRoommateService {
         return ResponseMyRoommateInfoDto.builder()
                 .name(roommate.getName())
                 .dormType(roommate.getDormType() != null ? roommate.getDormType().name() : null)
-                .college(roommate.getCollege() != null ? roommate.getCollege().name() : null)
+                .college(roommate.getCollege() != null ? roommate.getCollege().toValue() : null)
                 .imagePath(roommate.getImage() != null ? roommate.getImage().getFilePath() : null)
                 .build();
     }
