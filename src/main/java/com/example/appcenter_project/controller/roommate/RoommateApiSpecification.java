@@ -1,6 +1,7 @@
 package com.example.appcenter_project.controller.roommate;
 
 import com.example.appcenter_project.dto.request.roommate.RequestRoommateFormDto;
+import com.example.appcenter_project.dto.response.roommate.ResponseRoommateCheckListDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommatePostDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommateSimilarityDto;
 import com.example.appcenter_project.security.CustomUserDetails;
@@ -165,5 +166,19 @@ public interface RoommateApiSpecification {
             @PathVariable Long boardId,
             @Parameter(hidden = true) CustomUserDetails userDetails
     );
+
+    @Operation(
+            summary = "내 룸메이트 체크리스트 단일 조회",
+            description = "로그인한 사용자가 작성한 체크리스트를 단일 조회합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "내 체크리스트 조회 성공",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ResponseRoommateCheckListDto.class))),
+                    @ApiResponse(responseCode = "404", description = "체크리스트 없음", content = @Content)
+            }
+    )
+    ResponseEntity<ResponseRoommateCheckListDto> getMyRoommateCheckList(
+            @Parameter(hidden = true) CustomUserDetails userDetails
+    );
+
 
 }
