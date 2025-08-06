@@ -23,6 +23,7 @@ public class ResponseTipCommentDto {
     private Boolean isDeleted;
     private LocalDateTime createdDate;
     private String name;
+    private String writerImageFile;
 
     @Builder.Default
     private List<ResponseTipCommentDto> childTipCommentList = new ArrayList<>();
@@ -54,5 +55,9 @@ public class ResponseTipCommentDto {
 
     public void updateChildTipCommentList(List childTipCommentList) {
         this.childTipCommentList = childTipCommentList;
+    }
+
+    public void updateWriterImageFile(String  writerImageFile) {
+        this.writerImageFile = writerImageFile;
     }
 }
