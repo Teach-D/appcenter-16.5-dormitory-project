@@ -86,17 +86,17 @@ public class RoommateChattingRoomService {
 
     //채팅방 나가기
     @Transactional
-    public void leaveChatRoom(Long guestId, Long chatRoomId) {
+    public void leaveChatRoom(Long userId, Long chatRoomId) {
         // 유저 조회
-        User guest = userRepository.findById(guestId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
         // 채팅방 조회
         RoommateChattingRoom chatRoom = roommateChattingRoomRepository.findById(chatRoomId)
                 .orElseThrow(() -> new CustomException(ROOMMATE_CHAT_ROOM_NOT_FOUND));
 
-        // 채팅방의 게스트와 일치하는지 확인
-        if (!chatRoom.getGuest().getId().equals(guest.getId())) {
+        // 채팅방에 속한 두 명(호스트 또는 게스트)만 나가기 가능
+        if (!chatRoom.getGuest().getId().equals(user.getId()) && !chatRoom.getHost().getId().equals(user.getId())) {
             throw new CustomException(ROOMMATE_FORBIDDEN_ACCESS);
         }
 
