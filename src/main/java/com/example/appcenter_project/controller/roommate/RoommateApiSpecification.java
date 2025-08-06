@@ -136,4 +136,19 @@ public interface RoommateApiSpecification {
             @PathVariable Long boardId
     );
 
+    @Operation(
+            summary = "룸메이트 게시글 주인의 매칭 여부 조회",
+            description = "특정 게시글의 작성자가 이미 매칭(COMPLETED) 상태인지 확인합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "매칭 여부 반환",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Boolean.class))),
+                    @ApiResponse(responseCode = "404", description = "게시글이 존재하지 않음 (ROOMMATE_BOARD_NOT_FOUND)", content = @Content)
+            }
+    )
+    ResponseEntity<Boolean> isBoardOwnerMatched(
+            @Parameter(description = "조회할 게시글 ID", example = "1")
+            @PathVariable Long boardId
+    );
+
+
 }

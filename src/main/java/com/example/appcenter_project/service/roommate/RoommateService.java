@@ -7,11 +7,13 @@ import com.example.appcenter_project.entity.like.RoommateBoardLike;
 import com.example.appcenter_project.entity.roommate.RoommateBoard;
 import com.example.appcenter_project.entity.roommate.RoommateCheckList;
 import com.example.appcenter_project.entity.user.User;
+import com.example.appcenter_project.enums.roommate.MatchingStatus;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.exception.ErrorCode;
 import com.example.appcenter_project.repository.like.RoommateBoardLikeRepository;
 import com.example.appcenter_project.repository.roommate.RoommateBoardRepository;
 import com.example.appcenter_project.repository.roommate.RoommateCheckListRepository;
+import com.example.appcenter_project.repository.roommate.RoommateMatchingRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,7 @@ public class RoommateService {
     private final RoommateCheckListRepository roommateCheckListRepository;
     private final RoommateBoardRepository roommateBoardRepository;
     private final RoommateBoardLikeRepository roommateBoardLikeRepository;
+    private final RoommateMatchingRepository roommateMatchingRepository;
 
     @Transactional
     public ResponseRoommatePostDto createRoommateCheckListandBoard(RequestRoommateFormDto requestDto, Long userId) {
@@ -297,6 +300,19 @@ public class RoommateService {
         return board.minusLike();
     }
 
+    public boolean isRoommateBoardOwnerMatched(Long boardId) {
+        // 1. 게시글 조회
+        RoommateBoard board = roommateBoardRepository.findById(boardId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
 
+        User owner = board.getUser();
+
+        // 2. owner가 COMPLETED 상태인 매칭에 포함되어 있는지 검사
+        boolean alreadyMatched =
+                roommateMatchingRepository.existsBySenderAndStatus(owner, MatchingStatus.COMPLETED)
+                        || roommateMatchingRepository.existsByReceiverAndStatus(owner, MatchingStatus.COMPLETED);
+
+        return alreadyMatched;
+    }
 
 }
