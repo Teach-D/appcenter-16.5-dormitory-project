@@ -26,5 +26,6 @@ public class ResponseRoommateSimilarityDto {
     private CleanlinessType arrangement;
     private String comment;
 
+    private int roommateBoardLike;
     private Integer similarityPercentage;
 }
