@@ -11,6 +11,7 @@ import com.example.appcenter_project.entity.groupOrder.GroupOrderChatRoom;
 import com.example.appcenter_project.entity.groupOrder.GroupOrderComment;
 import com.example.appcenter_project.entity.groupOrder.UserGroupOrderChatRoom;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
+import com.example.appcenter_project.entity.like.TipLike;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
@@ -40,12 +41,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.example.appcenter_project.exception.ErrorCode.*;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -59,8 +58,6 @@ public class GroupOrderService {
     private final GroupOrderCommentRepository groupOrderCommentRepository;
     private final ImageRepository imageRepository;
     private final GroupOrderMapper groupOrderMapper;
-    private final DeliveryCacheService deliveryCacheService;
-    private final GroupOrderLockFacade groupOrderLockFacade;
 
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto) {
         // GroupOrder 저장
@@ -88,212 +85,40 @@ public class GroupOrderService {
         userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);
     }
 
-    /**
-     * groupOrderId로 GroupOrder 조회
-     * 해당 GroupOrder가 redis에 캐싱되어 있으면 redis에서 조회
-     * 해당 GroupOrder가 redis에 캐싱되어 있지 않으면 db에서 조회
-     */
     public ResponseGroupOrderDetailDto findGroupOrderById(Long groupOrderId) {
-        ResponseGroupOrderDetailDto dto;
-
-        // 캐시에서 먼저 조회
-        if (deliveryCacheService.existsGroupOrderInCache(groupOrderId)) {
-            dto = deliveryCacheService.getAllCacheDelivery(groupOrderId);
-            log.info("redis 조회");
-            if (dto != null) {
-                return buildHierarchicalComments(dto, true);
-            }
-        }
-
-        log.info("db 조회");
-        // DB에서 조회
-        dto = groupOrderMapper.findGroupOrderById(groupOrderId);
-        if (dto == null) {
+        ResponseGroupOrderDetailDto flatDto = groupOrderMapper.findGroupOrderById(groupOrderId);
+        if (flatDto == null) {
             throw new CustomException(GROUP_ORDER_NOT_FOUND);
         }
-
-        // GroupOrder 조회수 증가
-        if (MealTimeChecker.isDinnerTime() || MealTimeChecker.isLunchTime()){
-            // Redisson 분산락 활용 조회수 증가
-            //groupOrderLockFacade.plusGroupOrderViewCount(groupOrderId);
-
-            // Redis 스케줄링 조회수 증가
-            groupOrderLockFacade.plusGroupOrderScheduledViewCount(groupOrderId);
-
-        } else {
-            groupOrderMapper.plusViewCount(groupOrderId, 1);
-        }
-
-        return buildHierarchicalComments(dto, false);
-    }
-
-    /**
-     * GroupOrder의 comment를 트리 형태로 계층화
-     */
-    private ResponseGroupOrderDetailDto buildHierarchicalComments(ResponseGroupOrderDetailDto dto, boolean isFromCache) {
-        List<ResponseGroupOrderCommentDto> comments = dto.getGroupOrderCommentDtoList();
-
-        // 캐시에서 온 데이터는 정렬 필요
-        if (isFromCache) {
-            comments = comments.stream()
-                    .sorted(Comparator.comparing(ResponseGroupOrderCommentDto::getGroupOrderCommentId))
-                    .toList();
-        }
-
         Map<Long, ResponseGroupOrderCommentDto> parentMap = new LinkedHashMap<>();
         List<ResponseGroupOrderCommentDto> topLevelComments = new ArrayList<>();
 
-        for (ResponseGroupOrderCommentDto comment : comments) {
+        for (ResponseGroupOrderCommentDto comment : flatComments) {
             // 삭제된 댓글 처리
             if (Boolean.TRUE.equals(comment.getIsDeleted())) {
-                if (isFromCache) {
-                    comment.setReply("삭제된 메시지입니다.");
-                } else {
-                    comment.updateReply("삭제된 메시지입니다.");
-                }
+                comment.updateReply("삭제된 메시지입니다.");
             }
 
             // 계층 구조 구성
             if (comment.getParentId() == null) {
-                // 최상위 댓글
-                if (isFromCache) {
-                    comment.setChildGroupOrderCommentList(new ArrayList<>());
-                } else {
-                    comment.updateChildGroupOrderCommentList(new ArrayList<>());
-                }
+                comment.updateChildGroupOrderCommentList(new ArrayList<>());
                 parentMap.put(comment.getGroupOrderCommentId(), comment);
                 topLevelComments.add(comment);
             } else {
-                // 대댓글
                 ResponseGroupOrderCommentDto parent = parentMap.get(comment.getParentId());
                 if (parent != null) {
                     if (parent.getChildGroupOrderCommentList() == null) {
-                        if (isFromCache) {
-                            parent.setChildGroupOrderCommentList(new ArrayList<>());
-                        } else {
-                            parent.updateChildGroupOrderCommentList(new ArrayList<>());
-                        }
+                        parent.updateChildGroupOrderCommentList(new ArrayList<>());
                     }
                     parent.getChildGroupOrderCommentList().add(comment);
                 }
             }
         }
 
-        // 최상위 댓글만 설정
-        if (isFromCache) {
-            dto.setGroupOrderCommentDtoList(topLevelComments);
-        } else {
-            dto.updateGroupOrderCommentDtoList(topLevelComments);
-        }
-
-        return dto;
+        flatDto.updateGroupOrderCommentDtoList(topLevelComments);
+        return flatDto;
     }
 
-
-    /**
-     * GroupOrder 중에 Delivery만 조회
-     */
-    @Transactional(readOnly = true)
-    public List<GroupOrder> findGroupOrdersDelivery() {
-        return groupOrderMapper.findAllGroupOrdersWithDetails();
-        // 1단계: 기본 정보와 이미지 로딩
-        //return findAllGroupOrders();
-    }
-
-    public List<GroupOrder> findAllGroupOrders() {
-        log.info("단계별 조회 시작");
-
-        // 1단계: 기본 정보 + 이미지 + 유저 + 채팅방 조회
-        List<GroupOrder> groupOrders = groupOrderRepository.findAllWithBasicInfo();
-        log.info("1단계 완료: {} 개의 GroupOrder 조회", groupOrders.size());
-
-        if (groupOrders.isEmpty()) {
-            return groupOrders;
-        }
-
-        // ID 리스트 추출
-        List<Long> groupOrderIds = groupOrders.stream()
-                .map(GroupOrder::getId)
-                .collect(Collectors.toList());
-
-        // 빠른 조회를 위한 Map 생성
-        Map<Long, GroupOrder> groupOrderMap = groupOrders.stream()
-                .collect(Collectors.toMap(GroupOrder::getId, Function.identity()));
-
-        // 2단계: 좋아요 정보 조회 및 병합
-        List<GroupOrder> withLikes = groupOrderRepository.findAllWithLikes(groupOrderIds);
-        log.info("2단계 완료: {} 개의 좋아요 정보 조회", withLikes.size());
-
-        withLikes.forEach(go -> {
-            GroupOrder original = groupOrderMap.get(go.getId());
-            if (original != null) {
-                // 기존 리스트를 클리어하고 새로운 데이터로 교체
-                original.getGroupOrderLikeList().clear();
-                original.getGroupOrderLikeList().addAll(go.getGroupOrderLikeList());
-            }
-        });
-
-        // 3단계: 댓글 정보 조회 및 병합
-        List<GroupOrder> withComments = groupOrderRepository.findAllWithComments(groupOrderIds);
-        log.info("3단계 완료: {} 개의 댓글 정보 조회", withComments.size());
-
-        withComments.forEach(go -> {
-            GroupOrder original = groupOrderMap.get(go.getId());
-            if (original != null) {
-                // 기존 리스트를 클리어하고 새로운 데이터로 교체
-                original.getGroupOrderCommentList().clear();
-                original.getGroupOrderCommentList().addAll(go.getGroupOrderCommentList());
-            }
-        });
-
-        // Redis 직렬화를 위한 컬렉션 초기화
-        groupOrders.forEach(this::initializeCollectionsForRedis);
-
-        log.info("단계별 조회 완료: 총 {} 개 GroupOrder 반환", groupOrders.size());
-        return groupOrders;
-    }
-
-    /**
-     * Redis 직렬화를 위한 컬렉션 초기화
-     */
-    private void initializeCollectionsForRedis(GroupOrder groupOrder) {
-        try {
-            // 이미지 리스트 초기화
-            groupOrder.getImageList().size();
-
-            // 좋아요 리스트 초기화
-            groupOrder.getGroupOrderLikeList().size();
-            groupOrder.getGroupOrderLikeList().forEach(like -> {
-                if (like.getUser() != null) {
-                    like.getUser().getId(); // User 정보 초기화
-                }
-            });
-
-            // 댓글 리스트 초기화
-            groupOrder.getGroupOrderCommentList().size();
-            groupOrder.getGroupOrderCommentList().forEach(comment -> {
-                if (comment.getUser() != null) {
-                    comment.getUser().getId(); // User 정보 초기화
-                }
-                if (comment.getChildGroupOrderComments() != null) {
-                    comment.getChildGroupOrderComments().size(); // 중첩 댓글 초기화
-                }
-            });
-
-            // 유저 정보 초기화
-            if (groupOrder.getUser() != null) {
-                groupOrder.getUser().getId();
-            }
-
-            // 채팅방 정보 초기화
-            if (groupOrder.getGroupOrderChatRoom() != null) {
-                groupOrder.getGroupOrderChatRoom().getId();
-            }
-
-        } catch (Exception e) {
-            log.warn("컬렉션 초기화 중 에러 발생: {}", e.getMessage());
-        }
-    }
 
     // 이미지와 함께 공동구매 생성
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto, List<MultipartFile> images) {
@@ -433,23 +258,7 @@ public class GroupOrderService {
         return groupOrderMapper.findGroupOrders(typeString, searchKeyword, sortParam);
     }
 
-    /**
-     * groupOrderId, RequestGroupOrderDto로 GroupOrder 수정
-     * 해당 GroupOrder가 redis에 캐싱되어 있으면 redis에서 수정
-     * 해당 GroupOrder가 redis에 캐싱되어 있는 것과 상관없이 db에서 수정
-     */
     public ResponseGroupOrderDetailDto updateGroupOrder(Long userId, Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto) {
-        ResponseGroupOrderDetailDto dto;
-
-        if (deliveryCacheService.existsGroupOrderInCache(groupOrderId)) {
-            ResponseGroupOrderDetailDto responseGroupOrderDetailDto = deliveryCacheService.updateCacheDelivery(groupOrderId, requestGroupOrderDto);
-            log.info("redis 수정");
-            if (responseGroupOrderDetailDto != null) {
-                dto = buildHierarchicalComments(responseGroupOrderDetailDto, true);
-            }
-        }
-
-        log.info("db 수정");
         GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_OWNED_BY_USER));
 
         if (groupOrderRepository.existsByTitle(requestGroupOrderDto.getTitle())) {
@@ -468,22 +277,10 @@ public class GroupOrderService {
             groupOrderLikeUserList.add(groupOrderLikeUserId);
         }
 
-        dto = ResponseGroupOrderDetailDto.detailEntityToDto(groupOrder, groupOrderCommentDtoList, groupOrderLikeUserList);
-        return dto;
+        return ResponseGroupOrderDetailDto.detailEntityToDto(groupOrder, groupOrderCommentDtoList, groupOrderLikeUserList);
     }
 
-    /**
-     * groupOrderId, GroupOrder 삭제
-     * 해당 GroupOrder가 redis에 캐싱되어 있으면 redis에서 삭제
-     * 해당 GroupOrder가 redis에 캐싱되어 있는 것과 상관없이 db에서 삭제
-     */
     public void deleteGroupOrder(Long userId, Long groupOrderId) {
-        if (deliveryCacheService.existsGroupOrderInCache(groupOrderId)) {
-            log.info("redis 삭제");
-            deliveryCacheService.evictDelivery(groupOrderId);
-        }
-
-        log.info("db 삭제");
         GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_OWNED_BY_USER));
 
         GroupOrderChatRoom groupOrderChatRoom = groupOrder.getGroupOrderChatRoom();

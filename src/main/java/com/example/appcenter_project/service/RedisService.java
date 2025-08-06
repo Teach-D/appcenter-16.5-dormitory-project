@@ -1,3 +1,4 @@
+/*
 package com.example.appcenter_project.service;
 
 
@@ -114,4 +115,4 @@ public class RedisService {
     public void saveEntityWithTTL(String key, Object entity, long timeoutSeconds) {
         redisTemplate.opsForValue().set(key, entity, timeoutSeconds, java.util.concurrent.TimeUnit.SECONDS);
     }
-}
+}*/

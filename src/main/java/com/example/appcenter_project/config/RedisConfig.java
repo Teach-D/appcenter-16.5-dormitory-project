@@ -1,3 +1,4 @@
+/*
 package com.example.appcenter_project.config;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
@@ -22,7 +23,6 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @Configuration
 @EnableRedisRepositories
 public class RedisConfig {
-
     @Value("${spring.redis.host:localhost}")
     private String redisHost;
 
@@ -65,4 +65,4 @@ public class RedisConfig {
         template.afterPropertiesSet();
         return template;
     }
-}
+}*/

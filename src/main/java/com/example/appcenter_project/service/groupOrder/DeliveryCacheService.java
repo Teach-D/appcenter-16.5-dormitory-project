@@ -1,3 +1,4 @@
+/*
 package com.example.appcenter_project.service.groupOrder;
 
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
@@ -37,9 +38,11 @@ public class DeliveryCacheService {
         this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
-    /**
+    */
+/**
      * 식사시간이면 GroupOrder의 모든 Delivery가 캐싱
-     */
+     *//*
+
     @Transactional(readOnly = true)
     public void cacheAllDeliveries(List<GroupOrder> groupOrdersDeliveries) {
         ObjectMapper mapper = new ObjectMapper();
@@ -65,17 +68,21 @@ public class DeliveryCacheService {
         }
     }
 
-    /**
+    */
+/**
      * 하나의 GroupOrder Delivery 캐시 삭제
-     */
+     *//*
+
     public void evictDelivery(Long groupOrderId) {
         String key = ORDER_CACHE_KEY + groupOrderId;
         redisTemplate.delete(key);
     }
 
-    /**
+    */
+/**
      * 모든 GroupOrder Delivery 캐시 삭제
-     */
+     *//*
+
     public void evictAllDeliveryCaches() {
         for (String key : redisTemplate.keys(ORDER_CACHE_KEY + "*")) {
             redisTemplate.delete(key);
@@ -140,3 +147,4 @@ public class DeliveryCacheService {
         return responseGroupOrderDetailDto;
     }
 }
+*/
