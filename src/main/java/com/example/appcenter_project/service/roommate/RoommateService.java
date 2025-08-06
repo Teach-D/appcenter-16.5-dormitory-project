@@ -1,6 +1,7 @@
 package com.example.appcenter_project.service.roommate;
 
 import com.example.appcenter_project.dto.request.roommate.RequestRoommateFormDto;
+import com.example.appcenter_project.dto.response.roommate.ResponseRoommateCheckListDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommatePostDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommateSimilarityDto;
 import com.example.appcenter_project.entity.like.RoommateBoardLike;
@@ -329,6 +330,13 @@ public class RoommateService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
         return roommateBoardLikeRepository.existsByUserAndRoommateBoard(user, board);
+    }
+
+    @Transactional(readOnly = true)
+    public ResponseRoommateCheckListDto getMyRoommateCheckList(Long userId) {
+        RoommateCheckList checkList = roommateCheckListRepository.findByUserId(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_CHECKLIST_NOT_FOUND));
+        return ResponseRoommateCheckListDto.from(checkList);
     }
 
 }
