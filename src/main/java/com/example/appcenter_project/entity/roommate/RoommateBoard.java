@@ -1,6 +1,7 @@
 package com.example.appcenter_project.entity.roommate;
 
 import com.example.appcenter_project.entity.BaseTimeEntity;
+import com.example.appcenter_project.entity.like.RoommateBoardLike;
 import com.example.appcenter_project.entity.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -9,6 +10,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.lang.reflect.Member;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -29,7 +32,12 @@ public class RoommateBoard extends BaseTimeEntity {
     @JoinColumn(name = "roommate_checklist_id")
     private RoommateCheckList roommateCheckList;
 
-    private int roommateBoardLike;
+    @OneToMany(mappedBy = "roommateBoard", orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<RoommateBoardLike> roommateBoardLikeList = new ArrayList<>();
+
+    @Column(nullable = false)
+    private int roommateBoardLike = 0;
+
 
     public Integer plusLike(){
         this.roommateBoardLike +=1;
@@ -52,5 +60,6 @@ public class RoommateBoard extends BaseTimeEntity {
     public void updateTitle(String title){
         this.title = title;
     }
+
 
 }

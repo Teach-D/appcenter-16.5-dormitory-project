@@ -105,5 +105,35 @@ public interface RoommateApiSpecification {
             RequestRoommateFormDto requestDto
     );
 
+    @Operation(
+            summary = "룸메이트 게시글 좋아요",
+            description = "특정 게시글에 좋아요를 추가합니다. 이미 좋아요를 누른 경우 에러가 발생합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "좋아요 성공, 현재 좋아요 개수 반환",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Integer.class))),
+                    @ApiResponse(responseCode = "404", description = "해당 유저 또는 게시글이 존재하지 않음 (ROOMMATE_USER_NOT_FOUND, ROOMMATE_BOARD_NOT_FOUND)", content = @Content),
+                    @ApiResponse(responseCode = "401", description = "이미 좋아요를 누른 유저 (ALREADY_ROOMMATE_BOARD_LIKE_USER)", content = @Content)
+            }
+    )
+    ResponseEntity<Integer> plusLike(
+            @Parameter(hidden = true) CustomUserDetails userDetails,
+            @Parameter(description = "좋아요를 누를 게시글 ID", example = "1")
+            @PathVariable Long boardId
+    );
+
+    @Operation(
+            summary = "룸메이트 게시글 좋아요 취소",
+            description = "특정 게시글의 좋아요를 취소합니다. 좋아요를 누르지 않은 경우 에러가 발생합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "좋아요 취소 성공, 현재 좋아요 개수 반환",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Integer.class))),
+                    @ApiResponse(responseCode = "404", description = "해당 유저, 게시글 또는 좋아요 정보가 없음 (ROOMMATE_USER_NOT_FOUND, ROOMMATE_BOARD_NOT_FOUND, ROOMMATE_BOARD_LIKE_NOT_FOUND)", content = @Content)
+            }
+    )
+    ResponseEntity<Integer> minusLike(
+            @Parameter(hidden = true) CustomUserDetails userDetails,
+            @Parameter(description = "좋아요 취소할 게시글 ID", example = "1")
+            @PathVariable Long boardId
+    );
 
 }
