@@ -186,6 +186,7 @@ public class GroupOrderService {
         //return findAllGroupOrders();
     }
 
+/*
     public List<GroupOrder> findAllGroupOrders() {
         log.info("단계별 조회 시작");
 
@@ -238,6 +239,7 @@ public class GroupOrderService {
         log.info("단계별 조회 완료: 총 {} 개 GroupOrder 반환", groupOrders.size());
         return groupOrders;
     }
+*/
 
     /**
      * Redis 직렬화를 위한 컬렉션 초기화
