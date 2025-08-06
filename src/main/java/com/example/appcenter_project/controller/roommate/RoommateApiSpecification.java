@@ -150,5 +150,20 @@ public interface RoommateApiSpecification {
             @PathVariable Long boardId
     );
 
+    @Operation(
+            summary = "룸메이트 게시글 좋아요 여부 조회",
+            description = "특정 게시글에 로그인한 사용자가 좋아요를 눌렀는지 여부를 반환합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "좋아요 여부 반환 (true: 좋아요 누름, false: 안 누름)",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Boolean.class))),
+                    @ApiResponse(responseCode = "404", description = "해당 게시글이 존재하지 않음 (ROOMMATE_BOARD_NOT_FOUND)", content = @Content),
+                    @ApiResponse(responseCode = "404", description = "해당 유저가 존재하지 않음 (ROOMMATE_USER_NOT_FOUND)", content = @Content)
+            }
+    )
+    ResponseEntity<Boolean> isRoommateBoardLiked(
+            @Parameter(description = "조회할 게시글 ID", example = "1")
+            @PathVariable Long boardId,
+            @Parameter(hidden = true) CustomUserDetails userDetails
+    );
 
 }

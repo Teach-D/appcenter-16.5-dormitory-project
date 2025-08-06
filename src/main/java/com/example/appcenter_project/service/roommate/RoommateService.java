@@ -322,4 +322,13 @@ public class RoommateService {
         return alreadyMatched;
     }
 
+    //로그인한 사용자가 좋아요를 눌렀는지 여부를 반환
+    public boolean isRoommateBoardLikedByUser(Long boardId, Long userId) {
+        RoommateBoard board = roommateBoardRepository.findById(boardId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
+        return roommateBoardLikeRepository.existsByUserAndRoommateBoard(user, board);
+    }
+
 }
