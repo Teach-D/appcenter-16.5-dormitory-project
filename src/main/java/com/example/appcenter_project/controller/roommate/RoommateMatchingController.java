@@ -56,7 +56,14 @@ public class RoommateMatchingController implements RoommateMatchingApiSpecificat
         return ResponseEntity.ok(responseDtos);
     }
 
-
+    @PatchMapping("/{matchingId}/cancel")
+    public ResponseEntity<Void> cancelMatching(
+            @PathVariable Long matchingId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        roommateMatchingService.cancelMatching(matchingId, userDetails.getId());
+        return ResponseEntity.ok().build();
+    }
 
 
 }
