@@ -592,6 +592,8 @@ public class TipService {
 
     // Tip의 모든 이미지 삭제
     public void deleteTipImages(Long userId, Long tipId) {
+        log.info("[deleteTipImages] tipId={}에 대한 이미지 삭제 요청 by userId={}", tipId, userId);
+
         // 팁 소유자 확인
         Tip tip = tipRepository.findByIdAndUserId(tipId, userId)
                 .orElseThrow(() -> new CustomException(TIP_NOT_OWNED_BY_USER));
@@ -604,19 +606,20 @@ public class TipService {
             if (file.exists()) {
                 boolean deleted = file.delete();
                 if (!deleted) {
-                    log.warn("Failed to delete tip image file: {}", image.getFilePath());
+                    log.warn("[deleteTipImages] 파일 삭제 실패 - path={}", image.getFilePath());
                 }
             } else {
-                log.warn("Tip image file not found: {}", image.getFilePath());
+                log.warn("[deleteTipImages] 파일 존재하지 않음 - path={}", image.getFilePath());
             }
 
             // 데이터베이스에서 이미지 삭제
             imageRepository.delete(image);
+            log.debug("[deleteTipImages] 파일 삭제 성공 - path={}", image.getFilePath());
         }
 
         // Tip 엔티티에서도 이미지 목록 정리
         tip.getImageList().clear();
 
-        log.info("Successfully deleted {} images for tip {}", tipImages.size(), tipId);
+        log.info("[deleteTipImages] tipId={}에 대한 이미지 {}개 삭제 완료", tipId, tipImages.size());
     }
 }

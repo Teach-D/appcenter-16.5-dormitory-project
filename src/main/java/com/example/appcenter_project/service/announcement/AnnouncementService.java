@@ -201,6 +201,8 @@ public class AnnouncementService {
     }
 
     public List<ResponseAnnouncementDto> findAllAnnouncements() {
+        log.info("[findAllAnnouncements] 공지사항 전체 조회 요청");
+
         List<Announcement> announcements = announcementRepository.findAll();
         Collections.reverse(announcements);
 
@@ -210,14 +212,23 @@ public class AnnouncementService {
             ResponseAnnouncementDto responseAnnouncementDto = ResponseAnnouncementDto.entityToDto(announcement);
             responseAnnouncementDtos.add(responseAnnouncementDto);
         }
+
+        log.info("[findAllAnnouncements] 변환 완료 - 반환할 공지사항 수: {}", responseAnnouncementDtos.size());
+
         return responseAnnouncementDtos;
     }
 
     public ResponseAnnouncementDetailDto findAnnouncement(Long announcementId) {
+        log.info("[findAnnouncement] 공지사항 상세 조회 요청 - announcementId={}", announcementId);
+
         Announcement announcement = announcementRepository.findById(announcementId).orElseThrow(() -> new CustomException(ANNOUNCEMENT_NOT_REGISTERED));
         announcement.plusViewCount();
+        log.debug("[findAnnouncement] 공지사항 조회수 증가 - currentViewCount={}", announcement.getViewCount());
 
-        return ResponseAnnouncementDetailDto.entityToDto(announcement);
+        ResponseAnnouncementDetailDto dto = ResponseAnnouncementDetailDto.entityToDto(announcement);
+        log.info("[findAnnouncement] 공지사항 조회 완료 - title=\"{}\", id={}", dto.getTitle(), dto.getId());
+
+        return dto;
     }
 
     public void deleteAnnouncement(Long announcementId) {
