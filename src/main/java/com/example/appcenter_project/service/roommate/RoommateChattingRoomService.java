@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.example.appcenter_project.exception.ErrorCode.*;
+import static com.example.appcenter_project.exception.ErrorCode.ROOMMATE_CHAT_ROOM_NOT_FOUND;
 
 
 @Service
@@ -49,6 +50,15 @@ public class RoommateChattingRoomService {
         User host = roommateBoard.getUser();
         User guest = userRepository.findById(guestId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+        // 양방향 생성 제한
+        if (roommateChattingRoomRepository.existsRoommateChattingRoomByGuestAndHost(guest, host)) {
+            RoommateChattingRoom roommateChattingRoom = roommateChattingRoomRepository.findByGuestAndHost(guest, host).orElseThrow(() -> new CustomException(ROOMMATE_CHAT_ROOM_NOT_FOUND));
+            return roommateChattingRoom.getId();
+        } else if (roommateChattingRoomRepository.existsRoommateChattingRoomByGuestAndHost(host, guest)) {
+            RoommateChattingRoom roommateChattingRoom = roommateChattingRoomRepository.findByGuestAndHost(host, guest).orElseThrow(() -> new CustomException(ROOMMATE_CHAT_ROOM_NOT_FOUND));
+            return roommateChattingRoom.getId();
+        }
 
         // 자기 자신과 채팅 방지
         if (host.getId().equals(guest.getId())) {
@@ -115,12 +125,26 @@ public class RoommateChattingRoomService {
             String lastMessage = lastChat.map(RoommateChattingChat::getContent).orElse("");
             LocalDateTime lastMessageTime = lastChat.map(RoommateChattingChat::getCreatedDate).orElse(null);
 
+            // 상대방 정보 획득
+            User partner = null;
+
+            User host = room.getHost();
+            User guest = room.getGuest();
+
+            if (host.getId().equals(user.getId())) {
+                partner = guest;
+            } else {
+                partner = host;
+            }
+
             // DTO 생성
             result.add(ResponseRoommateChatRoomDto.builder()
                     .chatRoomId(room.getId())
                     .opponentNickname(opponentNickname)
                     .lastMessage(lastMessage)
                     .lastMessageTime(lastMessageTime)
+                    .partnerName(partner.getName())
+                    .partnerId(partner.getId())
                     .build());
         }
 

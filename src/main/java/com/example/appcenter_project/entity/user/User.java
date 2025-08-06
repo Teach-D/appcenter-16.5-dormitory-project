@@ -61,29 +61,44 @@ public class User extends BaseTimeEntity {
     @JoinColumn(name = "image_id")
     private Image image;
 
-    @OneToMany(mappedBy = "user")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "time_table_image_id")
+    private Image timeTableImage;
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Tip> tipList = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<GroupOrderLike> groupOrderLikeList = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<TipLike> tipLikeList = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<GroupOrder> groupOrderList = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user", orphanRemoval = true)
+    @OneToMany(mappedBy = "user", orphanRemoval = true, fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<UserGroupOrderChatRoom> userGroupOrderChatRoomList = new ArrayList<>();
 
-    @OneToOne(mappedBy = "user")
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private RoommateCheckList roommateCheckList;
 
-    @OneToOne(mappedBy = "user")
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private RoommateBoard roommateBoard;
 
-    @OneToOne(mappedBy = "user")
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private MyRoommate myRoommate;
+
+    @OneToMany(mappedBy = "user")
+    private List<RoommateBoardLike> roommateBoardLikeList = new ArrayList<>();
+
+    public void addRoommateBoardLike(RoommateBoardLike roommateBoardLike) {
+        this.roommateBoardLikeList.add(roommateBoardLike);
+    }
+
+    public void removeRoommateBoardLike(RoommateBoardLike roommateBoardLike) {
+        this.roommateBoardLikeList.remove(roommateBoardLike);
+    }
 
 
     @Builder
@@ -106,6 +121,14 @@ public class User extends BaseTimeEntity {
 
     public void updateImage(Image image) {
         this.image =image;
+    }
+
+    public void updateTimeTableImage(Image timeTableImage) {
+        this.timeTableImage = timeTableImage;
+    }
+
+    public void removeTimeTableImage() {
+        this.timeTableImage = null;
     }
 
     public void addTip(Tip tip) {
@@ -135,18 +158,6 @@ public class User extends BaseTimeEntity {
     public void removeGroupOrderLike(GroupOrderLike groupOrderLike) {
         this.groupOrderLikeList.remove(groupOrderLike);
     }
-
-    @OneToMany(mappedBy = "user")
-    private List<RoommateBoardLike> roommateBoardLikeList = new ArrayList<>();
-
-    public void addRoommateBoardLike(RoommateBoardLike roommateBoardLike) {
-        this.roommateBoardLikeList.add(roommateBoardLike);
-    }
-
-    public void removeRoommateBoardLike(RoommateBoardLike roommateBoardLike) {
-        this.roommateBoardLikeList.remove(roommateBoardLike);
-    }
-
 
     public void addSearchKeyword(String keyword) {
         if (searchLog == null) {

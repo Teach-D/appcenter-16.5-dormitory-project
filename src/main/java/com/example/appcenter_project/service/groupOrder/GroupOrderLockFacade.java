@@ -1,3 +1,4 @@
+/*
 package com.example.appcenter_project.service.groupOrder;
 
 import com.example.appcenter_project.mapper.GroupOrderMapper;
@@ -54,9 +55,11 @@ public class GroupOrderLockFacade {
         }
     }
 
-    /**
+    */
+/**
      * 식사시간마다 redis에서 mysql로 조회수 증가
-     */
+     *//*
+
     @Scheduled(cron = "0 * 12-14,18-23 * * *")
     @Transactional
     public void combineGroupOrderViewCount() {
@@ -91,4 +94,4 @@ public class GroupOrderLockFacade {
             }
         }
     }
-}
+}*/

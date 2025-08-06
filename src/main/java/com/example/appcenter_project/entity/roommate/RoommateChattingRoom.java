@@ -34,11 +34,11 @@ public class RoommateChattingRoom extends BaseTimeEntity {
     @JoinColumn(name = "host_id", nullable = false)
     private User host;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "guest_roommate_checklist_id", nullable = false)
     private RoommateCheckList guestChecklist;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "host_roommate_checklist_id", nullable = false)
     private RoommateCheckList hostChecklist;
 

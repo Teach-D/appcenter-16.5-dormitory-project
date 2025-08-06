@@ -7,7 +7,6 @@ import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderD
 import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import com.example.appcenter_project.security.CustomUserDetails;
-import com.example.appcenter_project.service.groupOrder.DeliveryCacheService;
 import com.example.appcenter_project.service.groupOrder.GroupOrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +14,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,7 +30,6 @@ import static org.springframework.http.HttpStatus.*;
 public class GroupOrderController {
 
     private final GroupOrderService groupOrderService;
-    private final DeliveryCacheService deliveryCacheService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> saveGroupOrder(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestPart RequestGroupOrderDto requestGroupOrderDto, @RequestPart List<MultipartFile> images) {

@@ -77,6 +77,7 @@ public class RoommateCheckList {
     @Column(length = 20)
     private CleanlinessType arrangement; // NEAT, EASYGOING, UNCERTAIN
 
+
     private String comment;
 
     @OneToOne
@@ -123,6 +124,8 @@ public class RoommateCheckList {
         this.arrangement = dto.getArrangement();
         this.comment = dto.getComment();
     }
+
+
 
 
 }

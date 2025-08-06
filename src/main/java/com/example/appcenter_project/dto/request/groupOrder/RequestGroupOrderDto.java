@@ -3,6 +3,7 @@ package com.example.appcenter_project.dto.request.groupOrder;
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -11,12 +12,16 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
+@Schema(description = "공동구매 정보 입력")
 @Getter
 public class RequestGroupOrderDto {
 
     @NotBlank(message = "제목은 필수 입력 값입니다.")
     private String title;
 
+    @Schema(description = "공동구매 유형",
+            allowableValues = {"전체", "배달", "식료품", "생활용품",
+                    "기타"})
     @NotNull(message = "공동구매 유형은 필수 입력 값입니다.")
     private GroupOrderType groupOrderType;
 
@@ -53,5 +58,6 @@ public class RequestGroupOrderDto {
                 .build();
     }
 }
+
 
 

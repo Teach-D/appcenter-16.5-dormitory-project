@@ -1,4 +1,3 @@
-/*
 package com.example.appcenter_project.config;
 
 import com.zaxxer.hikari.HikariConfig;
@@ -29,8 +28,7 @@ public class OracleConfig {
     @Bean(name = "oracleDataSource")
     @ConfigurationProperties(prefix = "school.datasource")
     public DataSource secondDataSource() {
-        */
-/*HikariConfig config = new HikariConfig();
+        /*HikariConfig config = new HikariConfig();
         config.setJdbcUrl(url);
         config.setUsername(username);
         config.setPassword(password);
@@ -40,8 +38,7 @@ public class OracleConfig {
         config.setMinimumIdle(1);
         config.setConnectionTimeout(60000); // milliseconds
         config.setIdleTimeout(600000); // milliseconds
-        return new HikariDataSource(config);*//*
-
+        return new HikariDataSource(config);*/
         return DataSourceBuilder.create().type(HikariDataSource.class).build();
     }
 
@@ -49,4 +46,4 @@ public class OracleConfig {
     public JdbcTemplate jdbcTemplate(@Qualifier("oracleDataSource")DataSource dataSource){
         return new JdbcTemplate(dataSource);
     }
-}*/
+}
