@@ -60,8 +60,8 @@ public class TipController implements TipApiSpecification {
 
     // 2. 특정 Tip의 이미지를 제외한 정보 하나 조회
     @GetMapping("/{tipId}")
-    public ResponseEntity<ResponseTipDetailDto> findTip(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long tipId) {
-        return ResponseEntity.status(OK).body(tipService.findTip(user, tipId));
+    public ResponseEntity<ResponseTipDetailDto> findTip(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long tipId, HttpServletRequest request) {
+        return ResponseEntity.status(OK).body(tipService.findTip(user, tipId, request));
     }
 /*    // 3. 특정 Tip의 이미지 메타 정보 목록 조회
     @GetMapping("/{tipId}/images")

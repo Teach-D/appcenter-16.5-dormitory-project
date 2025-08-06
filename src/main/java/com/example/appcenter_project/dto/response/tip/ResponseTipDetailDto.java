@@ -18,6 +18,7 @@ public class ResponseTipDetailDto {
     private Integer tipLikeCount;
     private String name;
     private boolean isCheckLikeCurrentUser = false;
+    private String writerImageFile;
 
     @Builder.Default
     private List<Long> tipLikeUserList = new ArrayList<>();
@@ -48,4 +49,9 @@ public class ResponseTipDetailDto {
     public void updateIsCheckLikeCurrentUser(boolean check) {
         this.isCheckLikeCurrentUser = check;
     }
+
+    public void updateFileName(String fileName) {
+        this.writerImageFile = fileName;
+    }
+
 }

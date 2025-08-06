@@ -98,7 +98,9 @@ public interface TipApiSpecification {
     public ResponseEntity<ResponseTipDetailDto> findTip(
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable
-            @Parameter(description = "팁 게시글 ID", required = true, example = "1") Long tipId);
+            @Parameter(description = "팁 게시글 ID", required = true, example = "1") Long tipId,
+            HttpServletRequest request
+    );
 
 /*
     @Operation(
