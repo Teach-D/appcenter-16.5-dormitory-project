@@ -22,6 +22,7 @@ public class ResponseRoommatePostDto {
     private Set<DormDay> dormPeriod;
     private DormType dormType;
     private College college;
+    private ReligionType religion;
     private String mbti;
     private SmokingType smoking;
     private SnoringType snoring;
@@ -47,6 +48,7 @@ public class ResponseRoommatePostDto {
                 .dormPeriod(cl.getDormPeriod())
                 .dormType(cl.getDormType())
                 .college(cl.getCollege())
+                .religion(cl.getReligion())
                 .mbti(cl.getMbti())
                 .smoking(cl.getSmoking())
                 .snoring(cl.getSnoring())
