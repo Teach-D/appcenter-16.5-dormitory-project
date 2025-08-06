@@ -141,5 +141,31 @@ public class RoommateMatchingService {
                 .toList();
     }
 
+    // 매칭 취소 (완료된 상태에서만 가능)
+    @Transactional
+    public void cancelMatching(Long matchingId, Long userId) {
+        RoommateMatching matching = roommateMatchingRepository.findById(matchingId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_MATCHING_NOT_FOUND));
+
+        // 매칭이 COMPLETED 상태인지 확인
+        if (matching.getStatus() != MatchingStatus.COMPLETED) {
+            throw new CustomException(ErrorCode.ROOMMATE_MATCHING_NOT_COMPLETED);
+        }
+
+        // sender나 receiver 중 한 명만 가능
+        if (!matching.getSender().getId().equals(userId) && !matching.getReceiver().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.ROOMMATE_MATCHING_NOT_FOR_USER);
+        }
+
+        // 매칭 상태 해제
+        matching.fail(); // 상태를 FAILED로 변경
+
+        // MyRoommate 관계도 해제
+        User sender = matching.getSender();
+        User receiver = matching.getReceiver();
+        myRoommateRepository.deleteByUserAndRoommate(sender, receiver);
+        myRoommateRepository.deleteByUserAndRoommate(receiver, sender);
+    }
+
 
 }

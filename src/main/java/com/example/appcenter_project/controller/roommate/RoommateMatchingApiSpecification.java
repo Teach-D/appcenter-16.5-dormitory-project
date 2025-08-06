@@ -86,6 +86,19 @@ public interface RoommateMatchingApiSpecification {
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
     );
 
-
+    @Operation(
+            summary = "룸메이트 매칭 취소",
+            description = "내가 요청한 룸메이트 매칭을 취소(삭제)합니다. (매칭 완료 상태일 때만 가능)",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "매칭 취소 성공"),
+                    @ApiResponse(responseCode = "404", description = "매칭 요청을 찾을 수 없습니다. (ROOMMATE_MATCHING_NOT_FOUND)", content = @Content),
+                    @ApiResponse(responseCode = "400", description = "매칭이 완료된 상태가 아닙니다. (ROOMMATE_MATCHING_NOT_COMPLETED)", content = @Content),
+                    @ApiResponse(responseCode = "403", description = "본인이 요청한 매칭이 아닙니다. (ROOMMATE_MATCHING_NOT_FOR_USER)", content = @Content)
+            }
+    )
+    ResponseEntity<Void> cancelMatching(
+            @Parameter(description = "매칭 ID", example = "1") @PathVariable Long matchingId,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
+    );
 
 }
