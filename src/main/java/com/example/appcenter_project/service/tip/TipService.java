@@ -20,6 +20,8 @@ import com.example.appcenter_project.repository.tip.TipCommentRepository;
 import com.example.appcenter_project.repository.tip.TipRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import com.example.appcenter_project.security.CustomUserDetails;
+import com.example.appcenter_project.service.image.ImageService;
+import com.example.appcenter_project.service.user.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +54,8 @@ public class TipService {
     private final TipCommentRepository tipCommentRepository;
     private final TipLikeRepository tipLikeRepository;
     private final TipMapper tipMapper;
+    private final UserService userService;
+    private final ImageService imageService;
 
     public void saveTip(Long userId, RequestTipDto requestTipDto, List<MultipartFile> images) {
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
@@ -193,8 +197,15 @@ public class TipService {
         }
     }
 
-    public ResponseTipDetailDto findTip(CustomUserDetails user, Long tipId) {
+    public ResponseTipDetailDto findTip(CustomUserDetails user, Long tipId, HttpServletRequest request) {
         ResponseTipDetailDto flatDto = tipMapper.findTip(tipId);
+        Tip tip = tipRepository.findById(tipId).orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
+        Long tipWriterId = tip.getUser().getId();
+
+        // 작성자 이미지 추가
+        ImageLinkDto userImageUrlByUserId = imageService.findUserImageUrlByUserId(tipWriterId, request);
+        String writerImageName = userImageUrlByUserId.getFileName();
+        flatDto.updateFileName(writerImageName);
 
         // 현재 유저가 해당 팁 게시글의 좋아요를 누른 유저인지 확인
         // 로그인 한 경우일 때
