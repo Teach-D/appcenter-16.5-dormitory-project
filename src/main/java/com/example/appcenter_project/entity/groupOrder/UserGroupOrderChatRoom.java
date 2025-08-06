@@ -27,7 +27,7 @@ public class UserGroupOrderChatRoom extends BaseTimeEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(nullable = false, unique = true, length = 30)
+    @Column(nullable = false, length = 30)
     private String chatRoomTitle;
 
     @Column(nullable = false)
