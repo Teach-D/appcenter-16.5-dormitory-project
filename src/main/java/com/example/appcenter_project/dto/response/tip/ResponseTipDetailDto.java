@@ -54,4 +54,7 @@ public class ResponseTipDetailDto {
         this.writerImageFile = fileName;
     }
 
+    public void updateWriterName(String name) {
+        this.name = name;
+    }
 }

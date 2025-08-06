@@ -206,6 +206,8 @@ public class TipService {
         Tip tip = tipRepository.findById(tipId).orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
         Long tipWriterId = tip.getUser().getId();
 
+        flatDto.updateWriterName(tip.getUser().getName());
+
         // 작성자 이미지 추가
         ImageLinkDto userImageUrlByUserId = imageService.findUserImageUrlByUserId(tipWriterId, request);
         String writerImageName = userImageUrlByUserId.getFileName();
