@@ -68,17 +68,20 @@ public class UserService {
         Image defaultImage = imageRepository.findAllByImageTypeAndIsDefault(ImageType.USER, true)
                 .orElseThrow(() -> new CustomException(DEFAULT_IMAGE_NOT_FOUND));
 
-        // 회원정보가 db에 없는 경우 db에 저장 후 로그인
-        if (!existsByStudentNumber) {
-            User user = User.builder()
-                    .studentNumber(signupUser.getStudentNumber())
-                    .password(passwordEncoder.encode(signupUser.getPassword())) // null 방지 + 인코딩 필수
-                    .penalty(0) // null 방지
-                    .image(defaultImage)
-                    .role(Role.ROLE_USER)
-                    .penalty(0)
-                    .build();
-            userRepository.save(user);
+        // studentNumber가 "admin"으로 시작하지 않는 경우만 DB 저장 로직 실행
+        if (!signupUser.getStudentNumber().startsWith("admin")) {
+            // 회원정보가 db에 없는 경우 db에 저장 후 로그인
+            if (!existsByStudentNumber) {
+                User user = User.builder()
+                        .studentNumber(signupUser.getStudentNumber())
+                        .password(passwordEncoder.encode(signupUser.getPassword())) // null 방지 + 인코딩 필수
+                        .penalty(0) // null 방지
+                        .image(defaultImage)
+                        .role(Role.ROLE_USER)
+                        .penalty(0)
+                        .build();
+                userRepository.save(user);
+            }
         }
 
         return login(signupUser);
