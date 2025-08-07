@@ -218,18 +218,21 @@ public class RoommateMatchingService {
 
         log.info("cancelMatching senderId : {}, receiverId:{}", sender.getId(), receiver.getId());
 
-        // MyRoommate 레코드들 조회 후 삭제 (더 안전한 방법)
-        Optional<MyRoommate> senderToReceiver = myRoommateRepository.findByUserAndRoommate(sender, receiver);
-        Optional<MyRoommate> receiverToSender = myRoommateRepository.findByUserAndRoommate(receiver, sender);
-
-        if (senderToReceiver.isPresent()) {
-            myRoommateRepository.delete(senderToReceiver.get());
-            log.info("Deleted MyRoommate: user {} -> roommate {}", sender.getId(), receiver.getId());
-        }
-
-        if (receiverToSender.isPresent()) {
-            myRoommateRepository.delete(receiverToSender.get());
-            log.info("Deleted MyRoommate: user {} -> roommate {}", receiver.getId(), sender.getId());
+        // 두 사용자 간의 모든 MyRoommate 관계 조회 후 삭제
+        List<MyRoommate> roommateRelations = myRoommateRepository.findAllByTwoUsers(sender.getId(), receiver.getId());
+        
+        if (!roommateRelations.isEmpty()) {
+            myRoommateRepository.deleteAll(roommateRelations);
+            log.info("Deleted {} MyRoommate relations between users {} and {}", 
+                roommateRelations.size(), sender.getId(), receiver.getId());
+                
+            // 각 관계 상세 로그
+            for (MyRoommate relation : roommateRelations) {
+                log.info("Deleted MyRoommate ID: {} (user: {}, roommate: {})", 
+                    relation.getId(), relation.getUser().getId(), relation.getRoommate().getId());
+            }
+        } else {
+            log.warn("No MyRoommate relations found between users {} and {}", sender.getId(), receiver.getId());
         }
 
         // RoommateMatching 레코드 완전 삭제
