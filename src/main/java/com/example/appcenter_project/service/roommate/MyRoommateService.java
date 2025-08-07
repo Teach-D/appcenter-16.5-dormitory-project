@@ -53,22 +53,44 @@ public class MyRoommateService {
                 .build();
     }
 
-    //룸메이트 규칙 생성,수정
+    //룸메이트 규칙 생성,수정 (양방향 동기화)
     @Transactional
     public void createRule(Long userId, List<String> rules) {
         MyRoommate myRoommate = myRoommateRepository.findByUserId(userId)
                 .orElseThrow(() -> new CustomException(MY_ROOMMATE_NOT_REGISTERED));
 
+        // 본인의 룰 업데이트
         myRoommate.updateRules(rules);
+
+        // 룸메이트의 룰도 동일하게 업데이트
+        User roommateUser = myRoommate.getRoommate();
+        MyRoommate roommateMyRoommate = myRoommateRepository.findByUserId(roommateUser.getId())
+                .orElseThrow(() -> new CustomException(MY_ROOMMATE_NOT_REGISTERED));
+
+        roommateMyRoommate.updateRules(rules);
+
+        // 로그로 동기화 확인
+        System.out.println("Rule synchronized - User " + userId + " and Roommate " + roommateUser.getId() + " both have rules: " + rules);
     }
 
-    //룸메이트 규칙 삭제
+    //룸메이트 규칙 삭제 (양방향 동기화)
     @Transactional
     public void deleteRule(Long userId) {
         MyRoommate myRoommate = myRoommateRepository.findByUserId(userId)
                 .orElseThrow(() -> new CustomException(MY_ROOMMATE_NOT_REGISTERED));
 
+        // 본인의 룰 삭제
         myRoommate.updateRules(null);
+
+        // 룸메이트의 룰도 동일하게 삭제
+        User roommateUser = myRoommate.getRoommate();
+        MyRoommate roommateMyRoommate = myRoommateRepository.findByUserId(roommateUser.getId())
+                .orElseThrow(() -> new CustomException(MY_ROOMMATE_NOT_REGISTERED));
+
+        roommateMyRoommate.updateRules(null);
+
+        // 로그로 동기화 확인
+        System.out.println("Rules deleted and synchronized - User " + userId + " and Roommate " + roommateUser.getId() + " both have rules cleared");
     }
 
     @Transactional(readOnly = true)
@@ -79,7 +101,7 @@ public class MyRoommateService {
         return new ResponseRuleDto(myRoommate.getRule());
     }
 
-    //규칙 수정
+    //규칙 수정 (양방향 동기화)
     @Transactional
     public void updateRules(Long userId, List<String> rules) {
         MyRoommate myRoommate = myRoommateRepository.findByUserId(userId)
@@ -89,7 +111,18 @@ public class MyRoommateService {
             throw new CustomException(ErrorCode.RULE_NOT_FOUND); // 예외는 정의 필요
         }
 
+        // 본인의 룰 업데이트
         myRoommate.updateRules(rules);
+
+        // 룸메이트의 룰도 동일하게 업데이트
+        User roommateUser = myRoommate.getRoommate();
+        MyRoommate roommateMyRoommate = myRoommateRepository.findByUserId(roommateUser.getId())
+                .orElseThrow(() -> new CustomException(MY_ROOMMATE_NOT_REGISTERED));
+
+        roommateMyRoommate.updateRules(rules);
+
+        // 로그로 동기화 확인
+        System.out.println("Rule updated and synchronized - User " + userId + " and Roommate " + roommateUser.getId() + " both have rules: " + rules);
     }
 
     @Transactional
