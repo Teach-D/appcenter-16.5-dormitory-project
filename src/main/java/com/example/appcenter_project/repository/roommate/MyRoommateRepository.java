@@ -10,4 +10,5 @@ public interface MyRoommateRepository extends JpaRepository<MyRoommate, Long> {
     Optional<MyRoommate> findByUserId(Long userId);  // userId로 내 룸메 정보 조회
     void deleteByUserAndRoommate(User user, User roommate);
 
+    Optional<MyRoommate> findByUserAndRoommate(User sender, User receiver);
 }
