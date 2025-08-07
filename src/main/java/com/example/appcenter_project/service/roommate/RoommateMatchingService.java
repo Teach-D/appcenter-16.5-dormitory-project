@@ -216,28 +216,25 @@ public class RoommateMatchingService {
         User sender = matching.getSender();
         User receiver = matching.getReceiver();
 
-        log.info("cancelMatching senderId : {}, receiverId:{}", sender.getId(), receiver.getId());
+        log.info("=== cancelMatching START ===");
+        log.info("matchingId: {}, userId: {}", matchingId, userId);
+        log.info("senderId: {}, receiverId: {}", sender.getId(), receiver.getId());
 
-        // 두 사용자 간의 모든 MyRoommate 관계 조회 후 삭제
-        List<MyRoommate> roommateRelations = myRoommateRepository.findAllByTwoUsers(sender.getId(), receiver.getId());
-        
-        if (!roommateRelations.isEmpty()) {
-            myRoommateRepository.deleteAll(roommateRelations);
-            log.info("Deleted {} MyRoommate relations between users {} and {}", 
-                roommateRelations.size(), sender.getId(), receiver.getId());
-                
-            // 각 관계 상세 로그
-            for (MyRoommate relation : roommateRelations) {
-                log.info("Deleted MyRoommate ID: {} (user: {}, roommate: {})", 
-                    relation.getId(), relation.getUser().getId(), relation.getRoommate().getId());
-            }
-        } else {
-            log.warn("No MyRoommate relations found between users {} and {}", sender.getId(), receiver.getId());
-        }
+        // MyRoommate 직접 삭제 (반환값으로 삭제된 행 수 확인)
+        int deletedCount1 = myRoommateRepository.deleteByUserIdAndRoommateId(sender.getId(), receiver.getId());
+        log.info("Deleted {} rows for sender {} -> receiver {}", deletedCount1, sender.getId(), receiver.getId());
+
+        int deletedCount2 = myRoommateRepository.deleteByUserIdAndRoommateId(receiver.getId(), sender.getId());
+        log.info("Deleted {} rows for receiver {} -> sender {}", deletedCount2, receiver.getId(), sender.getId());
+
+        // 총 삭제된 행 수 확인
+        log.info("Total deleted MyRoommate rows: {}", deletedCount1 + deletedCount2);
 
         // RoommateMatching 레코드 완전 삭제
         roommateMatchingRepository.delete(matching);
         log.info("RoommateMatching record deleted for matchingId: {}", matchingId);
+        
+        log.info("=== cancelMatching END ===");
     }
 
 
