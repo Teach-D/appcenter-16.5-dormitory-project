@@ -1,6 +1,7 @@
 package com.example.appcenter_project.dto.response.roommate;
 
 import com.example.appcenter_project.entity.roommate.RoommateCheckList;
+import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.roommate.*;
 import com.example.appcenter_project.enums.user.College;
 import com.example.appcenter_project.enums.user.DormType;
@@ -30,11 +31,13 @@ public class ResponseRoommateCheckListDto {
     private String comment;
 
     public static ResponseRoommateCheckListDto from(RoommateCheckList checklist) {
+        User user = checklist.getUser();
+
         return ResponseRoommateCheckListDto.builder()
                 .title(checklist.getTitle())
                 .dormPeriod(checklist.getDormPeriod())
-                .dormType(checklist.getDormType())
-                .college(checklist.getCollege())
+                .dormType(user.getDormType())
+                .college(user.getCollege())
                 .religion(checklist.getReligion())
                 .mbti(checklist.getMbti())
                 .smoking(checklist.getSmoking())
