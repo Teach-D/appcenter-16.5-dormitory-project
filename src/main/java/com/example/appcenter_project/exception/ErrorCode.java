@@ -25,6 +25,7 @@ public enum ErrorCode {
     USER_NOT_FOUND(NOT_FOUND, 2001, "[User] 사용자를 찾을 수 없습니다."),
     INVALID_REFRESH_TOKEN(UNAUTHORIZED, 2002, "[User] 유효하지 않은 Refresh Token입니다."),
     REFRESH_TOKEN_USER_NOT_FOUND(NOT_FOUND, 2003, "[User] 해당 Refresh Token과 일치하는 사용자가 없습니다."),
+    DUPLICATE_USER_NAME(CONFLICT, 2004, "[User] 중복된 닉네임 입니다."),
 
     // GROUP_ORDER
     GROUP_ORDER_NOT_FOUND(NOT_FOUND, 3001, "[GroupOrder] 공동구매 글을 찾을 수 없습니다."),

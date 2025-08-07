@@ -32,6 +32,7 @@ import com.example.appcenter_project.repository.user.UserRepository;
 import com.example.appcenter_project.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -108,11 +109,19 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
-        user.update(requestUserDto);
+        try {
+            user.update(requestUserDto);
+            userRepository.save(user); // 명시적으로 save 호출
 
-        log.info("[updateUser] 사용자 정보 업데이트 완료 - userId={}", userId);
+            log.info("[updateUser] 사용자 정보 업데이트 완료 - userId={}", userId);
 
-        return ResponseUserDto.entityToDto(user);
+            return ResponseUserDto.entityToDto(user);
+
+        } catch (DataIntegrityViolationException e) {
+            // DB unique 제약 조건 위반 시 발생하는 예외
+            log.warn("[updateUser] 중복된 이름으로 수정 시도 - userId={}, name={}", userId, requestUserDto.getName());
+            throw new CustomException(DUPLICATE_USER_NAME);
+        }
     }
 
     public void deleteUser(Long userId) {
