@@ -21,6 +21,7 @@ import java.util.List;
 
 import static com.example.appcenter_project.exception.ErrorCode.MY_ROOMMATE_NOT_REGISTERED;
 
+@Transactional
 @Service
 @RequiredArgsConstructor
 public class MyRoommateService {

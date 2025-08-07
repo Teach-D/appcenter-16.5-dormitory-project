@@ -19,7 +19,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
+@Transactional
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -210,17 +212,29 @@ public class RoommateMatchingService {
             throw new CustomException(ErrorCode.ROOMMATE_MATCHING_NOT_FOR_USER);
         }
 
-        // 매칭 상태 해제
-        matching.fail(); // 상태를 FAILED로 변경
-
         // MyRoommate 관계도 해제
         User sender = matching.getSender();
         User receiver = matching.getReceiver();
 
         log.info("cancelMatching senderId : {}, receiverId:{}", sender.getId(), receiver.getId());
 
-        myRoommateRepository.deleteByUserAndRoommate(sender, receiver);
-        myRoommateRepository.deleteByUserAndRoommate(receiver, sender);
+        // MyRoommate 레코드들 조회 후 삭제 (더 안전한 방법)
+        Optional<MyRoommate> senderToReceiver = myRoommateRepository.findByUserAndRoommate(sender, receiver);
+        Optional<MyRoommate> receiverToSender = myRoommateRepository.findByUserAndRoommate(receiver, sender);
+
+        if (senderToReceiver.isPresent()) {
+            myRoommateRepository.delete(senderToReceiver.get());
+            log.info("Deleted MyRoommate: user {} -> roommate {}", sender.getId(), receiver.getId());
+        }
+
+        if (receiverToSender.isPresent()) {
+            myRoommateRepository.delete(receiverToSender.get());
+            log.info("Deleted MyRoommate: user {} -> roommate {}", receiver.getId(), sender.getId());
+        }
+
+        // RoommateMatching 레코드 완전 삭제
+        roommateMatchingRepository.delete(matching);
+        log.info("RoommateMatching record deleted for matchingId: {}", matchingId);
     }
 
 
