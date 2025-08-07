@@ -30,6 +30,8 @@ public class ResponseAnnouncementDto {
     @Schema(description = "긴급", example = "true")
     private boolean isEmergency;
 
+    private int viewCount = 0;
+
     public static ResponseAnnouncementDto entityToDto(Announcement announcement) {
         String truncatedContent = announcement.getContent();
         if (truncatedContent != null && truncatedContent.length() > 50) {
@@ -43,6 +45,7 @@ public class ResponseAnnouncementDto {
                 .createdDate(announcement.getCreatedDate().toLocalDate())
                 .updatedDate(announcement.getModifiedDate().toLocalDate())
                 .isEmergency(announcement.getIsEmergency())
+                .viewCount(announcement.getViewCount())
                 .build();
     }
 }

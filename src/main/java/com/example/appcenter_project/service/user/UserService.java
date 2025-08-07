@@ -120,13 +120,17 @@ public class UserService {
     }
 
     public ResponseLoginDto login(SignupUser signupUser) {
-        String loginCheck = schoolLoginRepository.loginCheck(signupUser.getStudentNumber(), signupUser.getPassword());
+        String studentNumber = signupUser.getStudentNumber();
 
-        if (Objects.equals(loginCheck, "N")) {
-            throw new CustomException(USER_NOT_FOUND);
+        // admin으로 시작하지 않는 경우에만 학교 로그인 체크
+        if (!studentNumber.startsWith("admin")) {
+            String loginCheck = schoolLoginRepository.loginCheck(studentNumber, signupUser.getPassword());
+
+            if (Objects.equals(loginCheck, "N")) {
+                throw new CustomException(USER_NOT_FOUND);
+            }
         }
 
-        String studentNumber = signupUser.getStudentNumber();
         log.info("[로그인 시도] loginId: {}", studentNumber);
 
         User user = userRepository.findByStudentNumber(studentNumber)
