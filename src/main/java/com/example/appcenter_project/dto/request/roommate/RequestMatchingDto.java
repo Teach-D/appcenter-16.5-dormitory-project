@@ -5,5 +5,5 @@ import lombok.Getter;
 
 @Getter
 public class RequestMatchingDto {
-    private Long chatRoomId;
+    private String receiverStudentNumber;
 }

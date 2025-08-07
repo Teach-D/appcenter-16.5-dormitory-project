@@ -75,7 +75,7 @@ public class RoommateService {
         return ResponseRoommatePostDto.builder()
                 .id(roommateBoard.getId())
                 .title(savedCheckList.getTitle())
-                .dormPeriod(savedCheckList.getDormPeriod())
+                .dormPeriod(com.example.appcenter_project.utils.DormDayUtil.sortDormDays(savedCheckList.getDormPeriod()))
                 .dormType(savedCheckList.getDormType())
                 .college(savedCheckList.getCollege())
                 .religion(savedCheckList.getReligion())
@@ -104,15 +104,15 @@ public class RoommateService {
             throw new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND);
         }
 
-        return boards.stream() //게시글 목록을 하나 꺼내서 준비
-                .map(board -> { //꺼낸 게시글 하나를 꾸미기 시작
-                    boolean isMatched = isRoommateBoardOwnerMatched(board.getId());
-                    RoommateCheckList cl = board.getRoommateCheckList(); //룸메이트 보드에있는 체크리스트를 꺼냄
+        return boards.stream()
+                .map(board -> {
+                    RoommateCheckList cl = board.getRoommateCheckList();
                     User writer = board.getUser();
-                    return ResponseRoommatePostDto.builder() //화면에 보여줄 정보를 담아줌
+                    boolean isMatched = isRoommateBoardOwnerMatched(board.getId());
+                    return ResponseRoommatePostDto.builder()
                             .id(board.getId())
                             .title(cl.getTitle())
-                            .dormPeriod(cl.getDormPeriod())
+                            .dormPeriod(com.example.appcenter_project.utils.DormDayUtil.sortDormDays(cl.getDormPeriod())) // 정렬해서 넣음
                             .dormType(cl.getDormType())
                             .college(cl.getCollege())
                             .religion(cl.getReligion())
@@ -131,9 +131,9 @@ public class RoommateService {
                             .userName(writer.getName())
                             .createDate(board.getCreatedDate())
                             .isMatched(isMatched)
-                            .build(); //dto하나가 만들어짐
+                            .build();
                 })
-                .toList(); //만든 dto들을 모아서 리스트로 뭉쳐줌
+                .toList();
     }
 
     //단일 조회
@@ -202,6 +202,7 @@ public class RoommateService {
                     return ResponseRoommateSimilarityDto.builder()
                             .boardId(entry.getKey().getId())
                             .title(cl.getTitle())
+                            .dormPeriod(com.example.appcenter_project.utils.DormDayUtil.sortDormDays(cl.getDormPeriod()))
                             .dormType(cl.getDormType())
                             .college(cl.getCollege())
                             .religion(cl.getReligion())

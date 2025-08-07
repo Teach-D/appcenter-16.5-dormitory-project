@@ -30,7 +30,45 @@ public class RoommateMatchingService {
     private final MyRoommateRepository myRoommateRepository;
     private final RoommateChattingRoomRepository roommateChattingRoomRepository;
 
-    // 매칭 요청
+    //매칭요청 학번
+    @Transactional
+    public ResponseRoommateMatchingDto requestMatching(Long senderId, String receiverStudentNumber) {
+        User sender = userRepository.findById(senderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
+
+        User receiver = userRepository.findByStudentNumber(receiverStudentNumber)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
+
+        // "이미 매칭된 사람" 체크 기준 개선!
+        boolean receiverAlreadyMatched =
+                roommateMatchingRepository.existsBySenderAndStatus(receiver, MatchingStatus.COMPLETED) ||
+                        roommateMatchingRepository.existsByReceiverAndStatus(receiver, MatchingStatus.COMPLETED);
+
+        if (receiverAlreadyMatched) {
+            throw new CustomException(ErrorCode.ROOMMATE_ALREADY_MATCHED);
+        }
+
+        boolean exists = roommateMatchingRepository.existsBySenderAndReceiver(sender, receiver);
+        if (exists) {
+            throw new CustomException(ErrorCode.ROOMMATE_MATCHING_ALREADY_REQUESTED);
+        }
+
+        RoommateMatching matching = RoommateMatching.builder()
+                .check(MatchingStatus.REQUEST)
+                .sender(sender)
+                .receiver(receiver)
+                .build();
+
+        roommateMatchingRepository.save(matching);
+
+        return ResponseRoommateMatchingDto.builder()
+                .MatchingId(matching.getId())
+                .reciverId(matching.getReceiver().getId())
+                .status(matching.getStatus())
+                .build();
+    }
+
+    // 매칭 요청 채팅방id
     public ResponseRoommateMatchingDto requestMatchingByChatRoom(Long senderId, Long chatRoomId) {
         User sender = userRepository.findById(senderId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
