@@ -20,17 +20,17 @@ public interface RoommateMatchingApiSpecification {
 
     @Operation(
             summary = "룸메이트 매칭 요청",
-            description = "상대방의 학번을 통해 룸메이트 매칭을 요청합니다.",
+            description = "채팅방 ID를 통해 룸메이트 매칭을 요청합니다.",
             responses = {
                     @ApiResponse(responseCode = "201", description = "매칭 요청 성공"),
-                    @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다. (ROOMMATE_USER_NOT_FOUND)", content = @Content),
+                    @ApiResponse(responseCode = "404", description = "채팅방 또는 사용자를 찾을 수 없습니다. (ROOMMATE_CHAT_ROOM_NOT_FOUND, ROOMMATE_USER_NOT_FOUND)", content = @Content),
                     @ApiResponse(responseCode = "409", description = "이미 매칭 요청을 보낸 상태입니다. (ROOMMATE_MATCHING_ALREADY_REQUESTED)", content = @Content)
             }
     )
     ResponseEntity<?> requestMatching(
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "받는 사람의 학번 정보",
+                    description = "채팅방 ID 정보",
                     required = true,
                     content = @Content(schema = @Schema(implementation = RequestMatchingDto.class))
             ) RequestMatchingDto requestDto

@@ -3,20 +3,24 @@ package com.example.appcenter_project.service.roommate;
 import com.example.appcenter_project.dto.response.roommate.ResponseReceivedRoommateMatchingDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommateMatchingDto;
 import com.example.appcenter_project.entity.roommate.MyRoommate;
+import com.example.appcenter_project.entity.roommate.RoommateChattingRoom;
 import com.example.appcenter_project.entity.roommate.RoommateMatching;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.roommate.MatchingStatus;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.exception.ErrorCode;
 import com.example.appcenter_project.repository.roommate.MyRoommateRepository;
+import com.example.appcenter_project.repository.roommate.RoommateChattingRoomRepository;
 import com.example.appcenter_project.repository.roommate.RoommateMatchingRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RoommateMatchingService {
@@ -24,17 +28,28 @@ public class RoommateMatchingService {
     private final RoommateMatchingRepository roommateMatchingRepository;
     private final UserRepository userRepository;
     private final MyRoommateRepository myRoommateRepository;
+    private final RoommateChattingRoomRepository roommateChattingRoomRepository;
 
     // 매칭 요청
-    @Transactional
-    public ResponseRoommateMatchingDto requestMatching(Long senderId, String receiverStudentNumber) {
+    public ResponseRoommateMatchingDto requestMatchingByChatRoom(Long senderId, Long chatRoomId) {
         User sender = userRepository.findById(senderId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
 
-        User receiver = userRepository.findByStudentNumber(receiverStudentNumber)
-                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
+        // 채팅방 조회
+        RoommateChattingRoom chattingRoom = roommateChattingRoomRepository.findById(chatRoomId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_CHAT_ROOM_NOT_FOUND));
 
-        // "이미 매칭된 사람" 체크 기준 개선!
+        // 상대방 유저 추출 (본인을 sender로 가정, 상대는 host or guest)
+        User receiver;
+        if (chattingRoom.getHost().getId().equals(senderId)) {
+            receiver = chattingRoom.getGuest();
+        } else if (chattingRoom.getGuest().getId().equals(senderId)) {
+            receiver = chattingRoom.getHost();
+        } else {
+            throw new CustomException(ErrorCode.ROOMMATE_FORBIDDEN_ACCESS);
+        }
+
+        // receiver가 이미 매칭된 사람인지 체크
         boolean receiverAlreadyMatched =
                 roommateMatchingRepository.existsBySenderAndStatus(receiver, MatchingStatus.COMPLETED) ||
                         roommateMatchingRepository.existsByReceiverAndStatus(receiver, MatchingStatus.COMPLETED);
@@ -163,6 +178,9 @@ public class RoommateMatchingService {
         // MyRoommate 관계도 해제
         User sender = matching.getSender();
         User receiver = matching.getReceiver();
+
+        log.info("cancelMatching senderId : {}, receiverId:{}", sender.getId(), receiver.getId());
+
         myRoommateRepository.deleteByUserAndRoommate(sender, receiver);
         myRoommateRepository.deleteByUserAndRoommate(receiver, sender);
     }

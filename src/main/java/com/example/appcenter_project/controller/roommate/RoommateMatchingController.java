@@ -28,9 +28,10 @@ public class RoommateMatchingController implements RoommateMatchingApiSpecificat
             @RequestBody RequestMatchingDto requestDto
     ) {
         Long senderId = userDetails.getId(); // 인증된 사용자 ID
-        ResponseRoommateMatchingDto responseDto = roommateMatchingService.requestMatching(senderId, requestDto.getReceiverStudentNumber());
+        ResponseRoommateMatchingDto responseDto = roommateMatchingService.requestMatchingByChatRoom(senderId, requestDto.getChatRoomId());
         return ResponseEntity.status(201).body(responseDto);
     }
+
 
     @PatchMapping("/{matchingId}/accept")
     public ResponseEntity<Void> acceptMatching(

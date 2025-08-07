@@ -17,6 +17,7 @@ public class ResponseRoommateCheckListDto {
     private Set<DormDay> dormPeriod;
     private DormType dormType;
     private College college;
+    private ReligionType religion;
     private String mbti;
     private SmokingType smoking;
     private SnoringType snoring;
@@ -34,6 +35,7 @@ public class ResponseRoommateCheckListDto {
                 .dormPeriod(checklist.getDormPeriod())
                 .dormType(checklist.getDormType())
                 .college(checklist.getCollege())
+                .religion(checklist.getReligion())
                 .mbti(checklist.getMbti())
                 .smoking(checklist.getSmoking())
                 .snoring(checklist.getSnoring())

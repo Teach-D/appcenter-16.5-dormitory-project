@@ -7,6 +7,7 @@ import lombok.Getter;
 @Builder
 public class ResponseMyRoommateInfoDto {
 
+    private Long matchingId;     // 매칭 ID
     private String name;         // 룸메 이름
     private String dormType;     // 기숙사 타입
     private String college;      // 단과대 이름

@@ -69,7 +69,8 @@ jobs:
             # Docker Volume 생성 (이미 존재하면 무시됨)
             docker volume create unidorm-images || true
             docker volume create unidorm-uploads || true
-            
+            docker volume create unidorm-logs || true
+
             docker network create unidorm-network || true
             docker network connect unidorm-network unidorm-main-mysql || true
             
@@ -78,5 +79,6 @@ jobs:
               -p 8056:8080 \
               -v unidorm-images:/app/images \
               -v unidorm-uploads:/app/files \
+              -v unidorm-logs:/app/logs \
               --restart unless-stopped \
               ${{ secrets.DOCKER_USERNAME }}/${{ secrets.MAIN_CONTAINER_NAME }}:latest
