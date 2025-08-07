@@ -122,11 +122,9 @@ public class UserService {
     public ResponseLoginDto login(SignupUser signupUser) {
         String loginCheck = schoolLoginRepository.loginCheck(signupUser.getStudentNumber(), signupUser.getPassword());
 
-/*
         if (Objects.equals(loginCheck, "N")) {
             throw new CustomException(USER_NOT_FOUND);
         }
-*/
 
         String studentNumber = signupUser.getStudentNumber();
         log.info("[로그인 시도] loginId: {}", studentNumber);
