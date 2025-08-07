@@ -74,8 +74,8 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
                 .createDate(board.getCreatedDate())
                 .filePath(null) // 필요시 이미지 경로 설정
                 .dormPeriod(DormDayUtil.sortDormDays(cl.getDormPeriod()))
-                .dormType(cl.getDormType())
-                .college(cl.getCollege())
+                .dormType(user.getDormType())
+                .college(user.getCollege())
                 .religion(cl.getReligion())
                 .mbti(cl.getMbti())
                 .smoking(cl.getSmoking())
