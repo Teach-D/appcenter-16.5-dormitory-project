@@ -14,6 +14,7 @@ public class ResponseRoommateChatDto {
     private Long userId;
     private String content;
     private boolean read;
+    private String createdDate;
 
     public static ResponseRoommateChatDto entityToDto(RoommateChattingChat chat) {
         return ResponseRoommateChatDto.builder()
@@ -22,6 +23,7 @@ public class ResponseRoommateChatDto {
                 .userId(chat.getMember().getId())
                 .content(chat.getContent())
                 .read(chat.isReadByReceiver())
+                .createdDate(chat.getCreatedDate().toString())
                 .build();
     }
 }
