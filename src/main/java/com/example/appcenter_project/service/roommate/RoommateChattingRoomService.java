@@ -38,6 +38,7 @@ public class RoommateChattingRoomService {
     private final RoommateChattingRoomRepository roommateChattingRoomRepository;
     private final RoommateBoardRepository roommateBoardRepository;
     private final UserRepository userRepository;
+    private final com.example.appcenter_project.service.image.ImageService imageService;
 
     //채팅방 생성
     @Transactional
@@ -105,7 +106,10 @@ public class RoommateChattingRoomService {
     }
 
     @Transactional(readOnly = true)
-    public List<ResponseRoommateChatRoomDto> findRoommateChatRoomListByUser(CustomUserDetails userDetails) {
+    public List<ResponseRoommateChatRoomDto> findRoommateChatRoomListByUser(
+            CustomUserDetails userDetails,
+            jakarta.servlet.http.HttpServletRequest request
+    ) {
         User user = userRepository.findById(userDetails.getId())
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
@@ -115,29 +119,28 @@ public class RoommateChattingRoomService {
         int index = 1;
 
         for (RoommateChattingRoom room : rooms) {
-            // 익명 N 설정
             String opponentNickname = "익명 " + index++;
 
-            // 마지막 메시지
             Optional<RoommateChattingChat> lastChat = room.getChattingChatList().stream()
                     .max(Comparator.comparing(RoommateChattingChat::getCreatedDate));
 
             String lastMessage = lastChat.map(RoommateChattingChat::getContent).orElse("");
             LocalDateTime lastMessageTime = lastChat.map(RoommateChattingChat::getCreatedDate).orElse(null);
 
-            // 상대방 정보 획득
-            User partner = null;
-
             User host = room.getHost();
             User guest = room.getGuest();
+            User partner = host.getId().equals(user.getId()) ? guest : host;
 
-            if (host.getId().equals(user.getId())) {
-                partner = guest;
-            } else {
-                partner = host;
+            // ImageService의 정적 리소스 URL(fileName)을 사용
+            String partnerProfileImageUrl = null;
+            try {
+                partnerProfileImageUrl =
+                        imageService.findUserImageUrlByUserId(partner.getId(), request).getFileName();
+            } catch (Exception e) {
+                // 기본이미지 초기화 로직이 있으므로 실패 시 null 허용
+                log.warn("partner image url resolve failed. userId={}", partner.getId(), e);
             }
 
-            // DTO 생성
             result.add(ResponseRoommateChatRoomDto.builder()
                     .chatRoomId(room.getId())
                     .opponentNickname(opponentNickname)
@@ -145,11 +148,12 @@ public class RoommateChattingRoomService {
                     .lastMessageTime(lastMessageTime)
                     .partnerName(partner.getName())
                     .partnerId(partner.getId())
+                    .partnerProfileImageUrl(partnerProfileImageUrl)
                     .build());
         }
 
-        // 마지막 메시지 시간 기준 내림차순 정렬 (null은 맨 뒤)
-        result.sort(Comparator.comparing(ResponseRoommateChatRoomDto::getLastMessageTime,
+        result.sort(Comparator.comparing(
+                ResponseRoommateChatRoomDto::getLastMessageTime,
                 Comparator.nullsLast(Comparator.reverseOrder())));
 
         return result;
