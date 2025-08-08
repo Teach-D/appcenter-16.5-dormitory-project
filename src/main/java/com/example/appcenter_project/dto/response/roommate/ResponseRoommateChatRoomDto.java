@@ -16,5 +16,4 @@ public class ResponseRoommateChatRoomDto {
     private LocalDateTime lastMessageTime;
     private Long partnerId;
     private String partnerName;
-    private String partnerProfileImageUrl;
 }
