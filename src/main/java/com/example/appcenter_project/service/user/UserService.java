@@ -32,6 +32,7 @@ import com.example.appcenter_project.repository.user.UserRepository;
 import com.example.appcenter_project.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -68,17 +69,20 @@ public class UserService {
         Image defaultImage = imageRepository.findAllByImageTypeAndIsDefault(ImageType.USER, true)
                 .orElseThrow(() -> new CustomException(DEFAULT_IMAGE_NOT_FOUND));
 
-        // 회원정보가 db에 없는 경우 db에 저장 후 로그인
-        if (!existsByStudentNumber) {
-            User user = User.builder()
-                    .studentNumber(signupUser.getStudentNumber())
-                    .password(passwordEncoder.encode(signupUser.getPassword())) // null 방지 + 인코딩 필수
-                    .penalty(0) // null 방지
-                    .image(defaultImage)
-                    .role(Role.ROLE_USER)
-                    .penalty(0)
-                    .build();
-            userRepository.save(user);
+        // studentNumber가 "admin"으로 시작하지 않는 경우만 DB 저장 로직 실행
+        if (!signupUser.getStudentNumber().startsWith("admin")) {
+            // 회원정보가 db에 없는 경우 db에 저장 후 로그인
+            if (!existsByStudentNumber) {
+                User user = User.builder()
+                        .studentNumber(signupUser.getStudentNumber())
+                        .password(passwordEncoder.encode(signupUser.getPassword())) // null 방지 + 인코딩 필수
+                        .penalty(0) // null 방지
+                        .image(defaultImage)
+                        .role(Role.ROLE_USER)
+                        .penalty(0)
+                        .build();
+                userRepository.save(user);
+            }
         }
 
         return login(signupUser);
@@ -105,11 +109,19 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
-        user.update(requestUserDto);
+        try {
+            user.update(requestUserDto);
+            userRepository.save(user); // 명시적으로 save 호출
 
-        log.info("[updateUser] 사용자 정보 업데이트 완료 - userId={}", userId);
+            log.info("[updateUser] 사용자 정보 업데이트 완료 - userId={}", userId);
 
-        return ResponseUserDto.entityToDto(user);
+            return ResponseUserDto.entityToDto(user);
+
+        } catch (DataIntegrityViolationException e) {
+            // DB unique 제약 조건 위반 시 발생하는 예외
+            log.warn("[updateUser] 중복된 이름으로 수정 시도 - userId={}, name={}", userId, requestUserDto.getName());
+            throw new CustomException(DUPLICATE_USER_NAME);
+        }
     }
 
     public void deleteUser(Long userId) {
@@ -120,15 +132,17 @@ public class UserService {
     }
 
     public ResponseLoginDto login(SignupUser signupUser) {
-        String loginCheck = schoolLoginRepository.loginCheck(signupUser.getStudentNumber(), signupUser.getPassword());
-
-/*
-        if (Objects.equals(loginCheck, "N")) {
-            throw new CustomException(USER_NOT_FOUND);
-        }
-*/
-
         String studentNumber = signupUser.getStudentNumber();
+
+        // admin으로 시작하지 않는 경우에만 학교 로그인 체크
+        if (!studentNumber.startsWith("admin")) {
+            String loginCheck = schoolLoginRepository.loginCheck(studentNumber, signupUser.getPassword());
+
+            if (Objects.equals(loginCheck, "N")) {
+                throw new CustomException(USER_NOT_FOUND);
+            }
+        }
+
         log.info("[로그인 시도] loginId: {}", studentNumber);
 
         User user = userRepository.findByStudentNumber(studentNumber)
