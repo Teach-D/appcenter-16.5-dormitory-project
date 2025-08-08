@@ -2,6 +2,8 @@ package com.example.appcenter_project.service.roommate;
 
 import com.example.appcenter_project.dto.request.roommate.RequestRoommateChatDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommateChatDto;
+import com.example.appcenter_project.dto.response.roommate.RoommateChatHistoryDto;
+import com.example.appcenter_project.dto.response.roommate.RoommateChatRoomDetailDto;
 import com.example.appcenter_project.entity.roommate.RoommateChattingChat;
 import com.example.appcenter_project.entity.roommate.RoommateChattingRoom;
 import com.example.appcenter_project.entity.user.User;
@@ -9,6 +11,8 @@ import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.repository.roommate.RoommateChattingChatRepository;
 import com.example.appcenter_project.repository.roommate.RoommateChattingRoomRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
+import com.example.appcenter_project.service.image.ImageService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -30,6 +34,7 @@ public class RoommateChattingChatService {
     private final RoommateChattingRoomRepository chatRoomRepository;
     private final UserRepository userRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final ImageService imageService;
 
     public ResponseRoommateChatDto sendChat(Long userId, RequestRoommateChatDto request) {
         log.info("💬 [채팅 전송 시작] userId: {}, roomId: {}, content: {}",
@@ -132,7 +137,7 @@ public class RoommateChattingChatService {
     }
 
     @Transactional(readOnly = true)
-    public List<ResponseRoommateChatDto> getChatList(Long userId, Long roomId) {
+    public RoommateChatRoomDetailDto getRoomDetail(Long userId, Long roomId, HttpServletRequest request) {
         RoommateChattingRoom room = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new CustomException(ROOMMATE_CHAT_ROOM_NOT_FOUND));
 
@@ -141,13 +146,23 @@ public class RoommateChattingChatService {
 
         // 접근 권한 확인
         if (!room.getGuest().getId().equals(userId) && !room.getHost().getId().equals(userId)) {
-            throw new CustomException(ROOMMATE_CHAT_ROOM_FORBIDDEN); // 이 채팅방에 속하지 않은 사용자입니다.
+            throw new CustomException(ROOMMATE_CHAT_ROOM_FORBIDDEN);
         }
 
-        // 채팅 내역 조회
+        // 1. 상대방 추출
+        User partner = room.getHost().getId().equals(userId) ? room.getGuest() : room.getHost();
+
+        String partnerProfileImageUrl = null;
+        try {
+            partnerProfileImageUrl = imageService.findUserImageUrlByUserId(partner.getId(), request).getFileName();
+        } catch (Exception e) {
+            // 이미지 없을 경우 null
+        }
+
+        // 2. 채팅 내역 조회
         List<RoommateChattingChat> chatList = chatRepository.findByRoommateChattingRoom(room);
 
-        // 안 읽은 메시지 읽음 처리 (내가 보낸 거 제외)
+        // 3. 안 읽은 메시지 읽음 처리 (내가 보낸 거 제외)
         List<Long> readIds = new ArrayList<>();
         chatList.stream()
                 .filter(chat -> !chat.getMember().getId().equals(userId) && !chat.isReadByReceiver())
@@ -155,16 +170,38 @@ public class RoommateChattingChatService {
                     chat.markAsRead();
                     readIds.add(chat.getId());
                 });
-
-        // 읽음 처리된 메시지가 있으면 알림 전송
         if (!readIds.isEmpty()) {
             String destination = "/sub/roommate/chat/read/" + roomId + "/user/" + userId;
             log.info("📖 [채팅 조회 시 읽음 처리] destination: {}, readIds: {}", destination, readIds);
             messagingTemplate.convertAndSend(destination, readIds);
         }
 
-        return chatList.stream()
-                .map(ResponseRoommateChatDto::entityToDto)
+        // 4. 채팅 내역 DTO 변환
+        List<RoommateChatHistoryDto> chatHistory = chatList.stream()
+                .map(chat -> {
+                    String profileImageUrl = null;
+                    try {
+                        profileImageUrl = imageService.findUserImageUrlByUserId(chat.getMember().getId(), request).getFileName();
+                    } catch (Exception e) {}
+                    return RoommateChatHistoryDto.builder()
+                            .roommateChattingRoomId(chat.getRoommateChattingRoom().getId())
+                            .roommateChatId(chat.getId())
+                            .userId(chat.getMember().getId())
+                            .content(chat.getContent())
+                            .read(chat.isReadByReceiver())
+                            .createdDate(chat.getCreatedDate().toString())
+                            .profileImageUrl(profileImageUrl)
+                            .build();
+                })
                 .toList();
+
+        // 5. 최종 통합 DTO 반환!
+        return RoommateChatRoomDetailDto.builder()
+                .roomId(roomId)
+                .partnerId(partner.getId())
+                .partnerName(partner.getName())
+                .partnerProfileImageUrl(partnerProfileImageUrl)
+                .chatList(chatHistory)
+                .build();
     }
 }
