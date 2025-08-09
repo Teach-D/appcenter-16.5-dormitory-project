@@ -2,6 +2,8 @@ package com.example.appcenter_project.controller.roommate;
 
 import com.example.appcenter_project.dto.request.roommate.RequestRoommateChatDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommateChatDto;
+import com.example.appcenter_project.dto.response.roommate.RoommateChatHistoryDto;
+import com.example.appcenter_project.dto.response.roommate.RoommateChatRoomDetailDto;
 import com.example.appcenter_project.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -9,6 +11,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,22 +40,24 @@ public interface RoommateChatApiSpecification  {
     );
 
     @Operation(
-            summary = "채팅 내역 조회",
-            description = "채팅방에 입장 시, 해당 방의 전체 채팅 내역을 반환합니다.",
+            summary = "채팅방 상세 및 채팅 내역 조회",
+            description = "채팅방 입장 시, 상대방 정보 및 전체 채팅 내역을 반환합니다.",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "채팅 내역 조회 성공",
+                    @ApiResponse(responseCode = "200", description = "채팅방 상세 및 채팅 내역 조회 성공",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseRoommateChatDto.class))),
-                    @ApiResponse(responseCode = "404", description = "유저 또는 채팅방 없음 (USER_NOT_FOUND, ROOMMATE_CHAT_ROOM_NOT_FOUND)",
+                                    schema = @Schema(implementation = RoommateChatRoomDetailDto.class))),
+                    @ApiResponse(responseCode = "404", description = "유저 또는 채팅방 없음",
                             content = @Content()),
-                    @ApiResponse(responseCode = "403", description = "채팅방 권한 없음 (ROOMMATE_CHAT_ROOM_FORBIDDEN)",
+                    @ApiResponse(responseCode = "403", description = "채팅방 권한 없음",
                             content = @Content())
             }
     )
-    ResponseEntity<List<ResponseRoommateChatDto>> getChatList(
+    ResponseEntity<RoommateChatRoomDetailDto> getRoomDetail(
             @Parameter(hidden = true) CustomUserDetails userDetails,
-            @Parameter(description = "조회할 채팅방 ID", example = "1") @PathVariable Long roomId
+            @Parameter(description = "조회할 채팅방 ID", example = "1") @PathVariable Long roomId,
+            HttpServletRequest request
     );
+
 
     @Operation(
             summary = "채팅 읽음 처리",

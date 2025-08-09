@@ -2,8 +2,11 @@ package com.example.appcenter_project.controller.roommate;
 
 import com.example.appcenter_project.dto.request.roommate.RequestRoommateChatDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommateChatDto;
+import com.example.appcenter_project.dto.response.roommate.RoommateChatHistoryDto;
+import com.example.appcenter_project.dto.response.roommate.RoommateChatRoomDetailDto;
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.roommate.RoommateChattingChatService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import jakarta.validation.Valid;
@@ -35,15 +38,18 @@ public class RoommateChattingChatController implements RoommateChatApiSpecificat
     }
 
     // 채팅 내역 조회
-    @GetMapping("/{roomId}")
-    public ResponseEntity<List<ResponseRoommateChatDto>> getChatList(
+    @GetMapping("/{roomId}/detail")
+    public ResponseEntity<RoommateChatRoomDetailDto> getRoomDetail(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable Long roomId
+            @PathVariable Long roomId,
+            HttpServletRequest request
     ) {
         Long userId = userDetails.getId();
-        List<ResponseRoommateChatDto> chatList = chatService.getChatList(userId, roomId);
-        return ResponseEntity.ok(chatList);
+        RoommateChatRoomDetailDto detail = chatService.getRoomDetail(userId, roomId, request);
+        return ResponseEntity.ok(detail);
     }
+
+
 
     // 읽음 처리
     @PatchMapping("/{roomId}/read")

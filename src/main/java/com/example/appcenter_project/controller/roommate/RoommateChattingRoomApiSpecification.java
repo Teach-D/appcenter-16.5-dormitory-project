@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
@@ -48,7 +49,7 @@ public interface RoommateChattingRoomApiSpecification {
 
     @Operation(
             summary = "채팅방 목록 조회",
-            description = "로그인한 사용자가 참여한 모든 채팅방 목록을 조회합니다. (마지막 메시지 기준 최신순)",
+            description = "로그인한 사용자가 참여한 모든 채팅방 목록을 조회합니다. (마지막 메시지 기준 최신순, 상대방 프로필 이미지 URL 포함)",
             responses = {
                     @ApiResponse(responseCode = "200", description = "조회 성공",
                             content = @Content(mediaType = "application/json",
@@ -57,7 +58,8 @@ public interface RoommateChattingRoomApiSpecification {
             }
     )
     ResponseEntity<List<ResponseRoommateChatRoomDto>> getRoommateChatRoomList(
-            @Parameter(hidden = true) CustomUserDetails userDetails
+            @Parameter(hidden = true) CustomUserDetails userDetails,
+            @Parameter(hidden = true) HttpServletRequest request // 추가
     );
 
     @Operation(
