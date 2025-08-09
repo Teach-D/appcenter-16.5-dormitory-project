@@ -42,6 +42,8 @@ public class MySqlConfig {
 
         Map<String, String> properties = new HashMap<String, String>();
         properties.put("hibernate.hbm2ddl.auto", ddlAuto);
+        properties.put("hibernate.jdbc.time_zone", "Asia/Seoul");
+        properties.put("hibernate.dialect", "org.hibernate.dialect.MySQL8Dialect");
 
         return builder.dataSource(dataSource).packages("com.example.appcenter_project").persistenceUnit("primary").properties(properties).build();
     }
