@@ -34,8 +34,8 @@ public class RequestCalenderDto {
 
     public static Calender dtoToEntity(RequestCalenderDto requestCalenderDto) {
         return Calender.builder()
-                .startDate(LocalDate.parse(requestCalenderDto.getStartDate()))
-                .endDate(LocalDate.parse(requestCalenderDto.getEndDate()))
+                .startDate(LocalDate.parse(requestCalenderDto.getStartDate()).plusDays(1))
+                .endDate(LocalDate.parse(requestCalenderDto.getEndDate()).plusDays(1))
                 .title(requestCalenderDto.getTitle())
                 .link(requestCalenderDto.getLink())
                 .build();
