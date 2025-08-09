@@ -8,6 +8,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 @Schema(description = "캘린더 요청 DTO")
 @Getter
@@ -34,10 +36,23 @@ public class RequestCalenderDto {
 
     public static Calender dtoToEntity(RequestCalenderDto requestCalenderDto) {
         return Calender.builder()
-                .startDate(LocalDate.parse(requestCalenderDto.getStartDate()))
-                .endDate(LocalDate.parse(requestCalenderDto.getEndDate()))
+                .startDate(parseLocalDateSafely(requestCalenderDto.getStartDate()))
+                .endDate(parseLocalDateSafely(requestCalenderDto.getEndDate()))
                 .title(requestCalenderDto.getTitle())
                 .link(requestCalenderDto.getLink())
                 .build();
+    }
+
+    /**
+     * 안전한 날짜 파싱 메서드
+     * 타임존 영향을 받지 않고 순수 날짜만 파싱
+     */
+    private static LocalDate parseLocalDateSafely(String dateString) {
+        try {
+            // yyyy-MM-dd 형식의 문자열을 직접 파싱 (타임존 무시)
+            return LocalDate.parse(dateString, DateTimeFormatter.ISO_LOCAL_DATE);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date format: " + dateString + ". Expected format: yyyy-MM-dd", e);
+        }
     }
 }
