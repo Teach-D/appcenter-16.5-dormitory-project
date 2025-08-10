@@ -163,7 +163,7 @@ public class UserService {
         List<RoommateBoardLike> likeRoommateBoardLikes = roommateBoardLikeRepository.findByUserId(userId);
         for (RoommateBoardLike likeRoommateBoardLike : likeRoommateBoardLikes) {
             RoommateBoard roommateBoard = likeRoommateBoardLike.getRoommateBoard();
-            ResponseRoommatePostDto responseRoommatePostDto = ResponseRoommatePostDto.entityToDto(roommateBoard, false);
+            ResponseRoommatePostDto responseRoommatePostDto = ResponseRoommatePostDto.entityToDto(roommateBoard, false,null);
             responseLikeDtoList.add(responseRoommatePostDto);
         }
 
