@@ -33,6 +33,8 @@ public class RoommateService {
     private final RoommateBoardRepository roommateBoardRepository;
     private final RoommateBoardLikeRepository roommateBoardLikeRepository;
     private final RoommateMatchingRepository roommateMatchingRepository;
+    private final com.example.appcenter_project.service.image.ImageService imageService;
+
 
     @Transactional
     public ResponseRoommatePostDto createRoommateCheckListandBoard(RequestRoommateFormDto requestDto, Long userId) {
@@ -98,7 +100,7 @@ public class RoommateService {
     }
 
     //최신순 조회
-    public List<ResponseRoommatePostDto> getRoommateBoardList() {
+    public List<ResponseRoommatePostDto> getRoommateBoardList(jakarta.servlet.http.HttpServletRequest request) {
         List<RoommateBoard> boards = roommateBoardRepository.findAllByOrderByCreatedDateDesc();
 
         if (boards.isEmpty()){
@@ -110,6 +112,12 @@ public class RoommateService {
                     RoommateCheckList cl = board.getRoommateCheckList();
                     User writer = board.getUser();
                     boolean isMatched = isRoommateBoardOwnerMatched(board.getId());
+
+                    String writerImg = null;
+                    try {
+                        writerImg = imageService.findUserImageUrlByUserId(writer.getId(), request).getFileName();
+                    } catch (Exception ignored) {}
+
                     return ResponseRoommatePostDto.builder()
                             .id(board.getId())
                             .title(cl.getTitle())
@@ -132,21 +140,27 @@ public class RoommateService {
                             .userName(writer.getName())
                             .createDate(board.getCreatedDate())
                             .isMatched(isMatched)
+                            .userProfileImageUrl(writerImg)
                             .build();
                 })
                 .toList();
     }
 
     //단일 조회
-    public ResponseRoommatePostDto getRoommateBoardDetail(Long boardId){
+    public ResponseRoommatePostDto getRoommateBoardDetail(Long boardId, jakarta.servlet.http.HttpServletRequest request){
         RoommateBoard board = roommateBoardRepository.findById(boardId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
         boolean isMatched = isRoommateBoardOwnerMatched(boardId);
-        return ResponseRoommatePostDto.entityToDto(board, isMatched);
+        String writerImg = null;
+        try {
+            writerImg = imageService.findUserImageUrlByUserId(board.getUser().getId(), request).getFileName();
+        } catch (Exception ignored) {}
+
+        return ResponseRoommatePostDto.entityToDto(board, isMatched, writerImg);
     }
 
     //유사도 조회
-    public List<ResponseRoommateSimilarityDto> getSimilarRoommateBoards(Long userId) {
+    public List<ResponseRoommateSimilarityDto> getSimilarRoommateBoards(Long userId, jakarta.servlet.http.HttpServletRequest request) {
         // 1. 내 체크리스트 가져오기
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
@@ -200,6 +214,11 @@ public class RoommateService {
                     RoommateCheckList cl = entry.getKey().getRoommateCheckList();
                     User writer = board.getUser();
 
+                    String writerImg = null;
+                    try {
+                        writerImg = imageService.findUserImageUrlByUserId(writer.getId(), request).getFileName();
+                    } catch (Exception ignored) {}
+
                     return ResponseRoommateSimilarityDto.builder()
                             .boardId(entry.getKey().getId())
                             .title(cl.getTitle())
@@ -223,13 +242,18 @@ public class RoommateService {
                             .userName(writer.getName())
                             .createdDate(board.getCreatedDate())
                             .isMatched(isMatched)
+                            .userProfileImageUrl(writerImg)
                             .build();
                 })
                 .toList();
     }
 
     @Transactional
-    public ResponseRoommatePostDto updateRoommateChecklistAndBoard(RequestRoommateFormDto requestDto, Long userId) {
+    public ResponseRoommatePostDto updateRoommateChecklistAndBoard(
+            RequestRoommateFormDto requestDto,
+            Long userId,
+            jakarta.servlet.http.HttpServletRequest request // 추가
+    )  {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
 
@@ -249,7 +273,12 @@ public class RoommateService {
             throw new CustomException(ErrorCode.ROOMMATE_CHECKLIST_UPDATE_FAILED);
         }
 
-        return ResponseRoommatePostDto.entityToDto(board, isMatched);
+        String writerImg = null;
+        try {
+            writerImg = imageService.findUserImageUrlByUserId(user.getId(), request).getFileName();
+        } catch (Exception ignored) {}
+
+        return ResponseRoommatePostDto.entityToDto(board, isMatched, writerImg);
     }
 
     // 좋아요 추가 (Like)
