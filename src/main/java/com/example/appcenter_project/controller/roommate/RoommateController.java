@@ -20,6 +20,7 @@ public class RoommateController implements RoommateApiSpecification{
 
     private final RoommateService roommateService;
 
+    @Override
     @PostMapping
     public ResponseEntity<ResponseRoommatePostDto> createRoommatePost(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -30,35 +31,47 @@ public class RoommateController implements RoommateApiSpecification{
         return ResponseEntity.status(201).body(responseDto);
     }
 
+    @Override
     @GetMapping("/list")
-    public ResponseEntity<List<ResponseRoommatePostDto>> getRoommateBoardList() {
-        return ResponseEntity.ok(roommateService.getRoommateBoardList());
+    public ResponseEntity<List<ResponseRoommatePostDto>> getRoommateBoardList(
+            jakarta.servlet.http.HttpServletRequest request
+    ) {
+        return ResponseEntity.ok(roommateService.getRoommateBoardList(request));
     }
 
+    @Override
     @GetMapping("/{boardId}")
-    public ResponseEntity<ResponseRoommatePostDto> getRoommateBoardDetail(@PathVariable Long boardId){
-        return ResponseEntity.ok(roommateService.getRoommateBoardDetail(boardId));
+    public ResponseEntity<ResponseRoommatePostDto> getRoommateBoardDetail(
+            @PathVariable Long boardId,
+            jakarta.servlet.http.HttpServletRequest request
+    ){
+        return ResponseEntity.ok(roommateService.getRoommateBoardDetail(boardId, request));
     }
 
+    @Override
     @GetMapping("/similar")
     public ResponseEntity<List<ResponseRoommateSimilarityDto>> getSimilarRoommates(
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-
-        Long userId = userDetails.getId(); // 로그인된 사용자의 ID 가져오기
-        List<ResponseRoommateSimilarityDto> similarList = roommateService.getSimilarRoommateBoards(userId);
-        return ResponseEntity.ok(similarList);
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            jakarta.servlet.http.HttpServletRequest request
+    ) {
+        Long userId = userDetails.getId();
+        return ResponseEntity.ok(roommateService.getSimilarRoommateBoards(userId, request));
     }
 
+    @Override
     @PutMapping
     public ResponseEntity<ResponseRoommatePostDto> updateRoommateCheckListAndBoard(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody RequestRoommateFormDto requestDto) {
-
+            @RequestBody RequestRoommateFormDto requestDto,
+            jakarta.servlet.http.HttpServletRequest request // 추가
+    ) {
         Long userId = userDetails.getId();
-        ResponseRoommatePostDto updated = roommateService.updateRoommateChecklistAndBoard(requestDto, userId);
+        ResponseRoommatePostDto updated =
+                roommateService.updateRoommateChecklistAndBoard(requestDto, userId, request); // 변경
         return ResponseEntity.ok(updated);
     }
 
+    @Override
     @PostMapping("/{boardId}/like")
     public ResponseEntity<Integer> plusLike(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -68,6 +81,7 @@ public class RoommateController implements RoommateApiSpecification{
         return ResponseEntity.ok(likeCount);
     }
 
+    @Override
     @DeleteMapping("/{boardId}/like")
     public ResponseEntity<Integer> minusLike(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -77,12 +91,14 @@ public class RoommateController implements RoommateApiSpecification{
         return ResponseEntity.ok(likeCount);
     }
 
+    @Override
     @GetMapping("/{boardId}/owner-matched")
     public ResponseEntity<Boolean> isBoardOwnerMatched(@PathVariable Long boardId) {
         boolean matched = roommateService.isRoommateBoardOwnerMatched(boardId);
         return ResponseEntity.ok(matched);
     }
 
+    @Override
     @GetMapping("/{boardId}/liked")
     public ResponseEntity<Boolean> isRoommateBoardLiked(
             @PathVariable Long boardId,
@@ -93,6 +109,7 @@ public class RoommateController implements RoommateApiSpecification{
         return ResponseEntity.ok(isLiked);
     }
 
+    @Override
     @GetMapping("/my-checklist")
     public ResponseEntity<ResponseRoommateCheckListDto> getMyRoommateCheckList(
             @AuthenticationPrincipal CustomUserDetails userDetails

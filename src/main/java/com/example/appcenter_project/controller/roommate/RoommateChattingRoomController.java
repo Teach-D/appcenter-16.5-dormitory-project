@@ -5,6 +5,7 @@ import com.example.appcenter_project.dto.response.roommate.ResponseRoommateCheck
 import com.example.appcenter_project.entity.roommate.RoommateCheckList;
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.roommate.RoommateChattingRoomService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,6 +23,7 @@ public class RoommateChattingRoomController implements RoommateChattingRoomApiSp
     private final RoommateChattingRoomService roommateChattingRoomService;
 
     // 게스트가 채팅방 참여 요청
+    @Override
     @PostMapping("/board/{roommateBoardId}")
     public ResponseEntity<Long> createChatRoom(@AuthenticationPrincipal CustomUserDetails user,
                                                @PathVariable Long roommateBoardId) {
@@ -30,6 +32,7 @@ public class RoommateChattingRoomController implements RoommateChattingRoomApiSp
     }
 
     // 채팅방 나가기 (게스트 기준)
+    @Override
     @DeleteMapping("/{chatRoomId}")
     public ResponseEntity<Void> leaveChatRoom(@AuthenticationPrincipal CustomUserDetails user,
                                               @PathVariable Long chatRoomId) {
@@ -38,14 +41,19 @@ public class RoommateChattingRoomController implements RoommateChattingRoomApiSp
     }
 
     // 채팅방 목록 조회
+    @Override
     @GetMapping
     public ResponseEntity<List<ResponseRoommateChatRoomDto>> getRoommateChatRoomList(
-            @AuthenticationPrincipal CustomUserDetails user) {
-        List<ResponseRoommateChatRoomDto> chatRooms = roommateChattingRoomService.findRoommateChatRoomListByUser(user);
+            @AuthenticationPrincipal CustomUserDetails user,
+            HttpServletRequest request // 추가
+    ) {
+        List<ResponseRoommateChatRoomDto> chatRooms =
+                roommateChattingRoomService.findRoommateChatRoomListByUser(user, request); // 변경
         return ResponseEntity.ok(chatRooms);
     }
 
     //상대방 체크리스트 확인
+    @Override
     @GetMapping("/roommate-chatrooms/{chatRoomId}/opponent-checklist")
     public ResponseEntity<ResponseRoommateCheckListDto> getOpponentChecklist(
             @AuthenticationPrincipal CustomUserDetails user,
