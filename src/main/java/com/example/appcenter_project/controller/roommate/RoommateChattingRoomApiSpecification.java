@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import jakarta.servlet.http.HttpServletRequest;   // 추가
 
 import java.util.List;
 
@@ -36,7 +37,7 @@ public interface RoommateChattingRoomApiSpecification {
             summary = "채팅방 나가기",
             description = "게스트가 특정 채팅방에서 나가며 채팅방이 삭제됩니다.",
             responses = {
-                    @ApiResponse(responseCode = "201", description = "나가기 성공 (채팅방 삭제)"),
+                    @ApiResponse(responseCode = "204", description = "나가기 성공"),
                     @ApiResponse(responseCode = "404", description = "유저 또는 채팅방을 찾을 수 없음"),
                     @ApiResponse(responseCode = "403", description = "게스트가 아닌 사용자의 접근")
             }
@@ -57,7 +58,8 @@ public interface RoommateChattingRoomApiSpecification {
             }
     )
     ResponseEntity<List<ResponseRoommateChatRoomDto>> getRoommateChatRoomList(
-            @Parameter(hidden = true) CustomUserDetails userDetails
+            @Parameter(hidden = true) CustomUserDetails userDetails,
+            @Parameter(hidden = true) HttpServletRequest request   // 추가
     );
 
     @Operation(
@@ -75,6 +77,4 @@ public interface RoommateChattingRoomApiSpecification {
             @Parameter(hidden = true) CustomUserDetails user,
             @Parameter(description = "채팅방 ID") Long chatRoomId
     );
-
-
 }

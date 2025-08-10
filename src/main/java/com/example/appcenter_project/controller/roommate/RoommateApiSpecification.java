@@ -11,11 +11,13 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
+
 
 @Tag(name = "Roommate", description = "룸메이트 게시글 및 체크리스트 관련 API")
 public interface RoommateApiSpecification {
@@ -27,158 +29,80 @@ public interface RoommateApiSpecification {
                     @ApiResponse(responseCode = "201", description = "룸메이트 게시글 등록 성공",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ResponseRoommatePostDto.class))),
-                    @ApiResponse(responseCode = "404", description = "해당 유저가 존재하지 않습니다. (ROOMMATE_USER_NOT_FOUND)",
-                            content = @Content(examples = {}))
+                    @ApiResponse(responseCode = "404", description = "해당 유저가 존재하지 않습니다. (ROOMMATE_USER_NOT_FOUND)")
             }
     )
     ResponseEntity<ResponseRoommatePostDto> createRoommatePost(
             @Parameter(hidden = true) CustomUserDetails userDetails,
-
             @RequestBody
             @Parameter(description = "룸메이트 체크리스트 요청 DTO", required = true)
             RequestRoommateFormDto requestDto
+            // ※ 현재 컨트롤러가 request를 안 받으니 인터페이스도 받지 않음
     );
 
     @Operation(
             summary = "룸메이트 게시글 최신순 목록 조회",
-            description = "작성된 룸메이트 게시글을 최신순으로 조회합니다.",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "게시글 목록 조회 성공",
-                            content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseRoommatePostDto.class))),
-                    @ApiResponse(responseCode = "404", description = "게시글이 존재하지 않습니다. (ROOMMATE_BOARD_NOT_FOUND)",
-                            content = @Content(examples = {}))
-            }
+            description = "작성된 룸메이트 게시글을 최신순으로 조회합니다. (작성자 프로필 이미지 URL 포함)"
     )
-    ResponseEntity<List<ResponseRoommatePostDto>> getRoommateBoardList();
+    ResponseEntity<List<ResponseRoommatePostDto>> getRoommateBoardList(
+            @Parameter(hidden = true) HttpServletRequest request
+    );
 
     @Operation(
             summary = "룸메이트 게시글 단일 조회",
-            description = "특정 게시글 ID를 통해 룸메이트 게시글 상세 정보를 조회합니다.",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "게시글 상세 조회 성공",
-                            content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseRoommatePostDto.class))),
-                    @ApiResponse(responseCode = "404", description = "해당 게시글이 존재하지 않습니다. (ROOMMATE_BOARD_NOT_FOUND)",
-                            content = @Content(examples = {}))
-            }
+            description = "특정 게시글 ID를 통해 룸메이트 게시글 상세 정보를 조회합니다. (작성자 프로필 이미지 URL 포함)"
     )
     ResponseEntity<ResponseRoommatePostDto> getRoommateBoardDetail(
-            @Parameter(description = "조회할 게시글 ID", example = "1")
-            @PathVariable Long boardId
+            @Parameter(description = "조회할 게시글 ID", example = "1") @PathVariable Long boardId,
+            @Parameter(hidden = true) HttpServletRequest request
     );
 
     @Operation(
             summary = "유사한 룸메이트 게시글 추천",
-            description = "로그인한 사용자의 체크리스트 기준으로 유사한 게시글을 추천합니다.",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "추천 게시글 목록 조회 성공",
-                            content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseRoommateSimilarityDto.class))),
-                    @ApiResponse(responseCode = "404", description = "유사도 비교할 게시글이 없습니다 (ROOMMATE_NO_SIMILAR_BOARD)",
-                            content = @Content(examples = {}))
-            }
+            description = "로그인한 사용자의 체크리스트 기준으로 유사한 게시글을 추천합니다. (작성자 프로필 이미지 URL 포함)"
     )
     ResponseEntity<List<ResponseRoommateSimilarityDto>> getSimilarRoommates(
-            @Parameter(hidden = true) CustomUserDetails userDetails
+            @Parameter(hidden = true) CustomUserDetails userDetails,
+            @Parameter(hidden = true) HttpServletRequest request
     );
 
     @Operation(
             summary = "룸메이트 체크리스트 및 게시글 수정",
-            description = "기존에 작성한 룸메이트 체크리스트 및 게시글을 수정합니다.",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "수정 성공",
-                            content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseRoommatePostDto.class))),
-                    @ApiResponse(responseCode = "404", description = "해당 유저 또는 게시글/체크리스트가 존재하지 않음 (ROOMMATE_USER_NOT_FOUND, ROOMMATE_BOARD_NOT_FOUND, ROOMMATE_CHECKLIST_NOT_FOUND)",
-                            content = @Content(examples = {})),
-                    @ApiResponse(responseCode = "403", description = "본인이 작성한 체크리스트가 아님 (ROOMMATE_UPDATE_NOT_ALLOWED)",
-                            content = @Content(examples = {})),
-                    @ApiResponse(responseCode = "500", description = "체크리스트 수정 실패 (ROOMMATE_CHECKLIST_UPDATE_FAILED)",
-                            content = @Content(examples = {}))
-            }
+            description = "기존에 작성한 룸메이트 체크리스트 및 게시글을 수정합니다. (작성자 프로필 이미지 URL 포함)"
     )
     ResponseEntity<ResponseRoommatePostDto> updateRoommateCheckListAndBoard(
             @Parameter(hidden = true) CustomUserDetails userDetails,
-
             @RequestBody
             @Parameter(description = "수정할 룸메이트 체크리스트 요청 DTO", required = true)
-            RequestRoommateFormDto requestDto
+            RequestRoommateFormDto requestDto,
+            @Parameter(hidden = true) HttpServletRequest request
     );
 
-    @Operation(
-            summary = "룸메이트 게시글 좋아요",
-            description = "특정 게시글에 좋아요를 추가합니다. 이미 좋아요를 누른 경우 에러가 발생합니다.",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "좋아요 성공, 현재 좋아요 개수 반환",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Integer.class))),
-                    @ApiResponse(responseCode = "404", description = "해당 유저 또는 게시글이 존재하지 않음 (ROOMMATE_USER_NOT_FOUND, ROOMMATE_BOARD_NOT_FOUND)", content = @Content),
-                    @ApiResponse(responseCode = "401", description = "이미 좋아요를 누른 유저 (ALREADY_ROOMMATE_BOARD_LIKE_USER)", content = @Content)
-            }
-    )
+    @Operation(summary = "룸메이트 게시글 좋아요")
     ResponseEntity<Integer> plusLike(
             @Parameter(hidden = true) CustomUserDetails userDetails,
-            @Parameter(description = "좋아요를 누를 게시글 ID", example = "1")
-            @PathVariable Long boardId
+            @Parameter(description = "좋아요를 누를 게시글 ID", example = "1") @PathVariable Long boardId
     );
 
-    @Operation(
-            summary = "룸메이트 게시글 좋아요 취소",
-            description = "특정 게시글의 좋아요를 취소합니다. 좋아요를 누르지 않은 경우 에러가 발생합니다.",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "좋아요 취소 성공, 현재 좋아요 개수 반환",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Integer.class))),
-                    @ApiResponse(responseCode = "404", description = "해당 유저, 게시글 또는 좋아요 정보가 없음 (ROOMMATE_USER_NOT_FOUND, ROOMMATE_BOARD_NOT_FOUND, ROOMMATE_BOARD_LIKE_NOT_FOUND)", content = @Content)
-            }
-    )
+    @Operation(summary = "룸메이트 게시글 좋아요 취소")
     ResponseEntity<Integer> minusLike(
             @Parameter(hidden = true) CustomUserDetails userDetails,
-            @Parameter(description = "좋아요 취소할 게시글 ID", example = "1")
-            @PathVariable Long boardId
+            @Parameter(description = "좋아요 취소할 게시글 ID", example = "1") @PathVariable Long boardId
     );
 
-    @Operation(
-            summary = "룸메이트 게시글 주인의 매칭 여부 조회",
-            description = "특정 게시글의 작성자가 이미 매칭(COMPLETED) 상태인지 확인합니다.",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "매칭 여부 반환",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Boolean.class))),
-                    @ApiResponse(responseCode = "404", description = "게시글이 존재하지 않음 (ROOMMATE_BOARD_NOT_FOUND)", content = @Content)
-            }
-    )
+    @Operation(summary = "룸메이트 게시글 주인의 매칭 여부 조회")
     ResponseEntity<Boolean> isBoardOwnerMatched(
-            @Parameter(description = "조회할 게시글 ID", example = "1")
-            @PathVariable Long boardId
+            @Parameter(description = "조회할 게시글 ID", example = "1") @PathVariable Long boardId
     );
 
-    @Operation(
-            summary = "룸메이트 게시글 좋아요 여부 조회",
-            description = "특정 게시글에 로그인한 사용자가 좋아요를 눌렀는지 여부를 반환합니다.",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "좋아요 여부 반환 (true: 좋아요 누름, false: 안 누름)",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Boolean.class))),
-                    @ApiResponse(responseCode = "404", description = "해당 게시글이 존재하지 않음 (ROOMMATE_BOARD_NOT_FOUND)", content = @Content),
-                    @ApiResponse(responseCode = "404", description = "해당 유저가 존재하지 않음 (ROOMMATE_USER_NOT_FOUND)", content = @Content)
-            }
-    )
+    @Operation(summary = "룸메이트 게시글 좋아요 여부 조회")
     ResponseEntity<Boolean> isRoommateBoardLiked(
-            @Parameter(description = "조회할 게시글 ID", example = "1")
-            @PathVariable Long boardId,
+            @Parameter(description = "조회할 게시글 ID", example = "1") @PathVariable Long boardId,
             @Parameter(hidden = true) CustomUserDetails userDetails
     );
 
-    @Operation(
-            summary = "내 룸메이트 체크리스트 단일 조회",
-            description = "로그인한 사용자가 작성한 체크리스트를 단일 조회합니다.",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "내 체크리스트 조회 성공",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ResponseRoommateCheckListDto.class))),
-                    @ApiResponse(responseCode = "404", description = "체크리스트 없음", content = @Content)
-            }
-    )
+    @Operation(summary = "내 룸메이트 체크리스트 단일 조회")
     ResponseEntity<ResponseRoommateCheckListDto> getMyRoommateCheckList(
             @Parameter(hidden = true) CustomUserDetails userDetails
     );
-
-
 }
