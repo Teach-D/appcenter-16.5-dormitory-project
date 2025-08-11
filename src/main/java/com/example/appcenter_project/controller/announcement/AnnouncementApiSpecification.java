@@ -115,6 +115,29 @@ public interface AnnouncementApiSpecification {
             @PathVariable
             @Parameter(description = "공지사항 ID", required = true, example = "1") Long announcementId);
 
+    @Operation(
+            summary = "공지사항 및 첨부파일 수정",
+            description = "기존 공지사항과 첨부파일을 함께 수정합니다. 기존 첨부파일은 모두 삭제되고 새로운 파일들로 교체됩니다.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "수정 성공",
+                            content = @Content(schema = @Schema(implementation = ResponseAnnouncementDto.class))
+                    ),
+                    @ApiResponse(responseCode = "404", description = "공지사항을 찾을 수 없음"),
+                    @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
+                    @ApiResponse(responseCode = "403", description = "권한 없음")
+            }
+    )
+    ResponseEntity<ResponseAnnouncementDto> updateAnnouncementWithFiles(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @Valid @RequestPart("requestAnnouncementDto")
+            @Parameter(description = "수정할 공지사항 정보", required = true) RequestAnnouncementDto requestAnnouncementDto,
+            @PathVariable
+            @Parameter(description = "공지사항 ID", required = true, example = "1") Long announcementId,
+            @RequestPart(value = "files", required = false)
+            @Parameter(description = "새로운 첨부 파일들 (선택사항)") List<MultipartFile> files);
+
 
     @Operation(
             summary = "공지사항 삭제",

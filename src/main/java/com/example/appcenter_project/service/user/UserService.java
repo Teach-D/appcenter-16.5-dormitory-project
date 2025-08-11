@@ -109,19 +109,16 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
-        try {
-            user.update(requestUserDto);
-            userRepository.save(user); // 명시적으로 save 호출
-
-            log.info("[updateUser] 사용자 정보 업데이트 완료 - userId={}", userId);
-
-            return ResponseUserDto.entityToDto(user);
-
-        } catch (DataIntegrityViolationException e) {
-            // DB unique 제약 조건 위반 시 발생하는 예외
-            log.warn("[updateUser] 중복된 이름으로 수정 시도 - userId={}, name={}", userId, requestUserDto.getName());
+        // 기존 사용자의 이름과 다른 경우에만 중복 체크
+        if (!user.getName().equals(requestUserDto.getName()) &&
+                userRepository.existsByName(requestUserDto.getName())) {
             throw new CustomException(DUPLICATE_USER_NAME);
         }
+
+        user.update(requestUserDto);
+        log.info("[updateUser] 사용자 정보 업데이트 완료 - userId={}", userId);
+
+        return ResponseUserDto.entityToDto(user);
     }
 
     public void deleteUser(Long userId) {
@@ -167,7 +164,7 @@ public class UserService {
         List<RoommateBoardLike> likeRoommateBoardLikes = roommateBoardLikeRepository.findByUserId(userId);
         for (RoommateBoardLike likeRoommateBoardLike : likeRoommateBoardLikes) {
             RoommateBoard roommateBoard = likeRoommateBoardLike.getRoommateBoard();
-            ResponseRoommatePostDto responseRoommatePostDto = ResponseRoommatePostDto.entityToDto(roommateBoard, false);
+            ResponseRoommatePostDto responseRoommatePostDto = ResponseRoommatePostDto.entityToDto(roommateBoard, false,null);
             responseLikeDtoList.add(responseRoommatePostDto);
         }
 

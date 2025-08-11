@@ -76,9 +76,23 @@ public class AnnouncementController implements AnnouncementApiSpecification {
         return ResponseEntity.status(OK).body(announcementService.updateAnnouncement(requestAnnouncementDto, announcementId));
     }
 
+    @PutMapping(value = "/{announcementId}/with-files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Override
+    public ResponseEntity<ResponseAnnouncementDto> updateAnnouncementWithFiles(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @Valid @RequestPart("requestAnnouncementDto") RequestAnnouncementDto requestAnnouncementDto,
+            @PathVariable Long announcementId,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files) {
+
+        ResponseAnnouncementDto response = announcementService.updateAnnouncementWithFiles(
+                requestAnnouncementDto, announcementId, files);
+
+        return ResponseEntity.status(OK).body(response);
+    }
+
     @DeleteMapping("/{announcementId}/file")
     public ResponseEntity<Void> deleteAttachedFile(
-            @PathVariable Long announcementId, 
+            @PathVariable Long announcementId,
             @RequestParam String filePath) {
         announcementService.deleteAttachedFile(announcementId, filePath);
         return ResponseEntity.noContent().build();

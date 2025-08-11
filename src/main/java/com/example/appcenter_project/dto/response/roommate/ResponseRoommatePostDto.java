@@ -34,6 +34,7 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
     private Long userId;
     private String userName;
     private boolean isMatched;
+    private String userProfileImageUrl;
 
     @Builder
     public ResponseRoommatePostDto(Long id, String title, String type, LocalDateTime createDate, String filePath,
@@ -41,7 +42,8 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
                                    String mbti, SmokingType smoking, SnoringType snoring, TeethGrindingType toothGrind,
                                    SleepSensitivityType sleeper, ShowerTimeType showerHour, ShowerDurationType showerTime,
                                    BedTimeType bedTime, CleanlinessType arrangement, String comment,
-                                   int roommateBoardLike, Long userId, String userName, boolean isMatched) {
+                                   int roommateBoardLike, Long userId, String userName, boolean isMatched,
+                                   String userProfileImageUrl) {
         super(id, title, type, createDate, filePath);
         this.dormPeriod = dormPeriod;
         this.dormType = dormType;
@@ -61,9 +63,10 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
         this.userId = userId;
         this.userName = userName;
         this.isMatched = isMatched;
+        this.userProfileImageUrl = userProfileImageUrl;
     }
 
-    public static ResponseRoommatePostDto entityToDto(RoommateBoard board, boolean isMatched) {
+    public static ResponseRoommatePostDto entityToDto(RoommateBoard board, boolean isMatched, String userProfileImageUrl) {
         RoommateCheckList cl = board.getRoommateCheckList();
         User user = board.getUser();
 
@@ -91,6 +94,7 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
                 .userId(user.getId())
                 .userName(user.getName())
                 .isMatched(isMatched)
+                .userProfileImageUrl(userProfileImageUrl)
                 .build();
     }
 }

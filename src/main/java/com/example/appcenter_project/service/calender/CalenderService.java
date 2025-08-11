@@ -27,6 +27,8 @@ public class CalenderService {
     private final CalenderRepository calenderRepository;
 
     public void saveCalender(RequestCalenderDto requestCalenderDto) {
+        log.info("startDate : {},  endDate : {}", requestCalenderDto.getStartDate(), requestCalenderDto.getEndDate());
+
         Calender calender = RequestCalenderDto.dtoToEntity(requestCalenderDto);
         calenderRepository.save(calender);
     }

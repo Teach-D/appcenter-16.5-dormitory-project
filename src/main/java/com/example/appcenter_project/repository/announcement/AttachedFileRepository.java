@@ -10,6 +10,7 @@ import java.util.Optional;
 public interface AttachedFileRepository extends JpaRepository<AttachedFile, Long> {
     List<AttachedFile> findByAnnouncement(Announcement announcement);
     void deleteByFilePath(String filePath);
+    void deleteByAnnouncement(Announcement announcement);
 
     Optional<AttachedFile> findByFilePath(String filePath);
 
