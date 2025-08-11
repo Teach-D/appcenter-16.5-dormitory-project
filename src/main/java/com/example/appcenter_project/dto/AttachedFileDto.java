@@ -14,8 +14,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class AttachedFileDto {
 
-    @NotBlank(message = "첨부파일 URL이 필요합니다.")
-    private String fileUrl;
+    @NotBlank(message = "첨부파일경로가 필요합니다.")
+    private String filePath;
 
     @NotBlank(message = "첨부파일명이 필요합니다.")
     private String fileName;

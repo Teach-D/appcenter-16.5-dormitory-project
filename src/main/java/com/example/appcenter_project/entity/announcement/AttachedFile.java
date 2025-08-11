@@ -17,13 +17,17 @@ public class AttachedFile {
     @Column(nullable = false)
     private String filePath;
 
+    @Column(nullable = false)
+    private String fileName;
+
     @ManyToOne
     @JoinColumn(name = "announcement_id")
     private Announcement announcement;
 
     @Builder
-    public AttachedFile(String filePath, Announcement announcement) {
+    public AttachedFile(String filePath, String fileName, Announcement announcement) {
         this.filePath = filePath;
+        this.fileName = fileName;
         this.announcement = announcement;
     }
 }

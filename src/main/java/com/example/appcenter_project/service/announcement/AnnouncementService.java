@@ -64,7 +64,7 @@ public class AnnouncementService {
                 boolean created = directory.mkdirs();
             }
 
-            // 첨부파 저장
+            // 첨부파일 저장
             for (MultipartFile file : files) {
                 if (file == null || file.isEmpty()) {
                     log.warn("Empty file skipped during tip image save");
@@ -83,6 +83,7 @@ public class AnnouncementService {
 
                     AttachedFile attachedFile = AttachedFile.builder()
                             .filePath(destinationFile.getAbsolutePath())
+                            .fileName(file.getName())
                             .announcement(announcement)
                             .build();
 
@@ -136,8 +137,8 @@ public class AnnouncementService {
                 String changeUrl = staticImageUrl.replace("http", "https");
 
                 AttachedFileDto attachedFileDto = AttachedFileDto.builder()
-                        .fileUrl(fileUrl)
-                        .fileName(changeUrl)
+                        .filePath(changeUrl)
+                        .fileName(attachedFile.getFileName())
                         .fileSize(file.length())
                         .build();
 
