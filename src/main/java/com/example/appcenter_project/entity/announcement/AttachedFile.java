@@ -20,14 +20,17 @@ public class AttachedFile {
     @Column(nullable = false)
     private String fileName;
 
+    private Long fileSize; // 파일 크기 (bytes)
+
     @ManyToOne
     @JoinColumn(name = "announcement_id")
     private Announcement announcement;
 
     @Builder
-    public AttachedFile(String filePath, String fileName, Announcement announcement) {
+    public AttachedFile(String filePath, String fileName, Long fileSize, Announcement announcement) {
         this.filePath = filePath;
         this.fileName = fileName;
+        this.fileSize = fileSize;
         this.announcement = announcement;
     }
 }
