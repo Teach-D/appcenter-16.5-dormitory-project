@@ -10,4 +10,7 @@ public interface RoommateBoardRepository extends JpaRepository<RoommateBoard, Lo
     List<RoommateBoard> findAllByOrderByCreatedDateDesc();
     Optional<RoommateBoard> findByUserId(Long userId);
 
+    // 가장 최근 10개의 게시글 조회
+    List<RoommateBoard> findTop10ByOrderByCreatedDateDesc();
+
 }
