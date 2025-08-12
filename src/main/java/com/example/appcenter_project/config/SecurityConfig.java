@@ -60,6 +60,9 @@ public class SecurityConfig {
                         .requestMatchers(DELETE, "/calenders/**").hasRole("ADMIN")
                         .requestMatchers(GET, "/calenders/**").permitAll()
 
+                        // 공동구매관련 엔드포인트
+                        .requestMatchers(GET, "/group-orders/**").permitAll()
+
 
                         .requestMatchers(GET, "/reports/**").hasRole("ADMIN")
                         .requestMatchers(DELETE, "/reports/**").hasRole("ADMIN")
