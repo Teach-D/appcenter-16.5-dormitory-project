@@ -16,12 +16,15 @@ import com.example.appcenter_project.repository.roommate.RoommateBoardRepository
 import com.example.appcenter_project.repository.roommate.RoommateCheckListRepository;
 import com.example.appcenter_project.repository.roommate.RoommateMatchingRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Transactional
 @Service
@@ -369,5 +372,25 @@ public class RoommateService {
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_CHECKLIST_NOT_FOUND));
         return ResponseRoommateCheckListDto.from(checkList);
     }
+
+    @Transactional(readOnly = true)
+    public ResponseRoommatePostDto getRandomFromLatest10(Long userId, HttpServletRequest request) {
+        List<RoommateBoard> latest10 = roommateBoardRepository.findTop10ByOrderByCreatedDateDesc();
+        if (latest10.isEmpty()) {
+            throw new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND);
+        }
+
+        RoommateBoard target = latest10.get(ThreadLocalRandom.current().nextInt(latest10.size()));
+
+        boolean isMatched = isRoommateBoardOwnerMatched(target.getId());
+
+        String writerImg = null;
+        try {
+            writerImg = imageService.findUserImageUrlByUserId(target.getUser().getId(), request).getFileName();
+        } catch (Exception ignored) {}
+
+        return ResponseRoommatePostDto.entityToDto(target, isMatched, writerImg);
+    }
+
 
 }
