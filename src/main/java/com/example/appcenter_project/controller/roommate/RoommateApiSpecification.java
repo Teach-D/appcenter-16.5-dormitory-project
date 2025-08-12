@@ -105,4 +105,13 @@ public interface RoommateApiSpecification {
     ResponseEntity<ResponseRoommateCheckListDto> getMyRoommateCheckList(
             @Parameter(hidden = true) CustomUserDetails userDetails
     );
+
+    @Operation(
+            summary = "최신 10개 중 무작위 1개 조회",
+            description = "최신 10개 게시글 중 무작위 1개를 반환합니다. 작성자 프로필 이미지 URL 포함"
+    )
+    ResponseEntity<ResponseRoommatePostDto> getRandomFromLatest10(
+            @Parameter(hidden = true) CustomUserDetails userDetails,
+            @Parameter(hidden = true) HttpServletRequest request
+    );
 }
