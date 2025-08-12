@@ -119,4 +119,14 @@ public class RoommateController implements RoommateApiSpecification{
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/latest10/random")
+    public ResponseEntity<ResponseRoommatePostDto> getRandomFromLatest10(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            jakarta.servlet.http.HttpServletRequest request
+    ) {
+        Long userId = userDetails.getId();
+        return ResponseEntity.ok(roommateService.getRandomFromLatest10(userId, request));
+    }
+
+
 }
