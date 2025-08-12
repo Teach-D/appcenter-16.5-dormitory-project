@@ -110,7 +110,9 @@ public class UserService {
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
         // 기존 사용자의 이름과 다른 경우에만 중복 체크
-        if (!user.getName().equals(requestUserDto.getName()) &&
+        // 기존 사용자의 이름이 null이 아니고, 새로운 이름과 다른 경우에만 중복 체크
+        if (user.getName() != null &&
+                !user.getName().equals(requestUserDto.getName()) &&
                 userRepository.existsByName(requestUserDto.getName())) {
             throw new CustomException(DUPLICATE_USER_NAME);
         }
