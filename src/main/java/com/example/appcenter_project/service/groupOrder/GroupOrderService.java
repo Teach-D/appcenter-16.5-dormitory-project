@@ -25,6 +25,7 @@ import com.example.appcenter_project.repository.groupOrder.UserGroupOrderChatRoo
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.like.GroupOrderLikeRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
+import com.example.appcenter_project.security.CustomUserDetails;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -245,14 +246,18 @@ public class GroupOrderService {
         }
     }
 
-    public List<ResponseGroupOrderDto> findGroupOrders(Long userId, GroupOrderSort sort, GroupOrderType type, Optional<String> search) {
-        search.filter(s -> !s.isBlank())
-                .ifPresent(keyword -> {
-                    User user = userRepository.findById(userId)
-                            .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-                    user.addSearchKeyword(keyword);
-                });
+    public List<ResponseGroupOrderDto> findGroupOrders(CustomUserDetails jwtUser, GroupOrderSort sort, GroupOrderType type, Optional<String> search) {
+        // 로그인한 사용자만 검색 키워드 저장
+        if (jwtUser != null) {
+            search.filter(s -> !s.isBlank())
+                    .ifPresent(keyword -> {
+                        User user = userRepository.findById(jwtUser.getId())
+                                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+                        user.addSearchKeyword(keyword);
+                    });
+        }
 
+        // 공통 조건 처리
         String searchKeyword = search.filter(s -> !s.isBlank()).orElse(null);
         String sortParam = sort.name();
         String typeString = String.valueOf(GroupOrderType.from(String.valueOf(type)));

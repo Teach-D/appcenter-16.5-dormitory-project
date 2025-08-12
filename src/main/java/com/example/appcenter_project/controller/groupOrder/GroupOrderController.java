@@ -69,7 +69,7 @@ public class GroupOrderController {
             @AuthenticationPrincipal CustomUserDetails user,
             @RequestParam(defaultValue = "DEADLINE") String sort, @RequestParam(defaultValue = "ALL") String type, @RequestParam(required = false) Optional<String> search
     ) {
-        return ResponseEntity.status(OK).body(groupOrderService.findGroupOrders(user.getId(), GroupOrderSort.from(sort), GroupOrderType.from(type), search));
+        return ResponseEntity.status(OK).body(groupOrderService.findGroupOrders(user, GroupOrderSort.from(sort), GroupOrderType.from(type), search));
     }
 
     @PatchMapping("/{groupOrderId}/like")
