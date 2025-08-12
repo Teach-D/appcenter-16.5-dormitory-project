@@ -247,6 +247,7 @@ public class GroupOrderService {
     }
 
     public List<ResponseGroupOrderDto> findGroupOrders(CustomUserDetails jwtUser, GroupOrderSort sort, GroupOrderType type, Optional<String> search) {
+        // 로그인한 사용자만 검색 키워드 저장
         if (jwtUser != null) {
             search.filter(s -> !s.isBlank())
                     .ifPresent(keyword -> {
@@ -254,16 +255,13 @@ public class GroupOrderService {
                                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
                         user.addSearchKeyword(keyword);
                     });
-
-            String searchKeyword = search.filter(s -> !s.isBlank()).orElse(null);
-            String sortParam = sort.name();
-            String typeString = String.valueOf(GroupOrderType.from(String.valueOf(type)));
-            return groupOrderMapper.findGroupOrders(typeString, searchKeyword, sortParam);
-        } else {
-            List<GroupOrder> groupOrders = groupOrderRepository.findAll();
-            return groupOrders.stream().map(ResponseGroupOrderDto::entityToDto).toList();
         }
 
+        // 공통 조건 처리
+        String searchKeyword = search.filter(s -> !s.isBlank()).orElse(null);
+        String sortParam = sort.name();
+        String typeString = String.valueOf(GroupOrderType.from(String.valueOf(type)));
+        return groupOrderMapper.findGroupOrders(typeString, searchKeyword, sortParam);
     }
 
     public ResponseGroupOrderDetailDto updateGroupOrder(Long userId, Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto) {
