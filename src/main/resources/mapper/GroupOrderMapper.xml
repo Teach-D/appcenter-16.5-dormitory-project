@@ -4,7 +4,7 @@
 <mapper namespace="com.example.appcenter_project.mapper.GroupOrderMapper">
 
     <resultMap id="groupOrderResultMap" type="com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto">
-        <id property="id" column="id"/>
+        <id property="boardId" column="id"/>
         <result property="title" column="title"/>
         <result property="type" column="type"/>
         <result property="createDate" column="create_date"/>
@@ -29,7 +29,7 @@
         go.deadline,
         go.group_order_like,
         go.description,
-        go.created_date,
+        go.created_date as create_date,
         img.file_path,
         go.group_order_type
         FROM group_order go
@@ -105,7 +105,7 @@
         go.price,
         go.current_people,
         go.max_people,
-        go.group_order_type  <!-- 이 줄 추가 -->
+        go.group_order_type
 
         FROM group_order go
         WHERE go.user_id = #{userId}
@@ -146,7 +146,7 @@
             go.id,
             go.title,
             go.deadline,
-            go.created_date,
+            go.created_date as create_date,
             go.group_order_type,
             go.price,
             go.current_people,
