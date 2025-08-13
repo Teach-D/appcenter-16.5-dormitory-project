@@ -106,13 +106,16 @@ public class UserService {
     public ResponseUserDto updateUser(Long userId, RequestUserDto requestUserDto) {
         log.info("[updateUser] 사용자 정보 수정 요청 시작 - userId={}", userId);
 
-        if (userRepository.existsByName(requestUserDto.getName())) {
-            throw new CustomException(DUPLICATE_USER_NAME);
-        }
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
+        // 기존 사용자의 이름과 다른 경우에만 중복 체크
+        // 기존 사용자의 이름이 null이 아니고, 새로운 이름과 다른 경우에만 중복 체크
+        if (user.getName() != null &&
+                !user.getName().equals(requestUserDto.getName()) &&
+                userRepository.existsByName(requestUserDto.getName())) {
+            throw new CustomException(DUPLICATE_USER_NAME);
+        }
 
         user.update(requestUserDto);
         log.info("[updateUser] 사용자 정보 업데이트 완료 - userId={}", userId);

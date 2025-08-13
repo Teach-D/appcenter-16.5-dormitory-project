@@ -64,7 +64,7 @@ public class AnnouncementService {
                 boolean created = directory.mkdirs();
             }
 
-            // 첨부파 저장
+            // 첨부파일 저장
             for (MultipartFile file : files) {
                 if (file == null || file.isEmpty()) {
                     log.warn("Empty file skipped during tip image save");
@@ -83,6 +83,8 @@ public class AnnouncementService {
 
                     AttachedFile attachedFile = AttachedFile.builder()
                             .filePath(destinationFile.getAbsolutePath())
+                            .fileName(file.getOriginalFilename())
+                            .fileSize(file.getSize())
                             .announcement(announcement)
                             .build();
 
@@ -136,9 +138,9 @@ public class AnnouncementService {
                 String changeUrl = staticImageUrl.replace("http", "https");
 
                 AttachedFileDto attachedFileDto = AttachedFileDto.builder()
-                        .fileUrl(fileUrl)
-                        .fileName(changeUrl)
-                        .fileSize(file.length())
+                        .filePath(changeUrl)
+                        .fileName(attachedFile.getFileName())
+                        .fileSize(attachedFile.getFileSize())
                         .build();
 
                 attachedFileDtos.add(attachedFileDto);
@@ -241,5 +243,58 @@ public class AnnouncementService {
         announcement.update(requestAnnouncementDto);
 
         return ResponseAnnouncementDto.entityToDto(announcement);
+    }
+
+    public ResponseAnnouncementDto updateAnnouncementWithFiles(RequestAnnouncementDto requestAnnouncementDto,
+                                                               Long announcementId,
+                                                               List<MultipartFile> files) {
+        log.info("[updateAnnouncementWithFiles] 공지사항 및 첨부파일 수정 시작 - announcementId={}", announcementId);
+
+        // 1. 공지사항 조회
+        Announcement announcement = announcementRepository.findById(announcementId)
+                .orElseThrow(() -> new CustomException(ANNOUNCEMENT_NOT_REGISTERED));
+
+        // 2. 기존 첨부파일 삭제 (DB + 파일시스템)
+        deleteExistingAttachedFiles(announcement);
+
+        // 3. 공지사항 내용 업데이트
+        announcement.update(requestAnnouncementDto);
+
+        // 4. 새로운 첨부파일 저장
+        if (files != null && !files.isEmpty()) {
+            saveUploadFile(announcement, files);
+        }
+
+        log.info("[updateAnnouncementWithFiles] 공지사항 및 첨부파일 수정 완료 - announcementId={}", announcementId);
+        return ResponseAnnouncementDto.entityToDto(announcement);
+    }
+
+    private void deleteExistingAttachedFiles(Announcement announcement) {
+        log.info("[deleteExistingAttachedFiles] 기존 첨부파일 삭제 시작 - announcementId={}", announcement.getId());
+
+        List<AttachedFile> existingFiles = attachedFileRepository.findByAnnouncement(announcement);
+
+        for (AttachedFile attachedFile : existingFiles) {
+            // 파일시스템에서 파일 삭제
+            File file = new File(attachedFile.getFilePath());
+            if (file.exists()) {
+                boolean deleted = file.delete();
+                if (deleted) {
+                    log.info("파일 삭제 성공: {}", attachedFile.getFilePath());
+                } else {
+                    log.warn("파일 삭제 실패: {}", attachedFile.getFilePath());
+                }
+            } else {
+                log.warn("삭제할 파일이 존재하지 않음: {}", attachedFile.getFilePath());
+            }
+        }
+
+        // DB에서 첨부파일 레코드 삭제 (cascade로 자동 삭제되지만 명시적으로 처리)
+        attachedFileRepository.deleteByAnnouncement(announcement);
+
+        // 엔티티의 컬렉션도 정리
+        announcement.getAttachedFiles().clear();
+
+        log.info("[deleteExistingAttachedFiles] 기존 첨부파일 삭제 완료 - 삭제된 파일 수: {}", existingFiles.size());
     }
 }
