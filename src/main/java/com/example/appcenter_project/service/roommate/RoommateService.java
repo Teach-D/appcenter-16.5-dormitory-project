@@ -16,15 +16,21 @@ import com.example.appcenter_project.repository.roommate.RoommateBoardRepository
 import com.example.appcenter_project.repository.roommate.RoommateCheckListRepository;
 import com.example.appcenter_project.repository.roommate.RoommateMatchingRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
+import com.example.appcenter_project.utils.DormDayUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Stream;
 
 @Transactional
 @Service
@@ -391,6 +397,168 @@ public class RoommateService {
 
         return ResponseRoommatePostDto.entityToDto(target, isMatched, writerImg);
     }
+
+    @Transactional(readOnly = true)
+    public List<ResponseRoommatePostDto> getRoommateBoardListScroll(HttpServletRequest request, Long lastId, int size) {
+        Pageable pageable = PageRequest.of(0, size);
+        List<RoommateBoard> boards;
+
+        if (lastId == null) {
+            // 첫 로딩: 최신순 size개
+            boards = roommateBoardRepository.findAllByOrderByIdDesc(pageable);
+        } else {
+            // 이후 로딩: lastId보다 작은 데이터
+            boards = roommateBoardRepository.findByIdLessThanOrderByIdDesc(lastId, pageable);
+        }
+
+        if (boards.isEmpty()) {
+            return List.of(); // 마지막 페이지
+        }
+
+        return boards.stream().map(board -> {
+            RoommateCheckList cl = board.getRoommateCheckList();
+            User writer = board.getUser();
+            boolean isMatched = isRoommateBoardOwnerMatched(board.getId());
+
+            String writerImg = null;
+            try {
+                writerImg = imageService.findUserImageUrlByUserId(writer.getId(), request).getFileName();
+            } catch (Exception ignored) {}
+
+            return ResponseRoommatePostDto.builder()
+                    .id(board.getId())
+                    .title(cl.getTitle())
+                    .dormPeriod(com.example.appcenter_project.utils.DormDayUtil.sortDormDays(cl.getDormPeriod()))
+                    .dormType(writer.getDormType())
+                    .college(writer.getCollege())
+                    .religion(cl.getReligion())
+                    .mbti(cl.getMbti())
+                    .smoking(cl.getSmoking())
+                    .snoring(cl.getSnoring())
+                    .toothGrind(cl.getToothGrind())
+                    .sleeper(cl.getSleeper())
+                    .showerHour(cl.getShowerHour())
+                    .showerTime(cl.getShowerTime())
+                    .bedTime(cl.getBedTime())
+                    .arrangement(cl.getArrangement())
+                    .comment(cl.getComment())
+                    .roommateBoardLike(board.getRoommateBoardLike())
+                    .userId(writer.getId())
+                    .userName(writer.getName())
+                    .createDate(board.getCreatedDate())
+                    .isMatched(isMatched)
+                    .userProfileImageUrl(writerImg)
+                    .build();
+        }).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ResponseRoommateSimilarityDto> getSimilarRoommateBoardListScrollForMe(
+            HttpServletRequest request,
+            Long userId,
+            Integer lastPct,
+            Long lastBoardId,
+            int size
+    ) {
+        RoommateBoard myBoard = roommateBoardRepository.findByUserId(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
+
+        List<RoommateBoard> others = roommateBoardRepository.findAllByIdNot(myBoard.getId());
+
+        // 유사도 계산 + 정렬 (유사도 desc, id desc)
+        List<Map.Entry<RoommateBoard, Integer>> ranked = others.stream()
+                .map(b -> Map.entry(b, toPercent(calculateSimilarity(myBoard, b))))
+                .sorted((e1, e2) -> {
+                    int cmp = Integer.compare(e2.getValue(), e1.getValue()); // pct desc
+                    if (cmp != 0) return cmp;
+                    return Long.compare(e2.getKey().getId(), e1.getKey().getId()); // id desc
+                })
+                .toList();
+
+        // 커서 스킵
+        Stream<Map.Entry<RoommateBoard, Integer>> stream = ranked.stream();
+        if (lastPct != null && lastBoardId != null) {
+            stream = stream.dropWhile(e -> {
+                int pct = e.getValue();
+                long id = e.getKey().getId();
+
+                if (pct > lastPct) return true;   // 더 높은 유사도 → 스킵
+                if (pct < lastPct) return false;  // 더 낮은 유사도 → 시작
+                return id >= lastBoardId;         // 같은 유사도면 id 작은 것부터
+            });
+        }
+
+        // 페이지 사이즈만큼 가져오기
+        List<Map.Entry<RoommateBoard, Integer>> page = stream.limit(size).toList();
+
+        // DTO 변환
+        return page.stream().map(entry -> {
+            RoommateBoard board = entry.getKey();
+            int pct = entry.getValue();
+            String img = null;
+            try {
+                img = imageService.findUserImageUrlByUserId(board.getUser().getId(), request).getFileName();
+            } catch (Exception ignored) {}
+
+            RoommateCheckList cl = board.getRoommateCheckList();
+            User writer = board.getUser();
+            boolean isMatched = isRoommateBoardOwnerMatched(board.getId());
+
+            return ResponseRoommateSimilarityDto.builder()
+                    .boardId(board.getId())
+                    .title(cl.getTitle())
+                    .dormPeriod(DormDayUtil.sortDormDays(cl.getDormPeriod()))
+                    .dormType(writer.getDormType())
+                    .college(writer.getCollege())
+                    .religion(cl.getReligion())
+                    .mbti(cl.getMbti())
+                    .smoking(cl.getSmoking())
+                    .snoring(cl.getSnoring())
+                    .toothGrind(cl.getToothGrind())
+                    .sleeper(cl.getSleeper())
+                    .showerHour(cl.getShowerHour())
+                    .showerTime(cl.getShowerTime())
+                    .bedTime(cl.getBedTime())
+                    .arrangement(cl.getArrangement())
+                    .comment(cl.getComment())
+                    .similarityPercentage(pct)
+                    .roommateBoardLike(board.getRoommateBoardLike())
+                    .userId(writer.getId())
+                    .userName(writer.getName())
+                    .createdDate(board.getCreatedDate())
+                    .isMatched(isMatched)
+                    .userProfileImageUrl(img)
+                    .build();
+        }).toList();
+    }
+
+
+    private static int toPercent(double ratio) {
+        return (int) Math.round(ratio * 100.0);
+    }
+
+    // 필요시 네가 쓰던 12개 항목 비교식 그대로 사용
+    private double calculateSimilarity(RoommateBoard a, RoommateBoard b) {
+        var ac = a.getRoommateCheckList();
+        var bc = b.getRoommateCheckList();
+        int matches = 0, total = 12;
+
+        if (ac.getDormType() == bc.getDormType()) matches++;
+        if (ac.getCollege() == bc.getCollege()) matches++;
+        if (ac.getReligion() == bc.getReligion()) matches++;
+        if (ac.getMbti() != null && ac.getMbti().equals(bc.getMbti())) matches++;
+        if (ac.getSmoking() == bc.getSmoking()) matches++;
+        if (ac.getSnoring() == bc.getSnoring()) matches++;
+        if (ac.getToothGrind() == bc.getToothGrind()) matches++;
+        if (ac.getSleeper() == bc.getSleeper()) matches++;
+        if (ac.getShowerHour() == bc.getShowerHour()) matches++;
+        if (ac.getShowerTime() == bc.getShowerTime()) matches++;
+        if (ac.getBedTime() == bc.getBedTime()) matches++;
+        if (ac.getArrangement() == bc.getArrangement()) matches++;
+
+        return (total == 0) ? 0.0 : (double) matches / total;
+    }
+
 
 
 }
