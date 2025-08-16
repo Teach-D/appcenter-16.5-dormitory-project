@@ -89,6 +89,18 @@ public class GroupOrderController {
         return ResponseEntity.status(OK).body(groupOrderService.likeMinusGroupOrder(user.getId(), groupOrderId));
     }
 
+    @PatchMapping("/{groupOrderId}/completion")
+    public ResponseEntity<Void> completeGroupOrder(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderId) {
+        groupOrderService.completeGroupOrder(user.getId(), groupOrderId);
+        return ResponseEntity.status(OK).build();
+    }
+
+    @PatchMapping("/{groupOrderId}/unCompletion")
+    public ResponseEntity<Void> unCompleteGroupOrder(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderId) {
+        groupOrderService.unCompleteGroupOrder(user.getId(), groupOrderId);
+        return ResponseEntity.status(OK).build();
+    }
+
     @PutMapping("/{groupOrderId}")
     public ResponseEntity<ResponseGroupOrderDetailDto> updateGroupOrder(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderId, @Valid @RequestBody RequestGroupOrderDto requestGroupOrderDto) {
         return ResponseEntity.status(ACCEPTED).body(groupOrderService.updateGroupOrder(user.getId(), groupOrderId, requestGroupOrderDto));

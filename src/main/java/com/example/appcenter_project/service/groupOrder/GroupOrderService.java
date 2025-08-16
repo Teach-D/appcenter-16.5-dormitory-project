@@ -421,4 +421,14 @@ public class GroupOrderService {
                 .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
         groupOrder.getUser().addRating(ratingScore);
     }
+
+    public void completeGroupOrder(Long userId, Long groupOrderId) {
+        GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+        groupOrder.updateRecruitmentComplete(true);
+    }
+
+    public void unCompleteGroupOrder(Long userId, Long groupOrderId) {
+        GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+        groupOrder.updateRecruitmentComplete(false);
+    }
 }

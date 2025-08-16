@@ -200,4 +200,34 @@ public interface GroupOrderApiSpecification {
             @PathVariable Long groupOrderId,
             @PathVariable Float ratingScore
     );
+
+    @Operation(
+            summary = "공동구매 완료 처리",
+            description = "자신이 작성한 공동구매를 완료 상태로 변경합니다. 완료된 공동구매는 더 이상 참여할 수 없습니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "공동구매 완료 처리 성공"),
+                    @ApiResponse(responseCode = "403", description = "권한이 없는 사용자입니다. (작성자만 완료 처리 가능)"),
+                    @ApiResponse(responseCode = "404", description = "존재하지 않는 공동구매 또는 유저입니다."),
+                    @ApiResponse(responseCode = "409", description = "이미 완료된 공동구매입니다.")
+            }
+    )
+    ResponseEntity<Void> completeGroupOrder(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long groupOrderId
+    );
+
+    @Operation(
+            summary = "공동구매 완료 취소",
+            description = "자신이 작성한 완료된 공동구매를 다시 진행 중 상태로 변경합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "공동구매 완료 취소 성공"),
+                    @ApiResponse(responseCode = "403", description = "권한이 없는 사용자입니다. (작성자만 완료 취소 가능)"),
+                    @ApiResponse(responseCode = "404", description = "존재하지 않는 공동구매 또는 유저입니다."),
+                    @ApiResponse(responseCode = "409", description = "이미 진행 중인 공동구매입니다.")
+            }
+    )
+    ResponseEntity<Void> unCompleteGroupOrder(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long groupOrderId
+    );
 }
