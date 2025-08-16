@@ -38,9 +38,15 @@ public class GroupOrderController {
         return ResponseEntity.status(CREATED).build();
     }
 
+    @PostMapping("/{groupOrderId}/rating/{ratingScore}")
+    public ResponseEntity<Void> addRating(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderId, @PathVariable Float ratingScore) {
+        groupOrderService.addRating(user, groupOrderId, ratingScore);
+        return ResponseEntity.status(OK).build();
+    }
+
     @GetMapping("/{groupOrderId}")
-    public ResponseEntity<ResponseGroupOrderDetailDto> findGroupOrderById(@PathVariable Long groupOrderId) {
-        return ResponseEntity.status(OK).body(groupOrderService.findGroupOrderById(groupOrderId));
+    public ResponseEntity<ResponseGroupOrderDetailDto> findGroupOrderById(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderId) {
+        return ResponseEntity.status(OK).body(groupOrderService.findGroupOrderById(user, groupOrderId));
     }
 
     @GetMapping("/{groupOrderId}/images")

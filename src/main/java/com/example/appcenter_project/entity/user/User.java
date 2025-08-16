@@ -54,11 +54,18 @@ public class User extends BaseTimeEntity {
     private Role role;
 
     @ElementCollection
-    @CollectionTable(name = "search_logs", joinColumns =
+    @CollectionTable(name = "user_search_logs", joinColumns =
     @JoinColumn(name = "user_id")
     )
     @Column(name = "log")
     private List<String> searchLogs = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "user_ratings", joinColumns =
+    @JoinColumn(name = "user_id")
+    )
+    @Column(name = "rating")
+    private List<Float> ratings = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "image_id")
@@ -168,5 +175,18 @@ public class User extends BaseTimeEntity {
             searchLogs.remove(0); // 맨 앞(가장 오래된 것) 제거
         }
         searchLogs.add(searchLog); // 최신 검색어 추가
+    }
+
+    public void addRating(Float rating) {
+        ratings.add(rating);
+    }
+
+    public Float getAverageRating() {
+        Float sum = 0.0f;
+        for (Float rating : ratings) {
+            sum += rating;
+        }
+        Float average = sum / ratings.size();
+        return Math.round(average * 10.0f) / 10.0f;
     }
 }

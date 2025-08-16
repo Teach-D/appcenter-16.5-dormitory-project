@@ -183,4 +183,21 @@ public interface GroupOrderApiSpecification {
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long groupOrderId
     );
+
+    @Operation(
+            summary = "공동구매 평점 추가",
+            description = "완료된 공동구매에 대해 평점을 등록합니다. 평점은 0.0 ~ 5.0 사이의 값으로 입력해야 합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "평점 등록 성공"),
+                    @ApiResponse(responseCode = "400", description = "잘못된 평점 값입니다. (0.0 ~ 5.0 사이의 값을 입력해주세요)"),
+                    @ApiResponse(responseCode = "403", description = "유효하지 않은 토큰입니다."),
+                    @ApiResponse(responseCode = "404", description = "존재하지 않는 공동구매 또는 유저입니다."),
+                    @ApiResponse(responseCode = "409", description = "이미 평점을 등록한 공동구매입니다.")
+            }
+    )
+    ResponseEntity<Void> addRating(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long groupOrderId,
+            @PathVariable Float ratingScore
+    );
 }

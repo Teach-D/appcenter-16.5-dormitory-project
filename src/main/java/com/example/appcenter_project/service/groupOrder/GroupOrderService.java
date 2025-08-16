@@ -85,7 +85,7 @@ public class GroupOrderService {
         userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);
     }
 
-    public ResponseGroupOrderDetailDto findGroupOrderById(Long groupOrderId) {
+    public ResponseGroupOrderDetailDto findGroupOrderById(CustomUserDetails jwtUser, Long groupOrderId) {
         ResponseGroupOrderDetailDto flatDto = groupOrderMapper.findGroupOrderById(groupOrderId);
         if (flatDto == null) {
             throw new CustomException(GROUP_ORDER_NOT_FOUND);
@@ -118,6 +118,17 @@ public class GroupOrderService {
         }
 
         flatDto.updateGroupOrderCommentDtoList(topLevelComments);
+
+        // 해당 게시글의 작성자인지 검증
+        if (jwtUser != null) {
+            User user = userRepository.findById(jwtUser.getId()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+            Long flatDtoId = flatDto.getId();
+            GroupOrder groupOrder = groupOrderRepository.findById(flatDtoId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+            if (groupOrder.getUser().getId() == user.getId()) {
+                flatDto.updateIsMyPost(true);
+            }
+        }
+
         return flatDto;
     }
 
@@ -401,4 +412,13 @@ public class GroupOrderService {
         return user.getSearchLogs();
     }
 
+    public void addRating(CustomUserDetails user, Long groupOrderId, Float ratingScore) {
+        if (user == null) {
+            throw new CustomException(USER_NOT_FOUND);
+        }
+
+        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
+                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+        groupOrder.getUser().addRating(ratingScore);
+    }
 }
