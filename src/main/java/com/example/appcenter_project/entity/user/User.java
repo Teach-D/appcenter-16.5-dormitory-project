@@ -21,8 +21,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Entity
 @NoArgsConstructor
@@ -54,8 +53,12 @@ public class User extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    @Convert(converter = StringListConverter.class)
-    private List<String> searchLog;
+    @ElementCollection
+    @CollectionTable(name = "search_logs", joinColumns =
+    @JoinColumn(name = "user_id")
+    )
+    @Column(name = "log")
+    private List<String> searchLogs = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "image_id")
@@ -159,21 +162,11 @@ public class User extends BaseTimeEntity {
         this.groupOrderLikeList.remove(groupOrderLike);
     }
 
-    public void addSearchKeyword(String keyword) {
-        if (searchLog == null) {
-            searchLog = new ArrayList<>();
+    public void addSearchLog(String searchLog) {
+        searchLogs.remove(searchLog); // 중복 제거
+        if (searchLogs.size() >= 3) {
+            searchLogs.remove(0); // 맨 앞(가장 오래된 것) 제거
         }
-
-        // 기존에 있으면 삭제
-        searchLog.remove(keyword);
-        searchLog.add(keyword);
-
-        // 5개 초과 시, 가장 오래된 항목 제거
-        if (searchLog.size() > 5) {
-            searchLog.remove(0); // 맨 앞 요소 제거
-        }
+        searchLogs.add(searchLog); // 최신 검색어 추가
     }
-
-
-
 }

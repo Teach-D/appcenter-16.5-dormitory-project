@@ -253,7 +253,7 @@ public class GroupOrderService {
                     .ifPresent(keyword -> {
                         User user = userRepository.findById(jwtUser.getId())
                                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-                        user.addSearchKeyword(keyword);
+                        user.addSearchLog(keyword);
                     });
         }
 
@@ -398,7 +398,7 @@ public class GroupOrderService {
     public List<String> findGroupOrderSearchLog(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-        return user.getSearchLog();
+        return user.getSearchLogs();
     }
 
 }
