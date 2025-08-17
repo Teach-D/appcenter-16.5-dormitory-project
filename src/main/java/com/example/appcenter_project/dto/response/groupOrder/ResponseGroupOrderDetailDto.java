@@ -24,6 +24,7 @@ public class ResponseGroupOrderDetailDto {
     private int groupOrderLike;
     private String description;
     private String link;
+    private boolean isMyPost = false;
 
     @Builder.Default
     private List<Long> groupOrderLikeUserList = new ArrayList<>();
@@ -51,5 +52,9 @@ public class ResponseGroupOrderDetailDto {
 
     public void updateGroupOrderCommentDtoList(List<ResponseGroupOrderCommentDto> groupedList) {
         this.groupOrderCommentDtoList = groupedList;
+    }
+
+    public void updateIsMyPost(boolean b) {
+        this.isMyPost = b;
     }
 }

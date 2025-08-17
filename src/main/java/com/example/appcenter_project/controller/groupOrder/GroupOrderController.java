@@ -4,6 +4,7 @@ import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto
 import com.example.appcenter_project.dto.response.groupOrder.GroupOrderImageDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDetailDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
+import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderPopularSearch;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import com.example.appcenter_project.security.CustomUserDetails;
@@ -21,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.springframework.http.HttpStatus.*;
 
@@ -37,9 +39,15 @@ public class GroupOrderController {
         return ResponseEntity.status(CREATED).build();
     }
 
+    @PostMapping("/{groupOrderId}/rating/{ratingScore}")
+    public ResponseEntity<Void> addRating(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderId, @PathVariable Float ratingScore) {
+        groupOrderService.addRating(user, groupOrderId, ratingScore);
+        return ResponseEntity.status(OK).build();
+    }
+
     @GetMapping("/{groupOrderId}")
-    public ResponseEntity<ResponseGroupOrderDetailDto> findGroupOrderById(@PathVariable Long groupOrderId) {
-        return ResponseEntity.status(OK).body(groupOrderService.findGroupOrderById(groupOrderId));
+    public ResponseEntity<ResponseGroupOrderDetailDto> findGroupOrderById(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderId) {
+        return ResponseEntity.status(OK).body(groupOrderService.findGroupOrderById(user, groupOrderId));
     }
 
     @GetMapping("/{groupOrderId}/images")
@@ -67,9 +75,14 @@ public class GroupOrderController {
     @GetMapping
     public ResponseEntity<List<ResponseGroupOrderDto>> findGroupOrders(
             @AuthenticationPrincipal CustomUserDetails user,
-            @RequestParam(defaultValue = "DEADLINE") String sort, @RequestParam(defaultValue = "ALL") String type, @RequestParam(required = false) Optional<String> search
+            @RequestParam(defaultValue = "최신순") String sort, @RequestParam(defaultValue = "전체") String type, @RequestParam(required = false) Optional<String> search
     ) {
         return ResponseEntity.status(OK).body(groupOrderService.findGroupOrders(user, GroupOrderSort.from(sort), GroupOrderType.from(type), search));
+    }
+
+    @GetMapping("/popular-search")
+    public ResponseEntity<List<ResponseGroupOrderPopularSearch>> findGroupOrderPopularSearch() {
+        return ResponseEntity.status(OK).body(groupOrderService.findGroupOrderPopularSearch());
     }
 
     @PatchMapping("/{groupOrderId}/like")
@@ -80,6 +93,18 @@ public class GroupOrderController {
     @PatchMapping("/{groupOrderId}/unlike")
     public ResponseEntity<Integer> likeMinusGroupOrder(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderId) {
         return ResponseEntity.status(OK).body(groupOrderService.likeMinusGroupOrder(user.getId(), groupOrderId));
+    }
+
+    @PatchMapping("/{groupOrderId}/completion")
+    public ResponseEntity<Void> completeGroupOrder(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderId) {
+        groupOrderService.completeGroupOrder(user.getId(), groupOrderId);
+        return ResponseEntity.status(OK).build();
+    }
+
+    @PatchMapping("/{groupOrderId}/unCompletion")
+    public ResponseEntity<Void> unCompleteGroupOrder(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderId) {
+        groupOrderService.unCompleteGroupOrder(user.getId(), groupOrderId);
+        return ResponseEntity.status(OK).build();
     }
 
     @PutMapping("/{groupOrderId}")

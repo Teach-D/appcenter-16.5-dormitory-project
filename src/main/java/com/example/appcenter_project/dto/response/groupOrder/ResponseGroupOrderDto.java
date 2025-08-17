@@ -18,29 +18,30 @@ public class ResponseGroupOrderDto extends ResponseBoardDto {
     private int currentPeople;
     private int maxPeople;
     private GroupOrderType groupOrderType;
+    private boolean isRecruitmentComplete;
 
     public ResponseGroupOrderDto(Long id, String title, String type, int price, String link,
                                  int currentPeople, int maxPeople, String deadline,
-                                 int groupOrderLike, String description, LocalDateTime createTime, String fileName, String groupOrderType) {
+                                 int groupOrderLike, String description, LocalDateTime createTime, String fileName, String groupOrderType, boolean isRecruitmentComplete) {
         super(id, title, type, createTime, fileName);
         this.price = price;
         this.currentPeople = currentPeople;
         this.maxPeople = maxPeople;
         this.deadline = deadline;
         this.groupOrderType = GroupOrderType.valueOf(groupOrderType);
-        log.info("1",groupOrderType.toString());
+        this.isRecruitmentComplete  = isRecruitmentComplete;
     }
 
     @Builder
     public ResponseGroupOrderDto(Long id, String title, String type, LocalDateTime createTime, String fileName,
-                                 String deadline, int price, int currentPeople, int maxPeople, String groupOrderType) {
+                                 String deadline, int price, int currentPeople, int maxPeople, String groupOrderType, boolean isRecruitmentComplete) {
         super(id, title, type, createTime, fileName);
         this.deadline = deadline;
         this.price = price;
         this.currentPeople = currentPeople;
         this.maxPeople = maxPeople;
         this.groupOrderType = GroupOrderType.valueOf(groupOrderType);
-        log.info("2", groupOrderType.toString());
+        this.isRecruitmentComplete  = isRecruitmentComplete;
     }
 
     // Keep your existing entityToDto method unchanged

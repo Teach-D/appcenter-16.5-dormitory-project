@@ -15,6 +15,7 @@
         <result property="maxPeople" column="max_people"/>
         <result property="groupOrderType" column="group_order_type"/>
         <result property="deadline" column="deadline"/>
+        <result property="isRecruitmentComplete" column="recruitment_complete"/>
     </resultMap>
 
     <select id="findGroupOrders" resultMap="groupOrderResultMap">
@@ -31,7 +32,9 @@
         go.description,
         go.created_date as create_date,
         img.file_path,
-        go.group_order_type
+        go.group_order_type,
+        go.recruitment_complete
+
         FROM group_order go
         LEFT JOIN (
         SELECT *
@@ -57,7 +60,7 @@
                 ORDER BY go.price ASC
             </when>
             <when test="sort == 'POPULARITY'">
-                ORDER BY go.group_order_like DESC
+                ORDER BY go.group_order_view_count DESC
             </when>
             <otherwise>
                 ORDER BY go.deadline ASC

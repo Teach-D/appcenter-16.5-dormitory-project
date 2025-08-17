@@ -26,7 +26,7 @@ public enum GroupOrderType {
                 return type;
             }
         }
-        throw new IllegalArgumentException("Invalid BedTimeType: " + value);
+        throw new IllegalArgumentException("Invalid GroupOrderType: " + value);
     }
 
     @JsonValue

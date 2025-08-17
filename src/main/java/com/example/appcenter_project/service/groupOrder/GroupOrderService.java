@@ -1,15 +1,9 @@
 package com.example.appcenter_project.service.groupOrder;
 
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
-import com.example.appcenter_project.dto.response.groupOrder.GroupOrderImageDto;
-import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderCommentDto;
-import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDetailDto;
-import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
+import com.example.appcenter_project.dto.response.groupOrder.*;
 import com.example.appcenter_project.entity.Image;
-import com.example.appcenter_project.entity.groupOrder.GroupOrder;
-import com.example.appcenter_project.entity.groupOrder.GroupOrderChatRoom;
-import com.example.appcenter_project.entity.groupOrder.GroupOrderComment;
-import com.example.appcenter_project.entity.groupOrder.UserGroupOrderChatRoom;
+import com.example.appcenter_project.entity.groupOrder.*;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
 import com.example.appcenter_project.entity.like.TipLike;
 import com.example.appcenter_project.entity.user.User;
@@ -18,10 +12,7 @@ import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.mapper.GroupOrderMapper;
-import com.example.appcenter_project.repository.groupOrder.GroupOrderChatRoomRepository;
-import com.example.appcenter_project.repository.groupOrder.GroupOrderCommentRepository;
-import com.example.appcenter_project.repository.groupOrder.GroupOrderRepository;
-import com.example.appcenter_project.repository.groupOrder.UserGroupOrderChatRoomRepository;
+import com.example.appcenter_project.repository.groupOrder.*;
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.like.GroupOrderLikeRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
@@ -58,6 +49,7 @@ public class GroupOrderService {
     private final GroupOrderCommentRepository groupOrderCommentRepository;
     private final ImageRepository imageRepository;
     private final GroupOrderMapper groupOrderMapper;
+    private final GroupOrderPopularSearchKeywordRepository groupOrderPopularSearchKeywordRepository;
 
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto) {
         // GroupOrder 저장
@@ -85,7 +77,7 @@ public class GroupOrderService {
         userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);
     }
 
-    public ResponseGroupOrderDetailDto findGroupOrderById(Long groupOrderId) {
+    public ResponseGroupOrderDetailDto findGroupOrderById(CustomUserDetails jwtUser, Long groupOrderId) {
         ResponseGroupOrderDetailDto flatDto = groupOrderMapper.findGroupOrderById(groupOrderId);
         if (flatDto == null) {
             throw new CustomException(GROUP_ORDER_NOT_FOUND);
@@ -118,6 +110,17 @@ public class GroupOrderService {
         }
 
         flatDto.updateGroupOrderCommentDtoList(topLevelComments);
+
+        // 해당 게시글의 작성자인지 검증
+        if (jwtUser != null) {
+            User user = userRepository.findById(jwtUser.getId()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+            Long flatDtoId = flatDto.getId();
+            GroupOrder groupOrder = groupOrderRepository.findById(flatDtoId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+            if (groupOrder.getUser().getId() == user.getId()) {
+                flatDto.updateIsMyPost(true);
+            }
+        }
+
         return flatDto;
     }
 
@@ -253,9 +256,24 @@ public class GroupOrderService {
                     .ifPresent(keyword -> {
                         User user = userRepository.findById(jwtUser.getId())
                                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-                        user.addSearchKeyword(keyword);
+                        user.addSearchLog(keyword);
                     });
         }
+
+        search.filter(s -> !s.isBlank())
+                .ifPresent(keyword -> {
+                    if (groupOrderPopularSearchKeywordRepository.existsByKeyword(keyword)) {
+                        GroupOrderPopularSearchKeyword groupOrderPopularSearchKeyword =
+                                groupOrderPopularSearchKeywordRepository.findByKeyword(keyword);
+                        groupOrderPopularSearchKeyword.plusSearchCount();
+                    } else {
+                        GroupOrderPopularSearchKeyword build = GroupOrderPopularSearchKeyword.builder()
+                                .keyword(keyword)
+                                .searchCount(1)
+                                .build();
+                        groupOrderPopularSearchKeywordRepository.save(build);
+                    }
+                });
 
         // 공통 조건 처리
         String searchKeyword = search.filter(s -> !s.isBlank()).orElse(null);
@@ -398,7 +416,39 @@ public class GroupOrderService {
     public List<String> findGroupOrderSearchLog(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-        return user.getSearchLog();
+        return user.getSearchLogs();
     }
 
+    public void addRating(CustomUserDetails user, Long groupOrderId, Float ratingScore) {
+        if (user == null) {
+            throw new CustomException(USER_NOT_FOUND);
+        }
+
+        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
+                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+        groupOrder.getUser().addRating(ratingScore);
+    }
+
+    public void completeGroupOrder(Long userId, Long groupOrderId) {
+        GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+        groupOrder.updateRecruitmentComplete(true);
+    }
+
+    public void unCompleteGroupOrder(Long userId, Long groupOrderId) {
+        GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+        groupOrder.updateRecruitmentComplete(false);
+    }
+
+    public List<ResponseGroupOrderPopularSearch> findGroupOrderPopularSearch() {
+        int index = 1;
+        List<ResponseGroupOrderPopularSearch> responseGroupOrderPopularSearchList = new ArrayList<>();
+        List<GroupOrderPopularSearchKeyword> top10Popular = groupOrderPopularSearchKeywordRepository.findTop10Popular();
+        for (GroupOrderPopularSearchKeyword groupOrderPopularSearchKeyword : top10Popular) {
+            ResponseGroupOrderPopularSearch responseGroupOrderPopularSearch = new ResponseGroupOrderPopularSearch(index, groupOrderPopularSearchKeyword.getKeyword());
+            responseGroupOrderPopularSearchList.add(responseGroupOrderPopularSearch);
+            index += 1;
+        }
+
+        return responseGroupOrderPopularSearchList;
+    }
 }
