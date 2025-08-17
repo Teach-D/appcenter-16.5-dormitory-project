@@ -100,6 +100,8 @@ public class GroupOrderService {
                 comment.updateReply("삭제된 메시지입니다.");
             }
 
+            comment.updateCommentAuthorImagePath(imageService.findUserImageUrlByUserId(comment.getUserId(), request).getFileName());
+
             // 계층 구조 구성
             if (comment.getParentId() == null) {
                 comment.updateChildGroupOrderCommentList(new ArrayList<>());
