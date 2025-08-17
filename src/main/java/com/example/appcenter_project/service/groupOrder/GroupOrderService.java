@@ -632,7 +632,7 @@ public class GroupOrderService {
     public List<ResponseGroupOrderPopularSearch> findGroupOrderPopularSearch() {
         int index = 1;
         List<ResponseGroupOrderPopularSearch> responseGroupOrderPopularSearchList = new ArrayList<>();
-        List<GroupOrderPopularSearchKeyword> top10Popular = groupOrderPopularSearchKeywordRepository.findTop10Popular();
+        List<GroupOrderPopularSearchKeyword> top10Popular = groupOrderPopularSearchKeywordRepository.findTop10ByOrderBySearchCountDesc();
         for (GroupOrderPopularSearchKeyword groupOrderPopularSearchKeyword : top10Popular) {
             ResponseGroupOrderPopularSearch responseGroupOrderPopularSearch = new ResponseGroupOrderPopularSearch(index, groupOrderPopularSearchKeyword.getKeyword());
             responseGroupOrderPopularSearchList.add(responseGroupOrderPopularSearch);
