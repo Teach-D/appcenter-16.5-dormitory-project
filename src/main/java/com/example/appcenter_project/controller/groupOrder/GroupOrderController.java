@@ -2,7 +2,6 @@ package com.example.appcenter_project.controller.groupOrder;
 
 import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
-import com.example.appcenter_project.dto.response.groupOrder.GroupOrderImageDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDetailDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderPopularSearch;
@@ -13,25 +12,21 @@ import com.example.appcenter_project.service.groupOrder.GroupOrderService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.springframework.http.HttpStatus.*;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/group-orders")
-public class GroupOrderController {
+public class GroupOrderController implements GroupOrderApiSpecification {
 
     private final GroupOrderService groupOrderService;
 
@@ -66,7 +61,7 @@ public class GroupOrderController {
     @GetMapping
     public ResponseEntity<List<ResponseGroupOrderDto>> findGroupOrders(
             @AuthenticationPrincipal CustomUserDetails user,
-            @RequestParam(defaultValue = "최신순") String sort, @RequestParam(defaultValue = "전체") String type, @RequestParam(required = false) Optional<String> search,
+            @RequestParam(defaultValue = "마감임박순") String sort, @RequestParam(defaultValue = "전체") String type, @RequestParam(required = false) Optional<String> search,
             HttpServletRequest request
     ) {
         return ResponseEntity.status(OK).body(groupOrderService.findGroupOrders(user, GroupOrderSort.from(sort), GroupOrderType.from(type), search, request));
