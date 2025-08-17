@@ -27,6 +27,7 @@ public class ResponseGroupOrderDetailDto {
     private boolean isMyPost = false;
     private String authorImagePath;
     private boolean isCheckLikeCurrentUser = false;
+    private float authorRating = 5.0f;
 
     @Builder.Default
     private List<Long> groupOrderLikeUserList = new ArrayList<>();
@@ -68,4 +69,7 @@ public class ResponseGroupOrderDetailDto {
         this.isCheckLikeCurrentUser = check;
     }
 
+    public void updateAuthorRating(float rating) {
+        this.authorRating = rating;
+    }
 }

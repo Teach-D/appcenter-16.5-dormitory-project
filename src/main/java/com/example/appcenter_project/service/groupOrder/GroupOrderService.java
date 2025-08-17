@@ -145,6 +145,10 @@ public class GroupOrderService {
         // 게시글 조회 수 증가
         groupOrder.plusViewCount();
 
+        // 게시글 작성자의 평점 조회
+        Float averageRating = groupOrder.getUser().getAverageRating();
+        flatDto.updateAuthorRating(averageRating);
+
         return flatDto;
     }
 
