@@ -5,7 +5,6 @@ import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cglib.core.Local;
 
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
@@ -28,8 +27,9 @@ public class ResponseGroupOrderDto extends ResponseBoardDto {
         this.currentPeople = currentPeople;
         this.maxPeople = maxPeople;
         this.deadline = deadline;
-        this.groupOrderType = GroupOrderType.valueOf(groupOrderType);
-        this.isRecruitmentComplete  = isRecruitmentComplete;
+        // from() 메서드를 사용하여 안전하게 변환
+        this.groupOrderType = GroupOrderType.from(groupOrderType);
+        this.isRecruitmentComplete = isRecruitmentComplete;
     }
 
     @Builder
@@ -40,14 +40,20 @@ public class ResponseGroupOrderDto extends ResponseBoardDto {
         this.price = price;
         this.currentPeople = currentPeople;
         this.maxPeople = maxPeople;
-        this.groupOrderType = GroupOrderType.valueOf(groupOrderType);
-        this.isRecruitmentComplete  = isRecruitmentComplete;
+        // from() 메서드를 사용하여 안전하게 변환
+        this.groupOrderType = GroupOrderType.from(groupOrderType);
+        this.isRecruitmentComplete = isRecruitmentComplete;
     }
 
     // Keep your existing entityToDto method unchanged
     public static ResponseGroupOrderDto entityToDto(GroupOrder groupOrder) {
         String fullPath = groupOrder.getImageList().get(0).getFilePath();
         String fileName = extractFileName(fullPath);
+
+        // groupOrderType이 null인 경우 기본값 설정
+        String groupOrderTypeStr = groupOrder.getGroupOrderType() != null
+                ? groupOrder.getGroupOrderType().name()
+                : GroupOrderType.ETC.name();
 
         return ResponseGroupOrderDto.builder()
                 .id(groupOrder.getId())
@@ -59,6 +65,8 @@ public class ResponseGroupOrderDto extends ResponseBoardDto {
                 .maxPeople(groupOrder.getMaxPeople())
                 .createTime(groupOrder.getCreatedDate())
                 .fileName(fileName)
+                .groupOrderType(groupOrderTypeStr)
+                .isRecruitmentComplete(groupOrder.isRecruitmentComplete())
                 .build();
     }
 
