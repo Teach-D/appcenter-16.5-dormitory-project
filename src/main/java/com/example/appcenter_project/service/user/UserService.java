@@ -23,6 +23,7 @@ import com.example.appcenter_project.enums.user.Role;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.mapper.GroupOrderMapper;
 import com.example.appcenter_project.mapper.TipMapper;
+import com.example.appcenter_project.repository.groupOrder.GroupOrderRepository;
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.like.GroupOrderLikeRepository;
 import com.example.appcenter_project.repository.like.RoommateBoardLikeRepository;
@@ -62,6 +63,7 @@ public class UserService {
     private final TipMapper tipMapper;
     private final RoommateBoardLikeRepository roommateBoardLikeRepository;
     private final TipLikeRepository tipLikeRepository;
+    private final GroupOrderRepository groupOrderRepository;
 
     public ResponseLoginDto saveUser(SignupUser signupUser) {
         boolean existsByStudentNumber = userRepository.existsByStudentNumber(signupUser.getStudentNumber());
@@ -178,8 +180,18 @@ public class UserService {
             responseTipDtos.add(responseTipDto);
         }
 
+        List<ResponseGroupOrderDto> responseGroupOrderDtos = new ArrayList<>();
+        List<GroupOrderLike> groupOrderLikes = groupOrderLikeRepository.findByUser_Id(userId);
+        for (GroupOrderLike groupOrderLike : groupOrderLikes) {
+            GroupOrder groupOrder = groupOrderLike.getGroupOrder();
+            ResponseGroupOrderDto responseGroupOrderDto = ResponseGroupOrderDto.entityToDto(groupOrder);
+            responseGroupOrderDtos.add(responseGroupOrderDto);
+        }
+
+        responseBoardDtoList.addAll(responseGroupOrderDtos);
         responseBoardDtoList.addAll(responseLikeDtoList);
         responseBoardDtoList.addAll(responseTipDtos);
+
         log.info("[findLikeByUserId] 총 좋아요 게시물 수: {}", responseBoardDtoList.size());
 
         // 로그 추가로 디버깅
@@ -212,6 +224,14 @@ public class UserService {
         List<ResponseTipDto> tipsByUserId = tipMapper.findTipsByUserId(userId);
         log.info("[findBoardByUserId] Tip 게시물 개수: {}", tipsByUserId.size());
 
+        List<ResponseGroupOrderDto> responseGroupOrderDtos = new ArrayList<>();
+        List<GroupOrder> groupOrders = groupOrderRepository.findByUserId(userId);
+        for (GroupOrder groupOrder : groupOrders) {
+            ResponseGroupOrderDto responseGroupOrderDto = ResponseGroupOrderDto.entityToDto(groupOrder);
+            responseGroupOrderDtos.add(responseGroupOrderDto);
+        }
+
+        responseBoardDtoList.addAll(responseGroupOrderDtos);
         responseBoardDtoList.addAll(groupOrdersByUserId);
         responseBoardDtoList.addAll(tipsByUserId);
 
