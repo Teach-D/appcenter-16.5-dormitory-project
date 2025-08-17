@@ -12,4 +12,5 @@ public interface GroupOrderLikeRepository extends JpaRepository<GroupOrderLike, 
     List<GroupOrderLike> findByUser_Id(Long userId);
     boolean existsByUserAndGroupOrder(User user, GroupOrder groupOrder);
     Optional<GroupOrderLike> findByUserAndGroupOrder(User user, GroupOrder groupOrder);
+    boolean existsByUserIdAndGroupOrderId(Long userId, Long groupOrderId);
 }
