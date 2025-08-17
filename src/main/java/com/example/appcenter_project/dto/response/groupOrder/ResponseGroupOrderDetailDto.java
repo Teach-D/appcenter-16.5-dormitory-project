@@ -26,6 +26,7 @@ public class ResponseGroupOrderDetailDto {
     private String link;
     private boolean isMyPost = false;
     private String authorImagePath;
+    private boolean isCheckLikeCurrentUser = false;
 
     @Builder.Default
     private List<Long> groupOrderLikeUserList = new ArrayList<>();
@@ -62,4 +63,9 @@ public class ResponseGroupOrderDetailDto {
     public void updateAuthorImagePath(String imagePath) {
         this.authorImagePath = imagePath;
     }
+
+    public void updateIsCheckLikeCurrentUser(boolean check) {
+        this.isCheckLikeCurrentUser = check;
+    }
+
 }

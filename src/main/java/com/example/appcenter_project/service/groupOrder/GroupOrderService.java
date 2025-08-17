@@ -133,6 +133,16 @@ public class GroupOrderService {
             flatDto.updateAuthorImagePath(userImageUrl);
         }
 
+        // 해당 글을 좋아요 눌렀는지 검증
+        if (jwtUser != null) {
+            User user = userRepository.findById(jwtUser.getId()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+            if (groupOrderLikeRepository.existsByUserIdAndGroupOrderId(user.getId(), groupOrderId)) {
+                flatDto.updateIsCheckLikeCurrentUser(true);
+            } else {
+                flatDto.updateIsCheckLikeCurrentUser(false);
+            }
+        }
+
         return flatDto;
     }
 
