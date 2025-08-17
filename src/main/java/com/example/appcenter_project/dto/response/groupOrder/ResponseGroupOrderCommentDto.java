@@ -1,5 +1,6 @@
 package com.example.appcenter_project.dto.response.groupOrder;
 
+import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.entity.groupOrder.GroupOrderComment;
 import com.example.appcenter_project.entity.user.User;
 import lombok.*;
@@ -18,6 +19,7 @@ public class ResponseGroupOrderCommentDto {
     private String reply;
     private Long parentId;
     private Boolean isDeleted;
+    private String commentAuthorImagePath;
 
     @Builder.Default
     private List<ResponseGroupOrderCommentDto> childGroupOrderCommentList = new ArrayList<>();
@@ -36,5 +38,9 @@ public class ResponseGroupOrderCommentDto {
 
     public void updateChildGroupOrderCommentList(List childGroupOrderCommentList) {
         this.childGroupOrderCommentList = childGroupOrderCommentList;
+    }
+
+    public void updateCommentAuthorImagePath(String commentAuthorImagePath) {
+        this.commentAuthorImagePath = commentAuthorImagePath;
     }
 }
