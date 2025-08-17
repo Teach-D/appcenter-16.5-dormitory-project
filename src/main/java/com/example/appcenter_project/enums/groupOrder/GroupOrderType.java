@@ -20,13 +20,19 @@ public enum GroupOrderType {
 
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public static GroupOrderType from(String value) {
+        // null 또는 빈 문자열인 경우 기본값 반환
+        if (value == null || value.trim().isEmpty()) {
+            return ETC;
+        }
+
         for (GroupOrderType type : GroupOrderType.values()) {
             // 한글 설명 또는 enum name(대소문자 무시) 둘 다 허용
             if (type.getDescription().equals(value) || type.name().equalsIgnoreCase(value)) {
                 return type;
             }
         }
-        throw new IllegalArgumentException("Invalid GroupOrderType: " + value);
+        // 일치하는 값이 없는 경우 기본값 반환 (예외 대신)
+        return ETC;
     }
 
     @JsonValue

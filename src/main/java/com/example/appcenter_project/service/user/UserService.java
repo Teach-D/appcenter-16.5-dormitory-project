@@ -219,8 +219,6 @@ public class UserService {
 
         List<ResponseBoardDto> responseBoardDtoList = new ArrayList<>();
 
-        List<ResponseGroupOrderDto> groupOrdersByUserId = groupOrderMapper.findGroupOrdersByUserId(userId);
-
         List<ResponseTipDto> tipsByUserId = tipMapper.findTipsByUserId(userId);
         log.info("[findBoardByUserId] Tip 게시물 개수: {}", tipsByUserId.size());
 
@@ -232,7 +230,6 @@ public class UserService {
         }
 
         responseBoardDtoList.addAll(responseGroupOrderDtos);
-        responseBoardDtoList.addAll(groupOrdersByUserId);
         responseBoardDtoList.addAll(tipsByUserId);
 
         // 최신순 정렬 (createTime이 가장 최근인 것부터)
