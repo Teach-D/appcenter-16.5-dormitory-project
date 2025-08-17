@@ -117,12 +117,11 @@ public class GroupOrderService {
         }
 
         flatDto.updateGroupOrderCommentDtoList(topLevelComments);
+        GroupOrder groupOrder = groupOrderRepository.findById(flatDto.getId()).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
 
         // 해당 게시글의 작성자인지 검증
         if (jwtUser != null) {
             User user = userRepository.findById(jwtUser.getId()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-            Long flatDtoId = flatDto.getId();
-            GroupOrder groupOrder = groupOrderRepository.findById(flatDtoId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
             if (groupOrder.getUser().getId() == user.getId()) {
                 flatDto.updateIsMyPost(true);
             }
@@ -142,6 +141,9 @@ public class GroupOrderService {
                 flatDto.updateIsCheckLikeCurrentUser(false);
             }
         }
+
+        // 게시글 조회 수 증가
+        groupOrder.plusViewCount();
 
         return flatDto;
     }
@@ -632,7 +634,7 @@ public class GroupOrderService {
     public List<ResponseGroupOrderPopularSearch> findGroupOrderPopularSearch() {
         int index = 1;
         List<ResponseGroupOrderPopularSearch> responseGroupOrderPopularSearchList = new ArrayList<>();
-        List<GroupOrderPopularSearchKeyword> top10Popular = groupOrderPopularSearchKeywordRepository.findTop10Popular();
+        List<GroupOrderPopularSearchKeyword> top10Popular = groupOrderPopularSearchKeywordRepository.findTop10ByOrderBySearchCountDesc();
         for (GroupOrderPopularSearchKeyword groupOrderPopularSearchKeyword : top10Popular) {
             ResponseGroupOrderPopularSearch responseGroupOrderPopularSearch = new ResponseGroupOrderPopularSearch(index, groupOrderPopularSearchKeyword.getKeyword());
             responseGroupOrderPopularSearchList.add(responseGroupOrderPopularSearch);

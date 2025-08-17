@@ -9,8 +9,7 @@ import java.util.Optional;
 
 public interface GroupOrderPopularSearchKeywordRepository extends JpaRepository<GroupOrderPopularSearchKeyword, Long> {
 
-    @Query("select g from GroupOrderPopularSearchKeyword g order by g.searchCount desc limit 10")
-    List<GroupOrderPopularSearchKeyword> findTop10Popular();
+    List<GroupOrderPopularSearchKeyword> findTop10ByOrderBySearchCountDesc();
 
     boolean existsByKeyword(String keyword);
 
