@@ -78,4 +78,5 @@ public class ResponseGroupOrderDto extends ResponseBoardDto {
 
         return Paths.get(fullPath).getFileName().toString();
     }
+
 }

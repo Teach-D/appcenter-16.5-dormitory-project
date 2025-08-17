@@ -25,6 +25,7 @@ public class ResponseGroupOrderDetailDto {
     private String description;
     private String link;
     private boolean isMyPost = false;
+    private String authorImagePath;
 
     @Builder.Default
     private List<Long> groupOrderLikeUserList = new ArrayList<>();
@@ -56,5 +57,9 @@ public class ResponseGroupOrderDetailDto {
 
     public void updateIsMyPost(boolean b) {
         this.isMyPost = b;
+    }
+
+    public void updateAuthorImagePath(String imagePath) {
+        this.authorImagePath = imagePath;
     }
 }
