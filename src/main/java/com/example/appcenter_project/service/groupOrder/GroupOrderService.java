@@ -1,15 +1,9 @@
 package com.example.appcenter_project.service.groupOrder;
 
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
-import com.example.appcenter_project.dto.response.groupOrder.GroupOrderImageDto;
-import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderCommentDto;
-import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDetailDto;
-import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
+import com.example.appcenter_project.dto.response.groupOrder.*;
 import com.example.appcenter_project.entity.Image;
-import com.example.appcenter_project.entity.groupOrder.GroupOrder;
-import com.example.appcenter_project.entity.groupOrder.GroupOrderChatRoom;
-import com.example.appcenter_project.entity.groupOrder.GroupOrderComment;
-import com.example.appcenter_project.entity.groupOrder.UserGroupOrderChatRoom;
+import com.example.appcenter_project.entity.groupOrder.*;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
 import com.example.appcenter_project.entity.like.TipLike;
 import com.example.appcenter_project.entity.user.User;
@@ -18,10 +12,7 @@ import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.mapper.GroupOrderMapper;
-import com.example.appcenter_project.repository.groupOrder.GroupOrderChatRoomRepository;
-import com.example.appcenter_project.repository.groupOrder.GroupOrderCommentRepository;
-import com.example.appcenter_project.repository.groupOrder.GroupOrderRepository;
-import com.example.appcenter_project.repository.groupOrder.UserGroupOrderChatRoomRepository;
+import com.example.appcenter_project.repository.groupOrder.*;
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.like.GroupOrderLikeRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
@@ -58,6 +49,7 @@ public class GroupOrderService {
     private final GroupOrderCommentRepository groupOrderCommentRepository;
     private final ImageRepository imageRepository;
     private final GroupOrderMapper groupOrderMapper;
+    private final GroupOrderPopularSearchKeywordRepository groupOrderPopularSearchKeywordRepository;
 
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto) {
         // GroupOrder 저장
@@ -268,6 +260,16 @@ public class GroupOrderService {
                     });
         }
 
+        if (search.get() != null) {
+            if (groupOrderPopularSearchKeywordRepository.existsByKeyword(search.get())) {
+                GroupOrderPopularSearchKeyword groupOrderPopularSearchKeyword = groupOrderPopularSearchKeywordRepository.findByKeyword(search.get());
+                groupOrderPopularSearchKeyword.plusSearchCount();
+            } else {
+                GroupOrderPopularSearchKeyword build = GroupOrderPopularSearchKeyword.builder().keyword(search.get()).searchCount(1).build();
+                groupOrderPopularSearchKeywordRepository.save(build);
+            }
+        }
+
         // 공통 조건 처리
         String searchKeyword = search.filter(s -> !s.isBlank()).orElse(null);
         String sortParam = sort.name();
@@ -430,5 +432,18 @@ public class GroupOrderService {
     public void unCompleteGroupOrder(Long userId, Long groupOrderId) {
         GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
         groupOrder.updateRecruitmentComplete(false);
+    }
+
+    public List<ResponseGroupOrderPopularSearch> findGroupOrderPopularSearch() {
+        int index = 1;
+        List<ResponseGroupOrderPopularSearch> responseGroupOrderPopularSearchList = new ArrayList<>();
+        List<GroupOrderPopularSearchKeyword> top10Popular = groupOrderPopularSearchKeywordRepository.findTop10Popular();
+        for (GroupOrderPopularSearchKeyword groupOrderPopularSearchKeyword : top10Popular) {
+            ResponseGroupOrderPopularSearch responseGroupOrderPopularSearch = new ResponseGroupOrderPopularSearch(index, groupOrderPopularSearchKeyword.getKeyword());
+            responseGroupOrderPopularSearchList.add(responseGroupOrderPopularSearch);
+            index += 1;
+        }
+
+        return responseGroupOrderPopularSearchList;
     }
 }

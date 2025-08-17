@@ -4,6 +4,7 @@ import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto
 import com.example.appcenter_project.dto.response.groupOrder.GroupOrderImageDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDetailDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
+import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderPopularSearch;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import com.example.appcenter_project.security.CustomUserDetails;
@@ -77,6 +78,11 @@ public class GroupOrderController {
             @RequestParam(defaultValue = "DEADLINE") String sort, @RequestParam(defaultValue = "ALL") String type, @RequestParam(required = false) Optional<String> search
     ) {
         return ResponseEntity.status(OK).body(groupOrderService.findGroupOrders(user, GroupOrderSort.from(sort), GroupOrderType.from(type), search));
+    }
+
+    @GetMapping("/popular-search")
+    public ResponseEntity<List<ResponseGroupOrderPopularSearch>> findGroupOrderPopularSearch() {
+        return ResponseEntity.status(OK).body(groupOrderService.findGroupOrderPopularSearch());
     }
 
     @PatchMapping("/{groupOrderId}/like")
