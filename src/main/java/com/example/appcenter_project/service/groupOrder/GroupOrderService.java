@@ -260,15 +260,20 @@ public class GroupOrderService {
                     });
         }
 
-        if (search.get() != null) {
-            if (groupOrderPopularSearchKeywordRepository.existsByKeyword(search.get())) {
-                GroupOrderPopularSearchKeyword groupOrderPopularSearchKeyword = groupOrderPopularSearchKeywordRepository.findByKeyword(search.get());
-                groupOrderPopularSearchKeyword.plusSearchCount();
-            } else {
-                GroupOrderPopularSearchKeyword build = GroupOrderPopularSearchKeyword.builder().keyword(search.get()).searchCount(1).build();
-                groupOrderPopularSearchKeywordRepository.save(build);
-            }
-        }
+        search.filter(s -> !s.isBlank())
+                .ifPresent(keyword -> {
+                    if (groupOrderPopularSearchKeywordRepository.existsByKeyword(keyword)) {
+                        GroupOrderPopularSearchKeyword groupOrderPopularSearchKeyword =
+                                groupOrderPopularSearchKeywordRepository.findByKeyword(keyword);
+                        groupOrderPopularSearchKeyword.plusSearchCount();
+                    } else {
+                        GroupOrderPopularSearchKeyword build = GroupOrderPopularSearchKeyword.builder()
+                                .keyword(keyword)
+                                .searchCount(1)
+                                .build();
+                        groupOrderPopularSearchKeywordRepository.save(build);
+                    }
+                });
 
         // 공통 조건 처리
         String searchKeyword = search.filter(s -> !s.isBlank()).orElse(null);

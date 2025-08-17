@@ -60,7 +60,7 @@
                 ORDER BY go.price ASC
             </when>
             <when test="sort == 'POPULARITY'">
-                ORDER BY go.group_order_like DESC
+                ORDER BY go.group_order_view_count DESC
             </when>
             <otherwise>
                 ORDER BY go.deadline ASC

@@ -75,7 +75,7 @@ public class GroupOrderController {
     @GetMapping
     public ResponseEntity<List<ResponseGroupOrderDto>> findGroupOrders(
             @AuthenticationPrincipal CustomUserDetails user,
-            @RequestParam(defaultValue = "DEADLINE") String sort, @RequestParam(defaultValue = "ALL") String type, @RequestParam(required = false) Optional<String> search
+            @RequestParam(defaultValue = "최신순") String sort, @RequestParam(defaultValue = "전체") String type, @RequestParam(required = false) Optional<String> search
     ) {
         return ResponseEntity.status(OK).body(groupOrderService.findGroupOrders(user, GroupOrderSort.from(sort), GroupOrderType.from(type), search));
     }
