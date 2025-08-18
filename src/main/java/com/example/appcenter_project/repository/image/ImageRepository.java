@@ -19,11 +19,11 @@ public interface ImageRepository extends JpaRepository<Image, Long> {
     Optional<Image> findByBoardIdAndImageType(Long boardId, ImageType imageType);
     List<Image> findAllByBoardIdAndImageType(Long boardId, ImageType imageType);
 
-    @Query("SELECT i FROM Image i WHERE i.imageType = 'TIP' AND i.boardId IN :boardIds ORDER BY i.id")
+    @Query("SELECT i FROM Image i WHERE i.imageType = 'TIP' AND i.boardId IN :boardIds")
     List<Image> findTipImagesByBoardIds(@Param("boardIds") List<Long> boardIds);
 
     // GroupOrder 이미지 관련 메서드 추가
-    @Query("SELECT i FROM Image i WHERE i.imageType = 'GROUP_ORDER' AND i.boardId IN :boardIds ORDER BY i.id")
+    @Query("SELECT i FROM Image i WHERE i.imageType = 'GROUP_ORDER' AND i.boardId IN :boardIds")
     List<Image> findGroupOrderImagesByBoardIds(@Param("boardIds") List<Long> boardIds);
 
 }
