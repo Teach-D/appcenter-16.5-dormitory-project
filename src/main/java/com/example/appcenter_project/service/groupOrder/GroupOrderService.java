@@ -241,37 +241,42 @@ public class GroupOrderService {
         List<ImageLinkDto> imageLinkDtos = new ArrayList<>();
 
         for (Image image : imageList) {
-            File file = new File(image.getFilePath());
-            log.info("Checking group-order image file: {}", image.getFilePath());
-            log.info("File exists: {}", file.exists());
-
-            if (!file.exists()) {
-                log.error("GroupOrder image file not found: {}", image.getFilePath());
-                throw new CustomException(IMAGE_NOT_FOUND);
-            }
-
-            // 이미지 URL 생성
-            String baseUrl = getBaseUrl(request);
-            String imageUrl = baseUrl + "/api/images/group-order/" + image.getId();
-
-            // 정적 리소스 URL 생성
-            String staticImageUrl = getStaticGroupOrderImageUrl(image.getFilePath(), baseUrl);
-            String changeUrl = staticImageUrl.replace("http", "https");
-
-            // 안전한 컨텐츠 타입 확인
-            String contentType = getSafeContentType(file);
-
-            ImageLinkDto imageLinkDto = ImageLinkDto.builder()
-                    .imageUrl(imageUrl)
-                    .fileName(changeUrl)
-                    .contentType(contentType)
-                    .fileSize(file.length())
-                    .build();
-
-            imageLinkDtos.add(imageLinkDto);
+            ImageLinkDto groupOrderImage = getGroupOrderImage(image, request);
+            imageLinkDtos.add(groupOrderImage);
         }
 
         return imageLinkDtos;
+    }
+
+    public ImageLinkDto getGroupOrderImage(Image image, HttpServletRequest request) {
+        File file = new File(image.getFilePath());
+        log.info("Checking group-order image file: {}", image.getFilePath());
+        log.info("File exists: {}", file.exists());
+
+        if (!file.exists()) {
+            log.error("GroupOrder image file not found: {}", image.getFilePath());
+            throw new CustomException(IMAGE_NOT_FOUND);
+        }
+
+        // 이미지 URL 생성
+        String baseUrl = getBaseUrl(request);
+        String imageUrl = baseUrl + "/api/images/group-order/" + image.getId();
+
+        // 정적 리소스 URL 생성
+        String staticImageUrl = getStaticGroupOrderImageUrl(image.getFilePath(), baseUrl);
+        String changeUrl = staticImageUrl.replace("http", "https");
+
+        // 안전한 컨텐츠 타입 확인
+        String contentType = getSafeContentType(file);
+
+        ImageLinkDto imageLinkDto = ImageLinkDto.builder()
+                .imageUrl(imageUrl)
+                .fileName(changeUrl)
+                .contentType(contentType)
+                .fileSize(file.length())
+                .build();
+
+        return imageLinkDto;
     }
 
     // 정적 GroupOrder 이미지 URL 생성 헬퍼 메소드
