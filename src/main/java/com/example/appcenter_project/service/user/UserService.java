@@ -31,6 +31,10 @@ import com.example.appcenter_project.repository.like.TipLikeRepository;
 import com.example.appcenter_project.repository.user.SchoolLoginRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import com.example.appcenter_project.security.jwt.JwtTokenProvider;
+import com.example.appcenter_project.service.groupOrder.GroupOrderQueryService;
+import com.example.appcenter_project.service.tip.TipQueryService;
+import com.example.appcenter_project.service.tip.TipService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -39,10 +43,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.example.appcenter_project.exception.ErrorCode.*;
 
@@ -64,6 +66,8 @@ public class UserService {
     private final RoommateBoardLikeRepository roommateBoardLikeRepository;
     private final TipLikeRepository tipLikeRepository;
     private final GroupOrderRepository groupOrderRepository;
+    private final GroupOrderQueryService groupOrderQueryService;
+    private final TipQueryService tipQueryService;
 
     public ResponseLoginDto saveUser(SignupUser signupUser) {
         boolean existsByStudentNumber = userRepository.existsByStudentNumber(signupUser.getStudentNumber());
@@ -239,6 +243,27 @@ public class UserService {
 
         return responseBoardDtoList;
     }
+
+    public List<ResponseBoardDto> findBoardByUserId_optimization(Long userId, HttpServletRequest request) {
+        log.info("[findBoardByUserId] userId={}의 작성한 게시물 조회 시작", userId);
+
+        List<ResponseBoardDto> responseBoardDtoList = new ArrayList<>();
+
+        List<ResponseTipDto> responseTipDtos = tipQueryService.findTipDtosWithImages(userId, request);
+
+        List<ResponseGroupOrderDto> responseGroupOrderDtos = groupOrderQueryService.findGroupOrderDtosWithImages(userId, request);
+
+        responseBoardDtoList.addAll(responseGroupOrderDtos);
+        responseBoardDtoList.addAll(responseTipDtos);
+
+        // 최신순 정렬 (createTime이 가장 최근인 것부터)
+        responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateDate).reversed());
+
+        log.info("[findBoardByUserId] userId={}의 게시물 조회 완료", userId);
+
+        return responseBoardDtoList;
+    }
+
 
     public String reissueAccessToken(String refreshToken) {
         if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {

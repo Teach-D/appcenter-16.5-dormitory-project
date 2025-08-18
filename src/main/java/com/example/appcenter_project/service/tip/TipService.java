@@ -54,7 +54,6 @@ public class TipService {
     private final TipCommentRepository tipCommentRepository;
     private final TipLikeRepository tipLikeRepository;
     private final TipMapper tipMapper;
-    private final UserService userService;
     private final ImageService imageService;
 
     public void saveTip(Long userId, RequestTipDto requestTipDto, List<MultipartFile> images) {
@@ -140,7 +139,7 @@ public class TipService {
                 Timestamp timestamp = new Timestamp(System.currentTimeMillis());
                 String fileExtension = getFileExtension(file.getOriginalFilename());
                 String uuid = UUID.randomUUID().toString();
-                String imageFileName = "tip_" + tip.getId() + "_" + uuid + timestamp + fileExtension;
+                String imageFileName = "tip_" + tip.getId() + "_" + uuid + fileExtension;
                 File destinationFile = new File(imagePath + imageFileName);
 
                 try {
@@ -491,36 +490,42 @@ public class TipService {
             return new ArrayList<>(); // 빈 리스트 반환
         }
 
-        // BaseURL 생성
-        String baseUrl = getBaseUrl(request);
+
         List<ImageLinkDto> imageLinkDtos = new ArrayList<>();
 
         for (Image image : tipImages) {
-            File file = new File(image.getFilePath());
-            if (file.exists()) {
-                String imageUrl = baseUrl + "/api/images/tip/" + image.getId();
-
-                // 정적 리소스 URL 생성 (User와 동일한 방식)
-                String staticImageUrl = getStaticTipImageUrl(image.getFilePath(), baseUrl);
-                String changeUrl = staticImageUrl.replace("http", "https");
-
-                String contentType = getSafeContentType(file);
-
-                ImageLinkDto imageLinkDto = ImageLinkDto.builder()
-                        .imageUrl(imageUrl)
-                        .fileName(changeUrl)  // 정적 리소스로 직접 접근 가능한 URL
-                        .contentType(contentType)
-                        .fileSize(file.length())
-                        .build();
-
-                imageLinkDtos.add(imageLinkDto);
-            } else {
-                log.warn("[findTipImageUrlsByTipId] 파일이 존재하지 않음 - path={}", image.getFilePath());
-            }
+            ImageLinkDto tipImage = getTipImage(image, request);
+            imageLinkDtos.add(tipImage);
         }
 
         log.info("[findTipImageUrlsByTipId] tipId={}에 대해 {}개의 유효한 이미지 URL 반환", tipId, imageLinkDtos.size());
         return imageLinkDtos;
+    }
+
+    public ImageLinkDto getTipImage(Image image, HttpServletRequest request) {
+        // BaseURL 생성
+        String baseUrl = getBaseUrl(request);
+        File file = new File(image.getFilePath());
+        if (file.exists()) {
+            String imageUrl = baseUrl + "/api/images/tip/" + image.getId();
+
+            // 정적 리소스 URL 생성 (User와 동일한 방식)
+            String staticImageUrl = getStaticTipImageUrl(image.getFilePath(), baseUrl);
+            String changeUrl = staticImageUrl.replace("http", "https");
+
+            String contentType = getSafeContentType(file);
+
+            ImageLinkDto imageLinkDto = ImageLinkDto.builder()
+                    .imageUrl(imageUrl)
+                    .fileName(changeUrl)  // 정적 리소스로 직접 접근 가능한 URL
+                    .contentType(contentType)
+                    .fileSize(file.length())
+                    .build();
+            return imageLinkDto;
+        } else {
+            log.warn("[findTipImageUrlsByTipId] 파일이 존재하지 않음 - path={}", image.getFilePath());
+        }
+        return null;
     }
 
     // 정적 Tip 이미지 URL 생성 헬퍼 메소드
