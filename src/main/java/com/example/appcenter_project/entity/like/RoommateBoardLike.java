@@ -17,12 +17,12 @@ public class RoommateBoardLike extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
     // 좋아요 누른 룸메이트 게시글
-    @ManyToOne
+    @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "roommate_board_id")
     private RoommateBoard roommateBoard;
 

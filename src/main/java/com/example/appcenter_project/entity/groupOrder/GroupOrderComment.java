@@ -24,15 +24,15 @@ public class GroupOrderComment extends BaseTimeEntity {
 
     private boolean isDeleted = false;
 
-    @ManyToOne
+    @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "group_order_id")
     private GroupOrder groupOrder;
 
-    @ManyToOne
+    @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    @ManyToOne
+    @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private GroupOrderComment parentGroupOrderComment;
 
