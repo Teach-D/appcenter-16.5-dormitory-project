@@ -22,7 +22,7 @@ public class MyRoommate {
     @Convert(converter = StringListConverter.class)
     private List<String> rule;
 
-    @OneToOne(fetch =  FetchType.LAZY)
+    @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "member_id", unique = true, nullable = true)
     private User user;
 
@@ -38,7 +38,7 @@ public class MyRoommate {
     }
 
     public void updateRules(List<String> newRules) {
-        this.rule = newRules;
+        this.rule.addAll(newRules);
     }
 
 
