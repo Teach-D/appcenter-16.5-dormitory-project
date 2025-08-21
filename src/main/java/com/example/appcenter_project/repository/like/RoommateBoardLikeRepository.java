@@ -1,5 +1,6 @@
 package com.example.appcenter_project.repository.like;
 
+import com.example.appcenter_project.dto.response.roommate.ResponseRoommatePostDto;
 import com.example.appcenter_project.entity.like.RoommateBoardLike;
 import com.example.appcenter_project.entity.roommate.RoommateBoard;
 import com.example.appcenter_project.entity.user.User;
@@ -24,5 +25,6 @@ public interface RoommateBoardLikeRepository extends JpaRepository<RoommateBoard
             "JOIN FETCH rcl.user u " +
             "LEFT JOIN FETCH u.roommateBoard " +
             "WHERE rbl.user.id = :userId")
-    List<RoommateBoardLike> findByUserIdWithRoommateBoadAndRoommateCheckListAndUser(@Param("userId") Long userId);
+    List<RoommateBoardLike> findByUserIdWithRoommateBoardAndRoommateCheckListAndUser(@Param("userId") Long userId);
+
 }
