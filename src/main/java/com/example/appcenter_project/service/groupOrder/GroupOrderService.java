@@ -120,7 +120,7 @@ public class GroupOrderService {
         }
 
         flatDto.updateGroupOrderCommentDtoList(topLevelComments);
-        GroupOrder groupOrder = groupOrderRepository.findByIdWithPessimisticLock(flatDto.getId()).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+        GroupOrder groupOrder = groupOrderRepository.findById(flatDto.getId()).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
 
         // 해당 게시글의 작성자인지 검증
         if (jwtUser != null) {
@@ -146,7 +146,7 @@ public class GroupOrderService {
         }
 
         // 게시글 조회 수 증가
-        groupOrder.plusViewCount();
+        groupOrderLockService.increaseGroupOrderViewCount(groupOrderId);
 
         // 게시글 작성자의 평점 조회
         Float averageRating = groupOrder.getUser().getAverageRating();

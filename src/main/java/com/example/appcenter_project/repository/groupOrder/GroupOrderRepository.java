@@ -17,5 +17,8 @@ public interface GroupOrderRepository extends JpaRepository<GroupOrder, Long>, J
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT go FROM GroupOrder go where go.id = :id")
     Optional<GroupOrder> findByIdWithPessimisticLock(Long id);
-    
+
+    @Modifying
+    @Query("UPDATE GroupOrder go SET go.groupOrderViewCount = go.groupOrderViewCount + 1 WHERE go.id = :groupOrderId")
+    void plusViewCount(@Param("groupOrderId") Long groupOrderId);
 }
