@@ -98,9 +98,6 @@ public class User extends BaseTimeEntity {
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private RoommateBoard roommateBoard;
 
-    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private MyRoommate myRoommate;
-
     @OneToMany(mappedBy = "user")
     private List<RoommateBoardLike> roommateBoardLikeList = new ArrayList<>();
 

@@ -32,7 +32,7 @@ public class RoommateBoard extends BaseTimeEntity {
     @JoinColumn(name = "roommate_checklist_id")
     private RoommateCheckList roommateCheckList;
 
-    @OneToMany(mappedBy = "roommateBoard", orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "roommateBoard", orphanRemoval = true)
     private List<RoommateBoardLike> roommateBoardLikeList = new ArrayList<>();
 
     @Column(nullable = false)
