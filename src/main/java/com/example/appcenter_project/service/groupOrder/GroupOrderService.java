@@ -57,6 +57,7 @@ public class GroupOrderService {
     private final GroupOrderMapper groupOrderMapper;
     private final GroupOrderPopularSearchKeywordRepository groupOrderPopularSearchKeywordRepository;
     private final ImageService imageService;
+    private final GroupOrderLockService groupOrderLockService;
 
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto) {
         // GroupOrder 저장
@@ -119,7 +120,7 @@ public class GroupOrderService {
         }
 
         flatDto.updateGroupOrderCommentDtoList(topLevelComments);
-        GroupOrder groupOrder = groupOrderRepository.findById(flatDto.getId()).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+        GroupOrder groupOrder = groupOrderRepository.findByIdWithPessimisticLock(flatDto.getId()).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
 
         // 해당 게시글의 작성자인지 검증
         if (jwtUser != null) {
