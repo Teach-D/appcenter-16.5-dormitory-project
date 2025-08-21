@@ -32,6 +32,7 @@ import com.example.appcenter_project.repository.user.SchoolLoginRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import com.example.appcenter_project.security.jwt.JwtTokenProvider;
 import com.example.appcenter_project.service.groupOrder.GroupOrderQueryService;
+import com.example.appcenter_project.service.roommate.RoommateQueryService;
 import com.example.appcenter_project.service.tip.TipQueryService;
 import com.example.appcenter_project.service.tip.TipService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -68,6 +69,7 @@ public class UserService {
     private final GroupOrderRepository groupOrderRepository;
     private final GroupOrderQueryService groupOrderQueryService;
     private final TipQueryService tipQueryService;
+    private final RoommateQueryService roommateQueryService;
 
     public ResponseLoginDto saveUser(SignupUser signupUser) {
         boolean existsByStudentNumber = userRepository.existsByStudentNumber(signupUser.getStudentNumber());
@@ -169,6 +171,7 @@ public class UserService {
 //        responseBoardDtoList.addAll(likeGroupOrders);
 
         List<ResponseRoommatePostDto> responseLikeDtoList = new ArrayList<>();
+        // N+1 문제 해결: Fetch Join 사용
         List<RoommateBoardLike> likeRoommateBoardLikes = roommateBoardLikeRepository.findByUserId(userId);
         for (RoommateBoardLike likeRoommateBoardLike : likeRoommateBoardLikes) {
             RoommateBoard roommateBoard = likeRoommateBoardLike.getRoommateBoard();
@@ -177,7 +180,8 @@ public class UserService {
         }
 
         List<ResponseTipDto> responseTipDtos = new ArrayList<>();
-        List<TipLike> tipLikes = tipLikeRepository.findByUserId(userId);
+        // Tip N+1 문제 해결: Fetch Join 사용
+        List<TipLike> tipLikes = tipLikeRepository.findByUserIdWithTip(userId);
         for (TipLike tipLike : tipLikes) {
             Tip tip = tipLike.getTip();
             ResponseTipDto responseTipDto = ResponseTipDto.entityToDto(tip);
@@ -185,7 +189,7 @@ public class UserService {
         }
 
         List<ResponseGroupOrderDto> responseGroupOrderDtos = new ArrayList<>();
-        List<GroupOrderLike> groupOrderLikes = groupOrderLikeRepository.findByUser_Id(userId);
+        List<GroupOrderLike> groupOrderLikes = groupOrderLikeRepository.findByUserId(userId);
         for (GroupOrderLike groupOrderLike : groupOrderLikes) {
             GroupOrder groupOrder = groupOrderLike.getGroupOrder();
             ResponseGroupOrderDto responseGroupOrderDto = ResponseGroupOrderDto.entityToDto(groupOrder);
@@ -212,6 +216,27 @@ public class UserService {
         for (ResponseBoardDto board : responseBoardDtoList) {
             log.debug("  - Type: {}, CreateDate: {}, Title: {}", board.getType(), board.getCreateDate(), board.getTitle());
         }
+
+        log.info("[findLikeByUserId] userId={}의 좋아요 게시물 조회 완료", userId);
+
+        return responseBoardDtoList;
+    }
+
+    public List<ResponseBoardDto> findLikeByUserId_optimization(Long userId, HttpServletRequest request) {
+        log.info("[findLikeByUserId] userId={}의 좋아요 게시물 조회 시작", userId);
+
+        List<ResponseBoardDto> responseBoardDtoList = new ArrayList<>();
+
+        List<ResponseRoommatePostDto> responseLikeDtoList = roommateQueryService.findGroupOrderDtosWithImages(userId);
+        List<ResponseTipDto> responseTipLikeDtos = tipQueryService.findTipLikeDtosWithImages(userId, request);
+        List<ResponseGroupOrderDto> responseGroupOrderDtos = groupOrderQueryService.findGroupOrderLikeDtosWithImages(userId, request);
+
+        responseBoardDtoList.addAll(responseGroupOrderDtos);
+        responseBoardDtoList.addAll(responseLikeDtoList);
+        responseBoardDtoList.addAll(responseTipLikeDtos);
+
+        // 최신순 정렬 (createTime이 가장 최근인 것부터)
+        responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateDate).reversed());
 
         log.info("[findLikeByUserId] userId={}의 좋아요 게시물 조회 완료", userId);
 

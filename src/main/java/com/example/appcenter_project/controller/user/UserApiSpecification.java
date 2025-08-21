@@ -125,7 +125,7 @@ public interface UserApiSpecification {
                     @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다. (USER_NOT_FOUND)", content = @Content(examples = {}))
             }
     )
-    ResponseEntity<List<ResponseBoardDto>> findLikeByUserId(@AuthenticationPrincipal CustomUserDetails user);
+    ResponseEntity<List<ResponseBoardDto>> findLikeByUserId(@AuthenticationPrincipal CustomUserDetails user, HttpServletRequest request);
 
     @Operation(
             summary = "사용자 정보 수정",

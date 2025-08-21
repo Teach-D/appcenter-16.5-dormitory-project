@@ -24,20 +24,21 @@ public class RoommateBoard extends BaseTimeEntity {
 
     private String title;
 
-    @OneToOne
+    @OneToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    @OneToOne
+    @OneToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "roommate_checklist_id")
     private RoommateCheckList roommateCheckList;
 
-    @OneToMany(mappedBy = "roommateBoard", orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "roommateBoard", orphanRemoval = true)
     private List<RoommateBoardLike> roommateBoardLikeList = new ArrayList<>();
 
     @Column(nullable = false)
     private int roommateBoardLike = 0;
 
+    private boolean isMatched = false;
 
     public Integer plusLike(){
         this.roommateBoardLike +=1;
@@ -61,5 +62,7 @@ public class RoommateBoard extends BaseTimeEntity {
         this.title = title;
     }
 
-
+    public void changeIsMatched(boolean isMatched){
+        this.isMatched = isMatched;
+    }
 }
