@@ -38,6 +38,7 @@ public class RoommateBoard extends BaseTimeEntity {
     @Column(nullable = false)
     private int roommateBoardLike = 0;
 
+    private boolean isMatched = false;
 
     public Integer plusLike(){
         this.roommateBoardLike +=1;
@@ -61,5 +62,7 @@ public class RoommateBoard extends BaseTimeEntity {
         this.title = title;
     }
 
-
+    public void changeIsMatched(boolean isMatched){
+        this.isMatched = isMatched;
+    }
 }

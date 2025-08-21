@@ -162,6 +162,10 @@ public class RoommateMatchingService {
                 .roommate(sender)
                 .build();
 
+        // 두 명의 RoommateBoard matched = true로 변경
+        sender.getRoommateBoard().changeIsMatched(true);
+        receiver.getRoommateBoard().changeIsMatched(true);
+
         myRoommateRepository.save(myRoommate1);
         myRoommateRepository.save(myRoommate2);
     }
@@ -215,6 +219,9 @@ public class RoommateMatchingService {
         // MyRoommate 관계도 해제
         User sender = matching.getSender();
         User receiver = matching.getReceiver();
+
+        sender.getRoommateBoard().changeIsMatched(false);
+        receiver.getRoommateBoard().changeIsMatched(false);
 
         log.info("=== cancelMatching START ===");
         log.info("matchingId: {}, userId: {}", matchingId, userId);
