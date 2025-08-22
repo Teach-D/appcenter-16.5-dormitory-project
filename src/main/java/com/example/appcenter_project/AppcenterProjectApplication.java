@@ -14,11 +14,7 @@ import java.util.TimeZone;
 public class AppcenterProjectApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(AppcenterProjectApplication.class, args);
-	}
-
-	@PostConstruct
-	public void setUp() {
 		TimeZone.setDefault(TimeZone.getTimeZone("Asia/Seoul"));
+		SpringApplication.run(AppcenterProjectApplication.class, args);
 	}
 }
