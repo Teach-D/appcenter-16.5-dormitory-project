@@ -20,6 +20,7 @@ import com.example.appcenter_project.repository.user.UserRepository;
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.image.ImageService;
 import com.example.appcenter_project.service.user.UserService;
+import com.example.appcenter_project.utils.MealTimeChecker;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -145,8 +146,15 @@ public class GroupOrderService {
             }
         }
 
-        // 게시글 조회 수 증가
-        groupOrderLockService.increaseGroupOrderViewCount(groupOrderId);
+        // 게시글 조회수 증가
+        if (MealTimeChecker.isDinnerTime() || MealTimeChecker.isLunchTime()) {
+            // Redis 스케줄링을 통한 조회수 증가
+            groupOrderLockService.addRedisGroupOrderViewCount(groupOrderId);
+        } else {
+            // Redisson 분산락 활용 조회수 증가
+            groupOrderLockService.increaseGroupOrderViewCount(groupOrderId);
+        }
+
 
         // 게시글 작성자의 평점 조회
         Float averageRating = groupOrder.getUser().getAverageRating();

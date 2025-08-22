@@ -21,4 +21,8 @@ public interface GroupOrderRepository extends JpaRepository<GroupOrder, Long>, J
     @Modifying
     @Query("UPDATE GroupOrder go SET go.groupOrderViewCount = go.groupOrderViewCount + 1 WHERE go.id = :groupOrderId")
     void plusViewCount(@Param("groupOrderId") Long groupOrderId);
+
+    @Modifying
+    @Query("UPDATE GroupOrder go SET go.groupOrderViewCount = go.groupOrderViewCount + :viewCount WHERE go.id = :groupOrderId")
+    void plusViewCount(@Param("groupOrderId") Long groupOrderId, @Param("viewCount") Integer viewCount);
 }
