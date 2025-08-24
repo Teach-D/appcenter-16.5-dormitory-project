@@ -92,6 +92,13 @@ public class User extends BaseTimeEntity {
     @OneToMany(mappedBy = "user")
     private List<RoommateBoardLike> roommateBoardLikeList = new ArrayList<>();
 
+    @Column(name = "fcm_token")
+    private String fcmToken;
+
+    public void updateFcmToken(String token) {
+        this.fcmToken = token;
+    }
+
     public void addRoommateBoardLike(RoommateBoardLike roommateBoardLike) {
         this.roommateBoardLikeList.add(roommateBoardLike);
     }
