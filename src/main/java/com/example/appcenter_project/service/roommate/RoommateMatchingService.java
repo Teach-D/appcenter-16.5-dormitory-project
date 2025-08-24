@@ -13,6 +13,7 @@ import com.example.appcenter_project.repository.roommate.MyRoommateRepository;
 import com.example.appcenter_project.repository.roommate.RoommateChattingRoomRepository;
 import com.example.appcenter_project.repository.roommate.RoommateMatchingRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
+import com.example.appcenter_project.service.fcm.FcmMessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ public class RoommateMatchingService {
     private final UserRepository userRepository;
     private final MyRoommateRepository myRoommateRepository;
     private final RoommateChattingRoomRepository roommateChattingRoomRepository;
+    private final FcmMessageService fcmMessageService;
 
     //매칭요청 학번
     @Transactional
@@ -62,6 +64,9 @@ public class RoommateMatchingService {
                 .build();
 
         roommateMatchingRepository.save(matching);
+
+        // ★ FCM 발송
+        sendFcmToReceiver(sender, receiver);
 
         return ResponseRoommateMatchingDto.builder()
                 .MatchingId(matching.getId())
@@ -111,11 +116,32 @@ public class RoommateMatchingService {
 
         roommateMatchingRepository.save(matching);
 
+        // ★ FCM 발송
+        sendFcmToReceiver(sender, receiver);
+
+
         return ResponseRoommateMatchingDto.builder()
                 .MatchingId(matching.getId())
                 .reciverId(matching.getReceiver().getId())
                 .status(matching.getStatus())
                 .build();
+    }
+
+    // 공통 FCM 발송 메서드
+    private void sendFcmToReceiver(User sender, User receiver) {
+        if (receiver.getFcmToken() != null && !receiver.getFcmToken().isEmpty()) {
+            try {
+                fcmMessageService.sendNotification(
+                        receiver.getFcmToken(),
+                        "룸메이트 매칭 요청",
+                        sender.getName() + "님이 룸메이트 매칭을 요청했습니다."
+                );
+            } catch (Exception e) {
+                log.error("FCM 발송 실패: {}", e.getMessage());
+            }
+        } else {
+            log.warn("수신자 {}의 FCM 토큰이 없음", receiver.getId());
+        }
     }
 
     // 매칭 수락
