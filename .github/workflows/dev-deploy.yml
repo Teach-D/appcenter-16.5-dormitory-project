@@ -24,6 +24,12 @@ jobs:
           mkdir -p ./src/main/resources
           echo "${{ secrets.APPLICATION_YML }}" > ./src/main/resources/application.yml
 
+      - name: Create Firebase service account key
+        run: |
+          mkdir -p ./src/main/resources/firebase
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}" > ./src/main/resources/firebase/serviceAccountKey.json
+
+
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
 
