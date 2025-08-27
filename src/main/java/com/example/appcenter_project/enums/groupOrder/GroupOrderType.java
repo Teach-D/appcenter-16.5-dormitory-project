@@ -12,7 +12,7 @@ public enum GroupOrderType {
 
     ALL("전체"),
     DELIVERY("배달"),
-    GROCERY("식료품"),
+    GROCERY("식자재"),
     LIFE_ITEM("생활용품"),
     ETC("기타");
 
