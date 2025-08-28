@@ -83,6 +83,7 @@ public class ComplaintService {
                 .collect(Collectors.toList());
     }
 
+    //상세조회
     public ResponseComplaintDetailDto getComplaintDetail(Long complaintId) {
         Complaint c = complaintRepository.findById(complaintId)
                 .orElseThrow(() -> new CustomException(ErrorCode.COMPLAINT_NOT_FOUND));
@@ -112,5 +113,7 @@ public class ComplaintService {
                 .reply(replyDto)
                 .build();
     }
+
+
 
 }
