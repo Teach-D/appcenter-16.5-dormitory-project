@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Getter
-public class ResponseTipDto extends ResponseBoardDto {
+public class  ResponseTipDto extends ResponseBoardDto {
 
     private String content;
     private Integer tipLikeCount;
@@ -71,5 +71,18 @@ public class ResponseTipDto extends ResponseBoardDto {
         }
 
         return Paths.get(fullPath).getFileName().toString(); // fallback
+    }
+
+    public static ResponseTipDto entityToDto(Tip tip, String fileName) {
+        return ResponseTipDto.builder()
+                .boardId(tip.getId())
+                .title(tip.getTitle())
+                .type("TIP")
+                .content(tip.getContent())
+                .tipLikeCount(tip.getTipLike())
+                .tipCommentCount(tip.getTipCommentCount())
+                .createTime(tip.getCreatedDate())
+                .fileName(fileName)
+                .build();
     }
 }

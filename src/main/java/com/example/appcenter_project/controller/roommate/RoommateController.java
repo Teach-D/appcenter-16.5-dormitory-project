@@ -6,11 +6,14 @@ import com.example.appcenter_project.dto.response.roommate.ResponseRoommatePostD
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommateSimilarityDto;
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.roommate.RoommateService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -117,6 +120,43 @@ public class RoommateController implements RoommateApiSpecification{
         Long userId = userDetails.getId();
         ResponseRoommateCheckListDto response = roommateService.getMyRoommateCheckList(userId);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/latest10/random")
+    public ResponseEntity<ResponseRoommatePostDto> getRandomFromLatest10(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            jakarta.servlet.http.HttpServletRequest request
+    ) {
+        Long userId = userDetails.getId();
+        return ResponseEntity.ok(roommateService.getRandomFromLatest10(userId, request));
+    }
+
+    @GetMapping("/list/scroll")
+    public ResponseEntity<List<ResponseRoommatePostDto>> getRoommateBoardListScroll(
+            @RequestParam(required = false) Long lastId,
+            @RequestParam(defaultValue = "10") int size,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.ok(roommateService.getRoommateBoardListScroll(request, lastId, size));
+    }
+
+    @GetMapping("/list/similar/scroll/me")
+    public ResponseEntity<List<ResponseRoommateSimilarityDto>> getSimilarRoommateBoardListScrollForMe(
+            @RequestParam(required = false) Integer lastPct,    // 마지막 유사도 퍼센트
+            @RequestParam(required = false) Long lastBoardId,   // 마지막 boardId
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.ok(
+                roommateService.getSimilarRoommateBoardListScrollForMe(
+                        request,
+                        userDetails.getId(),
+                        lastPct,
+                        lastBoardId,
+                        size
+                )
+        );
     }
 
 }

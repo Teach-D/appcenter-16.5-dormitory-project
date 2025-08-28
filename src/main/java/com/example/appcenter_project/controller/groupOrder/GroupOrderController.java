@@ -1,24 +1,23 @@
 package com.example.appcenter_project.controller.groupOrder;
 
+import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
-import com.example.appcenter_project.dto.response.groupOrder.GroupOrderImageDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDetailDto;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
+import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderPopularSearch;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.groupOrder.GroupOrderService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,24 +26,30 @@ import static org.springframework.http.HttpStatus.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/group-orders")
-public class GroupOrderController {
+public class GroupOrderController implements GroupOrderApiSpecification {
 
     private final GroupOrderService groupOrderService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Void> saveGroupOrder(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestPart RequestGroupOrderDto requestGroupOrderDto, @RequestPart List<MultipartFile> images) {
+    public ResponseEntity<Void> saveGroupOrder(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestPart RequestGroupOrderDto requestGroupOrderDto, @RequestPart(value = "images", required = false) List<MultipartFile> images) {
         groupOrderService.saveGroupOrder(user.getId(), requestGroupOrderDto, images);
         return ResponseEntity.status(CREATED).build();
     }
 
+    @PostMapping("/{groupOrderId}/rating/{ratingScore}")
+    public ResponseEntity<Void> addRating(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderId, @PathVariable Float ratingScore) {
+        groupOrderService.addRating(user, groupOrderId, ratingScore);
+        return ResponseEntity.status(OK).build();
+    }
+
     @GetMapping("/{groupOrderId}")
-    public ResponseEntity<ResponseGroupOrderDetailDto> findGroupOrderById(@PathVariable Long groupOrderId) {
-        return ResponseEntity.status(OK).body(groupOrderService.findGroupOrderById(groupOrderId));
+    public ResponseEntity<ResponseGroupOrderDetailDto> findGroupOrderById(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderId, HttpServletRequest request) {
+        return ResponseEntity.status(OK).body(groupOrderService.findGroupOrderById(user, groupOrderId, request));
     }
 
     @GetMapping("/{groupOrderId}/images")
-    public ResponseEntity<List<GroupOrderImageDto>> getGroupOrderImages(@PathVariable Long groupOrderId) {
-        List<GroupOrderImageDto> images = groupOrderService.findGroupOrderImages(groupOrderId);
+    public ResponseEntity<List<ImageLinkDto>> getGroupOrderImages(@PathVariable Long groupOrderId, HttpServletRequest request) {
+        List<ImageLinkDto> images = groupOrderService.findGroupOrderImageUrls(groupOrderId, request);
         return ResponseEntity.ok(images);
     }
 
@@ -53,23 +58,18 @@ public class GroupOrderController {
         return ResponseEntity.status(OK).body(groupOrderService.findGroupOrderSearchLog(user.getId()));
     }
 
-    @GetMapping("/images/view")
-    public ResponseEntity<Resource> viewImage(@RequestParam String filename) {
-        Resource resource = groupOrderService.loadImageAsResource(filename);
-        File file = new File(resource.getFilename());
-        String contentType = groupOrderService.getImageContentType(file);
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(contentType))
-                .body(resource);
-    }
-
     @GetMapping
     public ResponseEntity<List<ResponseGroupOrderDto>> findGroupOrders(
             @AuthenticationPrincipal CustomUserDetails user,
-            @RequestParam(defaultValue = "DEADLINE") String sort, @RequestParam(defaultValue = "ALL") String type, @RequestParam(required = false) Optional<String> search
+            @RequestParam(defaultValue = "마감임박순") String sort, @RequestParam(defaultValue = "전체") String type, @RequestParam(required = false) Optional<String> search,
+            HttpServletRequest request
     ) {
-        return ResponseEntity.status(OK).body(groupOrderService.findGroupOrders(user, GroupOrderSort.from(sort), GroupOrderType.from(type), search));
+        return ResponseEntity.status(OK).body(groupOrderService.findGroupOrders(user, GroupOrderSort.from(sort), GroupOrderType.from(type), search, request));
+    }
+
+    @GetMapping("/popular-search")
+    public ResponseEntity<List<ResponseGroupOrderPopularSearch>> findGroupOrderPopularSearch() {
+        return ResponseEntity.status(OK).body(groupOrderService.findGroupOrderPopularSearch());
     }
 
     @PatchMapping("/{groupOrderId}/like")
@@ -82,9 +82,22 @@ public class GroupOrderController {
         return ResponseEntity.status(OK).body(groupOrderService.likeMinusGroupOrder(user.getId(), groupOrderId));
     }
 
-    @PutMapping("/{groupOrderId}")
-    public ResponseEntity<ResponseGroupOrderDetailDto> updateGroupOrder(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderId, @Valid @RequestBody RequestGroupOrderDto requestGroupOrderDto) {
-        return ResponseEntity.status(ACCEPTED).body(groupOrderService.updateGroupOrder(user.getId(), groupOrderId, requestGroupOrderDto));
+    @PatchMapping("/{groupOrderId}/completion")
+    public ResponseEntity<Void> completeGroupOrder(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderId) {
+        groupOrderService.completeGroupOrder(user.getId(), groupOrderId);
+        return ResponseEntity.status(OK).build();
+    }
+
+    @PatchMapping("/{groupOrderId}/unCompletion")
+    public ResponseEntity<Void> unCompleteGroupOrder(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderId) {
+        groupOrderService.unCompleteGroupOrder(user.getId(), groupOrderId);
+        return ResponseEntity.status(OK).build();
+    }
+
+    @PutMapping(value = "/{groupOrderId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> updateGroupOrder(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderId, @Valid @RequestPart RequestGroupOrderDto requestGroupOrderDto, @RequestPart(value = "images", required = false) List<MultipartFile> images) {
+        groupOrderService.updateGroupOrder(user.getId(), groupOrderId, requestGroupOrderDto, images);
+        return ResponseEntity.status(ACCEPTED).build();
     }
 
     @DeleteMapping("/{groupOrderId}")

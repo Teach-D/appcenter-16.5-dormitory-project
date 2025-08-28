@@ -3,25 +3,27 @@ package com.example.appcenter_project.dto.request.calender;
 import com.example.appcenter_project.entity.calender.Calender;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 @Schema(description = "캘린더 요청 DTO")
 @Getter
+@Slf4j
 public class RequestCalenderDto {
 
     @Schema(description = "시작 날짜", example = "2025-08-05", required = true)
-    @NotBlank(message = "시작 날짜는 필수입니다.")
-    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$", message = "날짜 형식은 yyyy-MM-dd 여야 합니다.")
-    private String startDate;
+    @NotNull(message = "시작 날짜는 필수입니다.")
+    private LocalDate startDate;
 
     @Schema(description = "종료 날짜", example = "2025-08-05", required = true)
-    @NotBlank(message = "종료 날짜는 필수입니다.")
-    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$", message = "날짜 형식은 yyyy-MM-dd 여야 합니다.")
-    private String endDate;
+    @NotNull(message = "종료 날짜는 필수입니다.")
+    private LocalDate endDate;
 
     @Schema(description = "캘린더 제목", example = "중간고사", required = true)
     @NotBlank(message = "제목은 필수입니다.")
@@ -33,9 +35,12 @@ public class RequestCalenderDto {
     private String link;
 
     public static Calender dtoToEntity(RequestCalenderDto requestCalenderDto) {
+        log.info(String.valueOf(requestCalenderDto.getStartDate()));
+        log.info(String.valueOf(requestCalenderDto.getEndDate()));
+
         return Calender.builder()
-                .startDate(LocalDate.parse(requestCalenderDto.getStartDate()).plusDays(1))
-                .endDate(LocalDate.parse(requestCalenderDto.getEndDate()).plusDays(1))
+                .startDate(requestCalenderDto.getStartDate())
+                .endDate(requestCalenderDto.getEndDate())
                 .title(requestCalenderDto.getTitle())
                 .link(requestCalenderDto.getLink())
                 .build();

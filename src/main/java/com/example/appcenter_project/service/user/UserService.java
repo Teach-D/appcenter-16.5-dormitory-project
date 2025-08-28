@@ -23,6 +23,7 @@ import com.example.appcenter_project.enums.user.Role;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.mapper.GroupOrderMapper;
 import com.example.appcenter_project.mapper.TipMapper;
+import com.example.appcenter_project.repository.groupOrder.GroupOrderRepository;
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.like.GroupOrderLikeRepository;
 import com.example.appcenter_project.repository.like.RoommateBoardLikeRepository;
@@ -30,6 +31,11 @@ import com.example.appcenter_project.repository.like.TipLikeRepository;
 import com.example.appcenter_project.repository.user.SchoolLoginRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import com.example.appcenter_project.security.jwt.JwtTokenProvider;
+import com.example.appcenter_project.service.groupOrder.GroupOrderQueryService;
+import com.example.appcenter_project.service.roommate.RoommateQueryService;
+import com.example.appcenter_project.service.tip.TipQueryService;
+import com.example.appcenter_project.service.tip.TipService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -38,10 +44,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.example.appcenter_project.exception.ErrorCode.*;
 
@@ -62,6 +66,10 @@ public class UserService {
     private final TipMapper tipMapper;
     private final RoommateBoardLikeRepository roommateBoardLikeRepository;
     private final TipLikeRepository tipLikeRepository;
+    private final GroupOrderRepository groupOrderRepository;
+    private final GroupOrderQueryService groupOrderQueryService;
+    private final TipQueryService tipQueryService;
+    private final RoommateQueryService roommateQueryService;
 
     public ResponseLoginDto saveUser(SignupUser signupUser) {
         boolean existsByStudentNumber = userRepository.existsByStudentNumber(signupUser.getStudentNumber());
@@ -163,6 +171,7 @@ public class UserService {
 //        responseBoardDtoList.addAll(likeGroupOrders);
 
         List<ResponseRoommatePostDto> responseLikeDtoList = new ArrayList<>();
+        // N+1 문제 해결: Fetch Join 사용
         List<RoommateBoardLike> likeRoommateBoardLikes = roommateBoardLikeRepository.findByUserId(userId);
         for (RoommateBoardLike likeRoommateBoardLike : likeRoommateBoardLikes) {
             RoommateBoard roommateBoard = likeRoommateBoardLike.getRoommateBoard();
@@ -171,15 +180,26 @@ public class UserService {
         }
 
         List<ResponseTipDto> responseTipDtos = new ArrayList<>();
-        List<TipLike> tipLikes = tipLikeRepository.findByUserId(userId);
+        // Tip N+1 문제 해결: Fetch Join 사용
+        List<TipLike> tipLikes = tipLikeRepository.findByUserIdWithTip(userId);
         for (TipLike tipLike : tipLikes) {
             Tip tip = tipLike.getTip();
             ResponseTipDto responseTipDto = ResponseTipDto.entityToDto(tip);
             responseTipDtos.add(responseTipDto);
         }
 
+        List<ResponseGroupOrderDto> responseGroupOrderDtos = new ArrayList<>();
+        List<GroupOrderLike> groupOrderLikes = groupOrderLikeRepository.findByUserId(userId);
+        for (GroupOrderLike groupOrderLike : groupOrderLikes) {
+            GroupOrder groupOrder = groupOrderLike.getGroupOrder();
+            ResponseGroupOrderDto responseGroupOrderDto = ResponseGroupOrderDto.entityToDto(groupOrder);
+            responseGroupOrderDtos.add(responseGroupOrderDto);
+        }
+
+        responseBoardDtoList.addAll(responseGroupOrderDtos);
         responseBoardDtoList.addAll(responseLikeDtoList);
         responseBoardDtoList.addAll(responseTipDtos);
+
         log.info("[findLikeByUserId] 총 좋아요 게시물 수: {}", responseBoardDtoList.size());
 
         // 로그 추가로 디버깅
@@ -202,17 +222,43 @@ public class UserService {
         return responseBoardDtoList;
     }
 
+    public List<ResponseBoardDto> findLikeByUserId_optimization(Long userId, HttpServletRequest request) {
+        log.info("[findLikeByUserId] userId={}의 좋아요 게시물 조회 시작", userId);
+
+        List<ResponseBoardDto> responseBoardDtoList = new ArrayList<>();
+
+        List<ResponseRoommatePostDto> responseLikeDtoList = roommateQueryService.findGroupOrderDtosWithImages(userId);
+        List<ResponseTipDto> responseTipLikeDtos = tipQueryService.findTipLikeDtosWithImages(userId, request);
+        List<ResponseGroupOrderDto> responseGroupOrderDtos = groupOrderQueryService.findGroupOrderLikeDtosWithImages(userId, request);
+
+        responseBoardDtoList.addAll(responseGroupOrderDtos);
+        responseBoardDtoList.addAll(responseLikeDtoList);
+        responseBoardDtoList.addAll(responseTipLikeDtos);
+
+        // 최신순 정렬 (createTime이 가장 최근인 것부터)
+        responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateDate).reversed());
+
+        log.info("[findLikeByUserId] userId={}의 좋아요 게시물 조회 완료", userId);
+
+        return responseBoardDtoList;
+    }
+
     public List<ResponseBoardDto> findBoardByUserId(Long userId) {
         log.info("[findBoardByUserId] userId={}의 작성한 게시물 조회 시작", userId);
 
         List<ResponseBoardDto> responseBoardDtoList = new ArrayList<>();
 
-        List<ResponseGroupOrderDto> groupOrdersByUserId = groupOrderMapper.findGroupOrdersByUserId(userId);
-
         List<ResponseTipDto> tipsByUserId = tipMapper.findTipsByUserId(userId);
         log.info("[findBoardByUserId] Tip 게시물 개수: {}", tipsByUserId.size());
 
-        responseBoardDtoList.addAll(groupOrdersByUserId);
+        List<ResponseGroupOrderDto> responseGroupOrderDtos = new ArrayList<>();
+        List<GroupOrder> groupOrders = groupOrderRepository.findByUserId(userId);
+        for (GroupOrder groupOrder : groupOrders) {
+            ResponseGroupOrderDto responseGroupOrderDto = ResponseGroupOrderDto.entityToDto(groupOrder);
+            responseGroupOrderDtos.add(responseGroupOrderDto);
+        }
+
+        responseBoardDtoList.addAll(responseGroupOrderDtos);
         responseBoardDtoList.addAll(tipsByUserId);
 
         // 최신순 정렬 (createTime이 가장 최근인 것부터)
@@ -222,6 +268,27 @@ public class UserService {
 
         return responseBoardDtoList;
     }
+
+    public List<ResponseBoardDto> findBoardByUserId_optimization(Long userId, HttpServletRequest request) {
+        log.info("[findBoardByUserId] userId={}의 작성한 게시물 조회 시작", userId);
+
+        List<ResponseBoardDto> responseBoardDtoList = new ArrayList<>();
+
+        List<ResponseTipDto> responseTipDtos = tipQueryService.findTipDtosWithImages(userId, request);
+
+        List<ResponseGroupOrderDto> responseGroupOrderDtos = groupOrderQueryService.findGroupOrderDtosWithImages(userId, request);
+
+        responseBoardDtoList.addAll(responseGroupOrderDtos);
+        responseBoardDtoList.addAll(responseTipDtos);
+
+        // 최신순 정렬 (createTime이 가장 최근인 것부터)
+        responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateDate).reversed());
+
+        log.info("[findBoardByUserId] userId={}의 게시물 조회 완료", userId);
+
+        return responseBoardDtoList;
+    }
+
 
     public String reissueAccessToken(String refreshToken) {
         if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {

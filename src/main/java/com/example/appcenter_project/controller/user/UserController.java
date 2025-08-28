@@ -88,13 +88,13 @@ public class UserController implements UserApiSpecification {
     }
 
     @GetMapping("/board")
-    public ResponseEntity<List<ResponseBoardDto>> findBoardByUserId(@AuthenticationPrincipal CustomUserDetails user) {
-        return ResponseEntity.status(OK).body(userService.findBoardByUserId(user.getId()));
+    public ResponseEntity<List<ResponseBoardDto>> findBoardByUserId(@AuthenticationPrincipal CustomUserDetails user, HttpServletRequest request) {
+        return ResponseEntity.status(OK).body(userService.findBoardByUserId_optimization(user.getId(), request));
     }
 
     @GetMapping("/like")
-    public ResponseEntity<List<ResponseBoardDto>> findLikeByUserId(@AuthenticationPrincipal CustomUserDetails user) {
-        return ResponseEntity.status(OK).body(userService.findLikeByUserId(user.getId()));
+    public ResponseEntity<List<ResponseBoardDto>> findLikeByUserId(@AuthenticationPrincipal CustomUserDetails user, HttpServletRequest request) {
+        return ResponseEntity.status(OK).body(userService.findLikeByUserId_optimization(user.getId(), request));
     }
 
     @PutMapping

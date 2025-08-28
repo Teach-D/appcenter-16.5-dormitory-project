@@ -20,7 +20,7 @@ public class RequestGroupOrderDto {
     private String title;
 
     @Schema(description = "공동구매 유형",
-            allowableValues = {"전체", "배달", "식료품", "생활용품",
+            allowableValues = {"전체", "배달", "식자재", "생활용품",
                     "기타"})
     @NotNull(message = "공동구매 유형은 필수 입력 값입니다.")
     private GroupOrderType groupOrderType;

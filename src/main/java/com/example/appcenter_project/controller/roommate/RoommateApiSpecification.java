@@ -15,6 +15,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -104,5 +105,44 @@ public interface RoommateApiSpecification {
     @Operation(summary = "내 룸메이트 체크리스트 단일 조회")
     ResponseEntity<ResponseRoommateCheckListDto> getMyRoommateCheckList(
             @Parameter(hidden = true) CustomUserDetails userDetails
+    );
+
+    @Operation(
+            summary = "최신 10개 중 무작위 1개 조회",
+            description = "최신 10개 게시글 중 무작위 1개를 반환합니다. 작성자 프로필 이미지 URL 포함"
+    )
+    ResponseEntity<ResponseRoommatePostDto> getRandomFromLatest10(
+            @Parameter(hidden = true) CustomUserDetails userDetails,
+            @Parameter(hidden = true) HttpServletRequest request
+    );
+
+    @Operation(
+            summary = "룸메이트 게시글 최신순 스크롤 조회",
+            description = "boardId 내림차순으로 최신순 게시글을 페이지네이션하여 조회합니다. " +
+                    "lastId를 기준으로 이전 페이지 데이터를 불러옵니다."
+    )
+    ResponseEntity<List<ResponseRoommatePostDto>> getRoommateBoardListScroll(
+            @Parameter(description = "마지막으로 조회한 게시글 ID (첫 페이지일 경우 비움)", example = "15")
+            @RequestParam(required = false) Long lastId,
+            @Parameter(description = "한 번에 가져올 데이터 개수", example = "10")
+            @RequestParam(defaultValue = "10") int size,
+            @Parameter(hidden = true) HttpServletRequest request
+    );
+
+    @Operation(
+            summary = "유사도 정렬 스크롤 조회",
+            description = "로그인한 사용자의 체크리스트를 기준으로 유사도가 높은 게시글부터 내림차순 정렬하여 페이지네이션합니다. " +
+                    "유사도가 같을 경우 boardId 내림차순으로 정렬합니다. " +
+                    "lastPct와 lastBoardId를 기준으로 커서 페이지네이션을 수행합니다."
+    )
+    ResponseEntity<List<ResponseRoommateSimilarityDto>> getSimilarRoommateBoardListScrollForMe(
+            @Parameter(description = "마지막으로 조회한 게시글의 유사도 퍼센트 (첫 페이지일 경우 비움)", example = "95")
+            @RequestParam(required = false) Integer lastPct,
+            @Parameter(description = "마지막으로 조회한 게시글 ID (첫 페이지일 경우 비움)", example = "42")
+            @RequestParam(required = false) Long lastBoardId,
+            @Parameter(description = "한 번에 가져올 데이터 개수", example = "10")
+            @RequestParam(defaultValue = "10") int size,
+            @Parameter(hidden = true) CustomUserDetails userDetails,
+            @Parameter(hidden = true) HttpServletRequest request
     );
 }

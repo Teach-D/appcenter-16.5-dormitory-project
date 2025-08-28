@@ -63,6 +63,9 @@ public class SecurityConfig {
                         // 공동구매관련 엔드포인트
                         .requestMatchers(GET, "/group-orders/**").permitAll()
 
+                        // Fcm관련 엔드포인트
+                        .requestMatchers(POST, "/fcm/**").permitAll()
+
 
                         .requestMatchers(GET, "/reports/**").hasRole("ADMIN")
                         .requestMatchers(DELETE, "/reports/**").hasRole("ADMIN")

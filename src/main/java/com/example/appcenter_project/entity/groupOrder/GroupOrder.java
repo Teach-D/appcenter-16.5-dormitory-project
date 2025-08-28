@@ -56,6 +56,9 @@ public class GroupOrder extends BaseTimeEntity {
     @Column(nullable = false, length = 100)
     private String description;
 
+    @Column(nullable = false)
+    private boolean recruitmentComplete = false;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_order_chat_room_id")
     private GroupOrderChatRoom groupOrderChatRoom;
@@ -117,5 +120,9 @@ public class GroupOrder extends BaseTimeEntity {
 
     public void plusViewCount() {
         this.groupOrderViewCount += 1;
+    }
+
+    public void updateRecruitmentComplete(boolean b) {
+        this.recruitmentComplete = b;
     }
 }

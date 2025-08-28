@@ -16,11 +16,11 @@ public class RoommateChattingChat extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "roommate_chatting_room_id", nullable = false)
     private RoommateChattingRoom roommateChattingRoom;
 
-    @ManyToOne
+    @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
     private User member;
 

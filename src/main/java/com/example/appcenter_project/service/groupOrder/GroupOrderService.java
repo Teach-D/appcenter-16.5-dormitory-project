@@ -1,15 +1,10 @@
 package com.example.appcenter_project.service.groupOrder;
 
+import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
-import com.example.appcenter_project.dto.response.groupOrder.GroupOrderImageDto;
-import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderCommentDto;
-import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDetailDto;
-import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
+import com.example.appcenter_project.dto.response.groupOrder.*;
 import com.example.appcenter_project.entity.Image;
-import com.example.appcenter_project.entity.groupOrder.GroupOrder;
-import com.example.appcenter_project.entity.groupOrder.GroupOrderChatRoom;
-import com.example.appcenter_project.entity.groupOrder.GroupOrderComment;
-import com.example.appcenter_project.entity.groupOrder.UserGroupOrderChatRoom;
+import com.example.appcenter_project.entity.groupOrder.*;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
 import com.example.appcenter_project.entity.like.TipLike;
 import com.example.appcenter_project.entity.user.User;
@@ -18,15 +13,15 @@ import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.mapper.GroupOrderMapper;
-import com.example.appcenter_project.repository.groupOrder.GroupOrderChatRoomRepository;
-import com.example.appcenter_project.repository.groupOrder.GroupOrderCommentRepository;
-import com.example.appcenter_project.repository.groupOrder.GroupOrderRepository;
-import com.example.appcenter_project.repository.groupOrder.UserGroupOrderChatRoomRepository;
+import com.example.appcenter_project.repository.groupOrder.*;
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.like.GroupOrderLikeRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import com.example.appcenter_project.security.CustomUserDetails;
+import com.example.appcenter_project.service.image.ImageService;
+import com.example.appcenter_project.service.user.UserService;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.FileSystemResource;
@@ -40,11 +35,13 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.example.appcenter_project.exception.ErrorCode.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -58,6 +55,8 @@ public class GroupOrderService {
     private final GroupOrderCommentRepository groupOrderCommentRepository;
     private final ImageRepository imageRepository;
     private final GroupOrderMapper groupOrderMapper;
+    private final GroupOrderPopularSearchKeywordRepository groupOrderPopularSearchKeywordRepository;
+    private final ImageService imageService;
 
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto) {
         // GroupOrder 저장
@@ -85,7 +84,7 @@ public class GroupOrderService {
         userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);
     }
 
-    public ResponseGroupOrderDetailDto findGroupOrderById(Long groupOrderId) {
+    public ResponseGroupOrderDetailDto findGroupOrderById(CustomUserDetails jwtUser, Long groupOrderId, HttpServletRequest request) {
         ResponseGroupOrderDetailDto flatDto = groupOrderMapper.findGroupOrderById(groupOrderId);
         if (flatDto == null) {
             throw new CustomException(GROUP_ORDER_NOT_FOUND);
@@ -100,6 +99,8 @@ public class GroupOrderService {
             if (Boolean.TRUE.equals(comment.getIsDeleted())) {
                 comment.updateReply("삭제된 메시지입니다.");
             }
+
+            comment.updateCommentAuthorImagePath(imageService.findUserImageUrlByUserId(comment.getUserId(), request).getFileName());
 
             // 계층 구조 구성
             if (comment.getParentId() == null) {
@@ -118,6 +119,38 @@ public class GroupOrderService {
         }
 
         flatDto.updateGroupOrderCommentDtoList(topLevelComments);
+        GroupOrder groupOrder = groupOrderRepository.findById(flatDto.getId()).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+
+        // 해당 게시글의 작성자인지 검증
+        if (jwtUser != null) {
+            User user = userRepository.findById(jwtUser.getId()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+            if (groupOrder.getUser().getId() == user.getId()) {
+                flatDto.updateIsMyPost(true);
+            }
+
+            User findUser = groupOrder.getUser();
+
+            String userImageUrl = imageService.findUserImageUrlByUserId(findUser.getId(), request).getFileName();
+            flatDto.updateAuthorImagePath(userImageUrl);
+        }
+
+        // 해당 글을 좋아요 눌렀는지 검증
+        if (jwtUser != null) {
+            User user = userRepository.findById(jwtUser.getId()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+            if (groupOrderLikeRepository.existsByUserIdAndGroupOrderId(user.getId(), groupOrderId)) {
+                flatDto.updateIsCheckLikeCurrentUser(true);
+            } else {
+                flatDto.updateIsCheckLikeCurrentUser(false);
+            }
+        }
+
+        // 게시글 조회 수 증가
+        groupOrder.plusViewCount();
+
+        // 게시글 작성자의 평점 조회
+        Float averageRating = groupOrder.getUser().getAverageRating();
+        flatDto.updateAuthorRating(averageRating);
+
         return flatDto;
     }
 
@@ -158,19 +191,29 @@ public class GroupOrderService {
 
     private void saveImages(GroupOrder groupOrder, List<MultipartFile> files) {
         if (files != null && !files.isEmpty()) {
-            String projectPath = System.getProperty("user.dir") + "/src/main/resources/static/images/group-order/";
-            File directory = new File(projectPath);
+            // User와 동일한 방식으로 경로 설정
+            String basePath = System.getProperty("user.dir");
+            String imagePath = basePath + "/images/group-order/";
+
+            File directory = new File(imagePath);
             if (!directory.exists()) {
-                directory.mkdirs();
+                boolean created = directory.mkdirs();
+                if (!created) {
+                    log.error("Failed to create group-order directory: {}", imagePath);
+                    throw new CustomException(IMAGE_NOT_FOUND);
+                }
             }
 
             for (MultipartFile file : files) {
+                // User 방식과 동일한 파일명 생성 패턴
+                String fileExtension = getFileExtension(file.getOriginalFilename());
                 String uuid = UUID.randomUUID().toString();
-                String imageFileName = uuid + "_" + file.getOriginalFilename();
-                File destinationFile = new File(projectPath + imageFileName);
+                String imageFileName = "grouporder_" + groupOrder.getId() + "_" + uuid + fileExtension;
+                File destinationFile = new File(imagePath + imageFileName);
 
                 try {
                     file.transferTo(destinationFile);
+                    log.info("GroupOrder image saved successfully: {}", destinationFile.getAbsolutePath());
 
                     Image image = Image.builder()
                             .filePath(destinationFile.getAbsolutePath())
@@ -183,10 +226,88 @@ public class GroupOrderService {
                     groupOrder.getImageList().add(image);
 
                 } catch (IOException e) {
-                    throw new RuntimeException("Failed to save image", e);
+                    log.error("Failed to save group-order image for groupOrder {}: ", groupOrder.getId(), e);
+                    throw new CustomException(IMAGE_NOT_FOUND);
                 }
             }
         }
+    }
+
+    public List<ImageLinkDto> findGroupOrderImageUrls(Long groupOrderId, HttpServletRequest request) {
+        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
+                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+
+        List<Image> imageList = groupOrder.getImageList();
+        List<ImageLinkDto> imageLinkDtos = new ArrayList<>();
+
+        for (Image image : imageList) {
+            ImageLinkDto groupOrderImage = getGroupOrderImage(image, request);
+            imageLinkDtos.add(groupOrderImage);
+        }
+
+        return imageLinkDtos;
+    }
+
+    public ImageLinkDto getGroupOrderImage(Image image, HttpServletRequest request) {
+        File file = new File(image.getFilePath());
+        log.info("Checking group-order image file: {}", image.getFilePath());
+        log.info("File exists: {}", file.exists());
+
+        if (!file.exists()) {
+            log.error("GroupOrder image file not found: {}", image.getFilePath());
+            throw new CustomException(IMAGE_NOT_FOUND);
+        }
+
+        // 이미지 URL 생성
+        String baseUrl = getBaseUrl(request);
+        String imageUrl = baseUrl + "/api/images/group-order/" + image.getId();
+
+        // 정적 리소스 URL 생성
+        String staticImageUrl = getStaticGroupOrderImageUrl(image.getFilePath(), baseUrl);
+        String changeUrl = staticImageUrl.replace("http", "https");
+
+        // 안전한 컨텐츠 타입 확인
+        String contentType = getSafeContentType(file);
+
+        ImageLinkDto imageLinkDto = ImageLinkDto.builder()
+                .imageUrl(imageUrl)
+                .fileName(changeUrl)
+                .contentType(contentType)
+                .fileSize(file.length())
+                .build();
+
+        return imageLinkDto;
+    }
+
+    // 정적 GroupOrder 이미지 URL 생성 헬퍼 메소드
+    private String getStaticGroupOrderImageUrl(String filePath, String baseUrl) {
+        try {
+            String fileName = Paths.get(filePath).getFileName().toString();
+            return baseUrl + "/images/group-order/" + fileName;
+        } catch (Exception e) {
+            log.warn("Could not generate static URL for group-order image path: {}", filePath);
+            return null;
+        }
+    }
+
+    // 유틸리티: 베이스 URL 생성 (ImageService와 동일)
+    private String getBaseUrl(HttpServletRequest request) {
+        String scheme = request.getScheme();
+        String serverName = request.getServerName();
+        int serverPort = request.getServerPort();
+        String contextPath = request.getContextPath();
+
+        StringBuilder baseUrl = new StringBuilder();
+        baseUrl.append(scheme).append("://").append(serverName);
+
+        // 기본 포트가 아닌 경우에만 포트 추가
+        if ((scheme.equals("http") && serverPort != 80) ||
+                (scheme.equals("https") && serverPort != 443)) {
+            baseUrl.append(":").append(serverPort);
+        }
+
+        baseUrl.append(contextPath);
+        return baseUrl.toString();
     }
 
     public List<GroupOrderImageDto> findGroupOrderImages(Long groupOrderId) {
@@ -199,72 +320,152 @@ public class GroupOrderService {
         for (Image image : imageList) {
             File file = new File(image.getFilePath());
             if (!file.exists()) {
-                throw new RuntimeException("Image file not found at path: " + image.getFilePath());
-            }
-
-            String contentType;
-            try {
-                contentType = Files.probeContentType(file.toPath());
-                if (contentType == null) {
-                    contentType = "application/octet-stream";
-                }
-            } catch (IOException e) {
+                log.error("GroupOrder image file not found: {}", image.getFilePath());
                 throw new CustomException(IMAGE_NOT_FOUND);
             }
 
-            String filename = file.getName();
-            String url = "/api/images/view?filename=" + filename;
+            // User 방식과 동일한 안전한 컨텐츠 타입 확인
+            String contentType = getSafeContentType(file);
 
-            GroupOrderImageDto tipImageDto = GroupOrderImageDto.builder()
+            // 실제 파일명 추출 (경로에서 파일명만)
+            String filename = file.getName();
+
+            GroupOrderImageDto groupOrderImageDto = GroupOrderImageDto.builder()
                     .filename(filename)
                     .contentType(contentType)
                     .build();
 
-            groupOrderImageDtoList.add(tipImageDto);
+            groupOrderImageDtoList.add(groupOrderImageDto);
         }
 
         return groupOrderImageDtoList;
     }
 
     public Resource loadImageAsResource(String filename) {
-        String projectPath = System.getProperty("user.dir") + "/src/main/resources/static/images/group-order/";
-        File file = new File(projectPath + filename);
+        // User 방식과 동일한 경로 사용
+        String imagePath = System.getProperty("user.dir") + "/images/group-order/";
+        File file = new File(imagePath + filename);
 
         if (!file.exists()) {
+            log.error("GroupOrder image file not found: {}", file.getAbsolutePath());
             throw new CustomException(IMAGE_NOT_FOUND);
         }
 
         return new FileSystemResource(file);
     }
 
-    public String getImageContentType(File file) {
+    // User 방식과 동일한 안전한 컨텐츠 타입 확인 메소드
+    private String getSafeContentType(File file) {
         try {
-            String contentType = Files.probeContentType(file.toPath());
-            return (contentType != null) ? contentType : "application/octet-stream";
-        } catch (IOException e) {
-            throw new RuntimeException("Could not determine file type.", e);
+            String fileName = file.getName().toLowerCase();
+
+            // 확장자 기반으로 먼저 판단 (더 안정적)
+            if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) {
+                return "image/jpeg";
+            } else if (fileName.endsWith(".png")) {
+                return "image/png";
+            } else if (fileName.endsWith(".gif")) {
+                return "image/gif";
+            } else if (fileName.endsWith(".webp")) {
+                return "image/webp";
+            } else if (fileName.endsWith(".svg")) {
+                return "image/svg+xml";
+            }
+
+            // Files.probeContentType이 실패할 수 있으므로 try-catch
+            try {
+                String detectedType = Files.probeContentType(file.toPath());
+                if (detectedType != null && detectedType.startsWith("image/")) {
+                    return detectedType;
+                }
+            } catch (Exception e) {
+                log.warn("Could not probe content type for file: {}", file.getName());
+            }
+
+            // 기본값
+            return "image/jpeg";
+
+        } catch (Exception e) {
+            log.error("Error determining content type for file: {}", file.getName(), e);
+            return "image/jpeg"; // 안전한 기본값
         }
     }
 
-    public List<ResponseGroupOrderDto> findGroupOrders(CustomUserDetails jwtUser, GroupOrderSort sort, GroupOrderType type, Optional<String> search) {
+    // User 방식과 동일한 파일 확장자 추출 메소드
+    private String getFileExtension(String fileName) {
+        if (fileName == null || fileName.isEmpty()) {
+            return ".jpg"; // 기본 확장자
+        }
+
+        int lastDotIndex = fileName.lastIndexOf(".");
+        if (lastDotIndex == -1) {
+            return ".jpg"; // 확장자가 없으면 기본값
+        }
+
+        return fileName.substring(lastDotIndex).toLowerCase();
+    }
+
+    public List<ResponseGroupOrderDto> findGroupOrders(CustomUserDetails jwtUser, GroupOrderSort sort, GroupOrderType type, Optional<String> search, HttpServletRequest request) {
         // 로그인한 사용자만 검색 키워드 저장
         if (jwtUser != null) {
             search.filter(s -> !s.isBlank())
                     .ifPresent(keyword -> {
                         User user = userRepository.findById(jwtUser.getId())
                                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-                        user.addSearchKeyword(keyword);
+                        user.addSearchLog(keyword);
                     });
         }
+
+        search.filter(s -> !s.isBlank())
+                .ifPresent(keyword -> {
+                    if (groupOrderPopularSearchKeywordRepository.existsByKeyword(keyword)) {
+                        GroupOrderPopularSearchKeyword groupOrderPopularSearchKeyword =
+                                groupOrderPopularSearchKeywordRepository.findByKeyword(keyword);
+                        groupOrderPopularSearchKeyword.plusSearchCount();
+                    } else {
+                        GroupOrderPopularSearchKeyword build = GroupOrderPopularSearchKeyword.builder()
+                                .keyword(keyword)
+                                .searchCount(1)
+                                .build();
+                        groupOrderPopularSearchKeywordRepository.save(build);
+                    }
+                });
 
         // 공통 조건 처리
         String searchKeyword = search.filter(s -> !s.isBlank()).orElse(null);
         String sortParam = sort.name();
         String typeString = String.valueOf(GroupOrderType.from(String.valueOf(type)));
-        return groupOrderMapper.findGroupOrders(typeString, searchKeyword, sortParam);
+
+        List<ResponseGroupOrderDto> groupOrders = groupOrderMapper.findGroupOrders(typeString, searchKeyword, sortParam);
+
+        return groupOrders;
     }
 
-    public ResponseGroupOrderDetailDto updateGroupOrder(Long userId, Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto) {
+    // 이미지 경로를 User 방식의 URL로 변환하는 헬퍼 메소드
+    private void convertImagePathToUrl(ResponseGroupOrderDto dto, HttpServletRequest request) {
+        if (dto.getFilePath() != null && !dto.getFilePath().isEmpty()) {
+            try {
+                // 절대 경로에서 파일명만 추출
+                String fileName = Paths.get(dto.getFilePath()).getFileName().toString();
+
+                // User 방식과 동일한 URL 패턴으로 변환
+                String baseUrl = getBaseUrl(request);
+                String imageUrl = baseUrl.replace("http:", "https:") + "/images/group-order/" + fileName;
+
+                // DTO의 filePath를 변환된 URL로 업데이트
+                // Reflection을 사용하여 private 필드에 접근
+                java.lang.reflect.Field filePathField = ResponseGroupOrderDto.class.getSuperclass().getDeclaredField("filePath");
+                filePathField.setAccessible(true);
+                filePathField.set(dto, imageUrl);
+
+                log.debug("Converted GroupOrder image path: {} -> {}", dto.getFilePath(), imageUrl);
+            } catch (Exception e) {
+                log.warn("Failed to update image path for GroupOrder {}: {}", dto.getBoardId(), e.getMessage());
+            }
+        }
+    }
+
+    public void updateGroupOrder(Long userId, Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto, List<MultipartFile> images) {
         GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_OWNED_BY_USER));
 
         if (groupOrderRepository.existsByTitle(requestGroupOrderDto.getTitle())) {
@@ -273,25 +474,45 @@ public class GroupOrderService {
 
         groupOrder.update(requestGroupOrderDto);
 
-        List<ResponseGroupOrderCommentDto> groupOrderCommentDtoList = findGroupOrderComment(groupOrder);
+        // 이미지가 제공된 경우에만 기존 이미지를 삭제하고 새로운 이미지를 저장
+        if (images != null && !images.isEmpty()) {
+            // 기존 이미지들이 있다면 파일 및 DB에서 삭제
+            List<Image> existingImages = groupOrder.getImageList();
+            for (Image existingImage : existingImages) {
+                File oldFile = new File(existingImage.getFilePath());
+                if (oldFile.exists()) {
+                    boolean deleted = oldFile.delete();
+                    if (!deleted) {
+                        log.warn("Failed to delete old GroupOrder image file: {}", existingImage.getFilePath());
+                    }
+                }
+                // 기존 이미지 엔티티 삭제
+                imageRepository.delete(existingImage);
+            }
+            groupOrder.getImageList().clear();
 
-        List<Long> groupOrderLikeUserList = new ArrayList<>();
-
-        List<GroupOrderLike> groupOrderLikeList = groupOrder.getGroupOrderLikeList();
-        for (GroupOrderLike groupOrderLike : groupOrderLikeList) {
-            Long groupOrderLikeUserId = groupOrderLike.getUser().getId();
-            groupOrderLikeUserList.add(groupOrderLikeUserId);
+            // 새로운 이미지들 저장
+            saveImages(groupOrder, images);
         }
-
-        return ResponseGroupOrderDetailDto.detailEntityToDto(groupOrder, groupOrderCommentDtoList, groupOrderLikeUserList);
     }
 
     public void deleteGroupOrder(Long userId, Long groupOrderId) {
         GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_OWNED_BY_USER));
 
-        GroupOrderChatRoom groupOrderChatRoom = groupOrder.getGroupOrderChatRoom();
-        groupOrderChatRoom.updateGroupOrder(null);
-        groupOrderRepository.deleteById(groupOrderId);
+        List<Image> existingImages = groupOrder.getImageList();
+        for (Image existingImage : existingImages) {
+            File oldFile = new File(existingImage.getFilePath());
+            if (oldFile.exists()) {
+                boolean deleted = oldFile.delete();
+                if (!deleted) {
+                    log.warn("Failed to delete old GroupOrder image file: {}", existingImage.getFilePath());
+                }
+            }
+            // 기존 이미지 엔티티 삭제
+            imageRepository.delete(existingImage);
+        }
+        groupOrder.getImageList().clear();
+        groupOrderRepository.delete(groupOrder);
     }
 
     private Specification<GroupOrder> buildSpecification(GroupOrderType type, Optional<String> search) {
@@ -398,7 +619,39 @@ public class GroupOrderService {
     public List<String> findGroupOrderSearchLog(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-        return user.getSearchLog();
+        return user.getSearchLogs();
     }
 
+    public void addRating(CustomUserDetails user, Long groupOrderId, Float ratingScore) {
+        if (user == null) {
+            throw new CustomException(USER_NOT_FOUND);
+        }
+
+        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
+                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+        groupOrder.getUser().addRating(ratingScore);
+    }
+
+    public void completeGroupOrder(Long userId, Long groupOrderId) {
+        GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+        groupOrder.updateRecruitmentComplete(true);
+    }
+
+    public void unCompleteGroupOrder(Long userId, Long groupOrderId) {
+        GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+        groupOrder.updateRecruitmentComplete(false);
+    }
+
+    public List<ResponseGroupOrderPopularSearch> findGroupOrderPopularSearch() {
+        int index = 1;
+        List<ResponseGroupOrderPopularSearch> responseGroupOrderPopularSearchList = new ArrayList<>();
+        List<GroupOrderPopularSearchKeyword> top10Popular = groupOrderPopularSearchKeywordRepository.findTop10ByOrderBySearchCountDesc();
+        for (GroupOrderPopularSearchKeyword groupOrderPopularSearchKeyword : top10Popular) {
+            ResponseGroupOrderPopularSearch responseGroupOrderPopularSearch = new ResponseGroupOrderPopularSearch(index, groupOrderPopularSearchKeyword.getKeyword());
+            responseGroupOrderPopularSearchList.add(responseGroupOrderPopularSearch);
+            index += 1;
+        }
+
+        return responseGroupOrderPopularSearchList;
+    }
 }

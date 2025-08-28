@@ -22,7 +22,7 @@ public class AttachedFile {
 
     private Long fileSize; // 파일 크기 (bytes)
 
-    @ManyToOne
+    @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "announcement_id")
     private Announcement announcement;
 

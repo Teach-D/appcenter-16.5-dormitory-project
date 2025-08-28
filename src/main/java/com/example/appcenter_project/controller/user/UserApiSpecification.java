@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.core.io.Resource;
@@ -111,7 +112,7 @@ public interface UserApiSpecification {
                     @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다. (USER_NOT_FOUND)", content = @Content(examples = {}))
             }
     )
-    ResponseEntity<List<ResponseBoardDto>> findBoardByUserId(@AuthenticationPrincipal CustomUserDetails user);
+    ResponseEntity<List<ResponseBoardDto>> findBoardByUserId(@AuthenticationPrincipal CustomUserDetails user, HttpServletRequest request);
 
     @Operation(
             summary = "사용자가 좋아요한 게시글 조회",
@@ -124,7 +125,7 @@ public interface UserApiSpecification {
                     @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다. (USER_NOT_FOUND)", content = @Content(examples = {}))
             }
     )
-    ResponseEntity<List<ResponseBoardDto>> findLikeByUserId(@AuthenticationPrincipal CustomUserDetails user);
+    ResponseEntity<List<ResponseBoardDto>> findLikeByUserId(@AuthenticationPrincipal CustomUserDetails user, HttpServletRequest request);
 
     @Operation(
             summary = "사용자 정보 수정",

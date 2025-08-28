@@ -24,6 +24,10 @@ public class ResponseGroupOrderDetailDto {
     private int groupOrderLike;
     private String description;
     private String link;
+    private boolean isMyPost = false;
+    private String authorImagePath;
+    private boolean isCheckLikeCurrentUser = false;
+    private float authorRating = 5.0f;
 
     @Builder.Default
     private List<Long> groupOrderLikeUserList = new ArrayList<>();
@@ -51,5 +55,21 @@ public class ResponseGroupOrderDetailDto {
 
     public void updateGroupOrderCommentDtoList(List<ResponseGroupOrderCommentDto> groupedList) {
         this.groupOrderCommentDtoList = groupedList;
+    }
+
+    public void updateIsMyPost(boolean b) {
+        this.isMyPost = b;
+    }
+
+    public void updateAuthorImagePath(String imagePath) {
+        this.authorImagePath = imagePath;
+    }
+
+    public void updateIsCheckLikeCurrentUser(boolean check) {
+        this.isCheckLikeCurrentUser = check;
+    }
+
+    public void updateAuthorRating(float rating) {
+        this.authorRating = rating;
     }
 }
