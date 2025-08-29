@@ -315,6 +315,20 @@ public class ComplaintService {
         return complaintFiles;
     }
 
+    // User 방식과 동일한 파일 확장자 추출 메소드
+    private String getFileExtension(String fileName) {
+        if (fileName == null || fileName.isEmpty()) {
+            return ".jpg"; // 기본 확장자
+        }
+
+        int lastDotIndex = fileName.lastIndexOf(".");
+        if (lastDotIndex == -1) {
+            return ".jpg"; // 확장자가 없으면 기본값
+        }
+
+        return fileName.substring(lastDotIndex).toLowerCase();
+    }
+
     // 유틸리티: 베이스 URL 생성 (ImageService와 동일)
     private String getBaseUrl(HttpServletRequest request) {
         String scheme = request.getScheme();
