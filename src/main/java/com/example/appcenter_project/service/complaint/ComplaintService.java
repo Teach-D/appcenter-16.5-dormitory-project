@@ -83,7 +83,7 @@ public class ComplaintService {
         Complaint saved = complaintRepository.save(complaint);
 
         // 이미지 저장
-        if (!files.isEmpty()) {
+        if (!files.isEmpty() && files != null) {
             saveImages(complaint, files);
         }
 
