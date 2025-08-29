@@ -1,5 +1,6 @@
 package com.example.appcenter_project.entity.announcement;
 
+import com.example.appcenter_project.entity.complaint.ComplaintReply;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -26,11 +27,16 @@ public class AttachedFile {
     @JoinColumn(name = "announcement_id")
     private Announcement announcement;
 
+    @ManyToOne(fetch =  FetchType.LAZY)
+    @JoinColumn(name = "complaint_reply_id")
+    private ComplaintReply complaintReply;
+
     @Builder
-    public AttachedFile(String filePath, String fileName, Long fileSize, Announcement announcement) {
+    public AttachedFile(String filePath, String fileName, Long fileSize, Announcement announcement, ComplaintReply complaintReply) {
         this.filePath = filePath;
         this.fileName = fileName;
         this.fileSize = fileSize;
         this.announcement = announcement;
+        this.complaintReply = complaintReply;
     }
 }

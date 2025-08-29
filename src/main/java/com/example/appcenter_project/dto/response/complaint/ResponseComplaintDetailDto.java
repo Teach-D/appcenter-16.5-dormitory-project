@@ -3,6 +3,8 @@ package com.example.appcenter_project.dto.response.complaint;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
 @Builder
 public class ResponseComplaintDetailDto {
@@ -16,4 +18,5 @@ public class ResponseComplaintDetailDto {
     private String status;      // 대기중 등
     private String createdDate; // ISO 또는 포맷 문자열
     private ResponseComplaintReplyDto reply; // null 가능
+    private List<String> images;
 }
