@@ -43,6 +43,7 @@ public class AdminComplaintService {
     private final ComplaintReplyRepository replyRepository;
     private final UserRepository userRepository;
     private final AttachedFileRepository attachedFileRepository;
+    private final ComplaintReplyRepository complaintReplyRepository;
 
     // 민원 답변 등록
     public ResponseComplaintReplyDto addReply(Long adminId, Long complaintId, RequestComplaintReplyDto dto, List<MultipartFile> files) {
@@ -108,7 +109,7 @@ public class AdminComplaintService {
         Complaint complaint = complaintRepository.findById(complaintId).orElseThrow(() -> new CustomException(COMPLAINT_NOT_FOUND));
         ComplaintReply reply = complaint.getReply();
 
-        complaintRepository.deleteById(complaintId);
+        complaintReplyRepository.deleteById(reply.getId());
         deleteExistingAttachedFiles(reply);
     }
 
