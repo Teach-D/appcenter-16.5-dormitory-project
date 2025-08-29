@@ -113,6 +113,7 @@ public class ComplaintService {
                         .status(c.getStatus().toValue())
                         .officer(c.getOfficer())
                         .caseNumber(c.getCaseNumber())
+                        .dormType(c.getDormType().toValue())
                         .build())
                 .collect(Collectors.toList());
     }
