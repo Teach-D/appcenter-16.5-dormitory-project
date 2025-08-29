@@ -77,6 +77,11 @@ public class Complaint extends BaseTimeEntity {
     public void addReply(ComplaintReply reply) {
         this.reply = reply;
     }
+    
+    // 답변 연관관계 해제 (편의 메서드)
+    public void removeReply() {
+        this.reply = null;
+    }
 
     public void update(RequestComplaintDto dto) {
         this.type = ComplaintType.from(dto.getType());

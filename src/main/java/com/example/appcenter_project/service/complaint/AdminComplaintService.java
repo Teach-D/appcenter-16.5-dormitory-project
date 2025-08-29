@@ -114,25 +114,60 @@ public class AdminComplaintService {
         }
     }
 
+    @Transactional
     public void deleteReply(Long complaintId) {
-        Complaint complaint = complaintRepository.findById(complaintId).orElseThrow(() -> new CustomException(COMPLAINT_NOT_FOUND));
-        ComplaintReply reply = complaint.getReply();
+        Complaint complaint = complaintRepository.findById(complaintId)
+                .orElseThrow(() -> new CustomException(COMPLAINT_NOT_FOUND));
         
+        ComplaintReply reply = complaint.getReply();
         if (reply == null) {
             throw new CustomException(COMPLAINT_REPLY_NOT_FOUND);
         }
 
         Long replyId = reply.getId();
+        log.info("[deleteReply] 민원 답변 삭제 시작 - complaintId={}, replyId={}", complaintId, replyId);
         
-        // 파일시스템에서 물리적 파일만 삭제 (DB 레코드는 CASCADE로 자동 삭제)
-        deletePhysicalFilesByReplyId(replyId);
+        // 1. 첨부파일 물리적 삭제 및 DB 레코드 삭제
+        deleteAttachedFilesCompletely(replyId);
         
-        // ComplaintReply 삭제 (CASCADE.ALL로 인해 AttachedFile도 자동 삭제)
+        // 2. Complaint에서 reply 관계 해제 (중요!)
+        complaint.removeReply();
+        
         replyRepository.deleteById(replyId);
+        
+        log.info("[deleteReply] 민원 답변 삭제 완료 - complaintId={}", complaintId);
+    }
+
+    private void deleteAttachedFilesCompletely(Long replyId) {
+        log.info("[deleteAttachedFilesCompletely] 첨부파일 완전 삭제 시작 - replyId={}", replyId);
+
+        List<AttachedFile> attachedFiles = attachedFileRepository.findByComplaintReplyId(replyId);
+        log.info("[deleteAttachedFilesCompletely] 발견된 첨부파일 개수: {}", attachedFiles.size());
+
+        // 1. 물리적 파일 삭제
+        for (AttachedFile attachedFile : attachedFiles) {
+            File file = new File(attachedFile.getFilePath());
+            if (file.exists()) {
+                boolean deleted = file.delete();
+                if (deleted) {
+                    log.info("물리적 파일 삭제 성공: {}", attachedFile.getFilePath());
+                } else {
+                    log.warn("물리적 파일 삭제 실패: {}", attachedFile.getFilePath());
+                }
+            } else {
+                log.warn("삭제할 물리적 파일이 존재하지 않음: {}", attachedFile.getFilePath());
+            }
+        }
+
+        // 2. DB 레코드 삭제 (complaintReplyId로 일괄 삭제)
+        int deletedCount = attachedFileRepository.deleteByComplaintReplyId(replyId);
+        log.info("[deleteAttachedFilesCompletely] DB에서 삭제된 첨부파일 레코드 수: {}", deletedCount);
+        
+        log.info("[deleteAttachedFilesCompletely] 첨부파일 완전 삭제 완료 - replyId={}", replyId);
     }
 
     private void deletePhysicalFilesByReplyId(Long replyId) {
-        log.info("[deletePhysicalFilesByReplyId] 물리적 파일 삭제 시작 - complaintReply={}", replyId);
+        log.info("[deletePhysicalFilesByReplyId] 물리적 파일 삭제 시작 - replyId={}", replyId);
 
         List<AttachedFile> existingFiles = attachedFileRepository.findByComplaintReplyId(replyId);
 
@@ -149,7 +184,6 @@ public class AdminComplaintService {
             } else {
                 log.warn("삭제할 파일이 존재하지 않음: {}", attachedFile.getFilePath());
             }
-            attachedFileRepository.delete(attachedFile);
         }
 
         log.info("[deletePhysicalFilesByReplyId] 물리적 파일 삭제 완료 - 처리된 파일 수: {}", existingFiles.size());
