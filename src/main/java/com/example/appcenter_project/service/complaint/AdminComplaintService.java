@@ -109,8 +109,8 @@ public class AdminComplaintService {
         Complaint complaint = complaintRepository.findById(complaintId).orElseThrow(() -> new CustomException(COMPLAINT_NOT_FOUND));
         ComplaintReply reply = complaint.getReply();
 
-        complaintReplyRepository.deleteById(reply.getId());
         deleteExistingAttachedFiles(reply);
+        complaintReplyRepository.deleteById(reply.getId());
     }
 
     private void deleteExistingAttachedFiles(ComplaintReply complaintReply) {
