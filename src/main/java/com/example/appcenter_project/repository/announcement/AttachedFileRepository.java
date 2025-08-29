@@ -22,4 +22,9 @@ public interface AttachedFileRepository extends JpaRepository<AttachedFile, Long
     List<AttachedFile> findByComplaintReply(ComplaintReply complaintReply);
 
     void deleteByComplaintReply(ComplaintReply complaintReply);
+    
+    // ID 기반 메서드 추가
+    List<AttachedFile> findByComplaintReplyId(Long complaintReplyId);
+    
+    void deleteByComplaintReplyId(Long complaintReplyId);
 }
