@@ -96,10 +96,20 @@ public class AdminComplaintService {
     public void updateReply(Long userId, Long complaintId, RequestComplaintReplyDto dto, List<MultipartFile> files) {
         Complaint complaint = complaintRepository.findById(complaintId).orElseThrow(() -> new CustomException(COMPLAINT_NOT_FOUND));
         ComplaintReply reply = complaint.getReply();
+        
+        if (reply == null) {
+            throw new CustomException(COMPLAINT_REPLY_NOT_FOUND);
+        }
+
+        Long replyId = reply.getId();
+        
+        // 기존 첨부파일 삭제 (ID만 사용)
+        deleteExistingAttachedFilesByReplyId(replyId);
+        
+        // 답변 내용 업데이트
         reply.update(dto);
 
-        deleteExistingAttachedFiles(reply);
-
+        // 새로운 첨부파일 저장
         if (files != null && !files.isEmpty()) {
             saveUploadFile(reply, files);
         }
@@ -108,15 +118,20 @@ public class AdminComplaintService {
     public void deleteReply(Long complaintId) {
         Complaint complaint = complaintRepository.findById(complaintId).orElseThrow(() -> new CustomException(COMPLAINT_NOT_FOUND));
         ComplaintReply reply = complaint.getReply();
+        
+        if (reply == null) {
+            throw new CustomException(COMPLAINT_REPLY_NOT_FOUND);
+        }
 
-        deleteExistingAttachedFiles(reply);
-        complaintReplyRepository.deleteById(reply.getId());
+        Long replyId = reply.getId();
+        deleteExistingAttachedFilesByReplyId(replyId);
+        complaintReplyRepository.deleteById(replyId);
     }
 
-    private void deleteExistingAttachedFiles(ComplaintReply complaintReply) {
-        log.info("[deleteExistingAttachedFiles] 기존 첨부파일 삭제 시작 - complaintReply={}", complaintReply.getId());
+    private void deleteExistingAttachedFilesByReplyId(Long replyId) {
+        log.info("[deleteExistingAttachedFilesByReplyId] 기존 첨부파일 삭제 시작 - complaintReply={}", replyId);
 
-        List<AttachedFile> existingFiles = attachedFileRepository.findByComplaintReply(complaintReply);
+        List<AttachedFile> existingFiles = attachedFileRepository.findByComplaintReplyId(replyId);
 
         for (AttachedFile attachedFile : existingFiles) {
             // 파일시스템에서 파일 삭제
@@ -133,13 +148,10 @@ public class AdminComplaintService {
             }
         }
 
-        // DB에서 첨부파일 레코드 삭제 (cascade로 자동 삭제되지만 명시적으로 처리)
-        attachedFileRepository.deleteByComplaintReply(complaintReply);
+        // DB에서 첨부파일 레코드 삭제
+        attachedFileRepository.deleteByComplaintReplyId(replyId);
 
-        // 엔티티의 컬렉션도 정리
-        complaintReply.getAttachedFiles().clear();
-
-        log.info("[deleteExistingAttachedFiles] 기존 첨부파일 삭제 완료 - 삭제된 파일 수: {}", existingFiles.size());
+        log.info("[deleteExistingAttachedFilesByReplyId] 기존 첨부파일 삭제 완료 - 삭제된 파일 수: {}", existingFiles.size());
     }
 
     private void saveUploadFile(ComplaintReply complaintReply, List<MultipartFile> files) {
