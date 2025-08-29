@@ -285,21 +285,7 @@ public class ComplaintService {
     }
 
     public void deleteComplaint(Long userId, Long complaintId) {
-        Complaint complaint = complaintRepository.findByIdAndUserId(complaintId, userId).orElseThrow(() -> new CustomException(COMPLAINT_NOT_OWNED_BY_USER));
-        complaintRepository.delete(complaint);
-
-        List<Image> existingImages = complaint.getImageList();
-        for (Image existingImage : existingImages) {
-            File oldFile = new File(existingImage.getFilePath());
-            if (oldFile.exists()) {
-                boolean deleted = oldFile.delete();
-                if (!deleted) {
-                    log.warn("Failed to delete old complaint image file: {}", existingImage.getFilePath());
-                }
-            }
-            // 기존 이미지 엔티티 삭제
-            imageRepository.delete(existingImage);
-        }
+        complaintRepository.deleteById(complaintId);
     }
 
     private void saveImages(Complaint complaint, List<MultipartFile> files) {

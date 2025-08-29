@@ -116,18 +116,8 @@ public class AdminComplaintService {
 
     @Transactional
     public void deleteReply(Long complaintId) {
-        Complaint complaint = complaintRepository.findById(complaintId)
-                .orElseThrow(() -> new CustomException(COMPLAINT_NOT_FOUND));
-        
-        ComplaintReply reply = complaint.getReply();
-        if (reply == null) {
-            throw new CustomException(COMPLAINT_REPLY_NOT_FOUND);
-        }
 
-        Long replyId = reply.getId();
-        log.info("[deleteReply] 민원 답변 삭제 시작 - complaintId={}, replyId={}", complaintId, replyId);
-
-        replyRepository.deleteById(replyId);
+        replyRepository.deleteByComplaintId(complaintId);
         
         log.info("[deleteReply] 민원 답변 삭제 완료 - complaintId={}", complaintId);
     }
