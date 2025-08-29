@@ -43,7 +43,6 @@ public class AdminComplaintService {
     private final ComplaintReplyRepository replyRepository;
     private final UserRepository userRepository;
     private final AttachedFileRepository attachedFileRepository;
-    private final ComplaintReplyRepository complaintReplyRepository;
 
     // 민원 답변 등록
     public ResponseComplaintReplyDto addReply(Long adminId, Long complaintId, RequestComplaintReplyDto dto, List<MultipartFile> files) {
@@ -125,7 +124,7 @@ public class AdminComplaintService {
 
         Long replyId = reply.getId();
         deleteExistingAttachedFilesByReplyId(replyId);
-        complaintReplyRepository.deleteById(replyId);
+        replyRepository.deleteById(replyId);
     }
 
     private void deleteExistingAttachedFilesByReplyId(Long replyId) {
