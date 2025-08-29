@@ -70,7 +70,10 @@ public class AdminComplaintService {
         complaint.updateStatus(ComplaintStatus.COMPLETED);
 
         // 첨부파일 저장
-        saveUploadFile(reply, files);
+        if (files != null && !files.isEmpty()) {
+            saveUploadFile(reply, files);
+        }
+
 
         return ResponseComplaintReplyDto.builder()
                 .replyTitle(reply.getReplyTitle())
