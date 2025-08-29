@@ -126,13 +126,7 @@ public class AdminComplaintService {
 
         Long replyId = reply.getId();
         log.info("[deleteReply] 민원 답변 삭제 시작 - complaintId={}, replyId={}", complaintId, replyId);
-        
-        // 1. 첨부파일 물리적 삭제 및 DB 레코드 삭제
-        deleteAttachedFilesCompletely(replyId);
-        
-        // 2. Complaint에서 reply 관계 해제 (중요!)
-        complaint.removeReply();
-        
+
         replyRepository.deleteById(replyId);
         
         log.info("[deleteReply] 민원 답변 삭제 완료 - complaintId={}", complaintId);
