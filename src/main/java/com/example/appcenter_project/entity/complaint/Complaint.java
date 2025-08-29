@@ -48,7 +48,7 @@ public class Complaint extends BaseTimeEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @OneToOne(mappedBy = "complaint", fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "complaint", cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     private ComplaintReply reply;
 
     @OneToMany(orphanRemoval = true)

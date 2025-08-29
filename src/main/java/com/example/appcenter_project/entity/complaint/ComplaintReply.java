@@ -41,7 +41,7 @@ public class ComplaintReply extends BaseTimeEntity {
     private User responder;
 
     // 첨부 파일
-    @OneToMany(mappedBy = "complaintReply", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "complaintReply", cascade = CascadeType.PERSIST, orphanRemoval = true)
     private List<AttachedFile> attachedFiles = new ArrayList<>();
 
 
