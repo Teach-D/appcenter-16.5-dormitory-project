@@ -76,7 +76,6 @@ public class AdminComplaintService {
                 .replyTitle(reply.getReplyTitle())
                 .replyContent(reply.getReplyContent())
                 .responderName(reply.getResponderName())
-                .attachmentUrl(reply.getAttachmentUrl())
                 .createdDate(reply.getCreatedDate().toString())
                 .build();
     }
