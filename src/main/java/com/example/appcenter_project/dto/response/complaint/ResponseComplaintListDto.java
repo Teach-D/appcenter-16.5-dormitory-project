@@ -6,6 +6,8 @@ import lombok.Getter;
 @Getter
 @Builder
 public class ResponseComplaintListDto {
+
+    private Long id;
     private String date;     // 08.27 형식
     private String type;     // 기물 / 시설 / 유형1 / 유형2
     private String title;    // 제목
