@@ -1,5 +1,6 @@
 package com.example.appcenter_project.service.complaint;
 
+import com.example.appcenter_project.dto.AttachedFileDto;
 import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.dto.request.complaint.RequestComplaintDto;
 import com.example.appcenter_project.dto.response.complaint.ResponseComplaintDetailDto;
@@ -7,6 +8,7 @@ import com.example.appcenter_project.dto.response.complaint.ResponseComplaintDto
 import com.example.appcenter_project.dto.response.complaint.ResponseComplaintListDto;
 import com.example.appcenter_project.dto.response.complaint.ResponseComplaintReplyDto;
 import com.example.appcenter_project.entity.Image;
+import com.example.appcenter_project.entity.announcement.AttachedFile;
 import com.example.appcenter_project.entity.complaint.Complaint;
 import com.example.appcenter_project.entity.complaint.ComplaintReply;
 import com.example.appcenter_project.entity.tip.Tip;
@@ -16,6 +18,7 @@ import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.enums.user.DormType;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.exception.ErrorCode;
+import com.example.appcenter_project.repository.announcement.AttachedFileRepository;
 import com.example.appcenter_project.repository.complaint.ComplaintRepository;
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
@@ -50,6 +53,8 @@ public class ComplaintService {
     private final ComplaintRepository complaintRepository;
     private final UserRepository userRepository;
     private final ImageRepository imageRepository;
+    private final AttachedFileRepository attachedFileRepository;
+
     // 민원 등록
     public ResponseComplaintDto createComplaint(Long userId, RequestComplaintDto dto, List<MultipartFile> files) {
         User user = userRepository.findById(userId)
@@ -130,12 +135,16 @@ public class ComplaintService {
 
         ResponseComplaintReplyDto replyDto = null;
         ComplaintReply r = c.getReply();
+
+        List<AttachedFile> attachedFiles = attachedFileRepository.findByComplaintReply(r);
+        List<AttachedFileDto> attachedFileDtos = getAttachedFile(attachedFiles, request);
+
         if (r != null) {
             replyDto = ResponseComplaintReplyDto.builder()
                     .replyTitle(r.getReplyTitle())
                     .replyContent(r.getReplyContent())
                     .responderName(r.getResponderName())
-                    .attachmentUrl(r.getAttachmentUrl())
+                    .attachmentUrl(attachedFileDtos)
                     .createdDate(r.getCreatedDate().toString())
                     .build();
         }
@@ -158,6 +167,7 @@ public class ComplaintService {
                 .status(c.getStatus().toValue())
                 .createdDate(c.getCreatedDate().toString())
                 .reply(replyDto)
+                .officer(c.getOfficer())
                 .images(complaintImages)
                 .build();
     }
@@ -169,12 +179,16 @@ public class ComplaintService {
 
         ResponseComplaintReplyDto replyDto = null;
         ComplaintReply r = c.getReply();
+
+        List<AttachedFile> attachedFiles = attachedFileRepository.findByComplaintReply(r);
+        List<AttachedFileDto> attachedFileDtos = getAttachedFile(attachedFiles, request);
+
         if (r != null) {
             replyDto = ResponseComplaintReplyDto.builder()
                     .replyTitle(r.getReplyTitle())
                     .replyContent(r.getReplyContent())
                     .responderName(r.getResponderName())
-                    .attachmentUrl(r.getAttachmentUrl())
+                    .attachmentUrl(attachedFileDtos)
                     .createdDate(r.getCreatedDate().toString())
                     .build();
         }
@@ -194,7 +208,53 @@ public class ComplaintService {
                 .createdDate(c.getCreatedDate().toString())
                 .reply(replyDto)
                 .images(complaintImages)
+                .officer(c.getOfficer())
                 .build();
+    }
+
+    private List<AttachedFileDto> getAttachedFile(List<AttachedFile> attachedFiles , HttpServletRequest request) {
+        if (attachedFiles.isEmpty()) {
+            return new ArrayList<>(); // 빈 리스트 반환
+        }
+
+        // BaseURL 생성
+        String baseUrl = getBaseUrl(request);
+        List<AttachedFileDto> attachedFileDtos = new ArrayList<>();
+
+        for (AttachedFile attachedFile : attachedFiles) {
+            File file = new File(attachedFile.getFilePath());
+            if (file.exists()) {
+                String fileUrl = baseUrl + "/api/files/complaint_reply/" + attachedFile.getId();
+
+                // 정적 리소스 URL 생성 (User와 동일한 방식)
+                String staticImageUrl = getStaticAttachedFileUrl(attachedFile.getFilePath(), baseUrl);
+                String changeUrl = staticImageUrl.replace("http", "https");
+
+                AttachedFileDto attachedFileDto = AttachedFileDto.builder()
+                        .filePath(changeUrl)
+                        .fileName(attachedFile.getFileName())
+                        .fileSize(attachedFile.getFileSize())
+                        .build();
+
+                attachedFileDtos.add(attachedFileDto);
+            } else {
+                log.warn("AttachedFile not found: {}", attachedFile.getFilePath());
+            }
+        }
+
+
+        return attachedFileDtos;
+    }
+
+    // 정적 첨부파일 이미지 URL 생성 헬퍼 메소드
+    private String getStaticAttachedFileUrl(String filePath, String baseUrl) {
+        try {
+            String fileName = Paths.get(filePath).getFileName().toString();
+            return baseUrl + "/files/complaint_reply/" + fileName;
+        } catch (Exception e) {
+            log.warn("Could not generate static URL for Attached file path: {}", filePath);
+            return null;
+        }
     }
 
     public void updateComplaint(Long userId, RequestComplaintDto dto, Long complaintId, List<MultipartFile> images) {

@@ -156,4 +156,23 @@ public interface AdminComplaintApiSpecification {
             @Parameter(description = "민원 ID", required = true, example = "1")
             Long complaintId
     );
+
+    @Operation(
+            summary = "민원 담당자 배정",
+            description = "관리자가 민원에 담당자를 배정합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "담당자 배정 성공"),
+                    @ApiResponse(responseCode = "404", description = "민원을 찾을 수 없음"),
+                    @ApiResponse(responseCode = "400", description = "잘못된 담당자 정보")
+            }
+    )
+    ResponseEntity<Void> updateComplaintOfficer(
+            @PathVariable
+            @Parameter(description = "민원 ID", required = true, example = "1")
+            Long complaintId,
+            
+            @PathVariable
+            @Parameter(description = "담당자명", required = true, example = "김관리")
+            String officer
+    );
 }
