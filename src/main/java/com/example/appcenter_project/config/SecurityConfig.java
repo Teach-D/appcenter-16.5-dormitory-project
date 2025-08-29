@@ -66,6 +66,8 @@ public class SecurityConfig {
                         // Fcm관련 엔드포인트
                         .requestMatchers(POST, "/fcm/**").permitAll()
 
+                        // 민원관련 엔드포엔트
+                        .requestMatchers("/admin/complaints/**").hasRole("ADMIN")
 
                         .requestMatchers(GET, "/reports/**").hasRole("ADMIN")
                         .requestMatchers(DELETE, "/reports/**").hasRole("ADMIN")

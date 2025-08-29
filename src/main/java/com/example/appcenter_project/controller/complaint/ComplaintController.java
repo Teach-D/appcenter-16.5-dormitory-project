@@ -7,10 +7,17 @@ import com.example.appcenter_project.dto.response.complaint.ResponseComplaintLis
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.complaint.ComplaintService;
 import java.util.List;
+
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import static org.springframework.http.HttpStatus.NO_CONTENT;
+import static org.springframework.http.HttpStatus.OK;
 
 @RestController
 @RequestMapping("/complaints")
@@ -21,26 +28,48 @@ public class ComplaintController implements ComplaintApiSpecification {
 
     // 민원 등록
     @Override
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResponseComplaintDto> createComplaint(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody RequestComplaintDto dto) {
-        ResponseComplaintDto response = complaintService.createComplaint(userDetails.getId(), dto);
+            @RequestPart RequestComplaintDto dto, @RequestPart(value = "files", required = false) List<MultipartFile> files) {
+        ResponseComplaintDto response = complaintService.createComplaint(userDetails.getId(), dto, files);
         return ResponseEntity.ok(response);
     }
 
     // 민원 목록 조회 (최신순)
     @Override
     @GetMapping
-    public ResponseEntity<List<ResponseComplaintListDto>> getAllComplaints() {
-        return ResponseEntity.ok(complaintService.getAllComplaints());
+    public ResponseEntity<List<ResponseComplaintListDto>> getAllComplaints(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(complaintService.getAllComplaintsUserId(userDetails.getId()));
     }
 
     // 민원 상세 조회
     @Override
     @GetMapping("/{complaintId}")
     public ResponseEntity<ResponseComplaintDetailDto> getComplaint(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long complaintId, 
+            HttpServletRequest request) {
+        return ResponseEntity.ok(complaintService.getComplaintDetailByUserId(userDetails.getId(), complaintId, request));
+    }
+
+    @Override
+    @PutMapping(value = "/{complaintId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> updateComplaint(
+            @AuthenticationPrincipal CustomUserDetails userDetails, 
+            @PathVariable Long complaintId,
+            @RequestPart RequestComplaintDto dto, 
+            @RequestPart(value = "files", required = false) List<MultipartFile> files) {
+        complaintService.updateComplaint(userDetails.getId(), dto, complaintId, files);
+        return ResponseEntity.status(OK).build();
+    }
+
+    @Override
+    @DeleteMapping("/{complaintId}")
+    public ResponseEntity<Void> deleteComplaint(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long complaintId) {
-        return ResponseEntity.ok(complaintService.getComplaintDetail(complaintId));
+        complaintService.deleteComplaint(userDetails.getId(), complaintId);
+        return ResponseEntity.status(NO_CONTENT).build();
     }
 }

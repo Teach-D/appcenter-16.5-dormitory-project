@@ -2,6 +2,7 @@ package com.example.appcenter_project.repository.announcement;
 
 import com.example.appcenter_project.entity.announcement.Announcement;
 import com.example.appcenter_project.entity.announcement.AttachedFile;
+import com.example.appcenter_project.entity.complaint.ComplaintReply;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -17,4 +18,8 @@ public interface AttachedFileRepository extends JpaRepository<AttachedFile, Long
     Optional<AttachedFile> findByFilePathAndAnnouncementId(String filePath, Long announcementId);
 
     Optional<AttachedFile> findByFilePathAndAnnouncement(String filePath, Announcement announcement);
+
+    List<AttachedFile> findByComplaintReply(ComplaintReply complaintReply);
+
+    void deleteByComplaintReply(ComplaintReply complaintReply);
 }

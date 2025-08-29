@@ -1,11 +1,16 @@
 package com.example.appcenter_project.entity.complaint;
 
+import com.example.appcenter_project.dto.request.complaint.RequestComplaintReplyDto;
 import com.example.appcenter_project.entity.BaseTimeEntity;
+import com.example.appcenter_project.entity.announcement.AttachedFile;
 import com.example.appcenter_project.entity.user.User;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -35,6 +40,11 @@ public class ComplaintReply extends BaseTimeEntity {
     @JoinColumn(name = "responder_id")
     private User responder;
 
+    // 첨부 파일
+    @OneToMany(mappedBy = "complaintReply", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AttachedFile> attachedFiles = new ArrayList<>();
+
+
     @Builder
     public ComplaintReply(String replyTitle, String replyContent, String responderName, String attachmentUrl, Complaint complaint, User responder) {
         this.replyTitle = replyTitle;
@@ -43,5 +53,11 @@ public class ComplaintReply extends BaseTimeEntity {
         this.attachmentUrl = attachmentUrl;
         this.complaint = complaint;
         this.responder = responder;
+    }
+
+    public void update(RequestComplaintReplyDto dto) {
+        this.replyTitle = dto.getReplyTitle();
+        this.replyContent = dto.getReplyContent();
+        this.responderName = dto.getResponderName();
     }
 }

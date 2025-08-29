@@ -13,10 +13,13 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -54,7 +57,10 @@ public interface AdminComplaintApiSpecification {
     ResponseEntity<ResponseComplaintDetailDto> getComplaintDetail(
             @PathVariable
             @Parameter(description = "민원 ID", required = true, example = "1")
-            Long complaintId
+            Long complaintId,
+            
+            @Parameter(description = "HTTP 요청 정보", hidden = true)
+            HttpServletRequest request
     );
 
     @Operation(
@@ -80,9 +86,13 @@ public interface AdminComplaintApiSpecification {
             @Parameter(description = "민원 ID", required = true, example = "1")
             Long complaintId,
 
-            @RequestBody
+            @RequestPart
             @Parameter(description = "답변 등록 정보", required = true)
-            RequestComplaintReplyDto dto
+            RequestComplaintReplyDto dto,
+            
+            @RequestPart(value = "files", required = false)
+            @Parameter(description = "첨부 파일 목록 (선택사항)")
+            List<MultipartFile> files
     );
 
     @Operation(
@@ -102,5 +112,48 @@ public interface AdminComplaintApiSpecification {
             @RequestBody
             @Parameter(description = "변경할 민원 상태", required = true)
             RequestComplaintStatusDto dto
+    );
+
+    @Operation(
+            summary = "민원 답변 수정",
+            description = "관리자가 등록한 민원 답변을 수정합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "답변 수정 성공"),
+                    @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
+                    @ApiResponse(responseCode = "404", description = "민원 또는 답변을 찾을 수 없음"),
+                    @ApiResponse(responseCode = "403", description = "권한 없음")
+            }
+    )
+    ResponseEntity<ResponseComplaintReplyDto> updateReply(
+            @AuthenticationPrincipal
+            @Parameter(description = "로그인 관리자", required = true)
+            CustomUserDetails admin,
+
+            @PathVariable
+            @Parameter(description = "민원 ID", required = true, example = "1")
+            Long complaintId,
+
+            @RequestPart
+            @Parameter(description = "답변 수정 정보", required = true)
+            RequestComplaintReplyDto dto,
+            
+            @RequestPart(value = "files", required = false)
+            @Parameter(description = "첨부 파일 목록 (선택사항)")
+            List<MultipartFile> files
+    );
+
+    @Operation(
+            summary = "민원 답변 삭제",
+            description = "관리자가 등록한 민원 답변을 삭제합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "204", description = "답변 삭제 성공"),
+                    @ApiResponse(responseCode = "404", description = "민원 또는 답변을 찾을 수 없음"),
+                    @ApiResponse(responseCode = "403", description = "권한 없음")
+            }
+    )
+    ResponseEntity<Void> deleteReply(
+            @PathVariable
+            @Parameter(description = "민원 ID", required = true, example = "1")
+            Long complaintId
     );
 }

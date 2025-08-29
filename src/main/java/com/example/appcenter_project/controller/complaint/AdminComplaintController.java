@@ -9,16 +9,22 @@ import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.complaint.AdminComplaintService;
 import com.example.appcenter_project.service.complaint.ComplaintService;
 import java.util.List;
+
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import static org.springframework.http.HttpStatus.NO_CONTENT;
+import static org.springframework.http.HttpStatus.OK;
 
 @RestController
 @RequestMapping("/admin/complaints")
 @RequiredArgsConstructor
-@PreAuthorize("hasAuthority('ROLE_ADMIN')")
 public class AdminComplaintController implements AdminComplaintApiSpecification {
 
     private final ComplaintService complaintService;         // 기존 조회 로직 재사용
@@ -33,30 +39,51 @@ public class AdminComplaintController implements AdminComplaintApiSpecification 
     // 민원 상세 조회
     @GetMapping("/{complaintId}")
     public ResponseEntity<ResponseComplaintDetailDto> getComplaintDetail(
-            @PathVariable Long complaintId
+            @PathVariable Long complaintId, HttpServletRequest request
     ) {
-        return ResponseEntity.ok(complaintService.getComplaintDetail(complaintId));
+        return ResponseEntity.ok(complaintService.getComplaintDetail(complaintId, request));
     }
 
     // 민원 답변 등록
-    @PostMapping("/{complaintId}/reply")
+    @PostMapping(value = "/{complaintId}/reply", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResponseComplaintReplyDto> addReply(
             @AuthenticationPrincipal CustomUserDetails admin,
             @PathVariable Long complaintId,
-            @RequestBody RequestComplaintReplyDto dto
+            @RequestPart RequestComplaintReplyDto dto,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files
     ) {
         ResponseComplaintReplyDto response =
-                adminComplaintService.addReply(admin.getId(), complaintId, dto);
+                adminComplaintService.addReply(admin.getId(), complaintId, dto, files);
         return ResponseEntity.ok(response);
     }
 
     // 민원 상태 변경
-    @PutMapping("/{complaintId}/status")
+    @PatchMapping("/{complaintId}/status")
     public ResponseEntity<Void> updateStatus(
             @PathVariable Long complaintId,
             @RequestBody RequestComplaintStatusDto dto
     ) {
         adminComplaintService.updateStatus(complaintId, dto);
         return ResponseEntity.ok().build();
+    }
+
+    // 민원 답변 수정
+    @PutMapping(value = "/{complaintId}/reply", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ResponseComplaintReplyDto> updateReply(
+            @AuthenticationPrincipal CustomUserDetails admin,
+            @PathVariable Long complaintId,
+            @RequestPart RequestComplaintReplyDto dto,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files
+    ) {
+        adminComplaintService.updateReply(admin.getId(), complaintId, dto, files);
+        return ResponseEntity.status(OK).build();
+    }
+
+    // 민원 답변 삭제
+    @DeleteMapping("/{complaintId}")
+    public ResponseEntity<Void> deleteReply(
+            @PathVariable Long complaintId) {
+        adminComplaintService.deleteReply(complaintId);
+        return ResponseEntity.status(NO_CONTENT).build();
     }
 }

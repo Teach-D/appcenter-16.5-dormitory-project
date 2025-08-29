@@ -3,6 +3,8 @@ package com.example.appcenter_project.service.complaint;
 import com.example.appcenter_project.dto.request.complaint.RequestComplaintReplyDto;
 import com.example.appcenter_project.dto.request.complaint.RequestComplaintStatusDto;
 import com.example.appcenter_project.dto.response.complaint.*;
+import com.example.appcenter_project.entity.announcement.Announcement;
+import com.example.appcenter_project.entity.announcement.AttachedFile;
 import com.example.appcenter_project.entity.complaint.Complaint;
 import com.example.appcenter_project.entity.complaint.ComplaintReply;
 import com.example.appcenter_project.entity.user.User;
@@ -11,16 +13,27 @@ import com.example.appcenter_project.enums.complaint.ComplaintType;
 import com.example.appcenter_project.enums.user.DormType;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.exception.ErrorCode;
+import com.example.appcenter_project.repository.announcement.AttachedFileRepository;
 import com.example.appcenter_project.repository.complaint.ComplaintReplyRepository;
 import com.example.appcenter_project.repository.complaint.ComplaintRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.example.appcenter_project.exception.ErrorCode.*;
+import static com.google.common.io.Files.getFileExtension;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -29,18 +42,18 @@ public class AdminComplaintService {
     private final ComplaintRepository complaintRepository;
     private final ComplaintReplyRepository replyRepository;
     private final UserRepository userRepository;
-
+    private final AttachedFileRepository attachedFileRepository;
 
     // 민원 답변 등록
-    public ResponseComplaintReplyDto addReply(Long adminId, Long complaintId, RequestComplaintReplyDto dto) {
+    public ResponseComplaintReplyDto addReply(Long adminId, Long complaintId, RequestComplaintReplyDto dto, List<MultipartFile> files) {
         User admin = userRepository.findById(adminId)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
         Complaint complaint = complaintRepository.findById(complaintId)
-                .orElseThrow(() -> new CustomException(ErrorCode.COMPLAINT_NOT_FOUND));
+                .orElseThrow(() -> new CustomException(COMPLAINT_NOT_FOUND));
 
         if (complaint.getReply() != null) {
-            throw new CustomException(ErrorCode.COMPLAINT_ALREADY_REPLIED);
+            throw new CustomException(COMPLAINT_ALREADY_REPLIED);
         }
 
         ComplaintReply reply = ComplaintReply.builder()
@@ -56,6 +69,9 @@ public class AdminComplaintService {
 
         complaint.updateStatus(ComplaintStatus.COMPLETED);
 
+        // 첨부파일 저장
+        saveUploadFile(reply, files);
+
         return ResponseComplaintReplyDto.builder()
                 .replyTitle(reply.getReplyTitle())
                 .replyContent(reply.getReplyContent())
@@ -68,9 +84,108 @@ public class AdminComplaintService {
     // 민원 상태 변경
     public void updateStatus(Long complaintId, RequestComplaintStatusDto dto) {
         Complaint complaint = complaintRepository.findById(complaintId)
-                .orElseThrow(() -> new CustomException(ErrorCode.COMPLAINT_NOT_FOUND));
+                .orElseThrow(() -> new CustomException(COMPLAINT_NOT_FOUND));
 
         ComplaintStatus status = ComplaintStatus.from(dto.getStatus());
         complaint.updateStatus(status);
     }
+
+    public void updateReply(Long userId, Long complaintId, RequestComplaintReplyDto dto, List<MultipartFile> files) {
+        Complaint complaint = complaintRepository.findById(complaintId).orElseThrow(() -> new CustomException(COMPLAINT_NOT_FOUND));
+        ComplaintReply reply = complaint.getReply();
+        reply.update(dto);
+
+        deleteExistingAttachedFiles(reply);
+
+        if (files != null && !files.isEmpty()) {
+            saveUploadFile(reply, files);
+        }
+    }
+
+    public void deleteReply(Long complaintId) {
+        Complaint complaint = complaintRepository.findById(complaintId).orElseThrow(() -> new CustomException(COMPLAINT_NOT_FOUND));
+        ComplaintReply reply = complaint.getReply();
+
+        complaintRepository.deleteById(complaintId);
+        deleteExistingAttachedFiles(reply);
+    }
+
+    private void deleteExistingAttachedFiles(ComplaintReply complaintReply) {
+        log.info("[deleteExistingAttachedFiles] 기존 첨부파일 삭제 시작 - complaintReply={}", complaintReply.getId());
+
+        List<AttachedFile> existingFiles = attachedFileRepository.findByComplaintReply(complaintReply);
+
+        for (AttachedFile attachedFile : existingFiles) {
+            // 파일시스템에서 파일 삭제
+            File file = new File(attachedFile.getFilePath());
+            if (file.exists()) {
+                boolean deleted = file.delete();
+                if (deleted) {
+                    log.info("파일 삭제 성공: {}", attachedFile.getFilePath());
+                } else {
+                    log.warn("파일 삭제 실패: {}", attachedFile.getFilePath());
+                }
+            } else {
+                log.warn("삭제할 파일이 존재하지 않음: {}", attachedFile.getFilePath());
+            }
+        }
+
+        // DB에서 첨부파일 레코드 삭제 (cascade로 자동 삭제되지만 명시적으로 처리)
+        attachedFileRepository.deleteByComplaintReply(complaintReply);
+
+        // 엔티티의 컬렉션도 정리
+        complaintReply.getAttachedFiles().clear();
+
+        log.info("[deleteExistingAttachedFiles] 기존 첨부파일 삭제 완료 - 삭제된 파일 수: {}", existingFiles.size());
+    }
+
+    private void saveUploadFile(ComplaintReply complaintReply, List<MultipartFile> files) {
+        if (files != null && !files.isEmpty()) {
+            // 개발 환경에 맞는 경로 설정
+            String basePath = System.getProperty("user.dir");
+            String filePath = basePath + "/files/complaint_reply/";
+
+            // 디렉토리 생성 (존재하지 않으면)
+            File directory = new File(filePath);
+            if (!directory.exists()) {
+                boolean created = directory.mkdirs();
+            }
+
+            // 첨부파일 저장
+            for (MultipartFile file : files) {
+                if (file == null || file.isEmpty()) {
+                    log.warn("Empty file skipped during complaint_reply image save");
+                    continue;
+                }
+
+                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                String fileExtension = getFileExtension(file.getOriginalFilename());
+                String uuid = UUID.randomUUID().toString();
+                String uploadFileName = "complaint_reply" + complaintReply.getId() + "_" + uuid + timestamp + fileExtension;
+                File destinationFile = new File(filePath + uploadFileName);
+
+                try {
+                    file.transferTo(destinationFile);
+                    log.info("ComplaintReply file saved successfully: {}", destinationFile.getAbsolutePath());
+
+                    AttachedFile attachedFile = AttachedFile.builder()
+                            .filePath(destinationFile.getAbsolutePath())
+                            .fileName(file.getOriginalFilename())
+                            .fileSize(file.getSize())
+                            .complaintReply(complaintReply)
+                            .build();
+
+                    attachedFileRepository.save(attachedFile);
+
+                    complaintReply.getAttachedFiles().add(attachedFile);
+
+                } catch (IOException e) {
+                    log.error("Failed to save ComplaintReply file for complaintReply {}: ", complaintReply.getId(), e);
+                    throw new CustomException(IMAGE_NOT_FOUND);
+                }
+            }
+        }
+    }
+
+
 }

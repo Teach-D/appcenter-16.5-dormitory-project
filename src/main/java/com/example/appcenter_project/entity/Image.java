@@ -19,6 +19,7 @@ public class Image {
     private String filePath;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "image_type", length = 30)
     private ImageType imageType;
 
     @Column(nullable = false)
