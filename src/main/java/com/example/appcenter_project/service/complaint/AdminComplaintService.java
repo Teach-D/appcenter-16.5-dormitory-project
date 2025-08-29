@@ -187,5 +187,17 @@ public class AdminComplaintService {
         }
     }
 
+    // 파일 확장자 추출 헬퍼 메소드
+    private String getFileExtension(String fileName) {
+        if (fileName == null || fileName.isEmpty()) {
+            return ".pdf"; // 기본 확장자
+        }
 
+        int lastDotIndex = fileName.lastIndexOf(".");
+        if (lastDotIndex == -1) {
+            return ".pdf"; // 확장자가 없으면 기본값
+        }
+
+        return fileName.substring(lastDotIndex).toLowerCase();
+    }
 }
