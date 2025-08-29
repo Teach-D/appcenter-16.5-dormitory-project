@@ -12,4 +12,6 @@ public class ResponseComplaintListDto {
     private String type;     // 기물 / 시설 / 유형1 / 유형2
     private String title;    // 제목
     private String status;   // 대기중 / 담당자 배정 / 처리중 / 처리완료
+    private String officer; // 담당자 이름
+    private String caseNumber; // 사생번호
 }

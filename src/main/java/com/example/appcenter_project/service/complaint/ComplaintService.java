@@ -111,6 +111,8 @@ public class ComplaintService {
                         .type(c.getType().toValue())
                         .title(c.getTitle())
                         .status(c.getStatus().toValue())
+                        .officer(c.getOfficer())
+                        .caseNumber(c.getCaseNumber())
                         .build())
                 .collect(Collectors.toList());
     }
