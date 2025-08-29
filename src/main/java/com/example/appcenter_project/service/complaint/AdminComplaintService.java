@@ -149,6 +149,7 @@ public class AdminComplaintService {
             } else {
                 log.warn("삭제할 파일이 존재하지 않음: {}", attachedFile.getFilePath());
             }
+            attachedFileRepository.delete(attachedFile);
         }
 
         log.info("[deletePhysicalFilesByReplyId] 물리적 파일 삭제 완료 - 처리된 파일 수: {}", existingFiles.size());
