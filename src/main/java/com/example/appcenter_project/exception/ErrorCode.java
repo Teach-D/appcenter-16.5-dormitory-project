@@ -102,7 +102,18 @@ public enum ErrorCode {
     ATTACHEDFILE_NOT_REGISTERED(NOT_FOUND, 13001, "[ATTACHEDFILE] 해당 파일을 찾을 수 없습니다"),
 
     // CALENDER
-    CALENDER_NOT_REGISTERED(NOT_FOUND, 13001, "[CALENDER] 해당 캘린더 정보를 찾을 수 없습니다");
+    CALENDER_NOT_REGISTERED(NOT_FOUND, 13001, "[CALENDER] 해당 캘린더 정보를 찾을 수 없습니다"),
+
+    // COMPLAINT
+    COMPLAINT_NOT_FOUND(NOT_FOUND, 14001, "[Complaint] 해당 민원을 찾을 수 없습니다."),
+    COMPLAINT_REPLY_NOT_FOUND(NOT_FOUND, 14002, "[Complaint] 해당 민원의 답변을 찾을 수 없습니다."),
+    COMPLAINT_NOT_OWNED_BY_USER(FORBIDDEN, 14003, "[Complaint] 본인이 작성한 민원이 아니기 때문에 수정 및 삭제할 권한이 없습니다."),
+    COMPLAINT_ALREADY_REPLIED(CONFLICT, 14004, "[Complaint] 이미 답변이 등록된 민원입니다."),
+    INVALID_COMPLAINT_TYPE(BAD_REQUEST, 14005, "[Complaint] 올바르지 않은 민원 유형입니다."),
+    INVALID_COMPLAINT_STATUS(BAD_REQUEST, 14006, "[Complaint] 올바르지 않은 민원 상태입니다."),
+    INVALID_DORM_TYPE(BAD_REQUEST, 14007, "[Complaint] 올바르지 않은 기숙사 유형입니다."),
+    COMPLAINT_REQUIRED_FIELD_MISSING(BAD_REQUEST, 14008, "[Complaint] 필수 입력값이 누락되었습니다.");
+
 
 
     private final HttpStatus httpStatus;
