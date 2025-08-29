@@ -199,4 +199,9 @@ public class AdminComplaintService {
 
         return fileName.substring(lastDotIndex).toLowerCase();
     }
+
+    public void updateComplaintOfficer(Long complaintId, String officer) {
+        Complaint complaint = complaintRepository.findById(complaintId).orElseThrow(() -> new CustomException(COMPLAINT_NOT_FOUND));
+        complaint.updateOfficer(officer);
+    }
 }

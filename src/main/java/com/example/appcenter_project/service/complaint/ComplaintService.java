@@ -167,6 +167,7 @@ public class ComplaintService {
                 .status(c.getStatus().toValue())
                 .createdDate(c.getCreatedDate().toString())
                 .reply(replyDto)
+                .officer(c.getOfficer())
                 .images(complaintImages)
                 .build();
     }
@@ -207,6 +208,7 @@ public class ComplaintService {
                 .createdDate(c.getCreatedDate().toString())
                 .reply(replyDto)
                 .images(complaintImages)
+                .officer(c.getOfficer())
                 .build();
     }
 

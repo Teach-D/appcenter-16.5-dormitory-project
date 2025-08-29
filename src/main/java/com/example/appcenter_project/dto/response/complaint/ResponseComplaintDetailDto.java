@@ -17,6 +17,7 @@ public class ResponseComplaintDetailDto {
     private String contact;
     private String status;      // 대기중 등
     private String createdDate; // ISO 또는 포맷 문자열
+    private String officer;
     private ResponseComplaintReplyDto reply; // null 가능
     private List<String> images;
 }

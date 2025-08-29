@@ -67,6 +67,15 @@ public class AdminComplaintController implements AdminComplaintApiSpecification 
         return ResponseEntity.ok().build();
     }
 
+    @PatchMapping("/{complaintId}/officer/{officer}")
+    public ResponseEntity<Void> updateComplaintOfficer(
+            @PathVariable Long complaintId,
+            @PathVariable String officer
+    ) {
+        adminComplaintService.updateComplaintOfficer(complaintId, officer);
+        return ResponseEntity.ok().build();
+    }
+
     // 민원 답변 수정
     @PutMapping(value = "/{complaintId}/reply", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResponseComplaintReplyDto> updateReply(
@@ -86,4 +95,5 @@ public class AdminComplaintController implements AdminComplaintApiSpecification 
         adminComplaintService.deleteReply(complaintId);
         return ResponseEntity.status(NO_CONTENT).build();
     }
+
 }
