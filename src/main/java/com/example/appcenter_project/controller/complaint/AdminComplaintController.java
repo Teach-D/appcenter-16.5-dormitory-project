@@ -1,6 +1,7 @@
 package com.example.appcenter_project.controller.complaint;
 
 import com.example.appcenter_project.dto.request.complaint.RequestComplaintReplyDto;
+import com.example.appcenter_project.dto.request.complaint.RequestComplaintSearchDto;
 import com.example.appcenter_project.dto.request.complaint.RequestComplaintStatusDto;
 import com.example.appcenter_project.dto.response.complaint.ResponseComplaintDetailDto;
 import com.example.appcenter_project.dto.response.complaint.ResponseComplaintListDto;
@@ -95,5 +96,15 @@ public class AdminComplaintController implements AdminComplaintApiSpecification 
         adminComplaintService.deleteReply(complaintId);
         return ResponseEntity.status(NO_CONTENT).build();
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<ResponseComplaintListDto>> searchComplaints(
+            @ModelAttribute RequestComplaintSearchDto dto
+    ) {
+        return ResponseEntity.ok(
+                complaintService.searchComplaints(null, dto)
+        );
+    }
+
 
 }
