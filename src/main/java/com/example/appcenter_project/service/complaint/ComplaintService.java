@@ -3,6 +3,7 @@ package com.example.appcenter_project.service.complaint;
 import com.example.appcenter_project.dto.AttachedFileDto;
 import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.dto.request.complaint.RequestComplaintDto;
+import com.example.appcenter_project.dto.request.complaint.RequestComplaintSearchDto;
 import com.example.appcenter_project.dto.response.complaint.ResponseComplaintDetailDto;
 import com.example.appcenter_project.dto.response.complaint.ResponseComplaintDto;
 import com.example.appcenter_project.dto.response.complaint.ResponseComplaintListDto;
@@ -13,6 +14,7 @@ import com.example.appcenter_project.entity.complaint.Complaint;
 import com.example.appcenter_project.entity.complaint.ComplaintReply;
 import com.example.appcenter_project.entity.tip.Tip;
 import com.example.appcenter_project.entity.user.User;
+import com.example.appcenter_project.enums.complaint.ComplaintStatus;
 import com.example.appcenter_project.enums.complaint.ComplaintType;
 import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.enums.user.DormType;
@@ -20,6 +22,7 @@ import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.exception.ErrorCode;
 import com.example.appcenter_project.repository.announcement.AttachedFileRepository;
 import com.example.appcenter_project.repository.complaint.ComplaintRepository;
+import com.example.appcenter_project.repository.complaint.ComplaintSpecification;
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 
@@ -36,6 +39,7 @@ import java.util.stream.Collectors;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -410,5 +414,38 @@ public class ComplaintService {
             return null;
         }
     }
+
+    //필터 검색
+    @Transactional(readOnly = true)
+    public List<ResponseComplaintListDto> searchComplaints(Long userId, RequestComplaintSearchDto dto) {
+
+        Specification<Complaint> spec = Specification
+                .where(ComplaintSpecification.hasDormType(dto.getDormType()))
+                .and(ComplaintSpecification.hasOfficer(dto.getOfficer()))
+                .and(ComplaintSpecification.hasCaseNumber(dto.getCaseNumber()))
+                .and(ComplaintSpecification.hasStatus(dto.getStatus()))
+                .and(ComplaintSpecification.hasKeyword(dto.getKeyword()))
+                .and(ComplaintSpecification.hasType(dto.getType()));
+
+        // 사용자일 경우 본인 것만
+        if (userId != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("user").get("id"), userId));
+        }
+
+        return complaintRepository.findAll(spec).stream()
+                .map(c -> ResponseComplaintListDto.builder()
+                        .id(c.getId())
+                        .date(c.getCreatedDate().toLocalDate().toString())
+                        .type(c.getType().toValue())
+                        .title(c.getTitle())
+                        .status(c.getStatus().toValue())
+                        .officer(c.getOfficer())
+                        .caseNumber(c.getCaseNumber())
+                        .dormType(c.getDormType().toValue())
+                        .build())
+                .toList();
+    }
+
+
 
 }

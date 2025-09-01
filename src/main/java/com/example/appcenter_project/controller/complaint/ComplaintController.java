@@ -1,9 +1,13 @@
 package com.example.appcenter_project.controller.complaint;
 
 import com.example.appcenter_project.dto.request.complaint.RequestComplaintDto;
+import com.example.appcenter_project.dto.request.complaint.RequestComplaintSearchDto;
 import com.example.appcenter_project.dto.response.complaint.ResponseComplaintDetailDto;
 import com.example.appcenter_project.dto.response.complaint.ResponseComplaintDto;
 import com.example.appcenter_project.dto.response.complaint.ResponseComplaintListDto;
+import com.example.appcenter_project.enums.complaint.ComplaintStatus;
+import com.example.appcenter_project.enums.complaint.ComplaintType;
+import com.example.appcenter_project.enums.user.DormType;
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.complaint.ComplaintService;
 import java.util.List;
@@ -72,4 +76,16 @@ public class ComplaintController implements ComplaintApiSpecification {
         complaintService.deleteComplaint(userDetails.getId(), complaintId);
         return ResponseEntity.status(NO_CONTENT).build();
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<ResponseComplaintListDto>> searchComplaints(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @ModelAttribute RequestComplaintSearchDto dto
+    ) {
+        return ResponseEntity.ok(
+                complaintService.searchComplaints(userDetails.getId(), dto)
+        );
+    }
+
+
 }
