@@ -51,9 +51,6 @@ public class GroupOrderChatRoomService {
         groupOrderChatRoom.getUserGroupOrderChatRoomList().add(userGroupOrderChatRoom);
         user.getUserGroupOrderChatRoomList().add(userGroupOrderChatRoom);
 
-        // GroupOrder의 currentPeople 1증가
-        groupOrder.plusCurrentPeople();
-
         userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);
     }
 

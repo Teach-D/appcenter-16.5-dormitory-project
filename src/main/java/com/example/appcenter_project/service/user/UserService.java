@@ -140,7 +140,6 @@ public class UserService {
 
     public ResponseLoginDto login(SignupUser signupUser) {
         String studentNumber = signupUser.getStudentNumber();
-
         // admin으로 시작하지 않는 경우에만 학교 로그인 체크
         if (!studentNumber.startsWith("admin")) {
             String loginCheck = schoolLoginRepository.loginCheck(studentNumber, signupUser.getPassword());
@@ -162,66 +161,6 @@ public class UserService {
         return new ResponseLoginDto(accessToken, refreshToken);
     }
 
-    public List<ResponseBoardDto> findLikeByUserId(Long userId) {
-        log.info("[findLikeByUserId] userId={}의 좋아요 게시물 조회 시작", userId);
-
-        List<ResponseBoardDto> responseBoardDtoList = new ArrayList<>();
-
-//        List<ResponseGroupOrderDto> likeGroupOrders = groupOrderMapper.findLikeGroupOrders(userId);
-//        responseBoardDtoList.addAll(likeGroupOrders);
-
-        List<ResponseRoommatePostDto> responseLikeDtoList = new ArrayList<>();
-        // N+1 문제 해결: Fetch Join 사용
-        List<RoommateBoardLike> likeRoommateBoardLikes = roommateBoardLikeRepository.findByUserId(userId);
-        for (RoommateBoardLike likeRoommateBoardLike : likeRoommateBoardLikes) {
-            RoommateBoard roommateBoard = likeRoommateBoardLike.getRoommateBoard();
-            ResponseRoommatePostDto responseRoommatePostDto = ResponseRoommatePostDto.entityToDto(roommateBoard, false,null);
-            responseLikeDtoList.add(responseRoommatePostDto);
-        }
-
-        List<ResponseTipDto> responseTipDtos = new ArrayList<>();
-        // Tip N+1 문제 해결: Fetch Join 사용
-        List<TipLike> tipLikes = tipLikeRepository.findByUserIdWithTip(userId);
-        for (TipLike tipLike : tipLikes) {
-            Tip tip = tipLike.getTip();
-            ResponseTipDto responseTipDto = ResponseTipDto.entityToDto(tip);
-            responseTipDtos.add(responseTipDto);
-        }
-
-        List<ResponseGroupOrderDto> responseGroupOrderDtos = new ArrayList<>();
-        List<GroupOrderLike> groupOrderLikes = groupOrderLikeRepository.findByUserId(userId);
-        for (GroupOrderLike groupOrderLike : groupOrderLikes) {
-            GroupOrder groupOrder = groupOrderLike.getGroupOrder();
-            ResponseGroupOrderDto responseGroupOrderDto = ResponseGroupOrderDto.entityToDto(groupOrder);
-            responseGroupOrderDtos.add(responseGroupOrderDto);
-        }
-
-        responseBoardDtoList.addAll(responseGroupOrderDtos);
-        responseBoardDtoList.addAll(responseLikeDtoList);
-        responseBoardDtoList.addAll(responseTipDtos);
-
-        log.info("[findLikeByUserId] 총 좋아요 게시물 수: {}", responseBoardDtoList.size());
-
-        // 로그 추가로 디버깅
-        log.debug("[findLikeByUserId] 정렬 전 데이터:");
-        for (ResponseBoardDto board : responseBoardDtoList) {
-            log.debug("  - Type: {}, CreateDate: {}, Title: {}", board.getType(), board.getCreateDate(), board.getTitle());
-        }
-
-        // 최신순 정렬 (createTime이 가장 최근인 것부터)
-        responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateDate).reversed());
-
-        // 정렬 후 로그
-        log.debug("[findLikeByUserId] 정렬 후 데이터:");
-        for (ResponseBoardDto board : responseBoardDtoList) {
-            log.debug("  - Type: {}, CreateDate: {}, Title: {}", board.getType(), board.getCreateDate(), board.getTitle());
-        }
-
-        log.info("[findLikeByUserId] userId={}의 좋아요 게시물 조회 완료", userId);
-
-        return responseBoardDtoList;
-    }
-
     public List<ResponseBoardDto> findLikeByUserId_optimization(Long userId, HttpServletRequest request) {
         log.info("[findLikeByUserId] userId={}의 좋아요 게시물 조회 시작", userId);
 
@@ -239,32 +178,6 @@ public class UserService {
         responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateDate).reversed());
 
         log.info("[findLikeByUserId] userId={}의 좋아요 게시물 조회 완료", userId);
-
-        return responseBoardDtoList;
-    }
-
-    public List<ResponseBoardDto> findBoardByUserId(Long userId) {
-        log.info("[findBoardByUserId] userId={}의 작성한 게시물 조회 시작", userId);
-
-        List<ResponseBoardDto> responseBoardDtoList = new ArrayList<>();
-
-        List<ResponseTipDto> tipsByUserId = tipMapper.findTipsByUserId(userId);
-        log.info("[findBoardByUserId] Tip 게시물 개수: {}", tipsByUserId.size());
-
-        List<ResponseGroupOrderDto> responseGroupOrderDtos = new ArrayList<>();
-        List<GroupOrder> groupOrders = groupOrderRepository.findByUserId(userId);
-        for (GroupOrder groupOrder : groupOrders) {
-            ResponseGroupOrderDto responseGroupOrderDto = ResponseGroupOrderDto.entityToDto(groupOrder);
-            responseGroupOrderDtos.add(responseGroupOrderDto);
-        }
-
-        responseBoardDtoList.addAll(responseGroupOrderDtos);
-        responseBoardDtoList.addAll(tipsByUserId);
-
-        // 최신순 정렬 (createTime이 가장 최근인 것부터)
-        responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateDate).reversed());
-
-        log.info("[findBoardByUserId] userId={}의 게시물 조회 완료", userId);
 
         return responseBoardDtoList;
     }

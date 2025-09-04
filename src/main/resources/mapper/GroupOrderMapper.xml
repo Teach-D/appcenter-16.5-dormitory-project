@@ -7,15 +7,12 @@
         <id property="boardId" column="id"/>
         <result property="title" column="title"/>
         <result property="type" column="type"/>
-        <result property="createDate" column="create_date"/>
-        <result property="filePath" column="file_path"/>
-
-        <result property="price" column="price"/>
-        <result property="currentPeople" column="current_people"/>
-        <result property="maxPeople" column="max_people"/>
-        <result property="groupOrderType" column="group_order_type"/>
-        <result property="deadline" column="deadline"/>
-        <result property="isRecruitmentComplete" column="recruitment_complete"/>
+        <result property="price" column="price" javaType="int"/>
+        <result property="groupOrderType" column="group_order_type" javaType="com.example.appcenter_project.enums.groupOrder.GroupOrderType"/>
+        <result property="deadline" column="deadline" javaType="string"/>
+        <result property="isRecruitmentComplete" column="recruitment_complete" javaType="boolean"/>
+        <result property="createDate" column="create_date" javaType="java.time.LocalDateTime"/>
+        <result property="filePath" column="file_path" javaType="string"/>
     </resultMap>
 
     <select id="findGroupOrders" resultMap="groupOrderResultMap">
@@ -25,8 +22,6 @@
         'GROUP_ORDER' as type,
         go.price,
         go.link,
-        go.current_people,
-        go.max_people,
         go.deadline,
         go.group_order_like,
         go.description,

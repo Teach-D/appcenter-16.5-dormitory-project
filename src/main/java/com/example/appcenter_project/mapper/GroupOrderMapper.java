@@ -14,9 +14,9 @@ public interface GroupOrderMapper {
                                                 @Param("search") String search,
                                                 @Param("sort") String sort);
 
-    ResponseGroupOrderDetailDto findGroupOrderById(@Param("groupOrderId") Long groupOrderId);
+/*    ResponseGroupOrderDetailDto findGroupOrderById(@Param("groupOrderId") Long groupOrderId);
 
     List<ResponseGroupOrderDto> findLikeGroupOrders(@Param("userId") Long userId);
-    List<ResponseGroupOrderDto> findGroupOrdersByUserId(@Param("userId") Long userId);
+    List<ResponseGroupOrderDto> findGroupOrdersByUserId(@Param("userId") Long userId);*/
 
 }

@@ -36,8 +36,6 @@ public class ResponseGroupOrderChatRoomDetailDto {
                 .groupOrderChatRoomId(groupOrderChatRoom.getId())
                 .groupOrderChatRoomTitle(groupOrderChatRoom.getTitle())
                 .groupOrderId(groupOrder.getId())
-                .currentPeople(groupOrder.getCurrentPeople())
-                .maxPeople(groupOrder.getMaxPeople())
                 .deadline(groupOrder.getDeadline())
                 .groupOrderChatDtoList(groupOrderChatDtoList)
                 .build();

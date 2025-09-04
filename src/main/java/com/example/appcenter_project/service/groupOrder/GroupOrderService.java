@@ -85,12 +85,25 @@ public class GroupOrderService {
     }
 
     public ResponseGroupOrderDetailDto findGroupOrderById(CustomUserDetails jwtUser, Long groupOrderId, HttpServletRequest request) {
+        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+
+        List<ResponseGroupOrderCommentDto> flatComments = new ArrayList<>();
+
+        for (GroupOrderComment groupOrderComment : groupOrder.getGroupOrderCommentList()) {
+            flatComments.add(ResponseGroupOrderCommentDto.entityToDto(groupOrderComment));
+        }
+
+/*
+
         ResponseGroupOrderDetailDto flatDto = groupOrderMapper.findGroupOrderById(groupOrderId);
         if (flatDto == null) {
             throw new CustomException(GROUP_ORDER_NOT_FOUND);
         }
 
         List<ResponseGroupOrderCommentDto> flatComments = flatDto.getGroupOrderCommentDtoList();
+
+*/
+
         Map<Long, ResponseGroupOrderCommentDto> parentMap = new LinkedHashMap<>();
         List<ResponseGroupOrderCommentDto> topLevelComments = new ArrayList<>();
 
@@ -118,39 +131,40 @@ public class GroupOrderService {
             }
         }
 
-        flatDto.updateGroupOrderCommentDtoList(topLevelComments);
-        GroupOrder groupOrder = groupOrderRepository.findById(flatDto.getId()).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+        ResponseGroupOrderDetailDto flatDto = ResponseGroupOrderDetailDto.entityToDto(groupOrder, topLevelComments);
 
         // 해당 게시글의 작성자인지 검증
         if (jwtUser != null) {
-            User user = userRepository.findById(jwtUser.getId()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-            if (groupOrder.getUser().getId() == user.getId()) {
+            User currentUser = userRepository.findById(jwtUser.getId()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+            if (groupOrder.getUser().getId() == currentUser.getId()) {
                 flatDto.updateIsMyPost(true);
             }
-
-            User findUser = groupOrder.getUser();
-
-            String userImageUrl = imageService.findUserImageUrlByUserId(findUser.getId(), request).getFileName();
-            flatDto.updateAuthorImagePath(userImageUrl);
         }
 
         // 해당 글을 좋아요 눌렀는지 검증
         if (jwtUser != null) {
-            User user = userRepository.findById(jwtUser.getId()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-            if (groupOrderLikeRepository.existsByUserIdAndGroupOrderId(user.getId(), groupOrderId)) {
+            User currentUser = userRepository.findById(jwtUser.getId()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+            if (groupOrderLikeRepository.existsByUserIdAndGroupOrderId(currentUser.getId(), groupOrderId)) {
                 flatDto.updateIsCheckLikeCurrentUser(true);
             } else {
                 flatDto.updateIsCheckLikeCurrentUser(false);
             }
         }
 
+        User findUser = groupOrder.getUser();
+
+        String userImageUrl = imageService.findUserImageUrlByUserId(findUser.getId(), request).getFileName();
+        flatDto.updateAuthorImagePath(userImageUrl);
+
         // 게시글 조회 수 증가
         groupOrder.plusViewCount();
 
+/*
         // 게시글 작성자의 평점 조회
         Float averageRating = groupOrder.getUser().getAverageRating();
         flatDto.updateAuthorRating(averageRating);
 
+*/
         return flatDto;
     }
 
@@ -159,10 +173,6 @@ public class GroupOrderService {
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto, List<MultipartFile> images) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-
-        if (groupOrderRepository.existsByTitle(requestGroupOrderDto.getTitle())) {
-            throw new CustomException(GROUP_ORDER_TITLE_DUPLICATE);
-        }
 
         GroupOrder groupOrder = RequestGroupOrderDto.dtoToEntity(requestGroupOrderDto, user);
 
@@ -406,7 +416,9 @@ public class GroupOrderService {
     }
 
     public List<ResponseGroupOrderDto> findGroupOrders(CustomUserDetails jwtUser, GroupOrderSort sort, GroupOrderType type, Optional<String> search, HttpServletRequest request) {
-        // 로그인한 사용자만 검색 키워드 저장
+        return groupOrderRepository.findAll().stream().map(groupOrder -> ResponseGroupOrderDto.entityToDto(groupOrder, request)).toList();
+
+        /*        // 로그인한 사용자만 검색 키워드 저장
         if (jwtUser != null) {
             search.filter(s -> !s.isBlank())
                     .ifPresent(keyword -> {
@@ -438,7 +450,7 @@ public class GroupOrderService {
 
         List<ResponseGroupOrderDto> groupOrders = groupOrderMapper.findGroupOrders(typeString, searchKeyword, sortParam);
 
-        return groupOrders;
+        return groupOrders;*/
     }
 
     // 이미지 경로를 User 방식의 URL로 변환하는 헬퍼 메소드

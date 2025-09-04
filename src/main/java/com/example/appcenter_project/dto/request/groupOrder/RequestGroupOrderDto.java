@@ -20,7 +20,7 @@ public class RequestGroupOrderDto {
     private String title;
 
     @Schema(description = "공동구매 유형",
-            allowableValues = {"전체", "배달", "식자재", "생활용품",
+            allowableValues = {"배달", "식자재", "생활용품",
                     "기타"})
     @NotNull(message = "공동구매 유형은 필수 입력 값입니다.")
     private GroupOrderType groupOrderType;
@@ -31,6 +31,9 @@ public class RequestGroupOrderDto {
 
     @NotBlank(message = "공동구매 링크는 필수 입력 값입니다.")
     private String link;
+
+    @NotBlank(message = "오픈채팅방 링크는 필수 입력 값입니다.")
+    private String openChatLink;
 
     @NotNull(message = "최대 인원 수는 필수 입력 값입니다.")
     @Min(value = 1, message = "최대 인원 수는 1명 이상이어야 합니다.")
@@ -49,6 +52,7 @@ public class RequestGroupOrderDto {
                 .groupOrderType(dto.getGroupOrderType())
                 .price(dto.getPrice())
                 .link(dto.getLink())
+                .openChatLink(dto.getOpenChatLink())
                 .currentPeople(0)
                 .maxPeople(dto.getMaxPeople())
                 .deadline(dto.getDeadline())
