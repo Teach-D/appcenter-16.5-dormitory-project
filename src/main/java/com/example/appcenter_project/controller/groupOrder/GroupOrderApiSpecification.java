@@ -142,9 +142,9 @@ public interface GroupOrderApiSpecification {
                     schema = @Schema(allowableValues = {"조회순", "가격순", "마감임박순"})) String sort,
             @RequestParam(defaultValue = "전체")
             @Parameter(description = "공동구매 카테고리", example = "전체",
-                    schema = @Schema(allowableValues = {"전체", "배달", "식료품", "생활용품", "기타"})) String type,
+                    schema = @Schema(allowableValues = {"전체", "배달", "식자재", "생활용품", "기타"})) String type,
             @RequestParam(required = false)
-            @Parameter(description = "검색어 (선택사항)", example = "치킨") Optional<String> search,
+            @Parameter(description = "검색어 (선택사항)", example = "치킨") String search,
             HttpServletRequest request);
 
     @Operation(

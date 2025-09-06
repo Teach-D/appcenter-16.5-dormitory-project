@@ -415,19 +415,18 @@ public class GroupOrderService {
         return fileName.substring(lastDotIndex).toLowerCase();
     }
 
-    public List<ResponseGroupOrderDto> findGroupOrders(CustomUserDetails jwtUser, GroupOrderSort sort, GroupOrderType type, Optional<String> search, HttpServletRequest request) {
-        return groupOrderRepository.findAll().stream().map(groupOrder -> ResponseGroupOrderDto.entityToDto(groupOrder, request)).toList();
-
-        /*        // 로그인한 사용자만 검색 키워드 저장
-        if (jwtUser != null) {
-            search.filter(s -> !s.isBlank())
-                    .ifPresent(keyword -> {
-                        User user = userRepository.findById(jwtUser.getId())
-                                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-                        user.addSearchLog(keyword);
-                    });
+    public List<ResponseGroupOrderDto> findGroupOrders(CustomUserDetails jwtUser, GroupOrderSort sort, GroupOrderType type, String search, HttpServletRequest request) {
+        if (jwtUser != null && search != null) {
+                User user = userRepository.findById(jwtUser.getId())
+                        .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+                user.addSearchLog(search);
         }
 
+        return groupOrderRepository.findGroupOrdersComplex(sort, type, search).stream().map(groupOrder -> ResponseGroupOrderDto.entityToDto(groupOrder, request)).toList();
+
+                // 로그인한 사용자만 검색 키워드 저장
+
+        /*
         search.filter(s -> !s.isBlank())
                 .ifPresent(keyword -> {
                     if (groupOrderPopularSearchKeywordRepository.existsByKeyword(keyword)) {

@@ -61,7 +61,7 @@ public class GroupOrderController implements GroupOrderApiSpecification {
     @GetMapping
     public ResponseEntity<List<ResponseGroupOrderDto>> findGroupOrders(
             @AuthenticationPrincipal CustomUserDetails user,
-            @RequestParam(defaultValue = "마감임박순") String sort, @RequestParam(defaultValue = "전체") String type, @RequestParam(required = false) Optional<String> search,
+            @RequestParam(defaultValue = "마감임박순") String sort, @RequestParam(defaultValue = "전체") String type, @RequestParam(required = false) String search,
             HttpServletRequest request
     ) {
         return ResponseEntity.status(OK).body(groupOrderService.findGroupOrders(user, GroupOrderSort.from(sort), GroupOrderType.from(type), search, request));
