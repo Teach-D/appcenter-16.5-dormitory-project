@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import java.util.TimeZone;
 
 @EnableJpaAuditing // JPA Auditing 활성화
-//@EnableScheduling
+@EnableScheduling
 @SpringBootApplication
 public class AppcenterProjectApplication {
 
