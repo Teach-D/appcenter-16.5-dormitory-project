@@ -11,7 +11,7 @@ public enum DormType {
     DORM_1("1기숙사"),
     DORM_2("2기숙사"),
     DORM_3("3기숙사"),
-    DORM_NONE("해당없음");
+    NONE("해당없음");
 
     private final String description;
 
