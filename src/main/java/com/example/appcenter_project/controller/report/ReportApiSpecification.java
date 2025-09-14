@@ -82,11 +82,10 @@ public interface ReportApiSpecification {
     })
     @PostMapping
     void createReport(
-            @Parameter(description = "신고 등록 요청 데이터", required = true)
-            @Valid @RequestBody RequestReportDto requestReportDto,
-
             @Parameter(hidden = true)
-            @AuthenticationPrincipal CustomUserDetails user
+            @AuthenticationPrincipal CustomUserDetails user,
+            @Parameter(description = "신고 등록 요청 데이터", required = true)
+            @Valid @RequestBody RequestReportDto requestReportDto
     );
 
     @Operation(

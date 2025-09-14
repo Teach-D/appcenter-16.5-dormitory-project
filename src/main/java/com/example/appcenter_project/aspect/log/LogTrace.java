@@ -2,7 +2,8 @@ package com.example.appcenter_project.aspect.log;
 
 public interface LogTrace {
 
-    TraceStatus begin(String message);
-    void end(TraceStatus status);
-    void exception(TraceStatus status, Exception e);
+    Long begin(String message);
+    Long begin(String message, String userId);
+    void end(Long startTimeMs, String message);
+    void exception(Long startTimeMs, String message, Exception e);
 }
