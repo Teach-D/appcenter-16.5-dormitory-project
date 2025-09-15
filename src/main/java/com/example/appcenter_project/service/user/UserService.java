@@ -45,7 +45,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.example.appcenter_project.exception.ErrorCode.*;
 
@@ -97,13 +96,11 @@ public class UserService {
     }
 
     public ResponseUserDto findUserByUserId(Long userId) {
-        log.info("[findUserByUserId] 사용자 정보 조회 요청 - userId={}", userId);
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
         if (user.getRoommateCheckList() == null) {
-            log.info("[findUserByUserId] RoommateCheckList 존재 여부: false");
+            log.info("RoommateCheckList 존재 여부: false");
 
             return ResponseUserDto.entityToDto(user, false);
         }
@@ -112,8 +109,6 @@ public class UserService {
     }
 
     public ResponseUserDto updateUser(Long userId, RequestUserDto requestUserDto) {
-        log.info("[updateUser] 사용자 정보 수정 요청 시작 - userId={}", userId);
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
@@ -126,7 +121,6 @@ public class UserService {
         }
 
         user.update(requestUserDto);
-        log.info("[updateUser] 사용자 정보 업데이트 완료 - userId={}", userId);
 
         return ResponseUserDto.entityToDto(user);
     }
@@ -135,6 +129,7 @@ public class UserService {
         if (!userRepository.existsById(userId)) {
             throw new CustomException(USER_NOT_FOUND);
         }
+        
         userRepository.deleteById(userId);
     }
 
@@ -162,8 +157,6 @@ public class UserService {
     }
 
     public List<ResponseBoardDto> findLikeByUserId_optimization(Long userId, HttpServletRequest request) {
-        log.info("[findLikeByUserId] userId={}의 좋아요 게시물 조회 시작", userId);
-
         List<ResponseBoardDto> responseBoardDtoList = new ArrayList<>();
 
         List<ResponseRoommatePostDto> responseLikeDtoList = roommateQueryService.findGroupOrderDtosWithImages(userId);
@@ -177,14 +170,10 @@ public class UserService {
         // 최신순 정렬 (createTime이 가장 최근인 것부터)
         responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateDate).reversed());
 
-        log.info("[findLikeByUserId] userId={}의 좋아요 게시물 조회 완료", userId);
-
         return responseBoardDtoList;
     }
 
     public List<ResponseBoardDto> findBoardByUserId_optimization(Long userId, HttpServletRequest request) {
-        log.info("[findBoardByUserId] userId={}의 작성한 게시물 조회 시작", userId);
-
         List<ResponseBoardDto> responseBoardDtoList = new ArrayList<>();
 
         List<ResponseTipDto> responseTipDtos = tipQueryService.findTipDtosWithImages(userId, request);
@@ -196,8 +185,6 @@ public class UserService {
 
         // 최신순 정렬 (createTime이 가장 최근인 것부터)
         responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateDate).reversed());
-
-        log.info("[findBoardByUserId] userId={}의 게시물 조회 완료", userId);
 
         return responseBoardDtoList;
     }
