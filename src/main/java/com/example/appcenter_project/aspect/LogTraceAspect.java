@@ -45,7 +45,9 @@ public class LogTraceAspect {
     }
 
     // service용 aop
-    @Around("execution(* com.example.appcenter_project.service..*(..))")
+    @Around("execution(* com.example.appcenter_project.service..*(..)) &&" +
+            "!execution(* com.example.appcenter_project.service.groupOrder.AsyncViewCountService.flushViewCountDB())"
+    )
     public Object aroundService(ProceedingJoinPoint joinPoint) throws Throwable {
         String methodName = joinPoint.getSignature().getName();
         String className = joinPoint.getSignature().getDeclaringType().getSimpleName();
