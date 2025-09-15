@@ -41,6 +41,19 @@ public class GroupOrderCleanupScheduler {
         deleteGroceryGroupOrders(groceryGroupOrders, now);
         deleteLifeItemGroupOrders(lifeItemGroupOrders, now);
         deleteEtcGroupOrders(etcGroupOrders, now);
+
+        // 마감일이 지난 GroupOrder 삭제
+        deleteAfterDeadlineGroupOrder();
+    }
+
+    private void deleteAfterDeadlineGroupOrder() {
+        LocalDate now = LocalDate.now();
+
+        for (GroupOrder groupOrder : groupOrderRepository.findAll()) {
+            if (now.isAfter(groupOrder.getDeadline().toLocalDate())) {
+                groupOrderRepository.delete(groupOrder);
+            }
+        }
     }
 
     private void deleteDeliveryGroupOrders(List<GroupOrder> deliveryGroupOrders, LocalDate now) {
