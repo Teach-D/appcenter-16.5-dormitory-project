@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 public enum GroupOrderSort {
 
     DEADLINE("마감임박순"),
-    PRICE("가격순"),
+    PRICE("낮은가격순"),
     POPULARITY("조회순");
 
     private final String description;
