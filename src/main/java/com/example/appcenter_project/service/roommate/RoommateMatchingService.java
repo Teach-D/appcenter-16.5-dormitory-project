@@ -5,6 +5,7 @@ import com.example.appcenter_project.dto.response.roommate.ResponseRoommateMatch
 import com.example.appcenter_project.entity.roommate.MyRoommate;
 import com.example.appcenter_project.entity.roommate.RoommateChattingRoom;
 import com.example.appcenter_project.entity.roommate.RoommateMatching;
+import com.example.appcenter_project.entity.user.FcmToken;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.roommate.MatchingStatus;
 import com.example.appcenter_project.exception.CustomException;
@@ -129,18 +130,20 @@ public class RoommateMatchingService {
 
     // 공통 FCM 발송 메서드
     private void sendFcmToReceiver(User sender, User receiver) {
-        if (receiver.getFcmToken() != null && !receiver.getFcmToken().isEmpty()) {
-            try {
-                fcmMessageService.sendNotification(
-                        receiver.getFcmToken(),
-                        "룸메이트 매칭 요청",
-                        sender.getName() + "님이 룸메이트 매칭을 요청했습니다."
-                );
-            } catch (Exception e) {
-                log.error("FCM 발송 실패: {}", e.getMessage());
+        for (FcmToken fcmToken : receiver.getFcmTokenList()) {
+            if (fcmToken != null) {
+                try {
+                    fcmMessageService.sendNotification(
+                            fcmToken.getToken(),
+                            "룸메이트 매칭 요청",
+                            sender.getName() + "님이 룸메이트 매칭을 요청했습니다."
+                    );
+                } catch (Exception e) {
+                    log.error("FCM 발송 실패: {}", e.getMessage());
+                }
+            } else {
+                log.warn("수신자 {}의 FCM 토큰이 없음", receiver.getId());
             }
-        } else {
-            log.warn("수신자 {}의 FCM 토큰이 없음", receiver.getId());
         }
     }
 

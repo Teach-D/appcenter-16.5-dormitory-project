@@ -27,5 +27,6 @@ public class FcmTokenService {
                 .token(token).build();
 
         fcmTokenRepository.save(build);
+        user.addFcmToken(build);
     }
 }

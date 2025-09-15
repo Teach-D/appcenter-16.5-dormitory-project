@@ -26,6 +26,8 @@ public enum ErrorCode {
     INVALID_REFRESH_TOKEN(UNAUTHORIZED, 2002, "[User] 유효하지 않은 Refresh Token입니다."),
     REFRESH_TOKEN_USER_NOT_FOUND(NOT_FOUND, 2003, "[User] 해당 Refresh Token과 일치하는 사용자가 없습니다."),
     DUPLICATE_USER_NAME(CONFLICT, 2004, "[User] 중복된 닉네임 입니다."),
+    FCM_TOKEN_NOT_ENABLE(NOT_ACCEPTABLE, 2005, "[User] 해당 Fcm 토큰을 이용한 알림이 실패했습니다." ),
+    USER_KEYWORD_ALREADY_EXISTS(NOT_ACCEPTABLE, 2006, "[User] 해당 키워드는 이미 존재합니다."),
 
     // GROUP_ORDER
     GROUP_ORDER_NOT_FOUND(NOT_FOUND, 3001, "[GroupOrder] 공동구매 글을 찾을 수 없습니다."),
@@ -112,9 +114,10 @@ public enum ErrorCode {
     INVALID_COMPLAINT_TYPE(BAD_REQUEST, 14005, "[Complaint] 올바르지 않은 민원 유형입니다."),
     INVALID_COMPLAINT_STATUS(BAD_REQUEST, 14006, "[Complaint] 올바르지 않은 민원 상태입니다."),
     INVALID_DORM_TYPE(BAD_REQUEST, 14007, "[Complaint] 올바르지 않은 기숙사 유형입니다."),
-    COMPLAINT_REQUIRED_FIELD_MISSING(BAD_REQUEST, 14008, "[Complaint] 필수 입력값이 누락되었습니다.");
+    COMPLAINT_REQUIRED_FIELD_MISSING(BAD_REQUEST, 14008, "[Complaint] 필수 입력값이 누락되었습니다."),
 
-
+    // USER_GROUP_ORDER_KEYWORD
+    USER_GROUP_ORDER_KEYWORD_NOT_FOUND(NOT_FOUND, 15001, "[UserGroupOrderKeyword] 해당 유저공동구매키워드를 찾을 수 없습니다.");
 
     private final HttpStatus httpStatus;
     private final Integer code;

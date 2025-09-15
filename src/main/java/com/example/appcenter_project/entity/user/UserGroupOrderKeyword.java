@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor
-public class FcmToken {
+public class UserGroupOrderKeyword {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -18,11 +18,16 @@ public class FcmToken {
     @JoinColumn(name = "user_id")
     private User user;
 
-    private String token;
+    @Column(unique = true)
+    private String keyword;
 
     @Builder
-    public FcmToken(User user, String token) {
+    public UserGroupOrderKeyword(User user, String keyword) {
         this.user = user;
-        this.token = token;
+        this.keyword = keyword;
+    }
+
+    public void updateKeyword(String afterKeyword) {
+        this.keyword = afterKeyword;
     }
 }

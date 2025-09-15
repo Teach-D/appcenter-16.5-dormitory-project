@@ -18,6 +18,7 @@ import com.example.appcenter_project.entity.like.TipLike;
 import com.example.appcenter_project.entity.roommate.RoommateBoard;
 import com.example.appcenter_project.entity.tip.Tip;
 import com.example.appcenter_project.entity.user.User;
+import com.example.appcenter_project.entity.user.UserGroupOrderKeyword;
 import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.enums.user.Role;
 import com.example.appcenter_project.exception.CustomException;
@@ -29,6 +30,7 @@ import com.example.appcenter_project.repository.like.GroupOrderLikeRepository;
 import com.example.appcenter_project.repository.like.RoommateBoardLikeRepository;
 import com.example.appcenter_project.repository.like.TipLikeRepository;
 import com.example.appcenter_project.repository.user.SchoolLoginRepository;
+import com.example.appcenter_project.repository.user.UserGroupOrderKeywordRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import com.example.appcenter_project.security.jwt.JwtTokenProvider;
 import com.example.appcenter_project.service.groupOrder.GroupOrderQueryService;
@@ -46,6 +48,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
+import static com.example.appcenter_project.entity.user.QUser.user;
 import static com.example.appcenter_project.exception.ErrorCode.*;
 
 @Slf4j
@@ -69,6 +72,7 @@ public class UserService {
     private final GroupOrderQueryService groupOrderQueryService;
     private final TipQueryService tipQueryService;
     private final RoommateQueryService roommateQueryService;
+    private final UserGroupOrderKeywordRepository userGroupOrderKeywordRepository;
 
     public ResponseLoginDto saveUser(SignupUser signupUser) {
         boolean existsByStudentNumber = userRepository.existsByStudentNumber(signupUser.getStudentNumber());
@@ -135,14 +139,14 @@ public class UserService {
 
     public ResponseLoginDto login(SignupUser signupUser) {
         String studentNumber = signupUser.getStudentNumber();
-        // admin으로 시작하지 않는 경우에만 학교 로그인 체크
+/*        // admin으로 시작하지 않는 경우에만 학교 로그인 체크
         if (!studentNumber.startsWith("admin")) {
             String loginCheck = schoolLoginRepository.loginCheck(studentNumber, signupUser.getPassword());
 
             if (Objects.equals(loginCheck, "N")) {
                 throw new CustomException(USER_NOT_FOUND);
             }
-        }
+        }*/
 
         log.info("[로그인 시도] loginId: {}", studentNumber);
 
@@ -203,5 +207,38 @@ public class UserService {
                 user.getStudentNumber(),
                 String.valueOf(user.getRole())
         );
+    }
+
+    public void addGroupOrderKeyword(Long userId, String keyword) {
+        if (userGroupOrderKeywordRepository.existsByKeyword(keyword)) {
+            throw new CustomException(USER_KEYWORD_ALREADY_EXISTS);
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(REFRESH_TOKEN_USER_NOT_FOUND));
+
+        UserGroupOrderKeyword build = UserGroupOrderKeyword.builder()
+                .user(user)
+                .keyword(keyword)
+                .build();
+
+        userGroupOrderKeywordRepository.save(build);
+    }
+
+    public List<String> findUserGroupOrderKeyword(Long userId) {
+        return userGroupOrderKeywordRepository.findByUserId(userId).stream().map(u -> u.getKeyword()).toList();
+    }
+
+    public void updateGroupOrderKeyword(Long userId, String beforeKeyword, String afterKeyword) {
+        if (userGroupOrderKeywordRepository.existsByKeyword(afterKeyword)) {
+            throw new CustomException(USER_KEYWORD_ALREADY_EXISTS);
+        }
+        UserGroupOrderKeyword userGroupOrderKeyword = userGroupOrderKeywordRepository
+                .findByUserIdAndKeyword(userId, beforeKeyword).orElseThrow(() -> new CustomException(USER_GROUP_ORDER_KEYWORD_NOT_FOUND));
+        userGroupOrderKeyword.updateKeyword(afterKeyword);
+    }
+
+    public void deleteUserGroupOrderKeyword(Long userId, String keyword) {
+        userGroupOrderKeywordRepository.deleteByUserIdAndKeyword(userId, keyword);
     }
 }
