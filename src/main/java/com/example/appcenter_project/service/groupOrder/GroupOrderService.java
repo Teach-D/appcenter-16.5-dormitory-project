@@ -20,6 +20,7 @@ import com.example.appcenter_project.repository.user.UserRepository;
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.image.ImageService;
 import com.example.appcenter_project.service.user.UserService;
+import com.example.appcenter_project.utils.MealTimeChecker;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -58,6 +59,7 @@ public class GroupOrderService {
     private final GroupOrderPopularSearchKeywordRepository groupOrderPopularSearchKeywordRepository;
     private final ImageService imageService;
     private final AsyncViewCountService asyncViewCountService;
+    private final MealTimeChecker mealTimeChecker;
 
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto) {
         // GroupOrder 저장
@@ -86,7 +88,12 @@ public class GroupOrderService {
     }
 
     public ResponseGroupOrderDetailDto findGroupOrderById(CustomUserDetails jwtUser, Long groupOrderId, HttpServletRequest request) {
-        asyncViewCountService.incrementViewCount(groupOrderId);
+        if (mealTimeChecker.isMealTime()) {
+            asyncViewCountService.incrementViewCount(groupOrderId);
+        } else {
+            GroupOrder groupOrder = groupOrderRepository.findByIdWithLock(groupOrderId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+            groupOrder.plusViewCount();
+        }
         return getResponseGroupOrderDetailDto(jwtUser, groupOrderId, request);
     }
 
