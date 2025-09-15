@@ -57,6 +57,7 @@ public class GroupOrderService {
     private final GroupOrderMapper groupOrderMapper;
     private final GroupOrderPopularSearchKeywordRepository groupOrderPopularSearchKeywordRepository;
     private final ImageService imageService;
+    private final AsyncViewCountService asyncViewCountService;
 
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto) {
         // GroupOrder 저장
@@ -85,6 +86,11 @@ public class GroupOrderService {
     }
 
     public ResponseGroupOrderDetailDto findGroupOrderById(CustomUserDetails jwtUser, Long groupOrderId, HttpServletRequest request) {
+        asyncViewCountService.incrementViewCount(groupOrderId);
+        return getResponseGroupOrderDetailDto(jwtUser, groupOrderId, request);
+    }
+
+    private ResponseGroupOrderDetailDto getResponseGroupOrderDetailDto(CustomUserDetails jwtUser, Long groupOrderId, HttpServletRequest request) {
         GroupOrder groupOrder = groupOrderRepository.findByIdWithLock(groupOrderId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
 
         List<ResponseGroupOrderCommentDto> flatComments = new ArrayList<>();

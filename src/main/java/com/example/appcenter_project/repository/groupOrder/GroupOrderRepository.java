@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
@@ -20,4 +21,8 @@ public interface GroupOrderRepository extends JpaRepository<GroupOrder, Long>, J
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT g FROM GroupOrder g WHERE g.id = :id")
     Optional<GroupOrder> findByIdWithLock(@Param("id") Long id);
+    
+    @Modifying
+    @Query("UPDATE GroupOrder g SET g.groupOrderViewCount = g.groupOrderViewCount + :count WHERE g.id = :id")
+    int incrementViewCountBy(@Param("id") Long id, @Param("count") Long count);
 }
