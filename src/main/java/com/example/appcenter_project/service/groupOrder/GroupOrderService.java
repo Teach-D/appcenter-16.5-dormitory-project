@@ -85,7 +85,7 @@ public class GroupOrderService {
     }
 
     public ResponseGroupOrderDetailDto findGroupOrderById(CustomUserDetails jwtUser, Long groupOrderId, HttpServletRequest request) {
-        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+        GroupOrder groupOrder = groupOrderRepository.findByIdWithLock(groupOrderId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
 
         List<ResponseGroupOrderCommentDto> flatComments = new ArrayList<>();
 
