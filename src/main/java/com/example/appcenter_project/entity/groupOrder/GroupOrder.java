@@ -67,10 +67,10 @@ public class GroupOrder extends BaseTimeEntity {
     @OneToMany(orphanRemoval = true)
     private List<Image> imageList = new ArrayList<>();
 
-    @OneToMany(mappedBy = "groupOrder", orphanRemoval = true)
+    @OneToMany(mappedBy = "groupOrder", cascade = CascadeType.REMOVE)
     private List<GroupOrderLike> groupOrderLikeList = new ArrayList<>();
 
-    @OneToMany(mappedBy = "groupOrder", orphanRemoval = true)
+    @OneToMany(mappedBy = "groupOrder", cascade = CascadeType.REMOVE)
     private List<GroupOrderComment> groupOrderCommentList = new ArrayList<>();
 
     @Builder
