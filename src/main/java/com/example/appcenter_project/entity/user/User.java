@@ -1,6 +1,5 @@
 package com.example.appcenter_project.entity.user;
 
-import com.example.appcenter_project.converter.StringListConverter;
 import com.example.appcenter_project.dto.request.user.RequestUserDto;
 import com.example.appcenter_project.entity.BaseTimeEntity;
 import com.example.appcenter_project.entity.Image;
@@ -9,9 +8,9 @@ import com.example.appcenter_project.entity.groupOrder.UserGroupOrderChatRoom;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
 import com.example.appcenter_project.entity.like.RoommateBoardLike;
 import com.example.appcenter_project.entity.like.TipLike;
+import com.example.appcenter_project.entity.notification.UserNotification;
 import com.example.appcenter_project.entity.roommate.RoommateBoard;
 import com.example.appcenter_project.entity.roommate.RoommateCheckList;
-import com.example.appcenter_project.entity.roommate.MyRoommate;
 import com.example.appcenter_project.entity.tip.Tip;
 import com.example.appcenter_project.enums.user.College;
 import com.example.appcenter_project.enums.user.DormType;
@@ -20,8 +19,6 @@ import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.LazyToOne;
-import org.hibernate.annotations.LazyToOneOption;
 
 import java.util.*;
 
@@ -102,20 +99,10 @@ public class User extends BaseTimeEntity {
     private List<RoommateBoardLike> roommateBoardLikeList = new ArrayList<>();
 
     @OneToMany(mappedBy = "user")
+    private List<UserNotification> userNotifications = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user")
     private List<FcmToken>  fcmTokenList = new ArrayList<>();
-
-    public void addFcmToken(FcmToken fcmToken) {
-        this.fcmTokenList.add(fcmToken);
-    }
-
-    public void addRoommateBoardLike(RoommateBoardLike roommateBoardLike) {
-        this.roommateBoardLikeList.add(roommateBoardLike);
-    }
-
-    public void removeRoommateBoardLike(RoommateBoardLike roommateBoardLike) {
-        this.roommateBoardLikeList.remove(roommateBoardLike);
-    }
-
 
     @Builder
     public User(String studentNumber, String name, String password, DormType dormType, Integer penalty, Role role, Image image) {
@@ -133,6 +120,22 @@ public class User extends BaseTimeEntity {
         this.dormType = DormType.from(requestUserDto.getDormType());
         this.college = College.from(requestUserDto.getCollege());
         this.penalty = requestUserDto.getPenalty();
+    }
+
+    public void addFcmToken(FcmToken fcmToken) {
+        this.fcmTokenList.add(fcmToken);
+    }
+
+    public void addRoommateBoardLike(RoommateBoardLike roommateBoardLike) {
+        this.roommateBoardLikeList.add(roommateBoardLike);
+    }
+
+    public void removeRoommateBoardLike(RoommateBoardLike roommateBoardLike) {
+        this.roommateBoardLikeList.remove(roommateBoardLike);
+    }
+
+    public void addNotification(UserNotification userNotification) {
+        this.userNotifications.add(userNotification);
     }
 
     public void updateImage(Image image) {
