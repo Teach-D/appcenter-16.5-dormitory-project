@@ -55,12 +55,6 @@ public class UserController implements UserApiSpecification {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh Token이 유효하지 않습니다.");
     }
 
-    @PostMapping("/group-order/keyword")
-    public ResponseEntity<Void> addGroupOrderKeyword(@AuthenticationPrincipal CustomUserDetails user, @RequestParam String keyword) {
-        userService.addGroupOrderKeyword(user.getId(), keyword);
-        return ResponseEntity.ok().build();
-    }
-
     @GetMapping
     public ResponseEntity<ResponseUserDto> findUserByUserId(@AuthenticationPrincipal CustomUserDetails user) {
         return ResponseEntity.status(OK).body(userService.findUserByUserId(user.getId()));
@@ -103,11 +97,6 @@ public class UserController implements UserApiSpecification {
         return ResponseEntity.status(OK).body(userService.findLikeByUserId_optimization(user.getId(), request));
     }
 
-    @GetMapping("/group-order/keyword")
-    public ResponseEntity<List<String>> findUserGroupOrderKeyword(@AuthenticationPrincipal CustomUserDetails user) {
-        return ResponseEntity.status(OK).body(userService.findUserGroupOrderKeyword(user.getId()));
-    }
-
     @PutMapping
     public ResponseEntity<ResponseUserDto> updateUser(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestBody RequestUserDto requestUserDto) {
         return ResponseEntity.status(OK).body(userService.updateUser(user.getId(), requestUserDto));
@@ -123,13 +112,6 @@ public class UserController implements UserApiSpecification {
     public ResponseEntity<Void> updateUserTimeTableImage(@AuthenticationPrincipal CustomUserDetails user, @RequestPart MultipartFile image) {
         imageService.updateUserTimeTableImage(user.getId(), image);
         return ResponseEntity.status(OK).build();
-    }
-
-    @PutMapping("/group-order/keyword")
-    public ResponseEntity<Void> updateGroupOrderKeyword(@AuthenticationPrincipal CustomUserDetails user,
-                                                        @RequestParam("beforeKeyword") String beforeKeyword, @RequestParam("afterKeyword") String afterKeyword) {
-        userService.updateGroupOrderKeyword(user.getId(), beforeKeyword, afterKeyword);
-        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/time-table-image")
@@ -158,11 +140,4 @@ public class UserController implements UserApiSpecification {
         userService.deleteUser(user.getId());
         return ResponseEntity.status(NO_CONTENT).build();
     }
-
-    @DeleteMapping("/group-order/keyword")
-    public ResponseEntity<Void> deleteUserGroupOrderKeyword(@AuthenticationPrincipal CustomUserDetails user, @RequestParam String keyword) {
-        userService.deleteUserGroupOrderKeyword(user.getId(), keyword);
-        return ResponseEntity.status(NO_CONTENT).build();
-    }
-
 }
