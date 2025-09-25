@@ -14,7 +14,8 @@ import java.time.LocalDateTime;
 
 @Schema(description = "공동구매 정보 입력")
 @Getter
-public class RequestGroupOrderDto {
+public class
+RequestGroupOrderDto {
 
     @NotBlank(message = "제목은 필수 입력 값입니다.")
     private String title;
@@ -35,10 +36,6 @@ public class RequestGroupOrderDto {
     @NotBlank(message = "오픈채팅방 링크는 필수 입력 값입니다.")
     private String openChatLink;
 
-    @NotNull(message = "최대 인원 수는 필수 입력 값입니다.")
-    @Min(value = 1, message = "최대 인원 수는 1명 이상이어야 합니다.")
-    private Integer maxPeople;
-
     @NotNull(message = "마감일은 필수 입력 값입니다.")
     @Future(message = "마감일은 미래의 날짜여야 합니다.")
     private LocalDateTime deadline;
@@ -54,7 +51,6 @@ public class RequestGroupOrderDto {
                 .link(dto.getLink())
                 .openChatLink(dto.getOpenChatLink())
                 .currentPeople(0)
-                .maxPeople(dto.getMaxPeople())
                 .deadline(dto.getDeadline())
                 .groupOrderLike(0)
                 .description(dto.getDescription())
