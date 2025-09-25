@@ -11,7 +11,8 @@ public enum GroupOrderSort {
 
     DEADLINE("마감임박순"),
     PRICE("낮은가격순"),
-    POPULARITY("조회순");
+    POPULARITY("인기순"),
+    LATEST("최신순");
 
     private final String description;
 
@@ -23,7 +24,7 @@ public enum GroupOrderSort {
                 return type;
             }
         }
-        throw new IllegalArgumentException("Invalid BedTimeType: " + value);
+        throw new IllegalArgumentException("Invalid GroupOrderSort: " + value);
     }
 
     @JsonValue
