@@ -208,37 +208,4 @@ public class UserService {
                 String.valueOf(user.getRole())
         );
     }
-
-    public void addGroupOrderKeyword(Long userId, String keyword) {
-        if (userGroupOrderKeywordRepository.existsByKeyword(keyword)) {
-            throw new CustomException(USER_KEYWORD_ALREADY_EXISTS);
-        }
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(REFRESH_TOKEN_USER_NOT_FOUND));
-
-        UserGroupOrderKeyword build = UserGroupOrderKeyword.builder()
-                .user(user)
-                .keyword(keyword)
-                .build();
-
-        userGroupOrderKeywordRepository.save(build);
-    }
-
-    public List<String> findUserGroupOrderKeyword(Long userId) {
-        return userGroupOrderKeywordRepository.findByUserId(userId).stream().map(u -> u.getKeyword()).toList();
-    }
-
-    public void updateGroupOrderKeyword(Long userId, String beforeKeyword, String afterKeyword) {
-        if (userGroupOrderKeywordRepository.existsByKeyword(afterKeyword)) {
-            throw new CustomException(USER_KEYWORD_ALREADY_EXISTS);
-        }
-        UserGroupOrderKeyword userGroupOrderKeyword = userGroupOrderKeywordRepository
-                .findByUserIdAndKeyword(userId, beforeKeyword).orElseThrow(() -> new CustomException(USER_GROUP_ORDER_KEYWORD_NOT_FOUND));
-        userGroupOrderKeyword.updateKeyword(afterKeyword);
-    }
-
-    public void deleteUserGroupOrderKeyword(Long userId, String keyword) {
-        userGroupOrderKeywordRepository.deleteByUserIdAndKeyword(userId, keyword);
-    }
 }
