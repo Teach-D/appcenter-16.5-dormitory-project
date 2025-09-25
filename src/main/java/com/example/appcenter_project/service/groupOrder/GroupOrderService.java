@@ -93,13 +93,17 @@ public class GroupOrderService {
     }
 
     public ResponseGroupOrderDetailDto findGroupOrderById(CustomUserDetails jwtUser, Long groupOrderId, HttpServletRequest request) {
-        GroupOrder groupOrder = null;
         if (mealTimeChecker.isMealTime()) {
             asyncViewCountService.incrementViewCount(groupOrderId);
         } else {
-            groupOrder = groupOrderRepository.findByIdWithLock(groupOrderId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+            GroupOrder groupOrder = groupOrderRepository.findByIdWithLock(groupOrderId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
             groupOrder.plusViewCount();
         }
+        return getResponseGroupOrderDetailDto(jwtUser, groupOrderId, request);
+    }
+
+    private ResponseGroupOrderDetailDto getResponseGroupOrderDetailDto(CustomUserDetails jwtUser, Long groupOrderId, HttpServletRequest request) {
+        GroupOrder groupOrder = groupOrderRepository.findByIdWithLock(groupOrderId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
 
         // 마감시간 지난 공동구매 isRecruitmentComplete true로 변경
         LocalDateTime now = LocalDateTime.now();
@@ -107,12 +111,6 @@ public class GroupOrderService {
         if(!groupOrder.isRecruitmentComplete() && now.isAfter(groupOrder.getDeadline())) {
             groupOrder.updateRecruitmentComplete(true);
         }
-
-        return getResponseGroupOrderDetailDto(jwtUser, groupOrderId, request);
-    }
-
-    private ResponseGroupOrderDetailDto getResponseGroupOrderDetailDto(CustomUserDetails jwtUser, Long groupOrderId, HttpServletRequest request) {
-        GroupOrder groupOrder = groupOrderRepository.findByIdWithLock(groupOrderId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
 
         List<ResponseGroupOrderCommentDto> flatComments = new ArrayList<>();
 
