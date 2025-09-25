@@ -40,6 +40,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.*;
 
 import static com.example.appcenter_project.exception.ErrorCode.*;
@@ -92,12 +93,21 @@ public class GroupOrderService {
     }
 
     public ResponseGroupOrderDetailDto findGroupOrderById(CustomUserDetails jwtUser, Long groupOrderId, HttpServletRequest request) {
+        GroupOrder groupOrder = null;
         if (mealTimeChecker.isMealTime()) {
             asyncViewCountService.incrementViewCount(groupOrderId);
         } else {
-            GroupOrder groupOrder = groupOrderRepository.findByIdWithLock(groupOrderId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+            groupOrder = groupOrderRepository.findByIdWithLock(groupOrderId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
             groupOrder.plusViewCount();
         }
+
+        // 마감시간 지난 공동구매 isRecruitmentComplete true로 변경
+        LocalDateTime now = LocalDateTime.now();
+
+        if(!groupOrder.isRecruitmentComplete() && now.isAfter(groupOrder.getDeadline())) {
+            groupOrder.updateRecruitmentComplete(true);
+        }
+
         return getResponseGroupOrderDetailDto(jwtUser, groupOrderId, request);
     }
 
@@ -464,34 +474,22 @@ public class GroupOrderService {
                 user.addSearchLog(search);
         }
 
-        return groupOrderRepository.findGroupOrdersComplex(sort, type, search).stream().map(groupOrder -> ResponseGroupOrderDto.entityToDto(groupOrder, request)).toList();
+        // todo 전체 조회 로직 필요
 
-                // 로그인한 사용자만 검색 키워드 저장
 
-        /*
-        search.filter(s -> !s.isBlank())
-                .ifPresent(keyword -> {
-                    if (groupOrderPopularSearchKeywordRepository.existsByKeyword(keyword)) {
-                        GroupOrderPopularSearchKeyword groupOrderPopularSearchKeyword =
-                                groupOrderPopularSearchKeywordRepository.findByKeyword(keyword);
-                        groupOrderPopularSearchKeyword.plusSearchCount();
-                    } else {
-                        GroupOrderPopularSearchKeyword build = GroupOrderPopularSearchKeyword.builder()
-                                .keyword(keyword)
-                                .searchCount(1)
-                                .build();
-                        groupOrderPopularSearchKeywordRepository.save(build);
-                    }
-                });
+        // 마감시간 지난 공동구매 isRecruitmentComplete true로 변경
+        List<ResponseGroupOrderDto> responseGroupOrderDtoList = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
 
-        // 공통 조건 처리
-        String searchKeyword = search.filter(s -> !s.isBlank()).orElse(null);
-        String sortParam = sort.name();
-        String typeString = String.valueOf(GroupOrderType.from(String.valueOf(type)));
+        for (GroupOrder groupOrdersComplex : groupOrderRepository.findGroupOrdersComplex(sort, type, search)) {
+            if(!groupOrdersComplex.isRecruitmentComplete() && now.isAfter(groupOrdersComplex.getDeadline())) {
+                groupOrdersComplex.updateRecruitmentComplete(true);
+            }
 
-        List<ResponseGroupOrderDto> groupOrders = groupOrderMapper.findGroupOrders(typeString, searchKeyword, sortParam);
+            responseGroupOrderDtoList.add(ResponseGroupOrderDto.entityToDto(groupOrdersComplex, request));
+        }
 
-        return groupOrders;*/
+        return responseGroupOrderDtoList;
     }
 
     // 이미지 경로를 User 방식의 URL로 변환하는 헬퍼 메소드
