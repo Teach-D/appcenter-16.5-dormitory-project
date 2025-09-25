@@ -138,8 +138,8 @@ public interface GroupOrderApiSpecification {
     ResponseEntity<List<ResponseGroupOrderDto>> findGroupOrders(
             @AuthenticationPrincipal CustomUserDetails user,
             @RequestParam(defaultValue = "마감임박순")
-            @Parameter(description = "정렬 방식", example = "조회순",
-                    schema = @Schema(allowableValues = {"조회순", "가격순", "마감임박순", "최신순"})) String sort,
+            @Parameter(description = "정렬 방식", example = "인기순",
+                    schema = @Schema(allowableValues = {"인기순", "가격순", "마감임박순", "최신순"})) String sort,
             @RequestParam(defaultValue = "전체")
             @Parameter(description = "공동구매 카테고리", example = "전체",
                     schema = @Schema(allowableValues = {"전체", "배달", "식자재", "생활용품", "기타"})) String type,
