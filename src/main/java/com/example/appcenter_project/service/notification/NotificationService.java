@@ -6,6 +6,7 @@ import com.example.appcenter_project.entity.notification.Notification;
 import com.example.appcenter_project.entity.notification.UserNotification;
 import com.example.appcenter_project.entity.user.FcmToken;
 import com.example.appcenter_project.entity.user.User;
+import com.example.appcenter_project.enums.user.DormType;
 import com.example.appcenter_project.enums.user.NotificationType;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.repository.notification.NotificationRepository;
@@ -68,8 +69,11 @@ public class NotificationService {
     }
 
     private void sendAllDormitoryStudent(Notification notification) {
-        
-        // todo 기숙사생 전용 알림 구현
+        for (User user : userRepository.findByDormTypeNot(DormType.NONE)) {
+            for (FcmToken fcmToken : user.getFcmTokenList()) {
+                fcmMessageService.sendNotification(fcmToken.getToken(), notification.getTitle(), notification.getBody());
+            }
+        }
     }
 
     private void sendAllUsers(Notification notification) {
