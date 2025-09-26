@@ -68,6 +68,13 @@ public class NotificationService {
 
     private void sendAllDormitoryStudent(Notification notification) {
         for (User user : userRepository.findByDormTypeNot(DormType.NONE)) {
+            // 유저 알림 저장
+            UserNotification userNotification = UserNotification.builder()
+                    .notification(notification)
+                    .user(user)
+                    .build();
+            userNotificationRepository.save(userNotification);
+
             for (FcmToken fcmToken : user.getFcmTokenList()) {
                 fcmMessageService.sendNotification(fcmToken.getToken(), notification.getTitle(), notification.getBody());
             }
@@ -76,6 +83,13 @@ public class NotificationService {
 
     private void sendAllUsers(Notification notification) {
         for (User user : userRepository.findAll()) {
+            // 유저 알림 저장
+            UserNotification userNotification = UserNotification.builder()
+                    .notification(notification)
+                    .user(user)
+                    .build();
+            userNotificationRepository.save(userNotification);
+
             for (FcmToken fcmToken : user.getFcmTokenList()) {
                 fcmMessageService.sendNotification(fcmToken.getToken(), notification.getTitle(), notification.getBody());
             }
