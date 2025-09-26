@@ -40,6 +40,9 @@ public class NotificationService {
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
         for (UserNotification userNotification : user.getUserNotifications()) {
             responseNotificationDtos.add(ResponseNotificationDto.entityToDto(userNotification));
+
+            // 공지사항 읽음 처리
+            userNotification.updateIsRead(true);
         }
 
         return responseNotificationDtos;
@@ -47,12 +50,7 @@ public class NotificationService {
 
     public ResponseNotificationDto findNotification(Long userId, Long notificationId) {
         UserNotification userNotification = userNotificationRepository.findByUserIdAndNotificationId(userId, notificationId).orElseThrow();
-        ResponseNotificationDto responseNotificationDto = ResponseNotificationDto.entityToDto(userNotification);
-
-        // 공지사항 읽음 처리
-        userNotification.updateIsRead(true);
-
-        return responseNotificationDto;
+        return  ResponseNotificationDto.entityToDto(userNotification);
     }
 
     public void saveNotification(RequestNotificationDto requestNotificationDto) {
