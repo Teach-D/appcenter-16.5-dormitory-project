@@ -130,7 +130,8 @@ public class RoommateMatchingService {
 
     // 공통 FCM 발송 메서드
     private void sendFcmToReceiver(User sender, User receiver) {
-        for (FcmToken fcmToken : receiver.getFcmTokenList()) {
+        // 기존 코드
+/*        for (FcmToken fcmToken : receiver.getFcmTokenList()) {
             if (fcmToken != null) {
                 try {
                     fcmMessageService.sendNotification(
@@ -144,7 +145,12 @@ public class RoommateMatchingService {
             } else {
                 log.warn("수신자 {}의 FCM 토큰이 없음", receiver.getId());
             }
-        }
+        }*/
+        fcmMessageService.sendNotification(
+                receiver,
+                "룸메이트 매칭 요청",
+                sender.getName() + "님이 룸메이트 매칭을 요청했습니다."
+        );
     }
 
     // 매칭 수락

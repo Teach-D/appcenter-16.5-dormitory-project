@@ -1,5 +1,7 @@
 package com.example.appcenter_project.service.fcm;
 
+import com.example.appcenter_project.entity.user.FcmToken;
+import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.repository.user.FcmTokenRepository;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
@@ -15,25 +17,32 @@ public class FcmMessageService {
 
     private final FcmTokenRepository fcmTokenRepository;
 
-    public String sendNotification(String targetToken, String title, String body) {
-        Notification notification = Notification.builder()
-                .setTitle(title)
-                .setBody(body)
-                .build();
+    // todo User user
+    public String sendNotification(User user, String title, String body) {
+        for (FcmToken fcmToken : user.getFcmTokenList()) {
+            String targetToken = fcmToken.getToken();
 
-        Message message = Message.builder()
-                .setToken(targetToken)
-                .setNotification(notification)
-                .build();
+            Notification notification = Notification.builder()
+                    .setTitle(title)
+                    .setBody(body)
+                    .build();
 
-        try {
-            String response = FirebaseMessaging.getInstance().send(message);
-            log.info("Successfully sent FCM message: {}", response);
-            return response; // 메시지 ID 반환
-        } catch (Exception e) {
-            log.error("Error sending FCM message", e);
-            fcmTokenRepository.deleteByToken(targetToken);
-            throw new RuntimeException("FCM 발송 실패", e);
+            Message message = Message.builder()
+                    .setToken(targetToken)
+                    .setNotification(notification)
+                    .build();
+
+            try {
+                String response = FirebaseMessaging.getInstance().send(message);
+                log.info("Successfully sent FCM message: {}", response);
+                return response; // 메시지 ID 반환
+            } catch (Exception e) {
+                log.error("Error sending FCM message", e);
+                fcmTokenRepository.deleteByToken(targetToken);
+                throw new RuntimeException("FCM 발송 실패", e);
+            }
         }
+        // todo 임시로 null
+        return null;
     }
 }

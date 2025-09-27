@@ -6,10 +6,9 @@ import com.example.appcenter_project.dto.response.groupOrder.*;
 import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.groupOrder.*;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
-import com.example.appcenter_project.entity.user.FcmToken;
-import com.example.appcenter_project.entity.user.User;
-import com.example.appcenter_project.entity.user.UserGroupOrderCategory;
-import com.example.appcenter_project.entity.user.UserGroupOrderKeyword;
+import com.example.appcenter_project.entity.notification.Notification;
+import com.example.appcenter_project.entity.notification.UserNotification;
+import com.example.appcenter_project.entity.user.*;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import com.example.appcenter_project.enums.image.ImageType;
@@ -18,6 +17,8 @@ import com.example.appcenter_project.mapper.GroupOrderMapper;
 import com.example.appcenter_project.repository.groupOrder.*;
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.like.GroupOrderLikeRepository;
+import com.example.appcenter_project.repository.notification.NotificationRepository;
+import com.example.appcenter_project.repository.notification.UserNotificationRepository;
 import com.example.appcenter_project.repository.user.UserGroupOrderCategoryRepository;
 import com.example.appcenter_project.repository.user.UserGroupOrderKeywordRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
@@ -44,6 +45,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
 
+import static com.example.appcenter_project.enums.user.NotificationType.*;
 import static com.example.appcenter_project.exception.ErrorCode.*;
 
 @Slf4j
@@ -67,6 +69,8 @@ public class GroupOrderService {
     private final UserGroupOrderKeywordRepository userGroupOrderKeywordRepository;
     private final FcmMessageService fcmMessageService;
     private final UserGroupOrderCategoryRepository userGroupOrderCategoryRepository;
+    private final NotificationRepository notificationRepository;
+    private final UserNotificationRepository userNotificationRepository;
 
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto) {
         // GroupOrder 저장
@@ -237,12 +241,32 @@ public class GroupOrderService {
 
         List<UserGroupOrderCategory> allCategory = userGroupOrderCategoryRepository.findAll();
         for (UserGroupOrderCategory category : allCategory) {
+
+            // 알림 저장
+            User user = category.getUser();
+
+            String title = "[" + groupOrderType.toValue() + "]" + " 공동구매 게시글이 등록되었습니다.";
+            String body = groupOrder.getTitle();
+
+            Notification notification = Notification.builder()
+                    .boardId(groupOrder.getId())
+                    .title(title)
+                    .body(body)
+                    .notificationType(GROUP_ORDER)
+                    .build();
+
+            notificationRepository.save(notification);
+
+            UserNotification userNotification = UserNotification.builder()
+                    .user(user)
+                    .notification(notification)
+                    .build();
+
+            userNotificationRepository.save(userNotification);
+
+            // 알림 전송
             if (category.getCategory() == groupOrderType) {
-                for (FcmToken fcmToken : category.getUser().getFcmTokenList()) {
-                    String title = "[" + groupOrderType + "]" + " 공동구매 게시글이 등록되었습니다.";
-                    String body = "boardId : " + groupOrder.getId() + "|" + "boardTitle : " +  groupOrder.getTitle();
-                    fcmMessageService.sendNotification(fcmToken.getToken(), title, body);
-                }
+                fcmMessageService.sendNotification(user, title, body);
 
             }
         }
@@ -257,13 +281,33 @@ public class GroupOrderService {
             if (groupOrder.getTitle().contains(userGroupOrderKeyword.getKeyword()) || groupOrder.getDescription().contains(userGroupOrderKeyword.getKeyword())) {
                 if (!sendUser.contains(userGroupOrderKeyword.getId())) {
                     sendUser.add(userGroupOrderKeyword.getId());
+
+                    // 알림 저장
                     User user = userGroupOrderKeyword.getUser();
+
+                    String title = "[" +  userGroupOrderKeyword.getKeyword() + "]" + " 공동구매 게시글이 등록되었습니다.";
+                    String body = groupOrder.getTitle();
+
+
+                    Notification notification = Notification.builder()
+                            .boardId(groupOrder.getId())
+                            .title(title)
+                            .body(body)
+                            .notificationType(GROUP_ORDER)
+                            .build();
+
+                    notificationRepository.save(notification);
+
+                    UserNotification userNotification = UserNotification.builder()
+                            .user(user)
+                            .notification(notification)
+                            .build();
+
+                    userNotificationRepository.save(userNotification);
+
+                    // 알림 전송
                     List<FcmToken> fcmTokenList = user.getFcmTokenList();
-                    for (FcmToken fcmToken : fcmTokenList) {
-                        String title = "[" + userGroupOrderKeyword.getKeyword() + "]" + " 공동구매 게시글이 등록되었습니다.";
-                        String body = "boardId : " + groupOrder.getId() + "|" + "boardTitle : " +  groupOrder.getTitle();
-                        fcmMessageService.sendNotification(fcmToken.getToken(), title, body);
-                    }
+                    fcmMessageService.sendNotification(user, title, body);
                 }
             }
 
