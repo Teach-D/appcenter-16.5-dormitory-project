@@ -64,7 +64,7 @@ public class UserNotificationController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/preferences")
+    @DeleteMapping("/preferences")
     public ResponseEntity<Void> deleteReceiveNotificationType(@AuthenticationPrincipal CustomUserDetails user, @RequestParam List<String> notificationTypes) {
         userNotificationService.deleteReceiveNotificationType(user.getId(), notificationTypes);
         return ResponseEntity.status(NO_CONTENT).build();
