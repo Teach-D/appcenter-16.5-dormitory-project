@@ -229,50 +229,17 @@ public class GroupOrderService {
         groupOrderChatRoomRepository.save(groupOrderChatRoom);
         userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);
 
+        // 카테고리, 키워드 알림 중복 방지 유저 목록
+        List<User> receivedUsers = new ArrayList<>();
+
         // 키워드를 등록한 유저에게 푸시 알림 전송(제목 또는 내용에 키워드가 포함되어 있는 경우)
-        keywordNotificationUser(groupOrder);
+        keywordNotificationUser(groupOrder, receivedUsers);
 
         // 카테고리를 등록한 유저에게 푸시 알림 전송
-        categoryNotificationUser(groupOrder);
+        categoryNotificationUser(groupOrder, receivedUsers);
     }
 
-    private void categoryNotificationUser(GroupOrder groupOrder) {
-        GroupOrderType groupOrderType = groupOrder.getGroupOrderType();
-
-        List<UserGroupOrderCategory> allCategory = userGroupOrderCategoryRepository.findAll();
-        for (UserGroupOrderCategory category : allCategory) {
-
-            // 알림 저장
-            User user = category.getUser();
-
-            String title = "[" + groupOrderType.toValue() + "]" + " 공동구매 게시글이 등록되었습니다.";
-            String body = groupOrder.getTitle();
-
-            Notification notification = Notification.builder()
-                    .boardId(groupOrder.getId())
-                    .title(title)
-                    .body(body)
-                    .notificationType(GROUP_ORDER)
-                    .build();
-
-            notificationRepository.save(notification);
-
-            UserNotification userNotification = UserNotification.builder()
-                    .user(user)
-                    .notification(notification)
-                    .build();
-
-            userNotificationRepository.save(userNotification);
-
-            // 알림 전송
-            if (category.getCategory() == groupOrderType) {
-                fcmMessageService.sendNotification(user, title, body);
-
-            }
-        }
-    }
-
-    private void keywordNotificationUser(GroupOrder groupOrder) {
+    private void keywordNotificationUser(GroupOrder groupOrder, List<User> receivedUsers) {
         List<UserGroupOrderKeyword> allKeyword = userGroupOrderKeywordRepository.findAll();
         List<Long> sendUser = new ArrayList<>();
 
@@ -308,11 +275,55 @@ public class GroupOrderService {
                     // 알림 전송
                     List<FcmToken> fcmTokenList = user.getFcmTokenList();
                     fcmMessageService.sendNotification(user, title, body);
+
+                    // 키워드 알림을 받은 유저, 카테고리 알림은 무시해야함
+                    receivedUsers.add(user);
                 }
             }
 
         }
 
+    }
+
+    private void categoryNotificationUser(GroupOrder groupOrder, List<User> receivedUsers) {
+        GroupOrderType groupOrderType = groupOrder.getGroupOrderType();
+
+        List<UserGroupOrderCategory> allCategory = userGroupOrderCategoryRepository.findAll();
+        for (UserGroupOrderCategory category : allCategory) {
+
+            // 알림 저장
+            User user = category.getUser();
+
+            // 키워드 알림을 받은 유저, 카테고리 알림은 무시해야함
+            if (receivedUsers.contains(user)) {
+                return;
+            }
+
+            String title = "[" + groupOrderType.toValue() + "]" + " 공동구매 게시글이 등록되었습니다.";
+            String body = groupOrder.getTitle();
+
+            Notification notification = Notification.builder()
+                    .boardId(groupOrder.getId())
+                    .title(title)
+                    .body(body)
+                    .notificationType(GROUP_ORDER)
+                    .build();
+
+            notificationRepository.save(notification);
+
+            UserNotification userNotification = UserNotification.builder()
+                    .user(user)
+                    .notification(notification)
+                    .build();
+
+            userNotificationRepository.save(userNotification);
+
+            // 알림 전송
+            if (category.getCategory() == groupOrderType) {
+                fcmMessageService.sendNotification(user, title, body);
+
+            }
+        }
     }
 
     private void saveImages(GroupOrder groupOrder, List<MultipartFile> files) {
@@ -609,9 +620,6 @@ public class GroupOrderService {
             // 새로운 이미지들 저장
             saveImages(groupOrder, images);
         }
-
-        // 키워드를 등록한 유저에게 푸시 알림 전송(제목 또는 내용에 키워드가 포함되어 있는 경우)
-        keywordNotificationUser(groupOrder);
     }
 
     public void deleteGroupOrder(Long userId, Long groupOrderId) {
