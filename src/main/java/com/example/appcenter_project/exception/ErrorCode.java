@@ -118,7 +118,10 @@ public enum ErrorCode {
     COMPLAINT_REQUIRED_FIELD_MISSING(BAD_REQUEST, 14008, "[Complaint] 필수 입력값이 누락되었습니다."),
 
     // USER_GROUP_ORDER_KEYWORD
-    USER_GROUP_ORDER_KEYWORD_NOT_FOUND(NOT_FOUND, 15001, "[UserGroupOrderKeyword] 해당 유저공동구매키워드를 찾을 수 없습니다.");
+    USER_GROUP_ORDER_KEYWORD_NOT_FOUND(NOT_FOUND, 15001, "[UserGroupOrderKeyword] 해당 유저공동구매키워드를 찾을 수 없습니다."),
+
+    // POPUP_NOTIFICATION
+    POPUP_NOTIFICATION_NOT_FOUND(NOT_FOUND, 16001, "[PopupNotification] 해당 팝업 공지를 찾을 수 없습니다.");
 
     private final HttpStatus httpStatus;
     private final Integer code;
