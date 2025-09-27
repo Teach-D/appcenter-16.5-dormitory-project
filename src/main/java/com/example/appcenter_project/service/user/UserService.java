@@ -1,6 +1,7 @@
 package com.example.appcenter_project.service.user;
 
 import com.example.appcenter_project.dto.request.user.RequestUserDto;
+import com.example.appcenter_project.dto.request.user.RequestUserRole;
 import com.example.appcenter_project.dto.request.user.SignupUser;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
 import com.example.appcenter_project.dto.response.like.ResponseLikeDto;
@@ -207,5 +208,16 @@ public class UserService {
                 user.getStudentNumber(),
                 String.valueOf(user.getRole())
         );
+    }
+
+    public void changeUserRole(RequestUserRole requestUserStudentNumber) {
+        User user = userRepository.findByStudentNumber(requestUserStudentNumber.getStudentNumber()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+        // 유저 권한 변경, 관리자로는 변경 불가능
+        Role role = Role.from(requestUserStudentNumber.getRole());
+        if (role == Role.ROLE_USER || role == Role.DORMITORY_LIFE_MANAGER || role == Role.DORMITORY_ROOMMATE_MANAGER
+                || role == Role.DORMITORY_SUPPORTERS || role == Role.DORMITORY_MANAGER) {
+            user.changeRole(role);
+        }
     }
 }

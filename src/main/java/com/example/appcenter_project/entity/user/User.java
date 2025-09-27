@@ -216,4 +216,8 @@ public class User extends BaseTimeEntity {
         Float average = sum / ratings.size();
         return Math.round(average * 10.0f) / 10.0f;
     }
+
+    public void changeRole(Role role) {
+        this.role = role;
+    }
 }
