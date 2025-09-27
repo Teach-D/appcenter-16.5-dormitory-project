@@ -75,9 +75,7 @@ public class NotificationService {
                     .build();
             userNotificationRepository.save(userNotification);
 
-            for (FcmToken fcmToken : user.getFcmTokenList()) {
-                fcmMessageService.sendNotification(fcmToken.getToken(), notification.getTitle(), notification.getBody());
-            }
+            fcmMessageService.sendNotification(user, notification.getTitle(), notification.getBody());
         }
     }
 
@@ -90,9 +88,7 @@ public class NotificationService {
                     .build();
             userNotificationRepository.save(userNotification);
 
-            for (FcmToken fcmToken : user.getFcmTokenList()) {
-                fcmMessageService.sendNotification(fcmToken.getToken(), notification.getTitle(), notification.getBody());
-            }
+            fcmMessageService.sendNotification(user, notification.getTitle(), notification.getBody());
         }
     }
 

@@ -28,7 +28,7 @@ public class FcmController implements FcmApiSpecification{
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/send")
+/*    @PostMapping("/send")
     public ResponseEntity<ResponseFcmMessageDto> sendMessage(
             @RequestBody RequestFcmMessageDto requestDto
     ) {
@@ -44,5 +44,5 @@ public class FcmController implements FcmApiSpecification{
                         .status("SUCCESS")
                         .build()
         );
-    }
+    }*/
 }

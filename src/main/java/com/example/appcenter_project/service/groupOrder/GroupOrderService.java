@@ -245,8 +245,8 @@ public class GroupOrderService {
             // 알림 저장
             User user = category.getUser();
 
-            String title = "[" + groupOrderType + "]" + " 공동구매 게시글이 등록되었습니다.";
-            String body = "boardId : " + groupOrder.getId() + "|" + "boardTitle : " +  groupOrder.getTitle();
+            String title = "[" + groupOrderType.toValue() + "]" + " 공동구매 게시글이 등록되었습니다.";
+            String body = groupOrder.getTitle();
 
             Notification notification = Notification.builder()
                     .boardId(groupOrder.getId())
@@ -266,9 +266,7 @@ public class GroupOrderService {
 
             // 알림 전송
             if (category.getCategory() == groupOrderType) {
-                for (FcmToken fcmToken : category.getUser().getFcmTokenList()) {
-                    fcmMessageService.sendNotification(fcmToken.getToken(), title, body);
-                }
+                fcmMessageService.sendNotification(user, title, body);
 
             }
         }
@@ -287,8 +285,8 @@ public class GroupOrderService {
                     // 알림 저장
                     User user = userGroupOrderKeyword.getUser();
 
-                    String title = "[" + userGroupOrderKeyword.getKeyword() + "]" + " 공동구매 게시글이 등록되었습니다.";
-                    String body = "boardId : " + groupOrder.getId() + "|" + "boardTitle : " +  groupOrder.getTitle();
+                    String title = "[" +  userGroupOrderKeyword.getKeyword() + "]" + " 공동구매 게시글이 등록되었습니다.";
+                    String body = groupOrder.getTitle();
 
 
                     Notification notification = Notification.builder()
@@ -309,10 +307,7 @@ public class GroupOrderService {
 
                     // 알림 전송
                     List<FcmToken> fcmTokenList = user.getFcmTokenList();
-                    for (FcmToken fcmToken : fcmTokenList) {
-
-                        fcmMessageService.sendNotification(fcmToken.getToken(), title, body);
-                    }
+                    fcmMessageService.sendNotification(user, title, body);
                 }
             }
 

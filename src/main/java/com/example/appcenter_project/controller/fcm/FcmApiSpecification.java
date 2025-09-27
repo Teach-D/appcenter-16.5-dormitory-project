@@ -30,7 +30,7 @@ public interface FcmApiSpecification {
             RequestFcmTokenDto requestDto
     );
 
-    @Operation(
+/*    @Operation(
             summary = "FCM 메시지 발송",
             description = "지정한 targetToken으로 푸시 알림을 발송합니다.",
             responses = {
@@ -44,5 +44,5 @@ public interface FcmApiSpecification {
     ResponseEntity<ResponseFcmMessageDto> sendMessage(
             @RequestBody @Parameter(description = "FCM 메시지 요청 DTO", required = true)
             RequestFcmMessageDto requestDto
-    );
+    );*/
 }
