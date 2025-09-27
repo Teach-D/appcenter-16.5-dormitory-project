@@ -1,6 +1,7 @@
 package com.example.appcenter_project.controller.user;
 
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
+import com.example.appcenter_project.enums.user.NotificationType;
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.user.UserNotificationService;
 import com.example.appcenter_project.service.user.UserService;
@@ -20,6 +21,12 @@ import static org.springframework.http.HttpStatus.OK;
 public class UserNotificationController {
 
     private final UserNotificationService userNotificationService;
+
+    @PostMapping("/preferences")
+    public ResponseEntity<Void> addReceiveNotificationType(@AuthenticationPrincipal CustomUserDetails user, @RequestParam List<String> notificationTypes) {
+        userNotificationService.addReceiveNotificationType(user.getId(), notificationTypes);
+        return ResponseEntity.ok().build();
+    }
 
     @PostMapping("/group-order/keyword")
     public ResponseEntity<Void> addGroupOrderKeyword(@AuthenticationPrincipal CustomUserDetails user, @RequestParam String keyword) {
@@ -55,6 +62,12 @@ public class UserNotificationController {
                                                         @RequestParam("beforeKeyword") String beforeCategory, @RequestParam("afterKeyword") String afterCategory) {
         userNotificationService.updateGroupOrderCategory(user.getId(), GroupOrderType.from(beforeCategory), GroupOrderType.from(afterCategory));
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/preferences")
+    public ResponseEntity<Void> deleteReceiveNotificationType(@AuthenticationPrincipal CustomUserDetails user, @RequestParam List<String> notificationTypes) {
+        userNotificationService.deleteReceiveNotificationType(user.getId(), notificationTypes);
+        return ResponseEntity.status(NO_CONTENT).build();
     }
 
     @DeleteMapping("/group-order/keyword")
