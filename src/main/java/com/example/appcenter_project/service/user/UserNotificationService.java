@@ -4,11 +4,14 @@ import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.entity.user.UserGroupOrderCategory;
 import com.example.appcenter_project.entity.user.UserGroupOrderKeyword;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
+import com.example.appcenter_project.enums.user.NotificationType;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.repository.user.UserGroupOrderCategoryRepository;
 import com.example.appcenter_project.repository.user.UserGroupOrderKeywordRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
+import com.example.appcenter_project.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -101,5 +104,27 @@ public class UserNotificationService {
     public void deleteUserGroupOrderCategory(Long userId, GroupOrderType category) {
         UserGroupOrderCategory userGroupOrderCategory = userGroupOrderCategoryRepository.findByUserIdAndCategory(userId, category).orElseThrow(() -> new CustomException(USER_KEYWORD_NOT_FOUND));
         userGroupOrderCategoryRepository.delete(userGroupOrderCategory);
+    }
+
+    public void addReceiveNotificationType(Long userId, List<String> notificationTypes) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+        for (String notificationType : notificationTypes) {
+            if (!user.getReceiveNotificationTypes().contains(NotificationType.from(notificationType))) {
+                user.addReceiveNotificationType(NotificationType.from(notificationType));
+            }
+        }
+    }
+
+    public void deleteReceiveNotificationType(Long userId, List<String> notificationTypes) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+        for (String notificationType : notificationTypes) {
+            if (user.getReceiveNotificationTypes().contains(NotificationType.from(notificationType))) {
+                user.deleteReceiveNotificationType(NotificationType.from(notificationType));
+            }
+        }
     }
 }

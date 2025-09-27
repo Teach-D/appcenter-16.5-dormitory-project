@@ -14,6 +14,7 @@ import com.example.appcenter_project.entity.roommate.RoommateCheckList;
 import com.example.appcenter_project.entity.tip.Tip;
 import com.example.appcenter_project.enums.user.College;
 import com.example.appcenter_project.enums.user.DormType;
+import com.example.appcenter_project.enums.user.NotificationType;
 import com.example.appcenter_project.enums.user.Role;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -66,6 +67,15 @@ public class User extends BaseTimeEntity {
     @Column(name = "rating")
     private List<Float> ratings = new ArrayList<>();
 
+    @ElementCollection
+    @Enumerated(EnumType.STRING)
+    @CollectionTable(name = "user_receive_notification_type", joinColumns =
+    @JoinColumn(name = "user_id")
+    )
+    @Column(name = "notificaiton_type")
+    // 모든 유저가 초기에는 유니돔과 관련된 공지사항을 받도록
+    private List<NotificationType> receiveNotificationTypes = new ArrayList<>(List.of(NotificationType.UNI_DORM));
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "image_id")
     private Image image;
@@ -98,10 +108,10 @@ public class User extends BaseTimeEntity {
     @OneToMany(mappedBy = "user")
     private List<RoommateBoardLike> roommateBoardLikeList = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", cascade =  CascadeType.REMOVE)
     private List<UserNotification> userNotifications = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", cascade =  CascadeType.REMOVE)
     private List<FcmToken>  fcmTokenList = new ArrayList<>();
 
     @Builder
@@ -113,6 +123,14 @@ public class User extends BaseTimeEntity {
         this.penalty = penalty;
         this.role = role;
         this.image = image;
+    }
+
+    public void addReceiveNotificationType(NotificationType notificationType) {
+        this.receiveNotificationTypes.add(notificationType);
+    }
+
+    public void deleteReceiveNotificationType(NotificationType notificationType) {
+        this.receiveNotificationTypes.remove(notificationType);
     }
 
     public void update(RequestUserDto requestUserDto) {

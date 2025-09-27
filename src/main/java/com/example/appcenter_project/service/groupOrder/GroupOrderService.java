@@ -266,8 +266,10 @@ public class GroupOrderService {
 
             // 알림 전송
             if (category.getCategory() == groupOrderType) {
-                fcmMessageService.sendNotification(user, title, body);
-
+                // 알림 수신 선택이 되어 있는 유저한테만 알림 전송
+                if (user.getReceiveNotificationTypes().contains(GROUP_ORDER)) {
+                    fcmMessageService.sendNotification(user, title, body);
+                }
             }
         }
     }
@@ -305,9 +307,10 @@ public class GroupOrderService {
 
                     userNotificationRepository.save(userNotification);
 
-                    // 알림 전송
-                    List<FcmToken> fcmTokenList = user.getFcmTokenList();
-                    fcmMessageService.sendNotification(user, title, body);
+                    // 알림 수신 선택이 되어 있는 유저한테만 알림 전송
+                    if (user.getReceiveNotificationTypes().contains(GROUP_ORDER)) {
+                        fcmMessageService.sendNotification(user, title, body);
+                    }
                 }
             }
 
