@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,6 +18,7 @@ public interface GroupOrderRepository extends JpaRepository<GroupOrder, Long>, J
     boolean existsByTitle(String title);
     Optional<GroupOrder> findByIdAndUserId(Long id, Long userId);
     List<GroupOrder> findByUserId(Long  userId);
+    List<GroupOrder> findByDeadlineBetween(LocalDateTime now, LocalDateTime oneHourLater);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT g FROM GroupOrder g WHERE g.id = :id")
@@ -25,4 +27,5 @@ public interface GroupOrderRepository extends JpaRepository<GroupOrder, Long>, J
     @Modifying
     @Query("UPDATE GroupOrder g SET g.groupOrderViewCount = g.groupOrderViewCount + :count WHERE g.id = :id")
     int incrementViewCountBy(@Param("id") Long id, @Param("count") Long count);
+
 }
