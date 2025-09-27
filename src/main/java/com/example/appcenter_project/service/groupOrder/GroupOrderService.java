@@ -625,8 +625,6 @@ public class GroupOrderService {
             saveImages(groupOrder, images);
         }
 
-        // 키워드를 등록한 유저에게 푸시 알림 전송(제목 또는 내용에 키워드가 포함되어 있는 경우)
-        keywordNotificationUser(groupOrder);
     }
 
     public void deleteGroupOrder(Long userId, Long groupOrderId) {
