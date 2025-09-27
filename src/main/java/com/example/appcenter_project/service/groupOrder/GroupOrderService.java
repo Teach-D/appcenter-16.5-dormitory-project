@@ -229,52 +229,17 @@ public class GroupOrderService {
         groupOrderChatRoomRepository.save(groupOrderChatRoom);
         userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);
 
+        // 키워드, 카테고리 중복 알림 방지 유저 목록
+        Set<User> receivedUsers = new HashSet<>();
+
         // 키워드를 등록한 유저에게 푸시 알림 전송(제목 또는 내용에 키워드가 포함되어 있는 경우)
-        keywordNotificationUser(groupOrder);
+        keywordNotificationUser(groupOrder, receivedUsers);
 
         // 카테고리를 등록한 유저에게 푸시 알림 전송
-        categoryNotificationUser(groupOrder);
+        categoryNotificationUser(groupOrder, receivedUsers);
     }
 
-    private void categoryNotificationUser(GroupOrder groupOrder) {
-        GroupOrderType groupOrderType = groupOrder.getGroupOrderType();
-
-        List<UserGroupOrderCategory> allCategory = userGroupOrderCategoryRepository.findAll();
-        for (UserGroupOrderCategory category : allCategory) {
-
-            // 알림 저장
-            User user = category.getUser();
-
-            String title = "[" + groupOrderType.toValue() + "]" + " 공동구매 게시글이 등록되었습니다.";
-            String body = groupOrder.getTitle();
-
-            Notification notification = Notification.builder()
-                    .boardId(groupOrder.getId())
-                    .title(title)
-                    .body(body)
-                    .notificationType(GROUP_ORDER)
-                    .build();
-
-            notificationRepository.save(notification);
-
-            UserNotification userNotification = UserNotification.builder()
-                    .user(user)
-                    .notification(notification)
-                    .build();
-
-            userNotificationRepository.save(userNotification);
-
-            // 알림 전송
-            if (category.getCategory() == groupOrderType) {
-                // 알림 수신 선택이 되어 있는 유저한테만 알림 전송
-                if (user.getReceiveNotificationTypes().contains(GROUP_ORDER)) {
-                    fcmMessageService.sendNotification(user, title, body);
-                }
-            }
-        }
-    }
-
-    private void keywordNotificationUser(GroupOrder groupOrder) {
+    private void keywordNotificationUser(GroupOrder groupOrder, Set<User> receivedUsers) {
         List<UserGroupOrderKeyword> allKeyword = userGroupOrderKeywordRepository.findAll();
         List<Long> sendUser = new ArrayList<>();
 
@@ -311,11 +276,58 @@ public class GroupOrderService {
                     if (user.getReceiveNotificationTypes().contains(GROUP_ORDER)) {
                         fcmMessageService.sendNotification(user, title, body);
                     }
+
+                    // 키워드 알림을 받은 유저로 등록, 카테고리 알림은 받으면 안됨
+                    receivedUsers.add(user);
                 }
             }
 
         }
 
+    }
+
+
+    private void categoryNotificationUser(GroupOrder groupOrder, Set<User> receivedUsers) {
+        GroupOrderType groupOrderType = groupOrder.getGroupOrderType();
+
+        List<UserGroupOrderCategory> allCategory = userGroupOrderCategoryRepository.findAll();
+        for (UserGroupOrderCategory category : allCategory) {
+
+            // 알림 저장
+            User user = category.getUser();
+
+            // 이미 키워드 알림을 받은 유저는 카테고리 알림에서는 제외
+            if (receivedUsers.contains(user)) {
+                return;
+            }
+
+            String title = "[" + groupOrderType.toValue() + "]" + " 공동구매 게시글이 등록되었습니다.";
+            String body = groupOrder.getTitle();
+
+            Notification notification = Notification.builder()
+                    .boardId(groupOrder.getId())
+                    .title(title)
+                    .body(body)
+                    .notificationType(GROUP_ORDER)
+                    .build();
+
+            notificationRepository.save(notification);
+
+            UserNotification userNotification = UserNotification.builder()
+                    .user(user)
+                    .notification(notification)
+                    .build();
+
+            userNotificationRepository.save(userNotification);
+
+            // 알림 전송
+            if (category.getCategory() == groupOrderType) {
+                // 알림 수신 선택이 되어 있는 유저한테만 알림 전송
+                if (user.getReceiveNotificationTypes().contains(GROUP_ORDER)) {
+                    fcmMessageService.sendNotification(user, title, body);
+                }
+            }
+        }
     }
 
     private void saveImages(GroupOrder groupOrder, List<MultipartFile> files) {
