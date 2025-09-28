@@ -213,10 +213,7 @@ public class UserService {
 
     public void changeUserRole(RequestUserRole requestUserStudentNumber) {
         User user = userRepository.findByStudentNumber(requestUserStudentNumber.getStudentNumber()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-
-        log.info("user: {}", user);
-        log.info("role : {}", requestUserStudentNumber.getRole());
-
+        
         // 유저 권한 변경, 관리자/서포터즈로는 변경 불가능
         Role role = Role.from(requestUserStudentNumber.getRole());
         if (role == Role.ROLE_USER || role == Role.DORM_LIFE_MANAGER
