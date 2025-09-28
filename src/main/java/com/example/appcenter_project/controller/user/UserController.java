@@ -10,6 +10,7 @@ import com.example.appcenter_project.dto.response.like.ResponseLikeDto;
 import com.example.appcenter_project.dto.response.user.ResponseBoardDto;
 import com.example.appcenter_project.dto.response.user.ResponseLoginDto;
 import com.example.appcenter_project.dto.response.user.ResponseUserDto;
+import com.example.appcenter_project.dto.response.user.ResponseUserRole;
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.image.ImageService;
 import com.example.appcenter_project.service.user.UserService;
@@ -65,6 +66,11 @@ public class UserController implements UserApiSpecification {
     @GetMapping
     public ResponseEntity<ResponseUserDto> findUserByUserId(@AuthenticationPrincipal CustomUserDetails user) {
         return ResponseEntity.status(OK).body(userService.findUserByUserId(user.getId()));
+    }
+
+    @GetMapping("/role")
+    public ResponseEntity<List<ResponseUserRole>> findUserDormitoryRole() {
+        return ResponseEntity.status(OK).body(userService.findUserDormitoryRole());
     }
 
 /*
