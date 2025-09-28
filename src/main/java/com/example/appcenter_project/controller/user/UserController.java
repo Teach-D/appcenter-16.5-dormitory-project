@@ -4,6 +4,7 @@ import com.example.appcenter_project.dto.ImageDto;
 import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.dto.request.user.RequestTokenDto;
 import com.example.appcenter_project.dto.request.user.RequestUserDto;
+import com.example.appcenter_project.dto.request.user.RequestUserRole;
 import com.example.appcenter_project.dto.request.user.SignupUser;
 import com.example.appcenter_project.dto.response.like.ResponseLikeDto;
 import com.example.appcenter_project.dto.response.user.ResponseBoardDto;
@@ -53,6 +54,12 @@ public class UserController implements UserApiSpecification {
             return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh Token이 유효하지 않습니다.");
+    }
+
+    @PostMapping("/role")
+    public ResponseEntity<Void> changeUserRole(@RequestBody RequestUserRole requestUserRole) {
+        userService.changeUserRole(requestUserRole);
+        return ResponseEntity.status(CREATED).build();
     }
 
     @GetMapping
