@@ -216,17 +216,17 @@ public class UserService {
         
         // 유저 권한 변경, 관리자/서포터즈로는 변경 불가능
         Role role = Role.from(requestUserStudentNumber.getRole());
-        if (role == Role.ROLE_USER || role == Role.DORM_LIFE_MANAGER
-                || role == Role.DORM_ROOMMATE_MANAGER || role == Role.DORM_MANAGER) {
+        if (role == Role.ROLE_USER || role == Role.ROLE_DORM_LIFE_MANAGER
+                || role == Role.ROLE_DORM_ROOMMATE_MANAGER || role == Role.ROLE_DORM_MANAGER) {
             user.changeRole(role);
         }
     }
 
     public List<ResponseUserRole> findUserDormitoryRole() {
         List<Role> roles = new ArrayList<>();
-        roles.add(Role.DORM_LIFE_MANAGER);
-        roles.add(Role.DORM_ROOMMATE_MANAGER);
-        roles.add(Role.DORM_MANAGER);
+        roles.add(Role.ROLE_DORM_LIFE_MANAGER);
+        roles.add(Role.ROLE_DORM_ROOMMATE_MANAGER);
+        roles.add(Role.ROLE_DORM_MANAGER);
 
         List<User> users = userRepository.findByRoleIn(roles);
 
