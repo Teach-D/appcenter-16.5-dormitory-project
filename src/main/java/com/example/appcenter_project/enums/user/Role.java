@@ -9,12 +9,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum Role {
 
-    ROLE_ADMIN("일반사용자"),
-    ROLE_USER("관리자"),
-    DORMITORY_MANAGER("기숙사 담당자"),
-    DORMITORY_LIFE_MANAGER("기숙사 생활민원 담당자"),
-    DORMITORY_ROOMMATE_MANAGER("기숙사 룸메이트민원 담당자"),
-    DORMITORY_SUPPORTERS("기숙사 서포터즈");
+    ROLE_ADMIN("관리자"),
+    ROLE_USER("일반 사용자"),
+    ROLE_DORM_MANAGER("기숙사 담당자"),
+    ROLE_DORM_LIFE_MANAGER("기숙사 생활민원 담당자"),
+    ROLE_DORM_ROOMMATE_MANAGER("기숙사 룸메이트민원 담당자"),
+    ROLE_DORM_SUPPORTERS("기숙사 서포터즈");
 
     private final String description;
 

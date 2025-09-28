@@ -11,6 +11,7 @@ import com.example.appcenter_project.dto.response.tip.ResponseTipDto;
 import com.example.appcenter_project.dto.response.user.ResponseBoardDto;
 import com.example.appcenter_project.dto.response.user.ResponseLoginDto;
 import com.example.appcenter_project.dto.response.user.ResponseUserDto;
+import com.example.appcenter_project.dto.response.user.ResponseUserRole;
 import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
@@ -212,12 +213,28 @@ public class UserService {
 
     public void changeUserRole(RequestUserRole requestUserStudentNumber) {
         User user = userRepository.findByStudentNumber(requestUserStudentNumber.getStudentNumber()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-
-        // 유저 권한 변경, 관리자로는 변경 불가능
+        
+        // 유저 권한 변경, 관리자/서포터즈로는 변경 불가능
         Role role = Role.from(requestUserStudentNumber.getRole());
-        if (role == Role.ROLE_USER || role == Role.DORMITORY_LIFE_MANAGER || role == Role.DORMITORY_ROOMMATE_MANAGER
-                || role == Role.DORMITORY_SUPPORTERS || role == Role.DORMITORY_MANAGER) {
+        if (role == Role.ROLE_USER || role == Role.ROLE_DORM_LIFE_MANAGER
+                || role == Role.ROLE_DORM_ROOMMATE_MANAGER || role == Role.ROLE_DORM_MANAGER) {
             user.changeRole(role);
         }
+    }
+
+    public List<ResponseUserRole> findUserDormitoryRole() {
+        List<Role> roles = new ArrayList<>();
+        roles.add(Role.ROLE_DORM_LIFE_MANAGER);
+        roles.add(Role.ROLE_DORM_ROOMMATE_MANAGER);
+        roles.add(Role.ROLE_DORM_MANAGER);
+
+        List<User> users = userRepository.findByRoleIn(roles);
+
+        return users.stream()
+                .map(user -> ResponseUserRole.builder()
+                        .studentNumber(user.getStudentNumber())
+                        .role(user.getRole().getDescription())
+                        .build())
+                .toList();
     }
 }

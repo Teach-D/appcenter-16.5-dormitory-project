@@ -2,6 +2,7 @@ package com.example.appcenter_project.repository.user;
 
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.user.DormType;
+import com.example.appcenter_project.enums.user.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -15,4 +16,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByName(String name);
 
     List<User> findByDormTypeNot(DormType dormType);
+    
+    // 특정 역할들을 가진 사용자들 조회
+    List<User> findByRoleIn(List<Role> roles);
 }
