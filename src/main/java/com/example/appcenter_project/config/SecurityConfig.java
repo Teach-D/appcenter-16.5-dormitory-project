@@ -65,7 +65,7 @@ public class SecurityConfig {
                         .requestMatchers(GET, "/announcements/**").permitAll()
                         // 공지사항 등록, 수정, 삭제
                         .requestMatchers("/announcements/**")
-                            .hasAnyRole("DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "ADMIN")
+                            .hasAnyRole("DORM_SUPPORTERS", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "ADMIN")
 
                         /** 공동구매 **/
                         // 검색 기록 조회
