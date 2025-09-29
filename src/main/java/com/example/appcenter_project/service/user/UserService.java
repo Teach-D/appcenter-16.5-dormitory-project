@@ -159,7 +159,7 @@ public class UserService {
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId(), user.getStudentNumber(), String.valueOf(user.getRole()));
         user.updateRefreshToken(refreshToken);
 
-        return new ResponseLoginDto(accessToken, refreshToken);
+        return new ResponseLoginDto(accessToken, refreshToken, user.getRole().toString());
     }
 
     public List<ResponseBoardDto> findLikeByUserId_optimization(Long userId, HttpServletRequest request) {

@@ -37,6 +37,6 @@ public class AdminService {
         String refreshToken = jwtTokenProvider.generateRefreshToken(admin.getId(), admin.getStudentNumber(), String.valueOf(admin.getRole()));
         admin.updateRefreshToken(refreshToken);
 
-        return new ResponseLoginDto(accessToken, refreshToken);
+        return new ResponseLoginDto(accessToken, refreshToken, admin.getRole().toString());
     }
 }
