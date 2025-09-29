@@ -2,6 +2,7 @@ package com.example.appcenter_project.entity.announcement;
 
 import com.example.appcenter_project.dto.request.announement.RequestAnnouncementDto;
 import com.example.appcenter_project.entity.BaseTimeEntity;
+import com.example.appcenter_project.enums.announcement.AnnouncementType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,6 +27,9 @@ public class Announcement extends BaseTimeEntity {
     private int viewCount = 0;
     private Boolean isEmergency = false;
 
+    @Enumerated(EnumType.STRING)
+    private AnnouncementType announcementType;
+
     @Lob
     private String content;
 
@@ -33,11 +37,12 @@ public class Announcement extends BaseTimeEntity {
     private List<AttachedFile> attachedFiles = new ArrayList<>();
 
     @Builder
-    public Announcement(String title, String writer, String content, boolean isEmergency) {
+    public Announcement(String title, String writer, String content, boolean isEmergency, AnnouncementType announcementType) {
         this.title = title;
         this.writer = writer;
         this.content = content;
         this.isEmergency = isEmergency;
+        this.announcementType = announcementType;
     }
 
     public void plusViewCount() {
@@ -49,5 +54,6 @@ public class Announcement extends BaseTimeEntity {
         this.writer = requestAnnouncementDto.getWriter();
         this.content = requestAnnouncementDto.getContent();
         this.isEmergency = requestAnnouncementDto.getIsEmergency();
+        this.announcementType = AnnouncementType.from(requestAnnouncementDto.getAnnouncementType());
     }
 }

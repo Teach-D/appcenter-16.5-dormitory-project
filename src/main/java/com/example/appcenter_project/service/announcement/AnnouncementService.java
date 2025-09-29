@@ -9,11 +9,15 @@ import com.example.appcenter_project.dto.response.tip.ResponseTipDto;
 import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.announcement.Announcement;
 import com.example.appcenter_project.entity.announcement.AttachedFile;
+import com.example.appcenter_project.entity.user.User;
+import com.example.appcenter_project.enums.announcement.AnnouncementType;
 import com.example.appcenter_project.enums.image.ImageType;
+import com.example.appcenter_project.enums.user.Role;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.exception.ErrorCode;
 import com.example.appcenter_project.repository.announcement.AnnouncementRepository;
 import com.example.appcenter_project.repository.announcement.AttachedFileRepository;
+import com.example.appcenter_project.repository.user.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,9 +45,35 @@ public class AnnouncementService {
 
     private final AttachedFileRepository attachedFileRepository;
     private final AnnouncementRepository announcementRepository;
+    private final UserRepository userRepository;
 
-    public void saveAnnouncement(RequestAnnouncementDto requestAnnouncementDto, List<MultipartFile> files) {
+    public void saveAnnouncement(Long userId, RequestAnnouncementDto requestAnnouncementDto, List<MultipartFile> files) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        Role role = user.getRole();
 
+        // 서포터즈 계정은 서포터즈 공지만 저장 가능
+        if (role == Role.ROLE_DORM_SUPPORTERS) {
+            if (AnnouncementType.from(requestAnnouncementDto.getAnnouncementType()) == AnnouncementType.SUPPORTERS) {
+                saveAnnouncementDetail(requestAnnouncementDto, files);
+            } else {
+                throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
+            }
+        }
+        // 기숙사 계정은 기숙사 공지만 저장 가능
+        else if (role == Role.ROLE_DORM_MANAGER || role == Role.ROLE_DORM_ROOMMATE_MANAGER || role == Role.ROLE_DORM_LIFE_MANAGER) {
+            if (AnnouncementType.from(requestAnnouncementDto.getAnnouncementType()) == AnnouncementType.DORMITORY) {
+                saveAnnouncementDetail(requestAnnouncementDto, files);
+            } else {
+                throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
+            }
+        }
+        // 관리자 계정은 모든 공지 저장 가능
+        else if (role == Role.ROLE_ADMIN) {
+            saveAnnouncementDetail(requestAnnouncementDto, files);
+        }
+    }
+
+    private void saveAnnouncementDetail(RequestAnnouncementDto requestAnnouncementDto, List<MultipartFile> files) {
         // 공지사항 저장
         Announcement announcement = RequestAnnouncementDto.dtoToEntity(requestAnnouncementDto);
         announcementRepository.save(announcement);
@@ -183,8 +213,35 @@ public class AnnouncementService {
         }
     }
 
-    public void deleteAttachedFile(Long announcementId, String filePath) {
+    public void deleteAttachedFile(Long userId, Long announcementId, String filePath) {
         Announcement announcement = announcementRepository.findById(announcementId).orElseThrow(() -> new CustomException(ANNOUNCEMENT_NOT_REGISTERED));
+
+        User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        Role role = user.getRole();
+
+        // 서포터즈 계정은 서포터즈 공지 파일만 삭제 가능
+        if (role == Role.ROLE_DORM_SUPPORTERS) {
+            if ((announcement.getAnnouncementType()) == AnnouncementType.SUPPORTERS) {
+                deleteAttachedFileDetail(filePath, announcement);
+            } else {
+                throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
+            }
+        }
+        // 기숙사 계정은 기숙사 공지 파일만 삭제 가능
+        else if (role == Role.ROLE_DORM_MANAGER || role == Role.ROLE_DORM_ROOMMATE_MANAGER || role == Role.ROLE_DORM_LIFE_MANAGER) {
+            if ((announcement.getAnnouncementType()) == AnnouncementType.DORMITORY) {
+                deleteAttachedFileDetail(filePath, announcement);
+            } else {
+                throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
+            }
+        }
+        // 관리자 계정은 모든 공지 파일만 삭제 가능
+        else if (role == Role.ROLE_ADMIN) {
+            deleteAttachedFileDetail(filePath, announcement);
+        }
+    }
+
+    private void deleteAttachedFileDetail(String filePath, Announcement announcement) {
         AttachedFile attachedFile = attachedFileRepository.findByFilePathAndAnnouncement(filePath, announcement).orElseThrow(() -> new CustomException(ATTACHEDFILE_NOT_REGISTERED));
 
         File file = new File(filePath);
@@ -203,8 +260,6 @@ public class AnnouncementService {
     }
 
     public List<ResponseAnnouncementDto> findAllAnnouncements() {
-        log.info("[findAllAnnouncements] 공지사항 전체 조회 요청");
-
         List<Announcement> announcements = announcementRepository.findAll();
         Collections.reverse(announcements);
 
@@ -215,41 +270,110 @@ public class AnnouncementService {
             responseAnnouncementDtos.add(responseAnnouncementDto);
         }
 
-        log.info("[findAllAnnouncements] 변환 완료 - 반환할 공지사항 수: {}", responseAnnouncementDtos.size());
-
         return responseAnnouncementDtos;
     }
 
     public ResponseAnnouncementDetailDto findAnnouncement(Long announcementId) {
-        log.info("[findAnnouncement] 공지사항 상세 조회 요청 - announcementId={}", announcementId);
-
         Announcement announcement = announcementRepository.findById(announcementId).orElseThrow(() -> new CustomException(ANNOUNCEMENT_NOT_REGISTERED));
         announcement.plusViewCount();
         log.debug("[findAnnouncement] 공지사항 조회수 증가 - currentViewCount={}", announcement.getViewCount());
 
         ResponseAnnouncementDetailDto dto = ResponseAnnouncementDetailDto.entityToDto(announcement);
-        log.info("[findAnnouncement] 공지사항 조회 완료 - title=\"{}\", id={}", dto.getTitle(), dto.getId());
-
         return dto;
     }
 
-    public void deleteAnnouncement(Long announcementId) {
-        announcementRepository.deleteById(announcementId);
+    public void deleteAnnouncement(Long userId, Long announcementId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        Announcement announcement = announcementRepository.findById(announcementId).orElseThrow(() -> new CustomException(ANNOUNCEMENT_NOT_REGISTERED));
+        Role role = user.getRole();
+
+        // 서포터즈 계정은 서포터즈 공지만 삭제 가능
+        if (role == Role.ROLE_DORM_SUPPORTERS) {
+            if ((announcement.getAnnouncementType()) == AnnouncementType.SUPPORTERS) {
+                announcementRepository.deleteById(announcementId);
+            } else {
+                throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
+            }
+        }
+        // 기숙사 계정은 기숙사 공지만 삭제
+        else if (role == Role.ROLE_DORM_MANAGER || role == Role.ROLE_DORM_ROOMMATE_MANAGER || role == Role.ROLE_DORM_LIFE_MANAGER) {
+            if ((announcement.getAnnouncementType()) == AnnouncementType.DORMITORY) {
+                announcementRepository.deleteById(announcementId);
+            } else {
+                throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
+            }
+        }
+        // 관리자 계정은 모든 공지 삭제 가능
+        else if (role == Role.ROLE_ADMIN) {
+            announcementRepository.deleteById(announcementId);
+        }
     }
 
-    public ResponseAnnouncementDto updateAnnouncement(RequestAnnouncementDto requestAnnouncementDto, Long announcementId) {
-
+    public ResponseAnnouncementDto updateAnnouncement(Long userId, RequestAnnouncementDto requestAnnouncementDto, Long announcementId) {
         Announcement announcement = announcementRepository.findById(announcementId).orElseThrow(() -> new CustomException(ANNOUNCEMENT_NOT_REGISTERED));
-        announcement.update(requestAnnouncementDto);
+        User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        Role role = user.getRole();
+
+        // 서포터즈 계정은 서포터즈 공지만 수정 가능
+        if (role == Role.ROLE_DORM_SUPPORTERS) {
+            if (AnnouncementType.from(requestAnnouncementDto.getAnnouncementType()) == AnnouncementType.SUPPORTERS
+                && announcement.getAnnouncementType()== AnnouncementType.SUPPORTERS) {
+                announcement.update(requestAnnouncementDto);
+            } else {
+                throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
+            }
+        }
+        // 기숙사 계정은 기숙사 공지만 수정 가능
+        else if (role == Role.ROLE_DORM_MANAGER || role == Role.ROLE_DORM_ROOMMATE_MANAGER || role == Role.ROLE_DORM_LIFE_MANAGER) {
+            if (AnnouncementType.from(requestAnnouncementDto.getAnnouncementType()) == AnnouncementType.DORMITORY
+                    && announcement.getAnnouncementType()== AnnouncementType.DORMITORY) {
+                announcement.update(requestAnnouncementDto);
+            } else {
+                throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
+            }
+        }
+        // 관리자 계정은 모든 공지 수정 가능
+        else if (role == Role.ROLE_ADMIN) {
+            announcement.update(requestAnnouncementDto);
+        }
 
         return ResponseAnnouncementDto.entityToDto(announcement);
     }
 
-    public ResponseAnnouncementDto updateAnnouncementWithFiles(RequestAnnouncementDto requestAnnouncementDto,
+    public ResponseAnnouncementDto updateAnnouncementWithFiles(Long userId, RequestAnnouncementDto requestAnnouncementDto,
                                                                Long announcementId,
                                                                List<MultipartFile> files) {
-        log.info("[updateAnnouncementWithFiles] 공지사항 및 첨부파일 수정 시작 - announcementId={}", announcementId);
+        User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        Role role = user.getRole();
+        Announcement announcement = announcementRepository.findById(announcementId).orElseThrow(() -> new CustomException(ANNOUNCEMENT_NOT_REGISTERED));
 
+        // 서포터즈 계정은 서포터즈 공지만 수정 가능
+        if (role == Role.ROLE_DORM_SUPPORTERS) {
+            if (AnnouncementType.from(requestAnnouncementDto.getAnnouncementType()) == AnnouncementType.SUPPORTERS
+                    && announcement.getAnnouncementType() == AnnouncementType.SUPPORTERS) {
+                return updateAnnouncementDetailWithFiles(requestAnnouncementDto, announcementId, files);
+            } else {
+                throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
+            }
+        }
+        // 기숙사 계정은 기숙사 공지만 수정 가능
+        else if (role == Role.ROLE_DORM_MANAGER || role == Role.ROLE_DORM_ROOMMATE_MANAGER || role == Role.ROLE_DORM_LIFE_MANAGER) {
+            if (AnnouncementType.from(requestAnnouncementDto.getAnnouncementType()) == AnnouncementType.DORMITORY
+                    && announcement.getAnnouncementType() == AnnouncementType.DORMITORY) {
+                return updateAnnouncementDetailWithFiles(requestAnnouncementDto, announcementId, files);
+            } else {
+                throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
+            }
+        }
+        // 관리자 계정은 모든 공지 수정 가능
+        else if (role == Role.ROLE_ADMIN) {
+            return updateAnnouncementDetailWithFiles(requestAnnouncementDto, announcementId, files);
+        }
+
+        return null;
+    }
+
+    private ResponseAnnouncementDto updateAnnouncementDetailWithFiles(RequestAnnouncementDto requestAnnouncementDto, Long announcementId, List<MultipartFile> files) {
         // 1. 공지사항 조회
         Announcement announcement = announcementRepository.findById(announcementId)
                 .orElseThrow(() -> new CustomException(ANNOUNCEMENT_NOT_REGISTERED));
@@ -265,7 +389,6 @@ public class AnnouncementService {
             saveUploadFile(announcement, files);
         }
 
-        log.info("[updateAnnouncementWithFiles] 공지사항 및 첨부파일 수정 완료 - announcementId={}", announcementId);
         return ResponseAnnouncementDto.entityToDto(announcement);
     }
 

@@ -36,7 +36,7 @@ public class AnnouncementController implements AnnouncementApiSpecification {
             @AuthenticationPrincipal CustomUserDetails user,
             @Valid @RequestPart("requestAnnouncementDto") RequestAnnouncementDto requestAnnouncementDto,
             @RequestPart(value = "files", required = false) List<MultipartFile> files) {
-        announcementService.saveAnnouncement(requestAnnouncementDto, files);
+        announcementService.saveAnnouncement(user.getId(), requestAnnouncementDto, files);
         return ResponseEntity.status(CREATED).build();
     }
 
@@ -71,9 +71,10 @@ public class AnnouncementController implements AnnouncementApiSpecification {
     @PutMapping("/{announcementId}")
     @Override
     public ResponseEntity<ResponseAnnouncementDto> updateAnnouncement(
+            @AuthenticationPrincipal CustomUserDetails user,
             @Valid @RequestBody RequestAnnouncementDto requestAnnouncementDto,
             @PathVariable Long announcementId) {
-        return ResponseEntity.status(OK).body(announcementService.updateAnnouncement(requestAnnouncementDto, announcementId));
+        return ResponseEntity.status(OK).body(announcementService.updateAnnouncement(user.getId(), requestAnnouncementDto, announcementId));
     }
 
     @PutMapping(value = "/{announcementId}/with-files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -85,22 +86,23 @@ public class AnnouncementController implements AnnouncementApiSpecification {
             @RequestPart(value = "files", required = false) List<MultipartFile> files) {
 
         ResponseAnnouncementDto response = announcementService.updateAnnouncementWithFiles(
-                requestAnnouncementDto, announcementId, files);
+                user.getId(), requestAnnouncementDto, announcementId, files);
 
         return ResponseEntity.status(OK).body(response);
     }
 
     @DeleteMapping("/{announcementId}/file")
     public ResponseEntity<Void> deleteAttachedFile(
+            @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long announcementId,
             @RequestParam String filePath) {
-        announcementService.deleteAttachedFile(announcementId, filePath);
+        announcementService.deleteAttachedFile(user.getId(), announcementId, filePath);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{announcementId}")
     @Override
-    public void deleteAnnouncement(@PathVariable Long announcementId) {
-        announcementService.deleteAnnouncement(announcementId);
+    public void deleteAnnouncement(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long announcementId) {
+        announcementService.deleteAnnouncement(user.getId(), announcementId);
     }
 }
