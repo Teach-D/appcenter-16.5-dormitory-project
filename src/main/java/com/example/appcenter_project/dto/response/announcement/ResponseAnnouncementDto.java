@@ -32,6 +32,8 @@ public class ResponseAnnouncementDto {
 
     private int viewCount = 0;
 
+    private String announcementType;
+
     public static ResponseAnnouncementDto entityToDto(Announcement announcement) {
         String truncatedContent = announcement.getContent();
         if (truncatedContent != null && truncatedContent.length() > 50) {
@@ -46,6 +48,7 @@ public class ResponseAnnouncementDto {
                 .updatedDate(announcement.getModifiedDate().toLocalDate())
                 .isEmergency(announcement.getIsEmergency())
                 .viewCount(announcement.getViewCount())
+                .announcementType(announcement.getAnnouncementType().toValue())
                 .build();
     }
 }
