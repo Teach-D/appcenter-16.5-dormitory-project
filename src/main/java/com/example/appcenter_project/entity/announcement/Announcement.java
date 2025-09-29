@@ -54,6 +54,5 @@ public class Announcement extends BaseTimeEntity {
         this.writer = requestAnnouncementDto.getWriter();
         this.content = requestAnnouncementDto.getContent();
         this.isEmergency = requestAnnouncementDto.getIsEmergency();
-        this.announcementType = AnnouncementType.from(requestAnnouncementDto.getAnnouncementType());
     }
 }

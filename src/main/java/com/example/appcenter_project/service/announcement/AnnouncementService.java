@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import static com.example.appcenter_project.enums.announcement.AnnouncementType.*;
 import static com.example.appcenter_project.exception.ErrorCode.*;
 import static com.example.appcenter_project.exception.ErrorCode.IMAGE_NOT_FOUND;
 
@@ -53,29 +54,21 @@ public class AnnouncementService {
 
         // 서포터즈 계정은 서포터즈 공지만 저장 가능
         if (role == Role.ROLE_DORM_SUPPORTERS) {
-            if (AnnouncementType.from(requestAnnouncementDto.getAnnouncementType()) == AnnouncementType.SUPPORTERS) {
-                saveAnnouncementDetail(requestAnnouncementDto, files);
-            } else {
-                throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
-            }
+            saveAnnouncementDetail(requestAnnouncementDto, files, SUPPORTERS);
         }
         // 기숙사 계정은 기숙사 공지만 저장 가능
         else if (role == Role.ROLE_DORM_MANAGER || role == Role.ROLE_DORM_ROOMMATE_MANAGER || role == Role.ROLE_DORM_LIFE_MANAGER) {
-            if (AnnouncementType.from(requestAnnouncementDto.getAnnouncementType()) == AnnouncementType.DORMITORY) {
-                saveAnnouncementDetail(requestAnnouncementDto, files);
-            } else {
-                throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
-            }
+            saveAnnouncementDetail(requestAnnouncementDto, files, DORMITORY);
         }
         // 관리자 계정은 모든 공지 저장 가능
         else if (role == Role.ROLE_ADMIN) {
-            saveAnnouncementDetail(requestAnnouncementDto, files);
+            saveAnnouncementDetail(requestAnnouncementDto, files, UNI_DORM);
         }
     }
 
-    private void saveAnnouncementDetail(RequestAnnouncementDto requestAnnouncementDto, List<MultipartFile> files) {
+    private void saveAnnouncementDetail(RequestAnnouncementDto requestAnnouncementDto, List<MultipartFile> files, AnnouncementType announcementType) {
         // 공지사항 저장
-        Announcement announcement = RequestAnnouncementDto.dtoToEntity(requestAnnouncementDto);
+        Announcement announcement = RequestAnnouncementDto.dtoToEntity(requestAnnouncementDto, announcementType);
         announcementRepository.save(announcement);
 
         // 첨부파일 저장
@@ -221,7 +214,7 @@ public class AnnouncementService {
 
         // 서포터즈 계정은 서포터즈 공지 파일만 삭제 가능
         if (role == Role.ROLE_DORM_SUPPORTERS) {
-            if ((announcement.getAnnouncementType()) == AnnouncementType.SUPPORTERS) {
+            if ((announcement.getAnnouncementType()) == SUPPORTERS) {
                 deleteAttachedFileDetail(filePath, announcement);
             } else {
                 throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
@@ -229,7 +222,7 @@ public class AnnouncementService {
         }
         // 기숙사 계정은 기숙사 공지 파일만 삭제 가능
         else if (role == Role.ROLE_DORM_MANAGER || role == Role.ROLE_DORM_ROOMMATE_MANAGER || role == Role.ROLE_DORM_LIFE_MANAGER) {
-            if ((announcement.getAnnouncementType()) == AnnouncementType.DORMITORY) {
+            if ((announcement.getAnnouncementType()) == DORMITORY) {
                 deleteAttachedFileDetail(filePath, announcement);
             } else {
                 throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
@@ -289,7 +282,7 @@ public class AnnouncementService {
 
         // 서포터즈 계정은 서포터즈 공지만 삭제 가능
         if (role == Role.ROLE_DORM_SUPPORTERS) {
-            if ((announcement.getAnnouncementType()) == AnnouncementType.SUPPORTERS) {
+            if ((announcement.getAnnouncementType()) == SUPPORTERS) {
                 announcementRepository.deleteById(announcementId);
             } else {
                 throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
@@ -297,7 +290,7 @@ public class AnnouncementService {
         }
         // 기숙사 계정은 기숙사 공지만 삭제
         else if (role == Role.ROLE_DORM_MANAGER || role == Role.ROLE_DORM_ROOMMATE_MANAGER || role == Role.ROLE_DORM_LIFE_MANAGER) {
-            if ((announcement.getAnnouncementType()) == AnnouncementType.DORMITORY) {
+            if ((announcement.getAnnouncementType()) == DORMITORY) {
                 announcementRepository.deleteById(announcementId);
             } else {
                 throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
@@ -316,8 +309,7 @@ public class AnnouncementService {
 
         // 서포터즈 계정은 서포터즈 공지만 수정 가능
         if (role == Role.ROLE_DORM_SUPPORTERS) {
-            if (AnnouncementType.from(requestAnnouncementDto.getAnnouncementType()) == AnnouncementType.SUPPORTERS
-                && announcement.getAnnouncementType()== AnnouncementType.SUPPORTERS) {
+            if (announcement.getAnnouncementType()== SUPPORTERS) {
                 announcement.update(requestAnnouncementDto);
             } else {
                 throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
@@ -325,8 +317,7 @@ public class AnnouncementService {
         }
         // 기숙사 계정은 기숙사 공지만 수정 가능
         else if (role == Role.ROLE_DORM_MANAGER || role == Role.ROLE_DORM_ROOMMATE_MANAGER || role == Role.ROLE_DORM_LIFE_MANAGER) {
-            if (AnnouncementType.from(requestAnnouncementDto.getAnnouncementType()) == AnnouncementType.DORMITORY
-                    && announcement.getAnnouncementType()== AnnouncementType.DORMITORY) {
+            if (announcement.getAnnouncementType()== DORMITORY) {
                 announcement.update(requestAnnouncementDto);
             } else {
                 throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
@@ -349,8 +340,7 @@ public class AnnouncementService {
 
         // 서포터즈 계정은 서포터즈 공지만 수정 가능
         if (role == Role.ROLE_DORM_SUPPORTERS) {
-            if (AnnouncementType.from(requestAnnouncementDto.getAnnouncementType()) == AnnouncementType.SUPPORTERS
-                    && announcement.getAnnouncementType() == AnnouncementType.SUPPORTERS) {
+            if (announcement.getAnnouncementType() == SUPPORTERS) {
                 return updateAnnouncementDetailWithFiles(requestAnnouncementDto, announcementId, files);
             } else {
                 throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
@@ -358,8 +348,7 @@ public class AnnouncementService {
         }
         // 기숙사 계정은 기숙사 공지만 수정 가능
         else if (role == Role.ROLE_DORM_MANAGER || role == Role.ROLE_DORM_ROOMMATE_MANAGER || role == Role.ROLE_DORM_LIFE_MANAGER) {
-            if (AnnouncementType.from(requestAnnouncementDto.getAnnouncementType()) == AnnouncementType.DORMITORY
-                    && announcement.getAnnouncementType() == AnnouncementType.DORMITORY) {
+            if (announcement.getAnnouncementType() == DORMITORY) {
                 return updateAnnouncementDetailWithFiles(requestAnnouncementDto, announcementId, files);
             } else {
                 throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
