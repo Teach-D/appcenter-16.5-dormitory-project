@@ -50,6 +50,12 @@ public class User extends BaseTimeEntity {
 
     private Integer penalty;
 
+    // 이용약관 동의 여부, 초기값 false
+    private boolean isTermsAgreed = false;
+
+    // 개인정보처리방침 동의 여부, 초기값 false
+    private boolean isPrivacyAgreed = false;
+
     @Enumerated(EnumType.STRING)
     private Role role;
 
@@ -123,6 +129,14 @@ public class User extends BaseTimeEntity {
         this.penalty = penalty;
         this.role = role;
         this.image = image;
+    }
+
+    public void updateTermsAgreed(boolean isTermsAgreed) {
+        this.isTermsAgreed = isTermsAgreed;
+    }
+
+    public void updatePrivacyAgreed(boolean isPrivacyAgreed) {
+        this.isPrivacyAgreed = isPrivacyAgreed;
     }
 
     public void addReceiveNotificationType(NotificationType notificationType) {

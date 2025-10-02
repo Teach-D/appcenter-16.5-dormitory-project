@@ -17,6 +17,7 @@ import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
 import com.example.appcenter_project.entity.like.RoommateBoardLike;
 import com.example.appcenter_project.entity.like.TipLike;
+import com.example.appcenter_project.entity.notification.UserNotification;
 import com.example.appcenter_project.entity.roommate.RoommateBoard;
 import com.example.appcenter_project.entity.tip.Tip;
 import com.example.appcenter_project.entity.user.User;
@@ -105,13 +106,22 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
+        boolean hasUnreadNotifications = false;
+
+        for (UserNotification userNotification : user.getUserNotifications()) {
+            // 읽지 않은 알림이 하나라도 있을 때
+            if (!userNotification.isRead()) {
+                hasUnreadNotifications = true;
+            }
+        }
+
         if (user.getRoommateCheckList() == null) {
             log.info("RoommateCheckList 존재 여부: false");
 
-            return ResponseUserDto.entityToDto(user, false);
+            return ResponseUserDto.entityToDto(user, hasUnreadNotifications, false);
         }
 
-        return ResponseUserDto.entityToDto(user, true);
+        return ResponseUserDto.entityToDto(user, hasUnreadNotifications, true);
     }
 
     public ResponseUserDto updateUser(Long userId, RequestUserDto requestUserDto) {
@@ -128,7 +138,15 @@ public class UserService {
 
         user.update(requestUserDto);
 
-        return ResponseUserDto.entityToDto(user);
+        for (UserNotification userNotification : user.getUserNotifications()) {
+            // 읽지 않은 알림이 하나라도 있을 때
+            if (!userNotification.isRead()) {
+                return ResponseUserDto.entityToDto(user, true);
+            }
+        }
+
+        // 모든 알림을 읽었을 때
+        return ResponseUserDto.entityToDto(user, false);
     }
 
     public void deleteUser(Long userId) {
@@ -236,5 +254,11 @@ public class UserService {
                         .role(user.getRole().getDescription())
                         .build())
                 .toList();
+    }
+
+    public void updateAgreement(Long userId, boolean isTermsAgreed, boolean isPrivacyAgreed) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        user.updateTermsAgreed(isTermsAgreed);
+        user.updatePrivacyAgreed(isPrivacyAgreed);
     }
 }
