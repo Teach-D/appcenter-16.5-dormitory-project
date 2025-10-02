@@ -27,7 +27,7 @@
         WHERE i.board_id = t.id AND i.image_type = 'TIP'
         LIMIT 1 <!--하나만 선택-->
         ) AS file_path,
-        SUBSTRING(t.content, 1, 10) AS content,
+        SUBSTRING(t.content, 1, 50) AS content,
         t.tip_like,
         t.tip_comment_count
         FROM tip t
