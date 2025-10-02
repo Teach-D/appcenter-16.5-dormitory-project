@@ -266,6 +266,10 @@ public class TipService {
                     }
                     parent.getChildTipCommentList().add(comment);
                 }
+                Long userId = comment.getUserId();
+                ImageLinkDto userImageUrlByUserIdComment = imageService.findUserImageUrlByUserId(userId, request);
+                String writerImageNameComment = userImageUrlByUserIdComment.getFileName();
+                comment.updateWriterImageFile(writerImageNameComment);
             }
         }
 
