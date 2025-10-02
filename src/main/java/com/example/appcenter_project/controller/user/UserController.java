@@ -14,11 +14,13 @@ import com.example.appcenter_project.dto.response.user.ResponseUserRole;
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.image.ImageService;
 import com.example.appcenter_project.service.user.UserService;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -124,6 +126,12 @@ public class UserController implements UserApiSpecification {
     @PutMapping(value = "/time-table-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> updateUserTimeTableImage(@AuthenticationPrincipal CustomUserDetails user, @RequestPart MultipartFile image) {
         imageService.updateUserTimeTableImage(user.getId(), image);
+        return ResponseEntity.status(OK).build();
+    }
+
+    @PutMapping("/agreement")
+    public ResponseEntity<Void> updateAgreement(@AuthenticationPrincipal CustomUserDetails user, @Parameter boolean isTermsAgreed, @Parameter boolean isPrivacyAgreed) {
+        userService.updateAgreement(user.getId(), isTermsAgreed, isPrivacyAgreed);
         return ResponseEntity.status(OK).build();
     }
 

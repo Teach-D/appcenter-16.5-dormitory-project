@@ -17,7 +17,14 @@ public class ResponseUserDto {
     private boolean isRoommateCheckList = false;
     private boolean hasTimeTableImage = false;
 
-    public static ResponseUserDto entityToDto(User user) {
+    // 이용약관 동의 여부, 초기값 false
+    private boolean isTermsAgreed = false;
+    // 개인정보처리방침 동의 여부, 초기값 false
+    private boolean isPrivacyAgreed = false;
+    // 읽지 않은 알림이 있는지
+    private boolean hasUnreadNotifications = false;
+
+    public static ResponseUserDto entityToDto(User user, boolean hasUnreadNotifications) {
         return ResponseUserDto.builder()
                 .id(user.getId())
                 .name(user.getName() != null ? user.getName() : "")
@@ -26,10 +33,13 @@ public class ResponseUserDto {
                 .college(user.getCollege() != null ? user.getCollege().toValue() : "")
                 .penalty(user.getPenalty())
                 .hasTimeTableImage(user.getTimeTableImage() != null)
+                .isTermsAgreed(user.isTermsAgreed())
+                .isPrivacyAgreed(user.isPrivacyAgreed())
+                .hasUnreadNotifications(hasUnreadNotifications)
                 .build();
     }
 
-    public static ResponseUserDto entityToDto(User user, boolean checkList) {
+    public static ResponseUserDto entityToDto(User user, boolean checkList, boolean hasUnreadNotifications) {
         return ResponseUserDto.builder()
                 .id(user.getId())
                 .name(user.getName() != null ? user.getName() : "")
@@ -39,6 +49,9 @@ public class ResponseUserDto {
                 .penalty(user.getPenalty())
                 .isRoommateCheckList(checkList)
                 .hasTimeTableImage(user.getTimeTableImage() != null)
+                .isTermsAgreed(user.isTermsAgreed())
+                .isPrivacyAgreed(user.isPrivacyAgreed())
+                .hasUnreadNotifications(hasUnreadNotifications)
                 .build();
     }
 }
