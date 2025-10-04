@@ -29,6 +29,7 @@ public enum ErrorCode {
     FCM_TOKEN_NOT_ENABLE(NOT_ACCEPTABLE, 2005, "[User] 해당 Fcm 토큰을 이용한 알림이 실패했습니다." ),
     USER_KEYWORD_ALREADY_EXISTS(NOT_ACCEPTABLE, 2006, "[User] 해당 키워드는 이미 존재합니다."),
     USER_KEYWORD_NOT_FOUND(NOT_FOUND, 2007, "[User] 해당 키워드는 이미 존재하지 않습니다."),
+    USER_NOTIFICATION_NOT_FOUND(NOT_FOUND, 2008, "[UserNotification] 해당 유저 알림은 존재하지 않습니다."),
 
     // GROUP_ORDER
     GROUP_ORDER_NOT_FOUND(NOT_FOUND, 3001, "[GroupOrder] 공동구매 글을 찾을 수 없습니다."),
