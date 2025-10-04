@@ -22,11 +22,23 @@ public class FcmTokenService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        FcmToken build = FcmToken.builder()
-                .user(user)
-                .token(token).build();
+        // 이미 등록된 토큰이면 중복 저장 방지
+        if (fcmTokenRepository.existsByToken(token)) {
+            return;
+        }
 
-        fcmTokenRepository.save(build);
-        user.addFcmToken(build);
+        // 해당 유저의 기존 토큰 찾기
+        fcmTokenRepository.findByUser(user)
+                .ifPresentOrElse(
+                        existing -> existing.updateToken(token), // 기존 토큰 갱신
+                        () -> { // 없으면 새로 생성
+                            FcmToken newToken = FcmToken.builder()
+                                    .user(user)
+                                    .token(token)
+                                    .build();
+                            fcmTokenRepository.save(newToken);
+                            user.addFcmToken(newToken);
+                        }
+                );
     }
 }
