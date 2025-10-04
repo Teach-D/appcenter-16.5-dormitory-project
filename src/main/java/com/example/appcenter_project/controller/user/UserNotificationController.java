@@ -81,4 +81,9 @@ public class UserNotificationController {
         userNotificationService.deleteUserGroupOrderCategory(user.getId(), GroupOrderType.from(category));
         return ResponseEntity.status(NO_CONTENT).build();
     }
-}
+
+    @DeleteMapping("/notification/{notificationId}")
+    public ResponseEntity<Void> deleteUserNotification(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long notificationId) {
+        userNotificationService.deleteUserNotification(user.getId(), notificationId);
+        return ResponseEntity.status(NO_CONTENT).build();
+    }}

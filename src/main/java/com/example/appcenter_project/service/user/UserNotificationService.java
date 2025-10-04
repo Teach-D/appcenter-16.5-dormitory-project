@@ -1,11 +1,13 @@
 package com.example.appcenter_project.service.user;
 
+import com.example.appcenter_project.entity.notification.UserNotification;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.entity.user.UserGroupOrderCategory;
 import com.example.appcenter_project.entity.user.UserGroupOrderKeyword;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import com.example.appcenter_project.enums.user.NotificationType;
 import com.example.appcenter_project.exception.CustomException;
+import com.example.appcenter_project.repository.notification.UserNotificationRepository;
 import com.example.appcenter_project.repository.user.UserGroupOrderCategoryRepository;
 import com.example.appcenter_project.repository.user.UserGroupOrderKeywordRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
@@ -29,6 +31,7 @@ public class UserNotificationService {
     private final UserGroupOrderKeywordRepository userGroupOrderKeywordRepository;
     private final UserGroupOrderCategoryRepository userGroupOrderCategoryRepository;
     private final UserRepository userRepository;
+    private final UserNotificationRepository userNotificationRepository;
 
     public void addGroupOrderKeyword(Long userId, String keyword) {
         if (userGroupOrderKeywordRepository.existsByKeyword(keyword)) {
@@ -126,5 +129,10 @@ public class UserNotificationService {
                 user.deleteReceiveNotificationType(NotificationType.from(notificationType));
             }
         }
+    }
+
+    public void deleteUserNotification(Long userId, Long notificationId) {
+        UserNotification userNotification = userNotificationRepository.findByUserIdAndNotificationId(userId, notificationId).orElseThrow(() -> new CustomException(USER_NOTIFICATION_NOT_FOUND));
+        userNotificationRepository.delete(userNotification);
     }
 }
