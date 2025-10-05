@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,10 +23,14 @@ public class Announcement extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String number;
     private String title;
     private String writer;
     private int viewCount = 0;
     private Boolean isEmergency = false;
+
+    // 크롤링한 게시글의 등록 날짜
+    private LocalDate crawlCreateDate;
 
     @Enumerated(EnumType.STRING)
     private AnnouncementType announcementType;
@@ -37,12 +42,17 @@ public class Announcement extends BaseTimeEntity {
     private List<AttachedFile> attachedFiles = new ArrayList<>();
 
     @Builder
-    public Announcement(String title, String writer, String content, boolean isEmergency, AnnouncementType announcementType) {
+    public Announcement(String number, String title, String writer, int viewCount, LocalDate crawlCreateDate,
+                        String content, boolean isEmergency, AnnouncementType announcementType, List<AttachedFile> attachedFiles) {
+        this.number = number;
         this.title = title;
         this.writer = writer;
+        this.viewCount = viewCount;
         this.content = content;
         this.isEmergency = isEmergency;
+        this.crawlCreateDate = crawlCreateDate;
         this.announcementType = announcementType;
+        this.attachedFiles = attachedFiles;
     }
 
     public void plusViewCount() {
@@ -55,4 +65,5 @@ public class Announcement extends BaseTimeEntity {
         this.content = requestAnnouncementDto.getContent();
         this.isEmergency = requestAnnouncementDto.getIsEmergency();
     }
+
 }

@@ -39,4 +39,8 @@ public class AttachedFile {
         this.announcement = announcement;
         this.complaintReply = complaintReply;
     }
+
+    public void updateAnnouncement(Announcement announcement) {
+        this.announcement = announcement;
+    }
 }
