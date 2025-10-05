@@ -3,17 +3,13 @@ package com.example.appcenter_project.service.complaint;
 import com.example.appcenter_project.dto.request.complaint.RequestComplaintReplyDto;
 import com.example.appcenter_project.dto.request.complaint.RequestComplaintStatusDto;
 import com.example.appcenter_project.dto.response.complaint.*;
-import com.example.appcenter_project.entity.announcement.Announcement;
-import com.example.appcenter_project.entity.announcement.AttachedFile;
+import com.example.appcenter_project.entity.file.AttachedFile;
 import com.example.appcenter_project.entity.complaint.Complaint;
 import com.example.appcenter_project.entity.complaint.ComplaintReply;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.complaint.ComplaintStatus;
-import com.example.appcenter_project.enums.complaint.ComplaintType;
-import com.example.appcenter_project.enums.user.DormType;
 import com.example.appcenter_project.exception.CustomException;
-import com.example.appcenter_project.exception.ErrorCode;
-import com.example.appcenter_project.repository.announcement.AttachedFileRepository;
+import com.example.appcenter_project.repository.file.AttachedFileRepository;
 import com.example.appcenter_project.repository.complaint.ComplaintReplyRepository;
 import com.example.appcenter_project.repository.complaint.ComplaintRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
@@ -28,10 +24,8 @@ import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static com.example.appcenter_project.exception.ErrorCode.*;
-import static com.google.common.io.Files.getFileExtension;
 
 @Slf4j
 @Service
@@ -228,16 +222,16 @@ public class AdminComplaintService {
                     file.transferTo(destinationFile);
                     log.info("ComplaintReply file saved successfully: {}", destinationFile.getAbsolutePath());
 
-                    AttachedFile attachedFile = AttachedFile.builder()
+/*                    AttachedFile attachedFile = AttachedFile.builder()
                             .filePath(destinationFile.getAbsolutePath())
                             .fileName(file.getOriginalFilename())
                             .fileSize(file.getSize())
                             .complaintReply(complaintReply)
-                            .build();
+                            .build();*//*
 
                     attachedFileRepository.save(attachedFile);
 
-                    complaintReply.getAttachedFiles().add(attachedFile);
+                    complaintReply.getAttachedFiles().add(attachedFile);*/
 
                 } catch (IOException e) {
                     log.error("Failed to save ComplaintReply file for complaintReply {}: ", complaintReply.getId(), e);

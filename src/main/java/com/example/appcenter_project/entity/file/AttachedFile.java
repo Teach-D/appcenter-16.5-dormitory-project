@@ -1,5 +1,6 @@
-package com.example.appcenter_project.entity.announcement;
+package com.example.appcenter_project.entity.file;
 
+import com.example.appcenter_project.entity.announcement.Announcement;
 import com.example.appcenter_project.entity.complaint.ComplaintReply;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -7,9 +8,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
+@Inheritance(strategy = InheritanceType.JOINED)
 @Getter
 @NoArgsConstructor
-public class AttachedFile {
+public abstract class AttachedFile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,7 +33,6 @@ public class AttachedFile {
     @JoinColumn(name = "complaint_reply_id")
     private ComplaintReply complaintReply;
 
-    @Builder
     public AttachedFile(String filePath, String fileName, Long fileSize, Announcement announcement, ComplaintReply complaintReply) {
         this.filePath = filePath;
         this.fileName = fileName;

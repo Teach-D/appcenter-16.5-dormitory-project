@@ -1,10 +1,10 @@
 package com.example.appcenter_project.utils;
 
-import com.example.appcenter_project.dto.response.announcement.ContentElementDto;
-import com.example.appcenter_project.entity.announcement.Announcement;
-import com.example.appcenter_project.entity.announcement.AttachedFile;
+import com.example.appcenter_project.entity.announcement.CrawledAnnouncement;
+import com.example.appcenter_project.entity.file.CrawledAnnouncementFile;
 import com.example.appcenter_project.enums.announcement.AnnouncementType;
-import com.example.appcenter_project.repository.announcement.AnnouncementRepository;
+import com.example.appcenter_project.repository.announcement.CrawledAnnouncementRepository;
+import com.example.appcenter_project.repository.file.CrawledAnnouncementFileRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,9 +32,10 @@ public class AnnouncementCrawlScheduler {
 
     private static final String BASE_URL = "https://dorm.inu.ac.kr/dorm/6528/subview.do";
 
-    private final AnnouncementRepository announcementRepository;
+    private final CrawledAnnouncementRepository crawledAnnouncementRepository;
+    private final CrawledAnnouncementFileRepository crawledAnnouncementFileRepository;
 
-    @Scheduled(cron = "0 12 10,20 * * ?")
+    @Scheduled(cron = "0 42 18,20 * * ?")
     public void crawling() {
         List<String> crawlLinks = crawlWithSelenium();
         saveCrawlAnnouncements(crawlLinks);
@@ -90,7 +91,7 @@ public class AnnouncementCrawlScheduler {
                 log.debug("글번호 추출 실패");
             }
             // 이미 저장되어 있는 공지사항은 저장 제외
-            if (announcementRepository.existsByNumber(number)) {
+            if (crawledAnnouncementRepository.existsByNumber(Integer.parseInt(number))) {
                 return;
             }
 
@@ -122,7 +123,7 @@ public class AnnouncementCrawlScheduler {
             }
 
             // 본문 내용
-            List<ContentElementDto> contentElements = new ArrayList<>();
+            String content = new String();
             try {
                 WebElement contentElement = driver.findElement(By.cssSelector(".view-con"));
                 // 모든 직접 자식 요소 (p, div, span 등)
@@ -135,22 +136,22 @@ public class AnnouncementCrawlScheduler {
                     String style = child.getAttribute("style");
                     String className = child.getAttribute("class");
 
-                    ContentElementDto element = ContentElementDto.builder()
+                    /*ContentElement element = ContentElement.builder()
                             .tagName(tagName)
                             .textContent(textContent)
                             .innerHTML(innerHTML)
                             .styleAttribute(style != null ? style : "")
                             .className(className != null ? className : "")
-                            .build();
+                            .build();*/
 
-                    contentElements.add(element);
+                    content = content + textContent;
                 }
             } catch (Exception e) {
                 log.debug("본문 내용 추출 실패");
             }
 
             // 첨부파일 목록
-            List<AttachedFile> attachedFiles = new ArrayList<>();
+            List<CrawledAnnouncementFile> crawledAnnouncementFiles = new ArrayList<>();
             try {
                 List<WebElement> fileElements = driver.findElements(By.cssSelector(".view-file .insert ul li"));
                 for (WebElement fileElement : fileElements) {
@@ -165,11 +166,11 @@ public class AnnouncementCrawlScheduler {
                                 downloadUrl = "https://dorm.inu.ac.kr" + downloadUrl;
                             }
 
-                            AttachedFile fileDto = AttachedFile.builder()
+                            CrawledAnnouncementFile fileDto = CrawledAnnouncementFile.builder()
                                     .fileName(fileName)
                                     .filePath(downloadUrl)
                                     .build();
-                            attachedFiles.add(fileDto);
+                            crawledAnnouncementFiles.add(fileDto);
                         }
                     } catch (Exception e) {
                         log.debug("개별 파일 추출 실패: {}", e.getMessage());
@@ -181,22 +182,24 @@ public class AnnouncementCrawlScheduler {
 
             log.info("상세 정보 크롤링 완료: {}", title);
 
-            Announcement announcement = Announcement.builder()
-                    .number(number)
+            CrawledAnnouncement crawledAnnouncement = CrawledAnnouncement.builder()
+                    .category(category)
+                    .number(Integer.parseInt(number))
                     .title(title)
                     .writer(writer)
                     .viewCount(Integer.parseInt(viewCount))
-                    .isEmergency(false)
-                    .crawlCreateDate(LocalDate.parse(createDate))
                     .announcementType(AnnouncementType.DORMITORY)
-//                    .content(content)
-                    .attachedFiles(attachedFiles)
+                    .content(content)
+                    .crawledAnnouncementFiles(crawledAnnouncementFiles)
                     .build();
 
-            announcementRepository.save(announcement);
+            crawledAnnouncement.updateCreateDate(LocalDate.parse(createDate));
 
-            for (AttachedFile attachedFile : attachedFiles) {
-                attachedFile.updateAnnouncement(announcement);
+            crawledAnnouncementRepository.save(crawledAnnouncement);
+
+            for (CrawledAnnouncementFile attachedFile : crawledAnnouncementFiles) {
+                attachedFile.updateCrawledAnnouncement(crawledAnnouncement);
+                crawledAnnouncementFileRepository.save(attachedFile);
             }
 
         } catch (Exception e) {

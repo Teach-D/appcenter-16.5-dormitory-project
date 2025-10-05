@@ -1,7 +1,6 @@
 package com.example.appcenter_project.dto.response.complaint;
 
 import com.example.appcenter_project.dto.AttachedFileDto;
-import com.example.appcenter_project.entity.announcement.AttachedFile;
 import lombok.Builder;
 import lombok.Getter;
 

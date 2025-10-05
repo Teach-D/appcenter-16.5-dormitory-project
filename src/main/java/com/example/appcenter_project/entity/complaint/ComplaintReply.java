@@ -2,7 +2,7 @@ package com.example.appcenter_project.entity.complaint;
 
 import com.example.appcenter_project.dto.request.complaint.RequestComplaintReplyDto;
 import com.example.appcenter_project.entity.BaseTimeEntity;
-import com.example.appcenter_project.entity.announcement.AttachedFile;
+import com.example.appcenter_project.entity.file.AttachedFile;
 import com.example.appcenter_project.entity.user.User;
 import jakarta.persistence.*;
 import lombok.Builder;
