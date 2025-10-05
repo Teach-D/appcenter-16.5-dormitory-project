@@ -11,8 +11,11 @@ import lombok.Setter;
 public class RequestComplaintSearchDto {
     private DormType dormType;
     private String officer;
-    private String caseNumber;
     private ComplaintStatus status;
     private String keyword;
+    private String building;
+    private String floor;
+    private String bedNumber;
+    private String roomNumber;
     private ComplaintType type;
 }
