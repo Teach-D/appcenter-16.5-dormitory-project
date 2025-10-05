@@ -13,6 +13,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 @Service
@@ -52,6 +53,7 @@ public class FcmMessageService {
     }
 
     // 추가: 전체 사용자(회원 + 비회원)에게 전송
+    @Transactional
     public ResponseFcmMessageDto sendNotificationToAllUsers(String title, String body) {
         List<FcmToken> allTokens = fcmTokenRepository.findAll();
 
