@@ -16,6 +16,7 @@ import com.example.appcenter_project.entity.tip.Tip;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.complaint.ComplaintStatus;
 import com.example.appcenter_project.enums.complaint.ComplaintType;
+import com.example.appcenter_project.enums.complaint.DormBuilding;
 import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.enums.user.DormType;
 import com.example.appcenter_project.exception.CustomException;
@@ -64,24 +65,31 @@ public class ComplaintService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
+        // 필수 항목 검증
         if (dto.getTitle() == null || dto.getTitle().isBlank()
                 || dto.getContent() == null || dto.getContent().isBlank()
-                || dto.getCaseNumber() == null || dto.getCaseNumber().isBlank()
-                || dto.getContact() == null || dto.getContact().isBlank()) {
+                || dto.getContact() == null || dto.getContact().isBlank()
+                || dto.getDormType() == null || dto.getDormType().isBlank()
+                || dto.getBuilding() == null || dto.getBuilding().isBlank()) {
             throw new CustomException(COMPLAINT_REQUIRED_FIELD_MISSING);
         }
 
         ComplaintType type = ComplaintType.from(dto.getType());
         DormType dormType = DormType.from(dto.getDormType());
+        DormBuilding building = DormBuilding.from(dto.getBuilding());
 
         Complaint complaint = Complaint.builder()
                 .title(dto.getTitle())
                 .content(dto.getContent())
-                .caseNumber(dto.getCaseNumber())
                 .contact(dto.getContact())
                 .dormType(dormType)
                 .type(type)
                 .user(user)
+                .building(building)
+                .floor(dto.getFloor())
+                .roomNumber(dto.getRoomNumber())
+                .bedNumber(dto.getBedNumber())
+                .isPrivacyAgreed(dto.isPrivacyAgreed())
                 .build();
 
         Complaint saved = complaintRepository.save(complaint);
@@ -95,10 +103,14 @@ public class ComplaintService {
                 .id(saved.getId())
                 .title(saved.getTitle())
                 .content(saved.getContent())
-                .caseNumber(saved.getCaseNumber())
                 .contact(saved.getContact())
                 .dormType(saved.getDormType().toValue())
                 .type(saved.getType().toValue())
+                .building(saved.getBuilding().toValue())
+                .floor(saved.getFloor())
+                .roomNumber(saved.getRoomNumber())
+                .bedNumber(saved.getBedNumber())
+                .isPrivacyAgreed(saved.isPrivacyAgreed())
                 .status(saved.getStatus().toValue())
                 .createdDate(saved.getCreatedDate().toString())
                 .build();
@@ -116,8 +128,11 @@ public class ComplaintService {
                         .title(c.getTitle())
                         .status(c.getStatus().toValue())
                         .officer(c.getOfficer())
-                        .caseNumber(c.getCaseNumber())
                         .dormType(c.getDormType().toValue())
+                        .building(c.getBuilding() != null ? c.getBuilding().toValue() : null)
+                        .floor(c.getFloor())
+                        .roomNumber(c.getRoomNumber())
+                        .bedNumber(c.getBedNumber())
                         .build())
                 .collect(Collectors.toList());
     }
@@ -128,11 +143,18 @@ public class ComplaintService {
                 .stream()
                 .map(c -> ResponseComplaintListDto.builder()
                         .id(c.getId())
-                        .date(c.getCreatedDate().toLocalDate()
+                        .date(c.getCreatedDate()
+                                .toLocalDate()
                                 .format(DateTimeFormatter.ofPattern("MM.dd")))
                         .type(c.getType().toValue())
                         .title(c.getTitle())
                         .status(c.getStatus().toValue())
+                        .officer(c.getOfficer())
+                        .dormType(c.getDormType() != null ? c.getDormType().toValue() : null)
+                        .building(c.getBuilding() != null ? c.getBuilding().toValue() : null)
+                        .floor(c.getFloor())
+                        .roomNumber(c.getRoomNumber())
+                        .bedNumber(c.getBedNumber())
                         .build())
                 .collect(Collectors.toList());
     }
@@ -170,8 +192,11 @@ public class ComplaintService {
                 .title(c.getTitle())
                 .content(c.getContent())
                 .type(c.getType().toValue())
-                .dormType(c.getDormType().toValue())
-                .caseNumber(c.getCaseNumber())
+                .dormType(c.getDormType() != null ? c.getDormType().toValue() : null)
+                .building(c.getBuilding() != null ? c.getBuilding().toValue() : null)
+                .floor(c.getFloor())
+                .roomNumber(c.getRoomNumber())
+                .bedNumber(c.getBedNumber())
                 .contact(c.getContact())
                 .status(c.getStatus().toValue())
                 .createdDate(c.getCreatedDate().toString())
@@ -211,7 +236,10 @@ public class ComplaintService {
                 .content(c.getContent())
                 .type(c.getType().toValue())
                 .dormType(c.getDormType().toValue())
-                .caseNumber(c.getCaseNumber())
+                .building(c.getBuilding().toValue())
+                .floor(c.getFloor())
+                .roomNumber(c.getRoomNumber())
+                .bedNumber(c.getBedNumber())
                 .contact(c.getContact())
                 .status(c.getStatus().toValue())
                 .createdDate(c.getCreatedDate().toString())
@@ -422,10 +450,18 @@ public class ComplaintService {
         Specification<Complaint> spec = Specification
                 .where(ComplaintSpecification.hasDormType(dto.getDormType()))
                 .and(ComplaintSpecification.hasOfficer(dto.getOfficer()))
-                .and(ComplaintSpecification.hasCaseNumber(dto.getCaseNumber()))
                 .and(ComplaintSpecification.hasStatus(dto.getStatus()))
                 .and(ComplaintSpecification.hasKeyword(dto.getKeyword()))
-                .and(ComplaintSpecification.hasType(dto.getType()));
+                .and(ComplaintSpecification.hasType(dto.getType()))
+                .and(ComplaintSpecification.hasBuilding(
+                        dto.getBuilding() != null && !dto.getBuilding().isBlank()
+                                ? DormBuilding.valueOf(dto.getBuilding())
+                                : null
+                ))
+                .and(ComplaintSpecification.hasFloor(dto.getFloor()))
+                .and(ComplaintSpecification.hasRoomNumber(dto.getRoomNumber()))
+                .and(ComplaintSpecification.hasBedNumber(dto.getBedNumber()));
+
 
         // 사용자일 경우 본인 것만
         if (userId != null) {
@@ -435,17 +471,21 @@ public class ComplaintService {
         return complaintRepository.findAll(spec).stream()
                 .map(c -> ResponseComplaintListDto.builder()
                         .id(c.getId())
-                        .date(c.getCreatedDate().toLocalDate().toString())
-                        .type(c.getType().toValue())
+                        .date(c.getCreatedDate() != null
+                                ? c.getCreatedDate().toLocalDate().toString()
+                                : null)
+                        .type(c.getType() != null ? c.getType().toValue() : null)
                         .title(c.getTitle())
-                        .status(c.getStatus().toValue())
+                        .status(c.getStatus() != null ? c.getStatus().toValue() : null)
                         .officer(c.getOfficer())
-                        .caseNumber(c.getCaseNumber())
-                        .dormType(c.getDormType().toValue())
+                        .dormType(c.getDormType() != null ? c.getDormType().toValue() : null)
+                        .building(c.getBuilding() != null ? c.getBuilding().toValue() : null)
+                        .floor(c.getFloor())
+                        .roomNumber(c.getRoomNumber())
+                        .bedNumber(c.getBedNumber())
                         .build())
                 .toList();
     }
-
 
 
 }
