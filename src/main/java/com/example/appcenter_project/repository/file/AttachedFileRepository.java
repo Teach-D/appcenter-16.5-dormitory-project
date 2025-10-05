@@ -1,7 +1,7 @@
-package com.example.appcenter_project.repository.announcement;
+package com.example.appcenter_project.repository.file;
 
 import com.example.appcenter_project.entity.announcement.Announcement;
-import com.example.appcenter_project.entity.announcement.AttachedFile;
+import com.example.appcenter_project.entity.file.AttachedFile;
 import com.example.appcenter_project.entity.complaint.ComplaintReply;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;

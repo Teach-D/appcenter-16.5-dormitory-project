@@ -1,11 +1,16 @@
 package com.example.appcenter_project.dto.response.announcement;
 
 import com.example.appcenter_project.entity.announcement.Announcement;
+import com.example.appcenter_project.entity.announcement.CrawledAnnouncement;
+import com.example.appcenter_project.entity.announcement.ManualAnnouncement;
+import com.example.appcenter_project.enums.announcement.AnnouncementType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Schema(description = "공지사항 목록 응답 DTO")
 @Builder
@@ -35,20 +40,45 @@ public class ResponseAnnouncementDto {
     private String announcementType;
 
     public static ResponseAnnouncementDto entityToDto(Announcement announcement) {
-        String truncatedContent = announcement.getContent();
-        if (truncatedContent != null && truncatedContent.length() > 50) {
-            truncatedContent = truncatedContent.substring(0, 50);
+
+        if (announcement instanceof ManualAnnouncement) {
+            ManualAnnouncement manualAnnouncement = (ManualAnnouncement) announcement;
+            String truncatedContent = manualAnnouncement.getContent();
+            if (truncatedContent != null && truncatedContent.length() > 50) {
+                truncatedContent = truncatedContent.substring(0, 50);
+            }
+
+            return ResponseAnnouncementDto.builder()
+                    .id(manualAnnouncement.getId())
+                    .title(manualAnnouncement.getTitle())
+                    .content(truncatedContent)
+                    .createdDate(LocalDate.from(manualAnnouncement.getCreatedDate()))
+                    .updatedDate(manualAnnouncement.getModifiedDate().toLocalDate())
+                    .isEmergency(manualAnnouncement.isEmergency())
+                    .viewCount(manualAnnouncement.getViewCount())
+                    .announcementType(manualAnnouncement.getAnnouncementType().toValue())
+                    .build();
         }
-        
-        return ResponseAnnouncementDto.builder()
-                .id(announcement.getId())
-                .title(announcement.getTitle())
-                .content(truncatedContent)
-                .createdDate(announcement.getCreatedDate().toLocalDate())
-                .updatedDate(announcement.getModifiedDate().toLocalDate())
-                .isEmergency(announcement.getIsEmergency())
-                .viewCount(announcement.getViewCount())
-                .announcementType(announcement.getAnnouncementType().toValue())
-                .build();
+
+
+        if (announcement instanceof CrawledAnnouncement) {
+            CrawledAnnouncement crawledAnnouncement = (CrawledAnnouncement) announcement;
+            String truncatedContent = crawledAnnouncement.getContent();
+            if (truncatedContent != null && truncatedContent.length() > 50) {
+                truncatedContent = truncatedContent.substring(0, 50);
+            }
+
+            return ResponseAnnouncementDto.builder()
+                    .id(crawledAnnouncement.getId())
+                    .title(crawledAnnouncement.getTitle())
+                    .content(truncatedContent)
+                    .createdDate(LocalDate.from(crawledAnnouncement.getCreatedDate()))
+                    .updatedDate(null)
+                    .isEmergency(false)
+                    .viewCount(crawledAnnouncement.getViewCount())
+                    .announcementType(crawledAnnouncement.getAnnouncementType().toValue())
+                    .build();
+        }
+        return null;
     }
 }

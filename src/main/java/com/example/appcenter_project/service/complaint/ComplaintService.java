@@ -1,7 +1,6 @@
 package com.example.appcenter_project.service.complaint;
 
 import com.example.appcenter_project.dto.AttachedFileDto;
-import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.dto.request.complaint.RequestComplaintDto;
 import com.example.appcenter_project.dto.request.complaint.RequestComplaintSearchDto;
 import com.example.appcenter_project.dto.response.complaint.ResponseComplaintDetailDto;
@@ -9,18 +8,15 @@ import com.example.appcenter_project.dto.response.complaint.ResponseComplaintDto
 import com.example.appcenter_project.dto.response.complaint.ResponseComplaintListDto;
 import com.example.appcenter_project.dto.response.complaint.ResponseComplaintReplyDto;
 import com.example.appcenter_project.entity.Image;
-import com.example.appcenter_project.entity.announcement.AttachedFile;
+import com.example.appcenter_project.entity.file.AttachedFile;
 import com.example.appcenter_project.entity.complaint.Complaint;
 import com.example.appcenter_project.entity.complaint.ComplaintReply;
-import com.example.appcenter_project.entity.tip.Tip;
 import com.example.appcenter_project.entity.user.User;
-import com.example.appcenter_project.enums.complaint.ComplaintStatus;
 import com.example.appcenter_project.enums.complaint.ComplaintType;
 import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.enums.user.DormType;
 import com.example.appcenter_project.exception.CustomException;
-import com.example.appcenter_project.exception.ErrorCode;
-import com.example.appcenter_project.repository.announcement.AttachedFileRepository;
+import com.example.appcenter_project.repository.file.AttachedFileRepository;
 import com.example.appcenter_project.repository.complaint.ComplaintRepository;
 import com.example.appcenter_project.repository.complaint.ComplaintSpecification;
 import com.example.appcenter_project.repository.image.ImageRepository;
@@ -46,7 +42,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import static com.example.appcenter_project.exception.ErrorCode.*;
 import static com.example.appcenter_project.exception.ErrorCode.COMPLAINT_NOT_OWNED_BY_USER;
-import static com.google.common.io.Files.getFileExtension;
 
 @Slf4j
 @Service

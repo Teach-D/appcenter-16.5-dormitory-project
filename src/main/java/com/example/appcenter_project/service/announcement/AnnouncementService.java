@@ -1,22 +1,25 @@
 package com.example.appcenter_project.service.announcement;
 
 import com.example.appcenter_project.dto.AttachedFileDto;
-import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.dto.request.announement.RequestAnnouncementDto;
 import com.example.appcenter_project.dto.response.announcement.ResponseAnnouncementDetailDto;
 import com.example.appcenter_project.dto.response.announcement.ResponseAnnouncementDto;
-import com.example.appcenter_project.dto.response.tip.ResponseTipDto;
-import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.announcement.Announcement;
-import com.example.appcenter_project.entity.announcement.AttachedFile;
+import com.example.appcenter_project.entity.file.AttachedFile;
+import com.example.appcenter_project.entity.announcement.CrawledAnnouncement;
+import com.example.appcenter_project.entity.announcement.ManualAnnouncement;
+import com.example.appcenter_project.entity.file.CrawledAnnouncementFile;
+import com.example.appcenter_project.entity.file.ManualAnnouncementFile;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.announcement.AnnouncementType;
-import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.enums.user.Role;
 import com.example.appcenter_project.exception.CustomException;
-import com.example.appcenter_project.exception.ErrorCode;
 import com.example.appcenter_project.repository.announcement.AnnouncementRepository;
-import com.example.appcenter_project.repository.announcement.AttachedFileRepository;
+import com.example.appcenter_project.repository.announcement.CrawledAnnouncementRepository;
+import com.example.appcenter_project.repository.announcement.ManualAnnouncementRepository;
+import com.example.appcenter_project.repository.file.AttachedFileRepository;
+import com.example.appcenter_project.repository.file.CrawledAnnouncementFileRepository;
+import com.example.appcenter_project.repository.file.ManualAnnouncementFileRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +50,9 @@ public class AnnouncementService {
     private final AttachedFileRepository attachedFileRepository;
     private final AnnouncementRepository announcementRepository;
     private final UserRepository userRepository;
+    private final ManualAnnouncementRepository manualAnnouncementRepository;
+    private final CrawledAnnouncementFileRepository crawledAnnouncementFileRepository;
+    private final ManualAnnouncementFileRepository manualAnnouncementFileRepository;
 
     public void saveAnnouncement(Long userId, RequestAnnouncementDto requestAnnouncementDto, List<MultipartFile> files) {
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
@@ -68,18 +74,18 @@ public class AnnouncementService {
 
     private void saveAnnouncementDetail(RequestAnnouncementDto requestAnnouncementDto, List<MultipartFile> files, AnnouncementType announcementType) {
         // 공지사항 저장
-        Announcement announcement = RequestAnnouncementDto.dtoToEntity(requestAnnouncementDto, announcementType);
-        announcementRepository.save(announcement);
+        ManualAnnouncement manualAnnouncement = RequestAnnouncementDto.dtoToEntity(requestAnnouncementDto, announcementType);
+        manualAnnouncementRepository.save(manualAnnouncement);
 
         // 첨부파일 저장
-        saveUploadFile(announcement, files);
+        saveUploadFile(manualAnnouncement, files);
     }
 
-    private void saveUploadFile(Announcement announcement, List<MultipartFile> files) {
+    private void saveUploadFile(ManualAnnouncement announcement, List<MultipartFile> files) {
         if (files != null && !files.isEmpty()) {
             // 개발 환경에 맞는 경로 설정
             String basePath = System.getProperty("user.dir");
-            String filePath = basePath + "/files/announcement/";
+            String filePath = basePath + "/files/manual-announcement/";
 
             // 디렉토리 생성 (존재하지 않으면)
             File directory = new File(filePath);
@@ -97,23 +103,21 @@ public class AnnouncementService {
                 Timestamp timestamp = new Timestamp(System.currentTimeMillis());
                 String fileExtension = getFileExtension(file.getOriginalFilename());
                 String uuid = UUID.randomUUID().toString();
-                String uploadFileName = "announcement_" + announcement.getId() + "_" + uuid + timestamp + fileExtension;
+                String uploadFileName = "manual-announcement_" + announcement.getId() + "_" + uuid + fileExtension;
                 File destinationFile = new File(filePath + uploadFileName);
 
                 try {
                     file.transferTo(destinationFile);
-                    log.info("Announcement file saved successfully: {}", destinationFile.getAbsolutePath());
+                    log.info("ManualAnnouncement file saved successfully: {}", destinationFile.getAbsolutePath());
 
-                    AttachedFile attachedFile = AttachedFile.builder()
+                    ManualAnnouncementFile attachedFile = ManualAnnouncementFile.builder()
                             .filePath(destinationFile.getAbsolutePath())
                             .fileName(file.getOriginalFilename())
                             .fileSize(file.getSize())
-                            .announcement(announcement)
+                            .manualAnnouncement(announcement)
                             .build();
 
-                    attachedFileRepository.save(attachedFile);
-
-                    announcement.getAttachedFiles().add(attachedFile);
+                    manualAnnouncementFileRepository.save(attachedFile);
 
                 } catch (IOException e) {
                     log.error("Failed to save Announcement file for announcement {}: ", announcement.getId(), e);
@@ -139,6 +143,25 @@ public class AnnouncementService {
 
     public List<AttachedFileDto> findAttachedFileByAnnouncementId(Long announcementId, HttpServletRequest request) {
         Announcement announcement = announcementRepository.findById(announcementId).orElseThrow(() -> new CustomException(ANNOUNCEMENT_NOT_REGISTERED));
+
+        if (announcement instanceof CrawledAnnouncement) {
+            log.info("CrawledAnnouncement : {}", announcement.getId());
+            List<CrawledAnnouncementFile> crawledAnnouncementFiles = crawledAnnouncementFileRepository.findByCrawledAnnouncementId(announcementId);
+
+            List<AttachedFileDto> attachedFileDtos = new ArrayList<>();
+            for (CrawledAnnouncementFile crawledAnnouncementFile : crawledAnnouncementFiles) {
+                log.info("fileName : {}", crawledAnnouncementFile.getFileName());
+                AttachedFileDto attachedFileDto = AttachedFileDto.builder()
+                        .filePath(crawledAnnouncementFile.getFilePath())
+                        .fileName(crawledAnnouncementFile.getFileName())
+                        .fileSize(crawledAnnouncementFile.getFileSize())
+                        .build();
+
+                attachedFileDtos.add(attachedFileDto);
+            }
+
+            return attachedFileDtos;
+        }
 
         List<AttachedFile> attachedFiles = attachedFileRepository.findByAnnouncement(announcement);
 
@@ -249,10 +272,11 @@ public class AnnouncementService {
         }
 
         attachedFileRepository.delete(attachedFile);
-        announcement.getAttachedFiles().remove(attachedFile);
+        // announcement.getAttachedFiles().remove(attachedFile);
     }
 
     public List<ResponseAnnouncementDto> findAllAnnouncements() {
+
         List<Announcement> announcements = announcementRepository.findAll();
         Collections.reverse(announcements);
 
@@ -268,8 +292,11 @@ public class AnnouncementService {
 
     public ResponseAnnouncementDetailDto findAnnouncement(Long announcementId) {
         Announcement announcement = announcementRepository.findById(announcementId).orElseThrow(() -> new CustomException(ANNOUNCEMENT_NOT_REGISTERED));
-        announcement.plusViewCount();
-        log.debug("[findAnnouncement] 공지사항 조회수 증가 - currentViewCount={}", announcement.getViewCount());
+
+        if (announcement instanceof ManualAnnouncement) {
+            ((ManualAnnouncement) announcement).plusViewCount();
+            log.debug("[findAnnouncement] 공지사항 조회수 증가 - currentViewCount={}", announcement.getViewCount());
+        }
 
         ResponseAnnouncementDetailDto dto = ResponseAnnouncementDetailDto.entityToDto(announcement);
         return dto;
@@ -304,13 +331,19 @@ public class AnnouncementService {
 
     public ResponseAnnouncementDto updateAnnouncement(Long userId, RequestAnnouncementDto requestAnnouncementDto, Long announcementId) {
         Announcement announcement = announcementRepository.findById(announcementId).orElseThrow(() -> new CustomException(ANNOUNCEMENT_NOT_REGISTERED));
+
+        // 크롤링 공지사항은 수정 불가
+        if (announcement instanceof CrawledAnnouncement) {
+            return null;
+        }
+
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
         Role role = user.getRole();
 
         // 서포터즈 계정은 서포터즈 공지만 수정 가능
-        if (role == Role.ROLE_DORM_SUPPORTERS) {
+/*        if (role == Role.ROLE_DORM_SUPPORTERS) {
             if (announcement.getAnnouncementType()== SUPPORTERS) {
-                announcement.update(requestAnnouncementDto);
+                ((ManualAnnouncement) announcement).update(requestAnnouncementDto);
             } else {
                 throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
             }
@@ -318,15 +351,15 @@ public class AnnouncementService {
         // 기숙사 계정은 기숙사 공지만 수정 가능
         else if (role == Role.ROLE_DORM_MANAGER || role == Role.ROLE_DORM_ROOMMATE_MANAGER || role == Role.ROLE_DORM_LIFE_MANAGER) {
             if (announcement.getAnnouncementType()== DORMITORY) {
-                announcement.update(requestAnnouncementDto);
+                ((ManualAnnouncement) announcement).update(requestAnnouncementDto);
             } else {
                 throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
             }
         }
         // 관리자 계정은 모든 공지 수정 가능
         else if (role == Role.ROLE_ADMIN) {
-            announcement.update(requestAnnouncementDto);
-        }
+            ((ManualAnnouncement) announcement).update(requestAnnouncementDto);
+        }*/
 
         return ResponseAnnouncementDto.entityToDto(announcement);
     }
@@ -367,16 +400,21 @@ public class AnnouncementService {
         Announcement announcement = announcementRepository.findById(announcementId)
                 .orElseThrow(() -> new CustomException(ANNOUNCEMENT_NOT_REGISTERED));
 
+        // 크롤링 공지사항은 수정 불가
+        if (announcement instanceof CrawledAnnouncement) {
+            return null;
+        }
+
         // 2. 기존 첨부파일 삭제 (DB + 파일시스템)
         deleteExistingAttachedFiles(announcement);
 
-        // 3. 공지사항 내용 업데이트
-        announcement.update(requestAnnouncementDto);
+/*        // 3. 공지사항 내용 업데이트
+        ((ManualAnnouncement) announcement).update(requestAnnouncementDto);
 
         // 4. 새로운 첨부파일 저장
         if (files != null && !files.isEmpty()) {
             saveUploadFile(announcement, files);
-        }
+        }*/
 
         return ResponseAnnouncementDto.entityToDto(announcement);
     }
@@ -405,7 +443,7 @@ public class AnnouncementService {
         attachedFileRepository.deleteByAnnouncement(announcement);
 
         // 엔티티의 컬렉션도 정리
-        announcement.getAttachedFiles().clear();
+//        announcement.getAttachedFiles().clear();
 
         log.info("[deleteExistingAttachedFiles] 기존 첨부파일 삭제 완료 - 삭제된 파일 수: {}", existingFiles.size());
     }

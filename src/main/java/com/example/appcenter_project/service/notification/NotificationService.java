@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.example.appcenter_project.enums.user.NotificationType.*;
@@ -45,6 +46,7 @@ public class NotificationService {
             userNotification.updateIsRead(true);
         }
 
+        Collections.reverse(responseNotificationDtos);
         return responseNotificationDtos;
     }
 

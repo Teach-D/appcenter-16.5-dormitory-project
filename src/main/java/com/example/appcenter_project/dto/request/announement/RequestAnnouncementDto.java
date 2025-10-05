@@ -1,6 +1,7 @@
 package com.example.appcenter_project.dto.request.announement;
 
 import com.example.appcenter_project.entity.announcement.Announcement;
+import com.example.appcenter_project.entity.announcement.ManualAnnouncement;
 import com.example.appcenter_project.enums.announcement.AnnouncementType;
 import lombok.Getter;
 
@@ -12,8 +13,8 @@ public class RequestAnnouncementDto {
     private String content;
     private Boolean isEmergency;
 
-    public static Announcement dtoToEntity(RequestAnnouncementDto requestAnnouncementDto, AnnouncementType announcementType) {
-        return Announcement.builder()
+    public static ManualAnnouncement dtoToEntity(RequestAnnouncementDto requestAnnouncementDto, AnnouncementType announcementType) {
+        return ManualAnnouncement.builder()
                 .title(requestAnnouncementDto.getTitle())
                 .writer(requestAnnouncementDto.getWriter())
                 .content(requestAnnouncementDto.getContent())

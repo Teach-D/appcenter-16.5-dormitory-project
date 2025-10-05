@@ -55,9 +55,11 @@ dependencies {
 	// mybatis
 	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
 
-	//firebase
+	// firebase
 	implementation 'com.google.firebase:firebase-admin:9.2.0'
 
+	// crawl
+	implementation 'org.seleniumhq.selenium:selenium-java:4.15.0'
 
 	// redis
 //	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
