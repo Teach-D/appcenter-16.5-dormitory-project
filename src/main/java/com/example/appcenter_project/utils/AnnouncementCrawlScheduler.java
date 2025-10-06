@@ -35,7 +35,7 @@ public class AnnouncementCrawlScheduler {
     private final CrawledAnnouncementRepository crawledAnnouncementRepository;
     private final CrawledAnnouncementFileRepository crawledAnnouncementFileRepository;
 
-    @Scheduled(cron = "0 42 18,20 * * ?")
+    @Scheduled(cron = "0 20 9,20 * * ?")
     public void crawling() {
         List<String> crawlLinks = crawlWithSelenium();
         saveCrawlAnnouncements(crawlLinks);
