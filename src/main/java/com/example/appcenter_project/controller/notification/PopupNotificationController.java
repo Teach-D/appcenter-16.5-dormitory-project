@@ -20,7 +20,7 @@ import static org.springframework.http.HttpStatus.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/popup-notifications")
-public class PopupNotificationController {
+public class PopupNotificationController implements PopupNotificationApiSpecification {
 
     private final PopupNotificationService popupNotificationService;
 
