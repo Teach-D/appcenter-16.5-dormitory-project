@@ -3,6 +3,7 @@ package com.example.appcenter_project.controller.user;
 import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.dto.request.user.RequestTokenDto;
 import com.example.appcenter_project.dto.request.user.RequestUserDto;
+import com.example.appcenter_project.dto.request.user.RequestUserRole;
 import com.example.appcenter_project.dto.request.user.SignupUser;
 import com.example.appcenter_project.dto.response.user.ResponseBoardDto;
 import com.example.appcenter_project.dto.response.user.ResponseLoginDto;
@@ -81,6 +82,15 @@ public interface UserApiSpecification {
             }
     )
     ResponseEntity<ResponseUserDto> findUserByUserId(@AuthenticationPrincipal CustomUserDetails user);
+
+    @Operation(
+            summary = "사용자 권한 변경",
+            description = "현재 로그인한 사용자의 권한을 변경합니다. 일반 사용자, 기숙사 담당자, 기숙사 생활민원 담당자, 기숙사 룸메이트민원 담당자 중에 하나로 선택해주세요",
+            responses = {
+                    @ApiResponse(responseCode = "201", description = "회원가입/로그인 성공")
+            }
+    )
+    ResponseEntity<Void> changeUserRole(@RequestBody RequestUserRole requestUserRole);
 
     @Operation(
             summary = "사용자 프로필 이미지 조회",

@@ -40,7 +40,7 @@ public interface UserNotificationApiSpecification {
                     example = "[\"공동구매\", \"룸메이트\"]",
                     array = @ArraySchema(schema = @Schema(
                             type = "string",
-                            allowableValues = {"룸메이트", "공동구매", "생활원", "유니돔", "서포터즈"}
+                            allowableValues = {"생활원", "유니돔"}
                     ))
             ) List<String> notificationTypes);
 
@@ -189,7 +189,7 @@ public interface UserNotificationApiSpecification {
                     example = "[\"공동구매\", \"룸메이트\"]",
                     array = @ArraySchema(schema = @Schema(
                             type = "string",
-                            allowableValues = {"룸메이트", "공동구매", "생활원", "유니돔", "서포터즈"}
+                            allowableValues = {"생활원", "유니돔"}
                     ))
             ) List<String> notificationTypes);
 
