@@ -42,6 +42,8 @@ public class ResponseAnnouncementDetailDto {
     @Schema(description = "긴급", example = "true")
     private boolean isEmergency;
 
+    private String number;
+
     private String announcementType;
 
     public static ResponseAnnouncementDetailDto entityToDto(Announcement announcement) {
@@ -52,6 +54,7 @@ public class ResponseAnnouncementDetailDto {
             return ResponseAnnouncementDetailDto.builder()
                     .id(manualAnnouncement.getId())
                     .title(manualAnnouncement.getTitle())
+                    .writer(announcement.getWriter())
                     .content(manualAnnouncement.getContent())
                     .createdDate(LocalDate.from(manualAnnouncement.getCreatedDate()))
                     .updatedDate(manualAnnouncement.getModifiedDate().toLocalDate())
@@ -68,12 +71,14 @@ public class ResponseAnnouncementDetailDto {
             return ResponseAnnouncementDetailDto.builder()
                     .id(crawledAnnouncement.getId())
                     .category(crawledAnnouncement.getCategory())
+                    .writer(announcement.getWriter())
                     .title(crawledAnnouncement.getTitle())
                     .content(crawledAnnouncement.getContent())
-                    .createdDate(LocalDate.from(crawledAnnouncement.getCreatedDate()))
+                    .createdDate(crawledAnnouncement.getCrawledDate())
                     .updatedDate(null)
                     .isEmergency(false)
                     .viewCount(crawledAnnouncement.getViewCount())
+                    .number(crawledAnnouncement.getNumber())
                     .announcementType(AnnouncementType.DORMITORY.toValue())
                     .build();
         }

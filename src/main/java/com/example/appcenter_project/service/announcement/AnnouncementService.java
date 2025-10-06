@@ -32,10 +32,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.example.appcenter_project.enums.announcement.AnnouncementType.*;
 import static com.example.appcenter_project.exception.ErrorCode.*;
@@ -276,18 +278,30 @@ public class AnnouncementService {
     }
 
     public List<ResponseAnnouncementDto> findAllAnnouncements() {
-
         List<Announcement> announcements = announcementRepository.findAll();
-        Collections.reverse(announcements);
 
-        List<ResponseAnnouncementDto> responseAnnouncementDtos = new ArrayList<>();
+        // 정렬: 각 타입에 맞는 날짜 기준으로 최신순
+        announcements.sort((a1, a2) -> {
+            LocalDateTime date1 = getCompareDate(a1);
+            LocalDateTime date2 = getCompareDate(a2);
+            return date2.compareTo(date1); // 최신순 (내림차순)
+        });
 
-        for (Announcement announcement : announcements) {
-            ResponseAnnouncementDto responseAnnouncementDto = ResponseAnnouncementDto.entityToDto(announcement);
-            responseAnnouncementDtos.add(responseAnnouncementDto);
+        return announcements.stream()
+                .map(ResponseAnnouncementDto::entityToDto)
+                .collect(Collectors.toList());
+    }
+
+    private LocalDateTime getCompareDate(Announcement announcement) {
+        if (announcement instanceof CrawledAnnouncement) {
+            CrawledAnnouncement crawled = (CrawledAnnouncement) announcement;
+            return crawled.getCrawledDate() != null
+                    ? crawled.getCrawledDate().atStartOfDay()
+                    : crawled.getCreatedDate();
+        } else {
+            // ManualAnnouncement는 BaseTimeEntity의 createdDate 사용
+            return announcement.getCreatedDate();
         }
-
-        return responseAnnouncementDtos;
     }
 
     public ResponseAnnouncementDetailDto findAnnouncement(Long announcementId) {

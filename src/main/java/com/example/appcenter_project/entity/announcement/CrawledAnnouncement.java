@@ -17,8 +17,7 @@ import java.util.List;
 @NoArgsConstructor
 public class CrawledAnnouncement extends Announcement {
 
-    private int NO;
-    private int number;
+    private String number;
 
     private String category;
 
@@ -28,34 +27,30 @@ public class CrawledAnnouncement extends Announcement {
     @OneToMany(mappedBy = "crawledAnnouncement")
     private List<CrawledAnnouncementFile> crawledAnnouncementFiles = new ArrayList<>();
 
+    private LocalDate crawledDate;
+
     @Builder
-    public CrawledAnnouncement(Long id, String title, String writer, int viewCount, AnnouncementType announcementType, int NO, int number, String category, String content, List<CrawledAnnouncementFile> crawledAnnouncementFiles) {
+    public CrawledAnnouncement(Long id, String title, String writer, int viewCount, AnnouncementType announcementType, String number, String category, String content, List<CrawledAnnouncementFile> crawledAnnouncementFiles, LocalDate crawledDate) {
         super(id, title, writer, viewCount, announcementType);
-        this.NO = NO;
+        this.number = number;
+        this.category = category;
+        this.content = content;
+        this.crawledAnnouncementFiles = crawledAnnouncementFiles;
+        this.crawledDate = crawledDate;
+    }
+
+    public CrawledAnnouncement(int NO, String number, String category, String content, List<CrawledAnnouncementFile> crawledAnnouncementFiles) {
         this.number = number;
         this.category = category;
         this.content = content;
         this.crawledAnnouncementFiles = crawledAnnouncementFiles;
     }
 
-    public CrawledAnnouncement(int NO, int number, String category, String content, List<CrawledAnnouncementFile> crawledAnnouncementFiles) {
-        this.NO = NO;
-        this.number = number;
-        this.category = category;
-        this.content = content;
-        this.crawledAnnouncementFiles = crawledAnnouncementFiles;
-    }
-
-    public CrawledAnnouncement(String title, String writer, int viewCount, AnnouncementType announcementType, List<AttachedFile> attachedFiles, int NO, int number, String category, String content, List<CrawledAnnouncementFile> crawledAnnouncementFiles) {
+    public CrawledAnnouncement(String title, String writer, int viewCount, AnnouncementType announcementType, List<AttachedFile> attachedFiles, String number, String category, String content, List<CrawledAnnouncementFile> crawledAnnouncementFiles) {
         super(title, writer, viewCount, announcementType, attachedFiles);
-        this.NO = NO;
         this.number = number;
         this.category = category;
         this.content = content;
         this.crawledAnnouncementFiles = crawledAnnouncementFiles;
-    }
-
-    public void updateCreateDate(LocalDate createDate) {
-        super.createdDate = createdDate;
     }
 }

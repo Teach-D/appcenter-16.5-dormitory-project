@@ -5,7 +5,6 @@ import com.example.appcenter_project.entity.file.CrawledAnnouncementFile;
 import com.example.appcenter_project.enums.announcement.AnnouncementType;
 import com.example.appcenter_project.repository.announcement.CrawledAnnouncementRepository;
 import com.example.appcenter_project.repository.file.CrawledAnnouncementFileRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.By;
@@ -18,13 +17,14 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-@Transactional
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -35,7 +35,7 @@ public class AnnouncementCrawlScheduler {
     private final CrawledAnnouncementRepository crawledAnnouncementRepository;
     private final CrawledAnnouncementFileRepository crawledAnnouncementFileRepository;
 
-    @Scheduled(cron = "0 20 9,20 * * ?")
+    @Scheduled(cron = "0 37 13,20 * * ?")
     public void crawling() {
         List<String> crawlLinks = crawlWithSelenium();
         saveCrawlAnnouncements(crawlLinks);
@@ -43,20 +43,30 @@ public class AnnouncementCrawlScheduler {
 
     private void saveCrawlAnnouncements(List<String> crawlLinks) {
         for (String crawlLink : crawlLinks) {
-            saveCrawlAnnouncement(crawlLink);
+            try {
+                saveCrawlAnnouncement(crawlLink);
+            } catch (Exception e) {
+                log.error("공지사항 저장 실패 (링크: {}): {}", crawlLink, e.getMessage());
+                // 한 건 실패해도 계속 진행
+            }
         }
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void saveCrawlAnnouncement(String link) {
         WebDriver driver = null;
 
         try {
             ChromeOptions options = new ChromeOptions();
-            options.addArguments("--headless");
+            options.addArguments("--headless=new");
             options.addArguments("--no-sandbox");
             options.addArguments("--disable-dev-shm-usage");
             options.addArguments("--disable-gpu");
+            options.addArguments("--disable-software-rasterizer");
+            options.addArguments("--disable-extensions");
+            options.addArguments("--remote-debugging-port=9222");
             options.addArguments("--window-size=1920,1080");
+            options.addArguments("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
 
             driver = new ChromeDriver(options);
             driver.get(link);
@@ -82,17 +92,26 @@ public class AnnouncementCrawlScheduler {
                 // 카테고리 없을 수 있음
             }
 
-            // 글번호
+            // 글번호 (String으로 처리)
             String number = "";
             try {
                 WebElement numberElement = driver.findElement(By.cssSelector("dl.view-num dd"));
                 number = numberElement.getText().trim();
+                
+                // 빈 값이면 건너뛰기
+                if (number.isEmpty()) {
+                    log.warn("빈 글번호, 건너뛰기");
+                    return;
+                }
+                
+                // 이미 저장되어 있는 공지사항은 저장 제외
+                if (crawledAnnouncementRepository.existsByNumber(number)) {
+                    log.debug("이미 존재하는 공지사항 번호: {}", number);
+                    return;
+                }
             } catch (Exception e) {
-                log.debug("글번호 추출 실패");
-            }
-            // 이미 저장되어 있는 공지사항은 저장 제외
-            if (crawledAnnouncementRepository.existsByNumber(Integer.parseInt(number))) {
-                return;
+                log.error("글번호 추출 실패: {}", e.getMessage());
+                return; // 글번호가 없으면 저장하지 않음
             }
 
             // 작성일
@@ -114,36 +133,25 @@ public class AnnouncementCrawlScheduler {
             }
 
             // 조회수
-            String viewCount = "";
+            int viewCountInt = 0;
             try {
                 WebElement viewCountElement = driver.findElement(By.cssSelector("dl.count dd"));
-                viewCount = viewCountElement.getText().trim();
+                String viewCount = viewCountElement.getText().trim();
+                if (!viewCount.isEmpty() && viewCount.matches("\\d+")) {
+                    viewCountInt = Integer.parseInt(viewCount);
+                }
             } catch (Exception e) {
-                // 조회수 없을 수 있음
+                log.debug("조회수 추출 실패, 기본값 0 사용");
             }
 
             // 본문 내용
-            String content = new String();
+            String content = "";
             try {
                 WebElement contentElement = driver.findElement(By.cssSelector(".view-con"));
-                // 모든 직접 자식 요소 (p, div, span 등)
                 List<WebElement> children = contentElement.findElements(By.xpath("./*"));
 
                 for (WebElement child : children) {
-                    String tagName = child.getTagName();
                     String textContent = child.getText().trim();
-                    String innerHTML = child.getAttribute("innerHTML");
-                    String style = child.getAttribute("style");
-                    String className = child.getAttribute("class");
-
-                    /*ContentElement element = ContentElement.builder()
-                            .tagName(tagName)
-                            .textContent(textContent)
-                            .innerHTML(innerHTML)
-                            .styleAttribute(style != null ? style : "")
-                            .className(className != null ? className : "")
-                            .build();*/
-
                     content = content + textContent;
                 }
             } catch (Exception e) {
@@ -161,7 +169,6 @@ public class AnnouncementCrawlScheduler {
                         String downloadUrl = linkElement.getAttribute("href");
 
                         if (!fileName.isEmpty() && downloadUrl != null && !downloadUrl.isEmpty()) {
-                            // 상대 경로인 경우 절대 경로로 변환
                             if (!downloadUrl.startsWith("http")) {
                                 downloadUrl = "https://dorm.inu.ac.kr" + downloadUrl;
                             }
@@ -184,16 +191,15 @@ public class AnnouncementCrawlScheduler {
 
             CrawledAnnouncement crawledAnnouncement = CrawledAnnouncement.builder()
                     .category(category)
-                    .number(Integer.parseInt(number))
+                    .number(number)  // String으로 저장
                     .title(title)
                     .writer(writer)
-                    .viewCount(Integer.parseInt(viewCount))
+                    .viewCount(viewCountInt)
                     .announcementType(AnnouncementType.DORMITORY)
                     .content(content)
                     .crawledAnnouncementFiles(crawledAnnouncementFiles)
+                    .crawledDate(LocalDate.parse(createDate))
                     .build();
-
-            crawledAnnouncement.updateCreateDate(LocalDate.parse(createDate));
 
             crawledAnnouncementRepository.save(crawledAnnouncement);
 
@@ -211,41 +217,37 @@ public class AnnouncementCrawlScheduler {
         }
     }
 
-
     public List<String> crawlWithSelenium() {
         List<String> crawlLinks = new ArrayList<>();
-
         WebDriver driver = null;
 
         try {
             ChromeOptions options = new ChromeOptions();
-            options.addArguments("--headless");
+            options.addArguments("--headless=new");
             options.addArguments("--no-sandbox");
             options.addArguments("--disable-dev-shm-usage");
             options.addArguments("--disable-gpu");
+            options.addArguments("--disable-software-rasterizer");
+            options.addArguments("--disable-extensions");
+            options.addArguments("--remote-debugging-port=9222");
             options.addArguments("--window-size=1920,1080");
+            options.addArguments("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
 
             driver = new ChromeDriver(options);
-
-            // 첫 페이지 접속
             driver.get(BASE_URL);
+            
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
             wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("table.board-table")));
 
-            // 총 페이지 수 추출
             int totalPages = getTotalPages(driver);
             log.info("총 페이지 수: {}", totalPages);
 
-            // 모든 페이지 순회
-            for (int page = 1; page <= totalPages; page++) {
+            for (int page = 1; page <= 2; page++) {
                 log.info("페이지 {} 크롤링 시작...", page);
 
                 if (page > 1) {
-                    // JavaScript로 페이지 이동
                     JavascriptExecutor js = (JavascriptExecutor) driver;
                     js.executeScript("page_link('" + page + "')");
-
-                    // 페이지 로딩 대기
                     Thread.sleep(1000);
                     wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("table.board-table")));
                 }
@@ -257,6 +259,25 @@ public class AnnouncementCrawlScheduler {
             }
 
             log.info("전체 크롤링 완료: 총 {}개의 공지사항 수집", crawlLinks.size());
+
+/*            for (int page = 1; page <= totalPages; page++) {
+                log.info("페이지 {} 크롤링 시작...", page);
+
+                if (page > 1) {
+                    JavascriptExecutor js = (JavascriptExecutor) driver;
+                    js.executeScript("page_link('" + page + "')");
+                    Thread.sleep(1000);
+                    wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("table.board-table")));
+                }
+
+                List<String> extractCrawlLinks = extractNoticesFromPage(driver);
+                crawlLinks.addAll(extractCrawlLinks);
+
+                log.info("페이지 {} 완료: {}개의 공지사항 수집", page, extractCrawlLinks.size());
+            }
+
+            log.info("전체 크롤링 완료: 총 {}개의 공지사항 수집", crawlLinks.size());
+            */
 
         } catch (Exception e) {
             log.error("Selenium 크롤링 실패: ", e);
@@ -277,9 +298,6 @@ public class AnnouncementCrawlScheduler {
 
             for (WebElement row : rows) {
                 try {
-                    String rowClass = row.getAttribute("class");
-
-                    // 링크 추출
                     String link = "";
                     try {
                         WebElement linkElement = row.findElement(By.cssSelector("td.td-subject a"));
@@ -287,7 +305,6 @@ public class AnnouncementCrawlScheduler {
                         if (href != null && !href.isEmpty()) {
                             link = href;
                         } else {
-                            // onclick에서 링크 추출
                             String onclick = linkElement.getAttribute("onclick");
                             if (onclick != null && onclick.contains("jf_viewArtcl")) {
                                 link = "javascript:" + onclick;
@@ -313,14 +330,12 @@ public class AnnouncementCrawlScheduler {
 
     private int getTotalPages(WebDriver driver) {
         try {
-            // ._totPage 요소의 내부 텍스트 추출
             WebElement totPageElement = driver.findElement(By.cssSelector("._paging ._totPage"));
             String totalPagesText = totPageElement.getText().trim();
 
             log.debug("추출된 총 페이지 텍스트: '{}'", totalPagesText);
 
             if (totalPagesText.isEmpty()) {
-                // JavaScript로 직접 추출 시도
                 JavascriptExecutor js = (JavascriptExecutor) driver;
                 Object result = js.executeScript("return document.querySelector('._paging ._totPage').textContent;");
                 totalPagesText = result != null ? result.toString().trim() : "";
@@ -331,7 +346,6 @@ public class AnnouncementCrawlScheduler {
                 return Integer.parseInt(totalPagesText);
             }
 
-            // 페이지네이션 링크에서 최대 페이지 추출 시도
             List<WebElement> pageLinks = driver.findElements(By.cssSelector("._paging ul li a"));
             int maxPage = 1;
             for (WebElement link : pageLinks) {
@@ -348,7 +362,6 @@ public class AnnouncementCrawlScheduler {
                 }
             }
 
-            // "끝" 버튼에서 페이지 추출
             try {
                 WebElement lastButton = driver.findElement(By.cssSelector("._paging ._last"));
                 String onclick = lastButton.getAttribute("href");
@@ -370,5 +383,4 @@ public class AnnouncementCrawlScheduler {
             return 1;
         }
     }
-
 }
