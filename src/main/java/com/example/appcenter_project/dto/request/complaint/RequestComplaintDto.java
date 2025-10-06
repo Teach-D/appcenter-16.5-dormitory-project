@@ -31,9 +31,6 @@ public class RequestComplaintDto {
     @Schema(description = "침대번호", example = "1번")
     private String bedNumber;
     
-    @Schema(description = "연락처", example = "010-1234-5678")
-    private String contact;     // 연락처
-    
     @Schema(description = "민원 제목", example = "화장실 변기가 막혔습니다")
     private String title;       // 민원 제목
     
