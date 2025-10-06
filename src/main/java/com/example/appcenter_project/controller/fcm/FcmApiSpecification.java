@@ -30,6 +30,34 @@ public interface FcmApiSpecification {
             RequestFcmTokenDto requestDto
     );
 
+    @Operation(
+            summary = "전체 사용자에게 FCM 알림 전송",
+            description = "모든 사용자(로그인하지 않은 사용자 포함)의 FCM 토큰을 대상으로 알림을 발송합니다.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "전체 사용자에게 메시지 전송 성공",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseFcmMessageDto.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "보낼 FCM 토큰이 존재하지 않음",
+                            content = @Content()
+                    ),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "FCM 발송 중 서버 오류 발생",
+                            content = @Content()
+                    )
+            }
+    )
+    ResponseEntity<ResponseFcmMessageDto> sendMessageToAllUsers(
+            @RequestBody @Parameter(description = "전체 사용자에게 보낼 알림 메시지 요청 DTO", required = true)
+            RequestFcmMessageDto requestDto
+    );
+
+
 /*    @Operation(
             summary = "FCM 메시지 발송",
             description = "지정한 targetToken으로 푸시 알림을 발송합니다.",

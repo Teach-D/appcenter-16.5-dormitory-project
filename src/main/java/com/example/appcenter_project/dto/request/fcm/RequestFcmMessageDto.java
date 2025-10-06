@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class RequestFcmMessageDto {
-    private String targetToken;
     private String title;
     private String body;
 }

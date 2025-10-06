@@ -123,7 +123,11 @@ public enum ErrorCode {
     USER_GROUP_ORDER_KEYWORD_NOT_FOUND(NOT_FOUND, 15001, "[UserGroupOrderKeyword] 해당 유저공동구매키워드를 찾을 수 없습니다."),
 
     // POPUP_NOTIFICATION
-    POPUP_NOTIFICATION_NOT_FOUND(NOT_FOUND, 16001, "[PopupNotification] 해당 팝업 공지를 찾을 수 없습니다.");
+    POPUP_NOTIFICATION_NOT_FOUND(NOT_FOUND, 16001, "[PopupNotification] 해당 팝업 공지를 찾을 수 없습니다."),
+
+    // FCM
+    FCM_TOKEN_NOT_FOUND(NOT_FOUND, 17001, "[FCM] 전체 사용자에게 보낼 FCM 토큰이 존재하지 않습니다."),
+    FCM_SEND_FAILED(INTERNAL_SERVER_ERROR, 17002, "[FCM] FCM 메시지 전송 중 오류가 발생했습니다.");
 
     private final HttpStatus httpStatus;
     private final Integer code;
