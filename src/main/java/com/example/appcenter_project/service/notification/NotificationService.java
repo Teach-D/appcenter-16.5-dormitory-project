@@ -70,28 +70,21 @@ public class NotificationService {
 
     private void sendAllDormitoryStudent(Notification notification) {
         for (User user : userRepository.findByDormTypeNot(DormType.NONE)) {
-            // 유저 알림 저장
-            UserNotification userNotification = UserNotification.builder()
-                    .notification(notification)
-                    .user(user)
-                    .build();
-            userNotificationRepository.save(userNotification);
+            if (user.getReceiveNotificationTypes().contains(DORMITORY)) {
+                // 유저 알림 저장
+                UserNotification userNotification = UserNotification.builder()
+                        .notification(notification)
+                        .user(user)
+                        .build();
+                userNotificationRepository.save(userNotification);
 
-            fcmMessageService.sendNotification(user, notification.getTitle(), notification.getBody());
+                fcmMessageService.sendNotification(user, notification.getTitle(), notification.getBody());
+            }
         }
     }
 
     private void sendAllUsers(Notification notification) {
-        for (User user : userRepository.findAll()) {
-            // 유저 알림 저장
-            UserNotification userNotification = UserNotification.builder()
-                    .notification(notification)
-                    .user(user)
-                    .build();
-            userNotificationRepository.save(userNotification);
-
-            fcmMessageService.sendNotification(user, notification.getTitle(), notification.getBody());
-        }
+        fcmMessageService.sendNotificationToAllUsers(notification.getTitle(), notification.getBody());
     }
 
     public void updateNotification(Long notificationId, RequestNotificationDto requestNotificationDto) {
