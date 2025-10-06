@@ -35,7 +35,7 @@ public class AnnouncementCrawlScheduler {
     private final CrawledAnnouncementRepository crawledAnnouncementRepository;
     private final CrawledAnnouncementFileRepository crawledAnnouncementFileRepository;
 
-    @Scheduled(cron = "0 55 13,21 * * ?")
+    @Scheduled(cron = "0 50 13,22 * * ?")
     public void crawling() {
         List<String> crawlLinks = crawlWithSelenium();
         saveCrawlAnnouncements(crawlLinks);
@@ -152,7 +152,7 @@ public class AnnouncementCrawlScheduler {
 
                 for (WebElement child : children) {
                     String textContent = child.getText().trim();
-                    content = content + textContent;
+                    content = content + textContent + "\n";
                 }
             } catch (Exception e) {
                 log.debug("본문 내용 추출 실패");
