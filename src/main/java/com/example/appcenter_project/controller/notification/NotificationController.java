@@ -17,7 +17,7 @@ import static org.springframework.http.HttpStatus.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/notifications")
-public class NotificationController {
+public class NotificationController implements NotificationApiSpecification {
 
     private final NotificationService notificationService;
 
