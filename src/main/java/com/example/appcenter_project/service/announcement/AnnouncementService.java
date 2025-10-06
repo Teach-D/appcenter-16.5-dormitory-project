@@ -21,6 +21,7 @@ import com.example.appcenter_project.repository.file.AttachedFileRepository;
 import com.example.appcenter_project.repository.file.CrawledAnnouncementFileRepository;
 import com.example.appcenter_project.repository.file.ManualAnnouncementFileRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
+import com.example.appcenter_project.service.fcm.FcmMessageService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,6 +56,7 @@ public class AnnouncementService {
     private final ManualAnnouncementRepository manualAnnouncementRepository;
     private final CrawledAnnouncementFileRepository crawledAnnouncementFileRepository;
     private final ManualAnnouncementFileRepository manualAnnouncementFileRepository;
+    private final FcmMessageService fcmMessageService;
 
     public void saveAnnouncement(Long userId, RequestAnnouncementDto requestAnnouncementDto, List<MultipartFile> files) {
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
@@ -81,6 +83,18 @@ public class AnnouncementService {
 
         // 첨부파일 저장
         saveUploadFile(manualAnnouncement, files);
+
+        sendNotification(requestAnnouncementDto, announcementType);
+    }
+
+    private void sendNotification(RequestAnnouncementDto requestAnnouncementDto, AnnouncementType announcementType) {
+        if (announcementType == DORMITORY) {
+            fcmMessageService.sendNotificationDormitoryPerson(requestAnnouncementDto.getTitle(), requestAnnouncementDto.getContent());
+        } else if (announcementType == SUPPORTERS) {
+            fcmMessageService.sendNotificationDormitoryPerson(requestAnnouncementDto.getTitle(), requestAnnouncementDto.getContent());
+        }else if (announcementType == UNI_DORM) {
+            fcmMessageService.sendNotificationDormitoryPerson(requestAnnouncementDto.getTitle(), requestAnnouncementDto.getContent());
+        }
     }
 
     private void saveUploadFile(ManualAnnouncement announcement, List<MultipartFile> files) {
