@@ -9,10 +9,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum ComplaintType {
 
-    EQUIPMENT("기물"),
-    FACILITY("시설"),
-    TYPE1("유형1"),
-    TYPE2("유형2");
+    NOISE("소음"),
+    SMOKING("흡연"),
+    DRINKING("음주"),
+    ROOMMATE_CHANGE("룸메이트변경"),
+    POINT_OFFSET("벌점상쇄"),
+    POINT_REASON_CHECK("벌점사유확인");
 
     private final String description;
 
