@@ -152,6 +152,12 @@ public class User extends BaseTimeEntity {
         this.dormType = DormType.from(requestUserDto.getDormType());
         this.college = College.from(requestUserDto.getCollege());
         this.penalty = requestUserDto.getPenalty();
+
+        if (DormType.from(requestUserDto.getDormType()) == DormType.DORM_1 || DormType.from(requestUserDto.getDormType()) == DormType.DORM_2
+        || DormType.from(requestUserDto.getDormType()) == DormType.DORM_3) {
+            receiveNotificationTypes.add(NotificationType.DORMITORY);
+        }
+
     }
 
     public void addFcmToken(FcmToken fcmToken) {
