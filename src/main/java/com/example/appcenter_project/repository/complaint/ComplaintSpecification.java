@@ -5,6 +5,8 @@ import com.example.appcenter_project.enums.complaint.ComplaintStatus;
 import com.example.appcenter_project.enums.complaint.ComplaintType;
 import com.example.appcenter_project.enums.user.DormType;
 import org.springframework.data.jpa.domain.Specification;
+import com.example.appcenter_project.enums.complaint.DormBuilding;
+
 
 public class ComplaintSpecification {
 
@@ -18,10 +20,6 @@ public class ComplaintSpecification {
                 (officer == null || officer.isBlank()) ? null : cb.like(root.get("officer"), "%" + officer + "%");
     }
 
-    public static Specification<Complaint> hasCaseNumber(String caseNumber) {
-        return (root, query, cb) ->
-                (caseNumber == null || caseNumber.isBlank()) ? null : cb.equal(root.get("caseNumber"), caseNumber);
-    }
 
     public static Specification<Complaint> hasStatus(ComplaintStatus status) {
         return (root, query, cb) ->
@@ -40,5 +38,25 @@ public class ComplaintSpecification {
     public static Specification<Complaint> hasType(ComplaintType type) {
         return (root, query, cb) ->
                 type == null ? null : cb.equal(root.get("type"), type);
+    }
+
+    public static Specification<Complaint> hasBuilding(DormBuilding building) {
+        return (root, query, cb) ->
+                building == null ? null : cb.equal(root.get("building"), building);
+    }
+
+    public static Specification<Complaint> hasFloor(String floor) {
+        return (root, query, cb) ->
+                (floor == null || floor.isBlank()) ? null : cb.equal(root.get("floor"), floor);
+    }
+
+    public static Specification<Complaint> hasRoomNumber(String roomNumber) {
+        return (root, query, cb) ->
+                (roomNumber == null || roomNumber.isBlank()) ? null : cb.equal(root.get("roomNumber"), roomNumber);
+    }
+
+    public static Specification<Complaint> hasBedNumber(String bedNumber) {
+        return (root, query, cb) ->
+                (bedNumber == null || bedNumber.isBlank()) ? null : cb.equal(root.get("bedNumber"), bedNumber);
     }
 }

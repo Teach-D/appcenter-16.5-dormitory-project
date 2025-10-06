@@ -6,6 +6,7 @@ import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.enums.complaint.ComplaintStatus;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.complaint.ComplaintType;
+import com.example.appcenter_project.enums.complaint.DormBuilding;
 import com.example.appcenter_project.enums.user.DormType;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -30,7 +31,14 @@ public class Complaint extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     private DormType dormType; // 기숙사
 
-    private String caseNumber; // 사생번호
+    @Enumerated(EnumType.STRING)
+    private DormBuilding building;  // 동
+
+    private String floor;       // 층
+
+    private String roomNumber;  // 호수
+
+    private String bedNumber;   // 침대번호
 
     private String contact;    // 연락처
 
@@ -40,6 +48,8 @@ public class Complaint extends BaseTimeEntity {
 
     @Lob
     private String content;    // 내용
+
+    private boolean isPrivacyAgreed; // 개인정보 동의 여부
 
     @Enumerated(EnumType.STRING)
     private ComplaintStatus status = ComplaintStatus.PENDING; // 상태 (기본값 대기중)
@@ -55,17 +65,25 @@ public class Complaint extends BaseTimeEntity {
     private List<Image> imageList = new ArrayList<>();
 
     @Builder
-    public Complaint(ComplaintType type, DormType dormType, String caseNumber,
-                     String contact, String title, String content, User user, String officer) {
+    public Complaint(ComplaintType type, DormType dormType,
+                     String contact, String title, String content, User user, String officer, DormBuilding building,
+                     String floor,
+                     String roomNumber,
+                     String bedNumber,
+                     boolean isPrivacyAgreed) {
         this.type = type;
         this.dormType = dormType;
-        this.caseNumber = caseNumber;
         this.contact = contact;
         this.title = title;
         this.content = content;
         this.status = ComplaintStatus.PENDING; // 기본 상태
         this.user = user;
         this.officer = officer;
+        this.building = building;
+        this.floor = floor;
+        this.roomNumber = roomNumber;
+        this.bedNumber = bedNumber;
+        this.isPrivacyAgreed = isPrivacyAgreed;
     }
 
     // 상태 변경
@@ -86,10 +104,14 @@ public class Complaint extends BaseTimeEntity {
     public void update(RequestComplaintDto dto) {
         this.type = ComplaintType.from(dto.getType());
         this.dormType = DormType.from(dto.getDormType());
-        this.caseNumber = dto.getCaseNumber();
         this.contact = dto.getContact();
         this.title = dto.getTitle();
         this.content = dto.getContent();
+        this.building = DormBuilding.from(dto.getBuilding());
+        this.floor = dto.getFloor();
+        this.roomNumber = dto.getRoomNumber();
+        this.bedNumber = dto.getBedNumber();
+        this.isPrivacyAgreed = dto.isPrivacyAgreed();
     }
 
     public void updateOfficer(String officer) {

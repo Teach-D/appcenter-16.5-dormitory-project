@@ -13,6 +13,9 @@ public class ResponseComplaintListDto {
     private String title;    // 제목
     private String status;   // 대기중 / 담당자 배정 / 처리중 / 처리완료
     private String officer; // 담당자 이름
-    private String caseNumber; // 사생번호
+    private String building;
+    private String floor;
+    private String roomNumber;
+    private String bedNumber;
     private String dormType; // 기숙사
 }

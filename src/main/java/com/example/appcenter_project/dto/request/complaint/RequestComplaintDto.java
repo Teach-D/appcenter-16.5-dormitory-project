@@ -18,9 +18,18 @@ public class RequestComplaintDto {
             example = "1기숙사", 
             allowableValues = {"1기숙사", "2기숙사", "3기숙사"})
     private String dormType;    // 기숙사 (1기숙사, 2기숙사, 3기숙사)
-    
-    @Schema(description = "사생번호", example = "101-201")
-    private String caseNumber;  // 사생번호
+
+    @Schema(description = "동", example = "A동")
+    private String building;
+
+    @Schema(description = "층", example = "3층")
+    private String floor;
+
+    @Schema(description = "호수", example = "301호")
+    private String roomNumber;
+
+    @Schema(description = "침대번호", example = "1번")
+    private String bedNumber;
     
     @Schema(description = "연락처", example = "010-1234-5678")
     private String contact;     // 연락처
@@ -31,4 +40,8 @@ public class RequestComplaintDto {
     @Schema(description = "민원 내용", 
             example = "3층 301호 화장실 변기가 막혀서 사용할 수 없습니다. 빠른 수리 부탁드립니다.")
     private String content;     // 민원 내용
+
+    @Schema(description = "개인정보 동의 여부", example = "true")
+    private boolean isPrivacyAgreed;
+
 }
