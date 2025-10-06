@@ -93,7 +93,7 @@ public class AnnouncementService {
         } else if (announcementType == SUPPORTERS) {
             fcmMessageService.sendNotificationDormitoryPerson(requestAnnouncementDto.getTitle(), requestAnnouncementDto.getContent());
         }else if (announcementType == UNI_DORM) {
-            fcmMessageService.sendNotificationDormitoryPerson(requestAnnouncementDto.getTitle(), requestAnnouncementDto.getContent());
+            fcmMessageService.sendNotificationToAllUsers(requestAnnouncementDto.getTitle(), requestAnnouncementDto.getContent());
         }
     }
 
