@@ -68,7 +68,6 @@ public class ComplaintService {
         // 필수 항목 검증
         if (dto.getTitle() == null || dto.getTitle().isBlank()
                 || dto.getContent() == null || dto.getContent().isBlank()
-                || dto.getContact() == null || dto.getContact().isBlank()
                 || dto.getDormType() == null || dto.getDormType().isBlank()
                 || dto.getBuilding() == null || dto.getBuilding().isBlank()) {
             throw new CustomException(COMPLAINT_REQUIRED_FIELD_MISSING);
@@ -81,7 +80,6 @@ public class ComplaintService {
         Complaint complaint = Complaint.builder()
                 .title(dto.getTitle())
                 .content(dto.getContent())
-                .contact(dto.getContact())
                 .dormType(dormType)
                 .type(type)
                 .user(user)
@@ -103,7 +101,6 @@ public class ComplaintService {
                 .id(saved.getId())
                 .title(saved.getTitle())
                 .content(saved.getContent())
-                .contact(saved.getContact())
                 .dormType(saved.getDormType().toValue())
                 .type(saved.getType().toValue())
                 .building(saved.getBuilding().toValue())
@@ -197,7 +194,6 @@ public class ComplaintService {
                 .floor(c.getFloor())
                 .roomNumber(c.getRoomNumber())
                 .bedNumber(c.getBedNumber())
-                .contact(c.getContact())
                 .status(c.getStatus().toValue())
                 .createdDate(c.getCreatedDate().toString())
                 .reply(replyDto)
@@ -240,7 +236,6 @@ public class ComplaintService {
                 .floor(c.getFloor())
                 .roomNumber(c.getRoomNumber())
                 .bedNumber(c.getBedNumber())
-                .contact(c.getContact())
                 .status(c.getStatus().toValue())
                 .createdDate(c.getCreatedDate().toString())
                 .reply(replyDto)
