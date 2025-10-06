@@ -46,6 +46,8 @@ public class ResponseAnnouncementDetailDto {
 
     private String announcementType;
 
+    private String link;
+
     public static ResponseAnnouncementDetailDto entityToDto(Announcement announcement) {
 
         if (announcement instanceof ManualAnnouncement) {
@@ -80,6 +82,7 @@ public class ResponseAnnouncementDetailDto {
                     .viewCount(crawledAnnouncement.getViewCount())
                     .number(crawledAnnouncement.getNumber())
                     .announcementType(AnnouncementType.DORMITORY.toValue())
+                    .link(crawledAnnouncement.getLink())
                     .build();
         }
         return null;

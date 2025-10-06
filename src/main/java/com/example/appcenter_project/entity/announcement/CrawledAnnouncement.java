@@ -29,14 +29,17 @@ public class CrawledAnnouncement extends Announcement {
 
     private LocalDate crawledDate;
 
+    private String link;
+
     @Builder
-    public CrawledAnnouncement(Long id, String title, String writer, int viewCount, AnnouncementType announcementType, String number, String category, String content, List<CrawledAnnouncementFile> crawledAnnouncementFiles, LocalDate crawledDate) {
+    public CrawledAnnouncement(Long id, String title, String writer, int viewCount, AnnouncementType announcementType, String number, String category, String content, List<CrawledAnnouncementFile> crawledAnnouncementFiles, LocalDate crawledDate, String link) {
         super(id, title, writer, viewCount, announcementType);
         this.number = number;
         this.category = category;
         this.content = content;
         this.crawledAnnouncementFiles = crawledAnnouncementFiles;
         this.crawledDate = crawledDate;
+        this.link = link;
     }
 
     public CrawledAnnouncement(int NO, String number, String category, String content, List<CrawledAnnouncementFile> crawledAnnouncementFiles) {
