@@ -24,7 +24,8 @@ public interface PopupNotificationApiSpecification {
             summary = "팝업 알림 생성",
             description = "새로운 팝업 알림을 생성합니다. " +
                     "팝업 알림은 앱 실행 시 사용자에게 팝업 형태로 표시됩니다. " +
-                    "이미지는 선택사항이며, 여러 개의 이미지를 첨부할 수 있습니다.",
+                    "이미지는 선택사항이며, 여러 개의 이미지를 첨부할 수 있습니다." +
+                    "notificationType(룸메이트, 공동구매, 생활원, 유니돔, 서포터즈 중 하나 선택)",
             responses = {
                     @ApiResponse(responseCode = "201", description = "팝업 알림 생성 성공"),
                     @ApiResponse(responseCode = "400", description = "입력이 잘못되었습니다."),
