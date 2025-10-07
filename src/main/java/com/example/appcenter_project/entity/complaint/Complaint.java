@@ -40,8 +40,6 @@ public class Complaint extends BaseTimeEntity {
 
     private String bedNumber;   // 침대번호
 
-    private String contact;    // 연락처
-
     private String title;      // 제목
 
     private String officer; // 담당자
@@ -66,14 +64,13 @@ public class Complaint extends BaseTimeEntity {
 
     @Builder
     public Complaint(ComplaintType type, DormType dormType,
-                     String contact, String title, String content, User user, String officer, DormBuilding building,
+                     String title, String content, User user, String officer, DormBuilding building,
                      String floor,
                      String roomNumber,
                      String bedNumber,
                      boolean isPrivacyAgreed) {
         this.type = type;
         this.dormType = dormType;
-        this.contact = contact;
         this.title = title;
         this.content = content;
         this.status = ComplaintStatus.PENDING; // 기본 상태
@@ -104,7 +101,6 @@ public class Complaint extends BaseTimeEntity {
     public void update(RequestComplaintDto dto) {
         this.type = ComplaintType.from(dto.getType());
         this.dormType = DormType.from(dto.getDormType());
-        this.contact = dto.getContact();
         this.title = dto.getTitle();
         this.content = dto.getContent();
         this.building = DormBuilding.from(dto.getBuilding());

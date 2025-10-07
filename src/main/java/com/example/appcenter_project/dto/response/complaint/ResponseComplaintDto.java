@@ -16,7 +16,6 @@ public class ResponseComplaintDto {
     private String floor;
     private String roomNumber;
     private String bedNumber;
-    private String contact;     // 연락처
     private String status;      // 상태 (대기중, 처리중 등)
     private String createdDate; // 등록일시 (문자열 변환)
     private boolean isPrivacyAgreed;

@@ -13,7 +13,6 @@ public class ResponseComplaintDetailDto {
     private String content;
     private String type;        // 기물 등
     private String dormType;    // 1기숙사 등
-    private String contact;
     private String status;      // 대기중 등
     private String building;
     private String floor;
