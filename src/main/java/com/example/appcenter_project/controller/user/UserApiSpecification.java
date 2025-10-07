@@ -3,6 +3,7 @@ package com.example.appcenter_project.controller.user;
 import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.dto.request.user.RequestTokenDto;
 import com.example.appcenter_project.dto.request.user.RequestUserDto;
+import com.example.appcenter_project.dto.request.user.RequestUserRole;
 import com.example.appcenter_project.dto.request.user.SignupUser;
 import com.example.appcenter_project.dto.response.user.ResponseBoardDto;
 import com.example.appcenter_project.dto.response.user.ResponseLoginDto;
@@ -70,6 +71,13 @@ public interface UserApiSpecification {
     );
 
     @Operation(
+            summary = "사용자 권한 변경",
+            description = "생활원 직원, 관리자만 특정 사용자의 권한을 생활원 직원으로 변경할 수 있음" +
+                    "(role : 기숙사 담당자, 기숙사 생활민원 담당자, 기숙사 룸메이트민원 담당자)"
+    )
+    ResponseEntity<Void> changeUserRole(@RequestBody RequestUserRole requestUserRole);
+
+    @Operation(
             summary = "사용자 정보 조회",
             description = "현재 로그인한 사용자의 정보를 조회합니다.",
             responses = {
@@ -126,6 +134,12 @@ public interface UserApiSpecification {
             }
     )
     ResponseEntity<List<ResponseBoardDto>> findLikeByUserId(@AuthenticationPrincipal CustomUserDetails user, HttpServletRequest request);
+
+    @Operation(
+            summary = "개인정보, 이용약관 동의 처리"
+    )
+    ResponseEntity<Void> updateAgreement(@AuthenticationPrincipal CustomUserDetails user, @Parameter(description = "이용약관 동의") boolean isTermsAgreed, @Parameter(description = "개인정보처리방침 동의") boolean isPrivacyAgreed);
+
 
     @Operation(
             summary = "사용자 정보 수정",
