@@ -23,6 +23,7 @@ import static com.example.appcenter_project.exception.ErrorCode.IMAGE_NOT_FOUND;
 @Getter
 public class ResponsePopupNotificationDto {
 
+    private Long id;
     private String title;
     private String content;
     private String notificationType;
@@ -38,6 +39,7 @@ public class ResponsePopupNotificationDto {
         }
 
         return ResponsePopupNotificationDto.builder()
+                .id(popupNotification.getId())
                 .title(popupNotification.getTitle())
                 .content(popupNotification.getContent())
                 .notificationType(popupNotification.getNotificationType().toValue())
