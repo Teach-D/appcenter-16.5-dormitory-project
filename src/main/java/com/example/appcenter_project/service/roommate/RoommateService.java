@@ -162,7 +162,7 @@ public class RoommateService {
         boolean isMatched = isRoommateBoardOwnerMatched(boardId);
         String writerImg = null;
         try {
-            writerImg = imageService.getImageUrl(ImageType.USER, board.getUser().getImage(), request);
+            writerImg = imageService.findStaticImageUrl(ImageType.USER, board.getUser().getId(), request);
         } catch (Exception ignored) {}
 
         return ResponseRoommatePostDto.entityToDto(board, isMatched, writerImg);
