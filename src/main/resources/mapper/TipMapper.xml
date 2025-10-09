@@ -8,7 +8,7 @@
         <result property="title" column="title"/>
         <result property="type" column="type"/>
         <result property="createDate" column="created_date"/>
-        <result property="filePath" column="file_path"/>
+        <result property="image_path" column="image_path"/>
 
         <result property="content" column="content"/>
         <result property="tipLikeCount" column="tip_like"/>
@@ -22,11 +22,11 @@
         'TIP' as type,
         t.created_date,
         (
-        SELECT i.file_path
+        SELECT i.image_path
         FROM image i
-        WHERE i.board_id = t.id AND i.image_type = 'TIP'
+        WHERE i.entity_id = t.id AND i.image_type = 'TIP'
         LIMIT 1 <!--하나만 선택-->
-        ) AS file_path,
+        ) AS image_path,
         SUBSTRING(t.content, 1, 50) AS content,
         t.tip_like,
         t.tip_comment_count
@@ -40,11 +40,11 @@
         'TIP' AS type,
         tl.created_date AS create_date,
         (
-        SELECT i.file_path
+        SELECT i.image_path
         FROM image i
-        WHERE i.image_type = 'TIP' AND i.board_id = t.id
+        WHERE i.image_type = 'TIP' AND i.entity_id = t.id
         LIMIT 1 <!--하나만 선택-->
-        ) AS file_path,
+        ) AS image_path,
 
         SUBSTRING(t.content, 1, 10) AS content,
         t.tip_like,
@@ -62,11 +62,11 @@
         'TIP' AS type,
         t.created_date AS create_date,
         (
-        SELECT i.file_path
+        SELECT i.image_path
         FROM image i
-        WHERE i.image_type = 'TIP' AND i.board_id = t.id
+        WHERE i.image_type = 'TIP' AND i.entity_id = t.id
         LIMIT 1 <!--하나만 선택-->
-        ) AS file_path,
+        ) AS image_path,
 
         SUBSTRING(t.content, 1, 10) AS content,
         t.tip_like,

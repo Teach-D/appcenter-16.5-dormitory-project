@@ -20,6 +20,7 @@ import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.apache.ibatis.annotations.One;
 
 import java.util.*;
 
@@ -32,10 +33,10 @@ public class User extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false)
     private String studentNumber;
 
-    @Column(length = 10, unique = true)
+    @Column(unique = true)
     private String name;
 
     private String password;
@@ -82,11 +83,11 @@ public class User extends BaseTimeEntity {
     // 모든 유저가 초기에는 유니돔과 관련된 공지사항을 받도록
     private List<NotificationType> receiveNotificationTypes = new ArrayList<>(List.of(NotificationType.UNI_DORM));
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "image_id")
     private Image image;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "time_table_image_id")
     private Image timeTableImage;
 

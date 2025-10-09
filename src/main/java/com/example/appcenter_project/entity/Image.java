@@ -16,27 +16,41 @@ public class Image {
     private Long id;
 
     @Column(nullable = false)
-    private String filePath;
+    private String imageName;
+    
+    @Column(nullable = false)
+    private String imagePath;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "image_type", length = 30)
+    @Column(name = "image_type", length = 200)
     private ImageType imageType;
 
     @Column(nullable = false)
     private Boolean isDefault = false;
 
-    private Long boardId = 0L;
+    private Long entityId = 0L;
 
     @Builder
-    public Image(String filePath, ImageType imageType, Boolean isDefault, Long boardId) {
-        this.filePath = filePath;
+    public Image(String filePath, String fileName, ImageType imageType, Boolean isDefault, Long entityId) {
+        this.imagePath = filePath;
+        this.imageName = fileName;
         this.imageType = imageType;
         this.isDefault = isDefault;
-        this.boardId = boardId;
+        this.entityId = entityId;
     }
 
-    public void updateFilePath(String filePath) {
-        this.filePath = filePath;
+    public static Image of(String filePath, String fileName, ImageType imageType, Long entityId) {
+        return Image.builder()
+                .filePath(filePath)
+                .fileName(fileName)
+                .isDefault(false)
+                .imageType(imageType)
+                .entityId(entityId)
+                .build();
+    }
+
+    public void updateImagePath(String imagePath) {
+        this.imagePath = imagePath;
     }
 
     public void setIsDefault(boolean b) {

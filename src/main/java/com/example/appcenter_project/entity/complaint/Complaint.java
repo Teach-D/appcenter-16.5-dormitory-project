@@ -26,6 +26,7 @@ public class Complaint extends BaseTimeEntity {
     private Long id;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 100)
     private ComplaintType type; // 유형
 
     @Enumerated(EnumType.STRING)
@@ -58,9 +59,6 @@ public class Complaint extends BaseTimeEntity {
 
     @OneToOne(mappedBy = "complaint", cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     private ComplaintReply reply;
-
-    @OneToMany(orphanRemoval = true)
-    private List<Image> imageList = new ArrayList<>();
 
     @Builder
     public Complaint(ComplaintType type, DormType dormType,

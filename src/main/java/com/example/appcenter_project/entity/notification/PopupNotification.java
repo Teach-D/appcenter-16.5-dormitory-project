@@ -32,9 +32,6 @@ public class PopupNotification extends BaseTimeEntity {
 
     private LocalDate deadline;
 
-    @OneToMany(cascade = CascadeType.REMOVE)
-    private List<Image> images = new ArrayList<>();
-
     @Builder
     public PopupNotification(String title, String content, NotificationType notificationType, LocalDate deadline) {
         this.title = title;
@@ -46,7 +43,7 @@ public class PopupNotification extends BaseTimeEntity {
     public void update(RequestPopupNotificationDto requestPopupNotificationDto) {
         this.title = requestPopupNotificationDto.getTitle();
         this.content = requestPopupNotificationDto.getContent();
-        this.notificationType = NotificationType.valueOf(requestPopupNotificationDto.getNotificationType());
+        this.notificationType = NotificationType.from(requestPopupNotificationDto.getNotificationType());
         this.deadline = LocalDate.now();
     }
 }

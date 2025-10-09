@@ -40,11 +40,6 @@ public class ComplaintReply extends BaseTimeEntity {
     @JoinColumn(name = "responder_id")
     private User responder;
 
-    // 첨부 파일
-    @OneToMany(mappedBy = "complaintReply", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AttachedFile> attachedFiles = new ArrayList<>();
-
-
     @Builder
     public ComplaintReply(String replyTitle, String replyContent, String responderName, String attachmentUrl, Complaint complaint, User responder) {
         this.replyTitle = replyTitle;

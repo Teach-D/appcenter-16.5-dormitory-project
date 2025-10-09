@@ -6,6 +6,7 @@ import com.example.appcenter_project.dto.response.roommate.ResponseRuleDto;
 import com.example.appcenter_project.entity.roommate.MyRoommate;
 import com.example.appcenter_project.entity.roommate.RoommateMatching;
 import com.example.appcenter_project.entity.user.User;
+import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.enums.roommate.MatchingStatus;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.exception.ErrorCode;
@@ -49,7 +50,7 @@ public class MyRoommateService {
                 .name(roommate.getName())
                 .dormType(roommate.getDormType() != null ? roommate.getDormType().name() : null)
                 .college(roommate.getCollege() != null ? roommate.getCollege().toValue() : null)
-                .imagePath(imageService.findUserImageUrlByUserId(roommate.getId(), request).getFileName())
+                .imagePath(imageService.getImageUrl(ImageType.USER, roommate.getImage(), request))
                 .build();
     }
 
@@ -131,11 +132,11 @@ public class MyRoommateService {
                 .orElseThrow(() -> new CustomException(MY_ROOMMATE_NOT_REGISTERED));
         Long myRoommateId = myRoommate.getRoommate().getId();
 
-        ImageLinkDto imageLinkDto = imageService.findUserTimeTableImageUrlByUserId(myRoommateId, request);
+        ImageLinkDto imageLinkDto = imageService.findImage(ImageType.USER, myRoommateId, request);
         return imageLinkDto;
     }
 
     public ImageLinkDto getMyRoommateImage(Long userId, HttpServletRequest request) {
-        return imageService.findUserImageUrlByUserId(userId, request);
+        return imageService.findImage(ImageType.USER, userId, request);
     }
 }
