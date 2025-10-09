@@ -1,5 +1,6 @@
 package com.example.appcenter_project.service.user;
 
+import com.example.appcenter_project.dto.response.user.ResponseUserAgreementDto;
 import com.example.appcenter_project.entity.notification.UserNotification;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.entity.user.UserGroupOrderCategory;
@@ -134,5 +135,14 @@ public class UserNotificationService {
     public void deleteUserNotification(Long userId, Long notificationId) {
         UserNotification userNotification = userNotificationRepository.findByUserIdAndNotificationId(userId, notificationId).orElseThrow(() -> new CustomException(USER_NOTIFICATION_NOT_FOUND));
         userNotificationRepository.delete(userNotification);
+    }
+
+    public ResponseUserAgreementDto findReceiveNotificationType(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        boolean privacyAgreed = user.isPrivacyAgreed();
+        boolean termsAgreed = user.isTermsAgreed();
+
+        return ResponseUserAgreementDto.of(termsAgreed, privacyAgreed);
     }
 }
