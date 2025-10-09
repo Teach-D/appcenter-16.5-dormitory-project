@@ -26,6 +26,7 @@ public class Complaint extends BaseTimeEntity {
     private Long id;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 100)
     private ComplaintType type; // 유형
 
     @Enumerated(EnumType.STRING)

@@ -50,7 +50,7 @@ public class ResponseTipDetailDto {
         this.isCheckLikeCurrentUser = check;
     }
 
-    public void updateFileName(String fileName) {
+    public void updateWriterImageUrl(String fileName) {
         this.writerImageFile = fileName;
     }
 

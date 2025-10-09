@@ -6,13 +6,13 @@ import com.example.appcenter_project.entity.roommate.RoommateChattingChat;
 import com.example.appcenter_project.entity.roommate.RoommateChattingRoom;
 import com.example.appcenter_project.entity.roommate.RoommateCheckList;
 import com.example.appcenter_project.entity.user.User;
+import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.repository.roommate.RoommateBoardRepository;
 import com.example.appcenter_project.repository.roommate.RoommateChattingRoomRepository;
-import com.example.appcenter_project.repository.roommate.RoommateCheckListRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
-import com.example.appcenter_project.entity.BaseTimeEntity;
 import com.example.appcenter_project.security.CustomUserDetails;
+import com.example.appcenter_project.service.image.ImageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,7 +23,6 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.example.appcenter_project.exception.ErrorCode.*;
 import static com.example.appcenter_project.exception.ErrorCode.ROOMMATE_CHAT_ROOM_NOT_FOUND;
@@ -38,7 +37,7 @@ public class RoommateChattingRoomService {
     private final RoommateChattingRoomRepository roommateChattingRoomRepository;
     private final RoommateBoardRepository roommateBoardRepository;
     private final UserRepository userRepository;
-    private final com.example.appcenter_project.service.image.ImageService imageService;
+    private final ImageService imageService;
 
 
     //채팅방 생성
@@ -136,7 +135,7 @@ public class RoommateChattingRoomService {
             String partnerProfileImageUrl = null;
             try {
                 partnerProfileImageUrl =
-                        imageService.findUserImageUrlByUserId(partner.getId(), request).getFileName();
+                        imageService.findImage(ImageType.USER, partner.getId(), request).getImageUrl();
             } catch (Exception e) {
                 // 기본이미지 초기화 로직이 있으므로 실패 시 null 허용
                 log.warn("partner image url resolve failed. userId={}", partner.getId(), e);

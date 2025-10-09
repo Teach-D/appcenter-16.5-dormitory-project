@@ -8,6 +8,7 @@ import com.example.appcenter_project.entity.like.RoommateBoardLike;
 import com.example.appcenter_project.entity.roommate.RoommateBoard;
 import com.example.appcenter_project.entity.roommate.RoommateCheckList;
 import com.example.appcenter_project.entity.user.User;
+import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.enums.roommate.MatchingStatus;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.exception.ErrorCode;
@@ -16,6 +17,7 @@ import com.example.appcenter_project.repository.roommate.RoommateBoardRepository
 import com.example.appcenter_project.repository.roommate.RoommateCheckListRepository;
 import com.example.appcenter_project.repository.roommate.RoommateMatchingRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
+import com.example.appcenter_project.service.image.ImageService;
 import com.example.appcenter_project.utils.DormDayUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -25,10 +27,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
@@ -42,7 +42,7 @@ public class RoommateService {
     private final RoommateBoardRepository roommateBoardRepository;
     private final RoommateBoardLikeRepository roommateBoardLikeRepository;
     private final RoommateMatchingRepository roommateMatchingRepository;
-    private final com.example.appcenter_project.service.image.ImageService imageService;
+    private final ImageService imageService;
 
 
     @Transactional
@@ -124,7 +124,7 @@ public class RoommateService {
 
                     String writerImg = null;
                     try {
-                        writerImg = imageService.findUserImageUrlByUserId(writer.getId(), request).getFileName();
+                        writerImg = imageService.findStaticImageUrl(ImageType.USER, writer.getId(), request);
                     } catch (Exception ignored) {}
 
                     return ResponseRoommatePostDto.builder()
@@ -162,7 +162,7 @@ public class RoommateService {
         boolean isMatched = isRoommateBoardOwnerMatched(boardId);
         String writerImg = null;
         try {
-            writerImg = imageService.findUserImageUrlByUserId(board.getUser().getId(), request).getFileName();
+            writerImg = imageService.getImageUrl(ImageType.USER, board.getUser().getImage(), request);
         } catch (Exception ignored) {}
 
         return ResponseRoommatePostDto.entityToDto(board, isMatched, writerImg);
@@ -225,7 +225,7 @@ public class RoommateService {
 
                     String writerImg = null;
                     try {
-                        writerImg = imageService.findUserImageUrlByUserId(writer.getId(), request).getFileName();
+                        writerImg = imageService.findStaticImageUrl(ImageType.USER, writer.getId(), request);
                     } catch (Exception ignored) {}
 
                     return ResponseRoommateSimilarityDto.builder()
@@ -284,7 +284,7 @@ public class RoommateService {
 
         String writerImg = null;
         try {
-            writerImg = imageService.findUserImageUrlByUserId(user.getId(), request).getFileName();
+            writerImg = imageService.findStaticImageUrl(ImageType.USER, user.getId(), request);
         } catch (Exception ignored) {}
 
         return ResponseRoommatePostDto.entityToDto(board, isMatched, writerImg);
@@ -392,7 +392,7 @@ public class RoommateService {
 
         String writerImg = null;
         try {
-            writerImg = imageService.findUserImageUrlByUserId(target.getUser().getId(), request).getFileName();
+            writerImg = imageService.findStaticImageUrl(ImageType.USER, target.getUser().getId(), request);
         } catch (Exception ignored) {}
 
         return ResponseRoommatePostDto.entityToDto(target, isMatched, writerImg);
@@ -422,7 +422,7 @@ public class RoommateService {
 
             String writerImg = null;
             try {
-                writerImg = imageService.findUserImageUrlByUserId(writer.getId(), request).getFileName();
+                writerImg = imageService.findStaticImageUrl(ImageType.USER, writer.getId(), request);
             } catch (Exception ignored) {}
 
             return ResponseRoommatePostDto.builder()
@@ -497,7 +497,7 @@ public class RoommateService {
             int pct = entry.getValue();
             String img = null;
             try {
-                img = imageService.findUserImageUrlByUserId(board.getUser().getId(), request).getFileName();
+                img = imageService.findStaticImageUrl(ImageType.USER, board.getUser().getId(), request);
             } catch (Exception ignored) {}
 
             RoommateCheckList cl = board.getRoommateCheckList();

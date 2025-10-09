@@ -1,13 +1,13 @@
 package com.example.appcenter_project.service.complaint;
 
 import com.example.appcenter_project.dto.AttachedFileDto;
+import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.dto.request.complaint.RequestComplaintDto;
 import com.example.appcenter_project.dto.request.complaint.RequestComplaintSearchDto;
 import com.example.appcenter_project.dto.response.complaint.ResponseComplaintDetailDto;
 import com.example.appcenter_project.dto.response.complaint.ResponseComplaintDto;
 import com.example.appcenter_project.dto.response.complaint.ResponseComplaintListDto;
 import com.example.appcenter_project.dto.response.complaint.ResponseComplaintReplyDto;
-import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.file.AttachedFile;
 import com.example.appcenter_project.entity.complaint.Complaint;
 import com.example.appcenter_project.entity.complaint.ComplaintReply;
@@ -24,15 +24,13 @@ import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Paths;
-import java.sql.Timestamp;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.example.appcenter_project.service.image.ImageService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,9 +52,10 @@ public class ComplaintService {
     private final UserRepository userRepository;
     private final ImageRepository imageRepository;
     private final AttachedFileRepository attachedFileRepository;
+    private final ImageService imageService;
 
     // 민원 등록
-    public ResponseComplaintDto createComplaint(Long userId, RequestComplaintDto dto, List<MultipartFile> files) {
+    public ResponseComplaintDto createComplaint(Long userId, RequestComplaintDto dto, List<MultipartFile> images) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
@@ -88,8 +87,8 @@ public class ComplaintService {
         Complaint saved = complaintRepository.save(complaint);
 
         // 이미지 저장
-        if (files != null && !files.isEmpty()) {
-            saveImages(complaint, files);
+        if (images != null && !images.isEmpty()) {
+            imageService.saveImages(ImageType.COMPLAINT, complaint.getId(), images);
         }
 
         return ResponseComplaintDto.builder()
@@ -159,10 +158,10 @@ public class ComplaintService {
         ResponseComplaintReplyDto replyDto = null;
         ComplaintReply r = c.getReply();
 
-        List<AttachedFile> attachedFiles = attachedFileRepository.findByComplaintReply(r);
-        List<AttachedFileDto> attachedFileDtos = getAttachedFile(attachedFiles, request);
-
         if (r != null) {
+            List<AttachedFile> attachedFiles = attachedFileRepository.findByComplaintReply(r);
+            List<AttachedFileDto> attachedFileDtos = getAttachedFile(attachedFiles, request);
+
             replyDto = ResponseComplaintReplyDto.builder()
                     .replyTitle(r.getReplyTitle())
                     .replyContent(r.getReplyContent())
@@ -172,13 +171,9 @@ public class ComplaintService {
                     .build();
         }
 
-        for (Image image : c.getImageList()) {
-            log.info(image.getFilePath());
-        }
 
         // 이미지 조회
-        List<String> complaintImages = getComplaintImage(c.getImageList(), request);
-
+        List<String> complaintImages = imageService.findStaticImageUrls(ImageType.COMPLAINT, c.getId(), request);
         return ResponseComplaintDetailDto.builder()
                 .id(c.getId())
                 .title(c.getTitle())
@@ -219,7 +214,9 @@ public class ComplaintService {
         }
 
         // 이미지 조회
-        List<String> complaintImages = getComplaintImage(c.getImageList(), request);
+        List<String> complaintImages = imageService.findImages(ImageType.COMPLAINT, c.getId(), request).stream()
+                .map(ImageLinkDto::getImageUrl)
+                .toList();
 
         return ResponseComplaintDetailDto.builder()
                 .id(c.getId())
@@ -288,118 +285,12 @@ public class ComplaintService {
         Complaint complaint = complaintRepository.findByIdAndUserId(complaintId, userId).orElseThrow(() -> new CustomException(COMPLAINT_NOT_OWNED_BY_USER));
         complaint.update(dto);
 
-        // 이미지가 제공된 경우에만 기존 이미지를 삭제하고 새로운 이미지를 저장
-        if (images != null && !images.isEmpty()) {
-            // 기존 이미지들이 있다면 파일 및 DB에서 삭제
-            List<Image> existingImages = complaint.getImageList();
-            for (Image existingImage : existingImages) {
-                File oldFile = new File(existingImage.getFilePath());
-                if (oldFile.exists()) {
-                    boolean deleted = oldFile.delete();
-                    if (!deleted) {
-                        log.warn("Failed to delete old complaint image file: {}", existingImage.getFilePath());
-                    }
-                }
-                // 기존 이미지 엔티티 삭제
-                imageRepository.delete(existingImage);
-            }
-            complaint.getImageList().clear(); // Tip에서 이미지 목록 비우기
-
-            // 새로운 이미지들 저장
-            saveImages(complaint, images);
-            log.info("[updateComplaint] complaintId={}의 새로운 이미지 저장 완료", complaintId);
-        }
+        imageService.updateImages(ImageType.COMPLAINT, complaintId, images);
     }
 
     public void deleteComplaint(Long userId, Long complaintId) {
         complaintRepository.deleteById(complaintId);
-    }
-
-    private void saveImages(Complaint complaint, List<MultipartFile> files) {
-        if (files != null && !files.isEmpty()) {
-            // 개발 환경에 맞는 경로 설정
-            String basePath = System.getProperty("user.dir");
-            String imagePath = basePath + "/images/complaint/";
-
-            // 디렉토리 생성 (존재하지 않으면)
-            File directory = new File(imagePath);
-            if (!directory.exists()) {
-                boolean created = directory.mkdirs();
-                if (!created) {
-                    log.error("Failed to create complaint directory: {}", imagePath);
-                    throw new CustomException(IMAGE_NOT_FOUND);
-                }
-            }
-
-            for (MultipartFile file : files) {
-                if (file == null || file.isEmpty()) {
-                    log.warn("Empty file skipped during complaint image save");
-                    continue;
-                }
-
-                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                String fileExtension = getFileExtension(file.getOriginalFilename());
-                String uuid = UUID.randomUUID().toString();
-                String imageFileName = "complaint_" + complaint.getId() + "_" + uuid + fileExtension;
-                File destinationFile = new File(imagePath + imageFileName);
-
-                try {
-                    file.transferTo(destinationFile);
-                    log.info("complaint image saved successfully: {}", destinationFile.getAbsolutePath());
-
-                    Image image = Image.builder()
-                            .filePath(destinationFile.getAbsolutePath())
-                            .isDefault(false)
-                            .imageType(ImageType.COMPLAINT)
-                            .boardId(complaint.getId())
-                            .build();
-
-                    imageRepository.save(image);
-                    complaint.getImageList().add(image);
-
-                } catch (IOException e) {
-                    log.error("Failed to save complaint image file for complaint {}: ", complaint.getId(), e);
-                    throw new CustomException(IMAGE_NOT_FOUND);
-                }
-            }
-        }
-    }
-
-    public List<String> getComplaintImage(List<Image> images, HttpServletRequest request) {
-        List<String> complaintFiles = new ArrayList<>();
-
-        for (Image image : images) {
-            // BaseURL 생성
-            String baseUrl = getBaseUrl(request);
-            File file = new File(image.getFilePath());
-            if (file.exists()) {
-                String imageUrl = baseUrl + "/api/images/complaint/" + image.getId();
-
-                // 정적 리소스 URL 생성 (User와 동일한 방식)
-                String staticImageUrl = getStaticComplaintImageUrl(image.getFilePath(), baseUrl);
-                String changeUrl = staticImageUrl.replace("http", "https");
-                complaintFiles.add(changeUrl);
-            } else {
-                log.warn("[getComplaintImage] 파일이 존재하지 않음 - path={}", image.getFilePath());
-            }
-
-        }
-
-        return complaintFiles;
-    }
-
-    // User 방식과 동일한 파일 확장자 추출 메소드
-    private String getFileExtension(String fileName) {
-        if (fileName == null || fileName.isEmpty()) {
-            return ".jpg"; // 기본 확장자
-        }
-
-        int lastDotIndex = fileName.lastIndexOf(".");
-        if (lastDotIndex == -1) {
-            return ".jpg"; // 확장자가 없으면 기본값
-        }
-
-        return fileName.substring(lastDotIndex).toLowerCase();
+        imageService.deleteImages(ImageType.COMPLAINT, complaintId);
     }
 
     // 유틸리티: 베이스 URL 생성 (ImageService와 동일)
@@ -420,17 +311,6 @@ public class ComplaintService {
 
         baseUrl.append(contextPath);
         return baseUrl.toString();
-    }
-
-    // 정적 Complaint 이미지 URL 생성 헬퍼 메소드
-    private String getStaticComplaintImageUrl(String filePath, String baseUrl) {
-        try {
-            String fileName = Paths.get(filePath).getFileName().toString();
-            return baseUrl + "/images/complaint/" + fileName;
-        } catch (Exception e) {
-            log.warn("Could not generate static URL for complaint image path: {}", filePath);
-            return null;
-        }
     }
 
     //필터 검색

@@ -1,27 +1,19 @@
 package com.example.appcenter_project.service.user;
 
+import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.dto.request.user.RequestUserDto;
 import com.example.appcenter_project.dto.request.user.RequestUserRole;
 import com.example.appcenter_project.dto.request.user.SignupUser;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
-import com.example.appcenter_project.dto.response.like.ResponseLikeDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommatePostDto;
-import com.example.appcenter_project.dto.response.tip.ResponseTipDetailDto;
 import com.example.appcenter_project.dto.response.tip.ResponseTipDto;
 import com.example.appcenter_project.dto.response.user.ResponseBoardDto;
 import com.example.appcenter_project.dto.response.user.ResponseLoginDto;
 import com.example.appcenter_project.dto.response.user.ResponseUserDto;
 import com.example.appcenter_project.dto.response.user.ResponseUserRole;
 import com.example.appcenter_project.entity.Image;
-import com.example.appcenter_project.entity.groupOrder.GroupOrder;
-import com.example.appcenter_project.entity.like.GroupOrderLike;
-import com.example.appcenter_project.entity.like.RoommateBoardLike;
-import com.example.appcenter_project.entity.like.TipLike;
 import com.example.appcenter_project.entity.notification.UserNotification;
-import com.example.appcenter_project.entity.roommate.RoommateBoard;
-import com.example.appcenter_project.entity.tip.Tip;
 import com.example.appcenter_project.entity.user.User;
-import com.example.appcenter_project.entity.user.UserGroupOrderKeyword;
 import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.enums.user.Role;
 import com.example.appcenter_project.exception.CustomException;
@@ -37,21 +29,20 @@ import com.example.appcenter_project.repository.user.UserGroupOrderKeywordReposi
 import com.example.appcenter_project.repository.user.UserRepository;
 import com.example.appcenter_project.security.jwt.JwtTokenProvider;
 import com.example.appcenter_project.service.groupOrder.GroupOrderQueryService;
+import com.example.appcenter_project.service.image.ImageService;
 import com.example.appcenter_project.service.roommate.RoommateQueryService;
 import com.example.appcenter_project.service.tip.TipQueryService;
-import com.example.appcenter_project.service.tip.TipService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 
-import static com.example.appcenter_project.entity.user.QUser.user;
 import static com.example.appcenter_project.exception.ErrorCode.*;
 
 @Slf4j
@@ -76,12 +67,10 @@ public class UserService {
     private final TipQueryService tipQueryService;
     private final RoommateQueryService roommateQueryService;
     private final UserGroupOrderKeywordRepository userGroupOrderKeywordRepository;
+    private final ImageService imageService;
 
     public ResponseLoginDto saveUser(SignupUser signupUser) {
         boolean existsByStudentNumber = userRepository.existsByStudentNumber(signupUser.getStudentNumber());
-
-        Image defaultImage = imageRepository.findAllByImageTypeAndIsDefault(ImageType.USER, true)
-                .orElseThrow(() -> new CustomException(DEFAULT_IMAGE_NOT_FOUND));
 
         // studentNumber가 "admin"으로 시작하지 않는 경우만 DB 저장 로직 실행
         if (!signupUser.getStudentNumber().startsWith("admin")) {
@@ -91,7 +80,7 @@ public class UserService {
                         .studentNumber(signupUser.getStudentNumber())
                         .password(passwordEncoder.encode(signupUser.getPassword())) // null 방지 + 인코딩 필수
                         .penalty(0) // null 방지
-                        .image(defaultImage)
+                        .image(null)
                         .role(Role.ROLE_USER)
                         .penalty(0)
                         .build();
@@ -260,5 +249,25 @@ public class UserService {
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
         user.updateTermsAgreed(isTermsAgreed);
         user.updatePrivacyAgreed(isPrivacyAgreed);
+    }
+
+    public ImageLinkDto findUserImage(Long userId, HttpServletRequest request) {
+        return imageService.findImage(ImageType.USER, userId, request);
+    }
+
+    public void updateUserImage(Long userId, MultipartFile image) {
+        imageService.updateImage(ImageType.USER, userId, image);
+    }
+
+    public void updateUserTimeTableImage(Long userId, MultipartFile image) {
+        imageService.updateImage(ImageType.TIME_TABLE, userId, image);
+    }
+
+    public ImageLinkDto findUserTimeTableImage(Long userId, HttpServletRequest request) {
+        return imageService.findImage(ImageType.TIME_TABLE, userId, request);
+    }
+
+    public void deleteUserTimeTableImage(Long userId) {
+        imageService.deleteImage(ImageType.TIME_TABLE, userId);
     }
 }

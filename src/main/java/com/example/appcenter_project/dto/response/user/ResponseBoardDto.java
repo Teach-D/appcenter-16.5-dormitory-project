@@ -13,5 +13,5 @@ public abstract class ResponseBoardDto {
     private String title;
     private String type;
     private LocalDateTime createDate;
-    private String filePath;
+    private String imagePath;
 }

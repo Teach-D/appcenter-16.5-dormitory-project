@@ -1,32 +1,26 @@
 package com.example.appcenter_project.controller.user;
 
-import com.example.appcenter_project.dto.ImageDto;
 import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.dto.request.user.RequestTokenDto;
 import com.example.appcenter_project.dto.request.user.RequestUserDto;
 import com.example.appcenter_project.dto.request.user.RequestUserRole;
 import com.example.appcenter_project.dto.request.user.SignupUser;
-import com.example.appcenter_project.dto.response.like.ResponseLikeDto;
 import com.example.appcenter_project.dto.response.user.ResponseBoardDto;
 import com.example.appcenter_project.dto.response.user.ResponseLoginDto;
 import com.example.appcenter_project.dto.response.user.ResponseUserDto;
 import com.example.appcenter_project.dto.response.user.ResponseUserRole;
 import com.example.appcenter_project.security.CustomUserDetails;
-import com.example.appcenter_project.service.image.ImageService;
 import com.example.appcenter_project.service.user.UserService;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.Resource;
-import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -42,7 +36,6 @@ import static org.springframework.http.HttpStatus.*;
 public class UserController implements UserApiSpecification {
 
     private final UserService userService;
-    private final ImageService imageService;
 
     @PostMapping
     public ResponseEntity<ResponseLoginDto> saveUser(@Valid @RequestBody SignupUser signupUser) {
@@ -91,8 +84,7 @@ public class UserController implements UserApiSpecification {
             @AuthenticationPrincipal CustomUserDetails user,
             HttpServletRequest request) {
         try {
-            ImageLinkDto imageLinkDto = imageService.findUserImageUrlByUserId(user.getId(), request);
-
+            ImageLinkDto imageLinkDto = userService.findUserImage(user.getId(), request);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_TYPE, "application/json")
                     .body(imageLinkDto);
@@ -119,13 +111,13 @@ public class UserController implements UserApiSpecification {
 
     @PutMapping(value = "/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> updateUserImage(@AuthenticationPrincipal CustomUserDetails user, @RequestPart MultipartFile image) {
-        imageService.updateUserImage(user.getId(), image);
+        userService.updateUserImage(user.getId(), image);
         return ResponseEntity.status(OK).build();
     }
 
     @PutMapping(value = "/time-table-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> updateUserTimeTableImage(@AuthenticationPrincipal CustomUserDetails user, @RequestPart MultipartFile image) {
-        imageService.updateUserTimeTableImage(user.getId(), image);
+        userService.updateUserTimeTableImage(user.getId(), image);
         return ResponseEntity.status(OK).build();
     }
 
@@ -140,7 +132,8 @@ public class UserController implements UserApiSpecification {
             @AuthenticationPrincipal CustomUserDetails user,
             HttpServletRequest request) {
         try {
-            ImageLinkDto imageLinkDto = imageService.findUserTimeTableImageUrlByUserId(user.getId(), request);
+            ImageLinkDto imageLinkDto = userService.findUserTimeTableImage(user.getId(), request);
+
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_TYPE, "application/json")
                     .body(imageLinkDto);
@@ -152,7 +145,7 @@ public class UserController implements UserApiSpecification {
 
     @DeleteMapping("/time-table-image")
     public ResponseEntity<Void> deleteUserTimeTableImage(@AuthenticationPrincipal CustomUserDetails user) {
-        imageService.deleteUserTimeTableImage(user.getId());
+        userService.deleteUserTimeTableImage(user.getId());
         return ResponseEntity.status(NO_CONTENT).build();
     }
 

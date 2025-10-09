@@ -3,7 +3,6 @@ package com.example.appcenter_project.service.groupOrder;
 import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
 import com.example.appcenter_project.dto.response.groupOrder.*;
-import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.groupOrder.*;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
 import com.example.appcenter_project.entity.notification.Notification;
@@ -26,21 +25,13 @@ import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.fcm.FcmMessageService;
 import com.example.appcenter_project.service.image.ImageService;
 import com.example.appcenter_project.utils.MealTimeChecker;
-import jakarta.persistence.criteria.Predicate;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -144,7 +135,9 @@ public class GroupOrderService {
                 comment.updateReply("삭제된 메시지입니다.");
             }
 
-            comment.updateCommentAuthorImagePath(imageService.findUserImageUrlByUserId(comment.getUserId(), request).getFileName());
+
+
+            comment.updateCommentAuthorImagePath(imageService.findImages(ImageType.USER, comment.getUserId(), request).get(0).getImageUrl());
 
             // 계층 구조 구성
             if (comment.getParentId() == null) {
@@ -184,7 +177,7 @@ public class GroupOrderService {
 
         User findUser = groupOrder.getUser();
 
-        String userImageUrl = imageService.findUserImageUrlByUserId(findUser.getId(), request).getFileName();
+        String userImageUrl = getRepresentativeUserImageUrl(request, findUser);
         flatDto.updateAuthorImagePath(userImageUrl);
 
         // 게시글 조회 수 증가
@@ -199,6 +192,10 @@ public class GroupOrderService {
         return flatDto;
     }
 
+    private String getRepresentativeUserImageUrl(HttpServletRequest request, User findUser) {
+        return imageService.findImages(ImageType.USER, findUser.getId(), request).get(0).getImageUrl();
+    }
+
 
     // 이미지와 함께 공동구매 생성
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto, List<MultipartFile> images) {
@@ -211,7 +208,7 @@ public class GroupOrderService {
 
         groupOrderRepository.save(groupOrder);
 
-        saveImages(groupOrder, images);
+        imageService.saveImages(ImageType.GROUP_ORDER, groupOrder.getId(), images);
 
         // GroupOrderChatRoom 저장
         GroupOrderChatRoom groupOrderChatRoom = new GroupOrderChatRoom(groupOrder.getTitle());
@@ -330,95 +327,11 @@ public class GroupOrderService {
         }
     }
 
-    private void saveImages(GroupOrder groupOrder, List<MultipartFile> files) {
-        if (files != null && !files.isEmpty()) {
-            // User와 동일한 방식으로 경로 설정
-            String basePath = System.getProperty("user.dir");
-            String imagePath = basePath + "/images/group-order/";
-
-            File directory = new File(imagePath);
-            if (!directory.exists()) {
-                boolean created = directory.mkdirs();
-                if (!created) {
-                    log.error("Failed to create group-order directory: {}", imagePath);
-                    throw new CustomException(IMAGE_NOT_FOUND);
-                }
-            }
-
-            for (MultipartFile file : files) {
-                // User 방식과 동일한 파일명 생성 패턴
-                String fileExtension = getFileExtension(file.getOriginalFilename());
-                String uuid = UUID.randomUUID().toString();
-                String imageFileName = "grouporder_" + groupOrder.getId() + "_" + uuid + fileExtension;
-                File destinationFile = new File(imagePath + imageFileName);
-
-                try {
-                    file.transferTo(destinationFile);
-                    log.info("GroupOrder image saved successfully: {}", destinationFile.getAbsolutePath());
-
-                    Image image = Image.builder()
-                            .filePath(destinationFile.getAbsolutePath())
-                            .isDefault(false)
-                            .imageType(ImageType.GROUP_ORDER)
-                            .boardId(groupOrder.getId())
-                            .build();
-
-                    imageRepository.save(image);
-                    groupOrder.getImageList().add(image);
-
-                } catch (IOException e) {
-                    log.error("Failed to save group-order image for groupOrder {}: ", groupOrder.getId(), e);
-                    throw new CustomException(IMAGE_NOT_FOUND);
-                }
-            }
-        }
-    }
-
     public List<ImageLinkDto> findGroupOrderImageUrls(Long groupOrderId, HttpServletRequest request) {
-        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
-                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
-
-        List<Image> imageList = groupOrder.getImageList();
-        List<ImageLinkDto> imageLinkDtos = new ArrayList<>();
-
-        for (Image image : imageList) {
-            ImageLinkDto groupOrderImage = getGroupOrderImage(image, request);
-            imageLinkDtos.add(groupOrderImage);
-        }
-
-        return imageLinkDtos;
+        return imageService.findImages(ImageType.GROUP_ORDER, groupOrderId, request);
     }
 
-    public ImageLinkDto getGroupOrderImage(Image image, HttpServletRequest request) {
-        File file = new File(image.getFilePath());
-        log.info("Checking group-order image file: {}", image.getFilePath());
-        log.info("File exists: {}", file.exists());
 
-        if (!file.exists()) {
-            log.error("GroupOrder image file not found: {}", image.getFilePath());
-            throw new CustomException(IMAGE_NOT_FOUND);
-        }
-
-        // 이미지 URL 생성
-        String baseUrl = getBaseUrl(request);
-        String imageUrl = baseUrl + "/api/images/group-order/" + image.getId();
-
-        // 정적 리소스 URL 생성
-        String staticImageUrl = getStaticGroupOrderImageUrl(image.getFilePath(), baseUrl);
-        String changeUrl = staticImageUrl.replace("http", "https");
-
-        // 안전한 컨텐츠 타입 확인
-        String contentType = getSafeContentType(file);
-
-        ImageLinkDto imageLinkDto = ImageLinkDto.builder()
-                .imageUrl(imageUrl)
-                .fileName(changeUrl)
-                .contentType(contentType)
-                .fileSize(file.length())
-                .build();
-
-        return imageLinkDto;
-    }
 
     // 정적 GroupOrder 이미지 URL 생성 헬퍼 메소드
     private String getStaticGroupOrderImageUrl(String filePath, String baseUrl) {
@@ -451,101 +364,6 @@ public class GroupOrderService {
         return baseUrl.toString();
     }
 
-    public List<GroupOrderImageDto> findGroupOrderImages(Long groupOrderId) {
-        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
-                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
-
-        List<Image> imageList = groupOrder.getImageList();
-        List<GroupOrderImageDto> groupOrderImageDtoList = new ArrayList<>();
-
-        for (Image image : imageList) {
-            File file = new File(image.getFilePath());
-            if (!file.exists()) {
-                log.error("GroupOrder image file not found: {}", image.getFilePath());
-                throw new CustomException(IMAGE_NOT_FOUND);
-            }
-
-            // User 방식과 동일한 안전한 컨텐츠 타입 확인
-            String contentType = getSafeContentType(file);
-
-            // 실제 파일명 추출 (경로에서 파일명만)
-            String filename = file.getName();
-
-            GroupOrderImageDto groupOrderImageDto = GroupOrderImageDto.builder()
-                    .filename(filename)
-                    .contentType(contentType)
-                    .build();
-
-            groupOrderImageDtoList.add(groupOrderImageDto);
-        }
-
-        return groupOrderImageDtoList;
-    }
-
-    public Resource loadImageAsResource(String filename) {
-        // User 방식과 동일한 경로 사용
-        String imagePath = System.getProperty("user.dir") + "/images/group-order/";
-        File file = new File(imagePath + filename);
-
-        if (!file.exists()) {
-            log.error("GroupOrder image file not found: {}", file.getAbsolutePath());
-            throw new CustomException(IMAGE_NOT_FOUND);
-        }
-
-        return new FileSystemResource(file);
-    }
-
-    // User 방식과 동일한 안전한 컨텐츠 타입 확인 메소드
-    private String getSafeContentType(File file) {
-        try {
-            String fileName = file.getName().toLowerCase();
-
-            // 확장자 기반으로 먼저 판단 (더 안정적)
-            if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) {
-                return "image/jpeg";
-            } else if (fileName.endsWith(".png")) {
-                return "image/png";
-            } else if (fileName.endsWith(".gif")) {
-                return "image/gif";
-            } else if (fileName.endsWith(".webp")) {
-                return "image/webp";
-            } else if (fileName.endsWith(".svg")) {
-                return "image/svg+xml";
-            }
-
-            // Files.probeContentType이 실패할 수 있으므로 try-catch
-            try {
-                String detectedType = Files.probeContentType(file.toPath());
-                if (detectedType != null && detectedType.startsWith("image/")) {
-                    return detectedType;
-                }
-            } catch (Exception e) {
-                log.warn("Could not probe content type for file: {}", file.getName());
-            }
-
-            // 기본값
-            return "image/jpeg";
-
-        } catch (Exception e) {
-            log.error("Error determining content type for file: {}", file.getName(), e);
-            return "image/jpeg"; // 안전한 기본값
-        }
-    }
-
-    // User 방식과 동일한 파일 확장자 추출 메소드
-    private String getFileExtension(String fileName) {
-        if (fileName == null || fileName.isEmpty()) {
-            return ".jpg"; // 기본 확장자
-        }
-
-        int lastDotIndex = fileName.lastIndexOf(".");
-        if (lastDotIndex == -1) {
-            return ".jpg"; // 확장자가 없으면 기본값
-        }
-
-        return fileName.substring(lastDotIndex).toLowerCase();
-    }
-
     public List<ResponseGroupOrderDto> findGroupOrders(CustomUserDetails jwtUser, GroupOrderSort sort, GroupOrderType type, String search, HttpServletRequest request) {
         if (jwtUser != null && search != null) {
                 User user = userRepository.findById(jwtUser.getId())
@@ -560,40 +378,19 @@ public class GroupOrderService {
         List<ResponseGroupOrderDto> responseGroupOrderDtoList = new ArrayList<>();
         LocalDateTime now = LocalDateTime.now();
 
-        for (GroupOrder groupOrdersComplex : groupOrderRepository.findGroupOrdersComplex(sort, type, search)) {
-            if(!groupOrdersComplex.isRecruitmentComplete() && now.isAfter(groupOrdersComplex.getDeadline())) {
-                groupOrdersComplex.updateRecruitmentComplete(true);
+        for (GroupOrder groupOrder : groupOrderRepository.findGroupOrdersComplex(sort, type, search)) {
+            if(!groupOrder.isRecruitmentComplete() && now.isAfter(groupOrder.getDeadline())) {
+                groupOrder.updateRecruitmentComplete(true);
             }
 
-            responseGroupOrderDtoList.add(ResponseGroupOrderDto.entityToDto(groupOrdersComplex, request));
+            List<ImageLinkDto> images = imageService.findImages(ImageType.GROUP_ORDER, groupOrder.getId(), request);
+            String imagePath = images.get(0).getImageUrl();
+            responseGroupOrderDtoList.add(ResponseGroupOrderDto.entityToDto(groupOrder, imagePath));
         }
 
         return responseGroupOrderDtoList;
     }
 
-    // 이미지 경로를 User 방식의 URL로 변환하는 헬퍼 메소드
-    private void convertImagePathToUrl(ResponseGroupOrderDto dto, HttpServletRequest request) {
-        if (dto.getFilePath() != null && !dto.getFilePath().isEmpty()) {
-            try {
-                // 절대 경로에서 파일명만 추출
-                String fileName = Paths.get(dto.getFilePath()).getFileName().toString();
-
-                // User 방식과 동일한 URL 패턴으로 변환
-                String baseUrl = getBaseUrl(request);
-                String imageUrl = baseUrl.replace("http:", "https:") + "/images/group-order/" + fileName;
-
-                // DTO의 filePath를 변환된 URL로 업데이트
-                // Reflection을 사용하여 private 필드에 접근
-                java.lang.reflect.Field filePathField = ResponseGroupOrderDto.class.getSuperclass().getDeclaredField("filePath");
-                filePathField.setAccessible(true);
-                filePathField.set(dto, imageUrl);
-
-                log.debug("Converted GroupOrder image path: {} -> {}", dto.getFilePath(), imageUrl);
-            } catch (Exception e) {
-                log.warn("Failed to update image path for GroupOrder {}: {}", dto.getBoardId(), e.getMessage());
-            }
-        }
-    }
 
     public void updateGroupOrder(Long userId, Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto, List<MultipartFile> images) {
         GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_OWNED_BY_USER));
@@ -604,68 +401,13 @@ public class GroupOrderService {
 
         groupOrder.update(requestGroupOrderDto);
 
-        // 이미지가 제공된 경우에만 기존 이미지를 삭제하고 새로운 이미지를 저장
-        if (images != null && !images.isEmpty()) {
-            // 기존 이미지들이 있다면 파일 및 DB에서 삭제
-            List<Image> existingImages = groupOrder.getImageList();
-            for (Image existingImage : existingImages) {
-                File oldFile = new File(existingImage.getFilePath());
-                if (oldFile.exists()) {
-                    boolean deleted = oldFile.delete();
-                    if (!deleted) {
-                        log.warn("Failed to delete old GroupOrder image file: {}", existingImage.getFilePath());
-                    }
-                }
-                // 기존 이미지 엔티티 삭제
-                imageRepository.delete(existingImage);
-            }
-            groupOrder.getImageList().clear();
-
-            // 새로운 이미지들 저장
-            saveImages(groupOrder, images);
-        }
-
+        imageService.updateImages(ImageType.GROUP_ORDER, groupOrderId, images);
     }
 
     public void deleteGroupOrder(Long userId, Long groupOrderId) {
         GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_OWNED_BY_USER));
-
-        List<Image> existingImages = groupOrder.getImageList();
-        for (Image existingImage : existingImages) {
-            File oldFile = new File(existingImage.getFilePath());
-            if (oldFile.exists()) {
-                boolean deleted = oldFile.delete();
-                if (!deleted) {
-                    log.warn("Failed to delete old GroupOrder image file: {}", existingImage.getFilePath());
-                }
-            }
-            // 기존 이미지 엔티티 삭제
-            imageRepository.delete(existingImage);
-        }
-        groupOrder.getImageList().clear();
+        imageService.deleteImages(ImageType.GROUP_ORDER, groupOrderId);
         groupOrderRepository.delete(groupOrder);
-    }
-
-    private Specification<GroupOrder> buildSpecification(GroupOrderType type, Optional<String> search) {
-        return (root, query, criteriaBuilder) -> {
-            List<Predicate> predicates = new ArrayList<>();
-
-            if (type != GroupOrderType.ALL) {
-                predicates.add(criteriaBuilder.equal(root.get("groupOrderType"), type));
-            }
-
-            search.filter(s -> !s.isEmpty())
-                    .ifPresent(s -> predicates.add(criteriaBuilder.like(root.get("title"), "%" + s + "%")));
-            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
-    }
-
-    private Sort getSortOption(GroupOrderSort sort) {
-        return switch (sort) {
-            case PRICE -> Sort.by(Sort.Direction.ASC, "price");
-            case POPULARITY -> Sort.by(Sort.Direction.DESC, "groupOrderLike");
-            default -> Sort.by(Sort.Direction.ASC, "deadline");
-        };
     }
 
     public Integer likePlusGroupOrder(Long userId, Long groupOrderId) {
@@ -718,34 +460,6 @@ public class GroupOrderService {
         return groupOrder.minusLike();
     }
 
-
-    // 하나의 GroupOrder 게시판에 있는 모든 GroupOrderComment 조회
-    private List<ResponseGroupOrderCommentDto> findGroupOrderComment(GroupOrder groupOrder) {
-        List<ResponseGroupOrderCommentDto> responseGroupOrderCommentDtoList = new ArrayList<>();
-        List<GroupOrderComment> groupOrderCommentList = groupOrderCommentRepository.findByGroupOrder_IdAndParentGroupOrderCommentIsNull(groupOrder.getId());
-        for (GroupOrderComment groupOrderComment : groupOrderCommentList) {
-            List<ResponseGroupOrderCommentDto> childResponseComments = new ArrayList<>();
-            List<GroupOrderComment> childGroupOrderComments = groupOrderComment.getChildGroupOrderComments();
-            for (GroupOrderComment childGroupOrderComment : childGroupOrderComments) {
-                ResponseGroupOrderCommentDto build = ResponseGroupOrderCommentDto.builder()
-                        .groupOrderCommentId(childGroupOrderComment.getId())
-                        .userId(childGroupOrderComment.getUser().getId())
-                        .reply(childGroupOrderComment.isDeleted() ? "삭제된 메시지입니다." : childGroupOrderComment.getReply())
-                        .build();
-
-                childResponseComments.add(build);
-            }
-            ResponseGroupOrderCommentDto responseGroupOrderCommentDto = ResponseGroupOrderCommentDto.builder()
-                    .groupOrderCommentId(groupOrderComment.getId())
-                    .userId(groupOrderComment.getUser().getId())
-                    .reply(groupOrderComment.isDeleted() ? "삭제된 메시지입니다." : groupOrderComment.getReply())
-                    .childGroupOrderCommentList(childResponseComments)
-                    .build();
-            responseGroupOrderCommentDtoList.add(responseGroupOrderCommentDto);
-
-        }
-        return responseGroupOrderCommentDtoList;
-    }
 
     public List<String> findGroupOrderSearchLog(Long userId) {
         User user = userRepository.findById(userId)

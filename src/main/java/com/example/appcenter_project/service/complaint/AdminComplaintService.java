@@ -222,16 +222,16 @@ public class AdminComplaintService {
                     file.transferTo(destinationFile);
                     log.info("ComplaintReply file saved successfully: {}", destinationFile.getAbsolutePath());
 
-/*                    AttachedFile attachedFile = AttachedFile.builder()
+                    AttachedFile attachedFile = AttachedFile.builder()
                             .filePath(destinationFile.getAbsolutePath())
                             .fileName(file.getOriginalFilename())
                             .fileSize(file.getSize())
                             .complaintReply(complaintReply)
-                            .build();*//*
+                            .build();
 
                     attachedFileRepository.save(attachedFile);
 
-                    complaintReply.getAttachedFiles().add(attachedFile);*/
+                    complaintReply.getAttachedFiles().add(attachedFile);
 
                 } catch (IOException e) {
                     log.error("Failed to save ComplaintReply file for complaintReply {}: ", complaintReply.getId(), e);
