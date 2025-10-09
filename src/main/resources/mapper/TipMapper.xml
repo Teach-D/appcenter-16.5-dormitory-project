@@ -8,7 +8,7 @@
         <result property="title" column="title"/>
         <result property="type" column="type"/>
         <result property="createDate" column="created_date"/>
-        <result property="image_path" column="image_path"/>
+        <result property="filePath" column="image_path"/>
 
         <result property="content" column="content"/>
         <result property="tipLikeCount" column="tip_like"/>
