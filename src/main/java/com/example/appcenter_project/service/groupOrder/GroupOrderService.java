@@ -137,7 +137,7 @@ public class GroupOrderService {
 
 
 
-            comment.updateCommentAuthorImagePath(imageService.findImages(ImageType.USER, comment.getUserId(), request).get(0).getImageUrl());
+            comment.updateCommentAuthorImagePath(imageService.findStaticImageUrl(ImageType.USER, comment.getUserId(), request));
 
             // 계층 구조 구성
             if (comment.getParentId() == null) {
@@ -193,7 +193,13 @@ public class GroupOrderService {
     }
 
     private String getRepresentativeUserImageUrl(HttpServletRequest request, User findUser) {
-        return imageService.findImages(ImageType.USER, findUser.getId(), request).get(0).getImageUrl();
+        List<ImageLinkDto> imageLinkDtos = imageService.findImages(ImageType.USER, findUser.getId(), request);
+
+        if (imageLinkDtos.isEmpty()) {
+            return null;
+        }
+
+        return imageLinkDtos.get(0).getImageUrl();
     }
 
 
@@ -384,7 +390,12 @@ public class GroupOrderService {
             }
 
             List<ImageLinkDto> images = imageService.findImages(ImageType.GROUP_ORDER, groupOrder.getId(), request);
-            String imagePath = images.get(0).getImageUrl();
+
+            String imagePath = null;
+            if (!images.isEmpty()) {
+                imagePath = images.get(0).getImageUrl();
+            }
+
             responseGroupOrderDtoList.add(ResponseGroupOrderDto.entityToDto(groupOrder, imagePath));
         }
 

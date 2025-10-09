@@ -75,7 +75,7 @@ public class TipService {
         flatDto.updateWriterName(tip.getUser().getName());
 
         // 작성자 이미지 추가
-        String writerImageUrl = imageService.findImages(ImageType.USER, tipWriterId, request).get(0).getImageUrl();;
+        String writerImageUrl = imageService.findStaticImageUrl(ImageType.USER, tipWriterId, request);
         flatDto.updateWriterImageUrl(writerImageUrl);
 
         log.debug("[findTip] Tip 작성자 ID: {}", tipWriterId);
@@ -118,7 +118,7 @@ public class TipService {
 
                 // 대댓글 작성자 이미지 url
                 Long userId = comment.getUserId();
-                String commentWriterImageUrl = imageService.findImages(ImageType.USER, userId, request).get(0).getImageUrl();;
+                String commentWriterImageUrl = imageService.findStaticImageUrl(ImageType.USER, userId, request);
 
                 comment.updateWriterImageFile(commentWriterImageUrl);
 
@@ -133,7 +133,7 @@ public class TipService {
                     parent.getChildTipCommentList().add(comment);
                 }
                 Long userId = comment.getUserId();
-                String commentWriterImageUrl = imageService.findImages(ImageType.USER, userId, request).get(0).getImageUrl();;
+                String commentWriterImageUrl = imageService.findStaticImageUrl(ImageType.USER, userId, request);
 
                 comment.updateWriterImageFile(commentWriterImageUrl);
             }
