@@ -51,10 +51,10 @@ public class AdminComplaintController implements AdminComplaintApiSpecification 
             @AuthenticationPrincipal CustomUserDetails admin,
             @PathVariable Long complaintId,
             @RequestPart RequestComplaintReplyDto dto,
-            @RequestPart(value = "files", required = false) List<MultipartFile> files
+            @RequestPart(value = "files", required = false) List<MultipartFile> images
     ) {
         ResponseComplaintReplyDto response =
-                adminComplaintService.addReply(admin.getId(), complaintId, dto, files);
+                adminComplaintService.addReply(admin.getId(), complaintId, dto, images);
         return ResponseEntity.ok(response);
     }
 
@@ -83,9 +83,9 @@ public class AdminComplaintController implements AdminComplaintApiSpecification 
             @AuthenticationPrincipal CustomUserDetails admin,
             @PathVariable Long complaintId,
             @RequestPart RequestComplaintReplyDto dto,
-            @RequestPart(value = "files", required = false) List<MultipartFile> files
+            @RequestPart(value = "files", required = false) List<MultipartFile> images
     ) {
-        adminComplaintService.updateReply(admin.getId(), complaintId, dto, files);
+        adminComplaintService.updateReply(admin.getId(), complaintId, dto, images);
         return ResponseEntity.status(OK).build();
     }
 

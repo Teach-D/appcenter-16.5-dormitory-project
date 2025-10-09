@@ -60,9 +60,6 @@ public class Complaint extends BaseTimeEntity {
     @OneToOne(mappedBy = "complaint", cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     private ComplaintReply reply;
 
-    @OneToMany(orphanRemoval = true)
-    private List<Image> imageList = new ArrayList<>();
-
     @Builder
     public Complaint(ComplaintType type, DormType dormType,
                      String title, String content, User user, String officer, DormBuilding building,

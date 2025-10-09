@@ -21,9 +21,8 @@ public class Image {
     @Column(nullable = false)
     private String imagePath;
 
-
     @Enumerated(EnumType.STRING)
-    @Column(name = "image_type")
+    @Column(name = "image_type", length = 200)
     private ImageType imageType;
 
     @Column(nullable = false)

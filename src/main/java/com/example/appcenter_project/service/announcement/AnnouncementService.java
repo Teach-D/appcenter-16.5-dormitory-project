@@ -332,7 +332,7 @@ public class AnnouncementService {
 
     public void deleteAnnouncement(Long userId, Long announcementId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-        Announcement announcement = announcementRepository.findById(announcementId).orElseThrow(() -> new CustomException(ANNOUNCEMENT_NOT_REGISTERED));
+        ManualAnnouncement announcement = manualAnnouncementRepository.findById(announcementId).orElseThrow(() -> new CustomException(ANNOUNCEMENT_NOT_REGISTERED));
         Role role = user.getRole();
 
         // 서포터즈 계정은 서포터즈 공지만 삭제 가능
@@ -397,7 +397,7 @@ public class AnnouncementService {
                                                                List<MultipartFile> files) {
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
         Role role = user.getRole();
-        Announcement announcement = announcementRepository.findById(announcementId).orElseThrow(() -> new CustomException(ANNOUNCEMENT_NOT_REGISTERED));
+        ManualAnnouncement announcement = manualAnnouncementRepository.findById(announcementId).orElseThrow(() -> new CustomException(ANNOUNCEMENT_NOT_REGISTERED));
 
         // 서포터즈 계정은 서포터즈 공지만 수정 가능
         if (role == Role.ROLE_DORM_SUPPORTERS) {

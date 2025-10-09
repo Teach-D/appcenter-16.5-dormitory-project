@@ -32,6 +32,7 @@ public class ImageService {
     private static final String GROUP_ORDER_IMAGE_PREFIX = "group_order";
     private static final String TIME_TABLE_IMAGE_PREFIX = "time_table";
     private static final String COMPLAINT_IMAGE_PREFIX = "complaint";
+    private static final String COMPLAINT_REPLY_IMAGE_PREFIX = "complaint_reply";
     private static final String POPUP_NOTIFICATION_IMAGE_PREFIX = "popup_notification";
     private static final String DEFAULT_IMAGE_EXTENSION = ".jpg";
 
@@ -139,6 +140,9 @@ public class ImageService {
             if (imageType == ImageType.COMPLAINT) {
                 imageName = "/images/" + COMPLAINT_IMAGE_PREFIX + "/" + imageName;
             }
+            if (imageType == ImageType.COMPLAINT_REPLY) {
+                imageName = "/images/" + COMPLAINT_REPLY_IMAGE_PREFIX + "/" + imageName;
+            }
             if (imageType == ImageType.POPUP_NOTIFICATION) {
                 imageName = "/images/" + POPUP_NOTIFICATION_IMAGE_PREFIX + "/" + imageName;
             }
@@ -188,6 +192,9 @@ public class ImageService {
         }
         if (imageType == ImageType.COMPLAINT) {
             directoryPath += (COMPLAINT_IMAGE_PREFIX + "/");
+        }
+        if (imageType == ImageType.COMPLAINT_REPLY) {
+            directoryPath += (COMPLAINT_REPLY_IMAGE_PREFIX + "/");
         }
         if (imageType == ImageType.POPUP_NOTIFICATION) {
             directoryPath += (POPUP_NOTIFICATION_IMAGE_PREFIX + "/");
@@ -245,6 +252,9 @@ public class ImageService {
         }
         if (imageType == ImageType.COMPLAINT) {
             imageName = COMPLAINT_IMAGE_PREFIX + "_" + imageName;
+        }
+        if (imageType == ImageType.COMPLAINT_REPLY) {
+            imageName = COMPLAINT_REPLY_IMAGE_PREFIX + "_" + imageName;
         }
         if (imageType == ImageType.POPUP_NOTIFICATION) {
             imageName = POPUP_NOTIFICATION_IMAGE_PREFIX + "_" + imageName;

@@ -22,10 +22,10 @@ public class Tip extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 30)
+    @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false)
     private String content;
     private Integer tipLike;
     private Integer tipCommentCount;
@@ -34,9 +34,6 @@ public class Tip extends BaseTimeEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @OneToMany(orphanRemoval = true)
-    private List<Image> imageList = new ArrayList<>();
-
     @OneToMany(mappedBy = "tip", orphanRemoval = true)
     private List<TipComment> tipCommentList = new ArrayList<>();
 
@@ -44,13 +41,12 @@ public class Tip extends BaseTimeEntity {
     private List<TipLike> tipLikeList = new ArrayList<>();
 
     @Builder
-    private Tip(String title, String content, User user, Image image) {
+    private Tip(String title, String content, User user) {
         this.title = title;
         this.content = content;
         this.user = user;
         this.tipLike = 0;
         this.tipCommentCount = 0;
-        this.imageList.add(image);
     }
 
     public Integer plusLike() {
