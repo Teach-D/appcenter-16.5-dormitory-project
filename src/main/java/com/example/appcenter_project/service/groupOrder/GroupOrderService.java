@@ -406,9 +406,9 @@ public class GroupOrderService {
     public void updateGroupOrder(Long userId, Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto, List<MultipartFile> images) {
         GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_OWNED_BY_USER));
 
-        if (groupOrderRepository.existsByTitle(requestGroupOrderDto.getTitle())) {
+/*        if (groupOrderRepository.existsByTitle(requestGroupOrderDto.getTitle())) {
             throw new CustomException(GROUP_ORDER_TITLE_DUPLICATE);
-        }
+        }*/
 
         groupOrder.update(requestGroupOrderDto);
 
