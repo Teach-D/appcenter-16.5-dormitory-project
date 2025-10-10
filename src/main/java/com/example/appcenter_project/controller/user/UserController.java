@@ -71,7 +71,7 @@ public class UserController implements UserApiSpecification {
         return ResponseEntity.status(OK).body(userService.findUserDormitoryRole());
     }
 
-    @GetMapping("/all/admin")
+    @GetMapping("/admin")
     public ResponseEntity<List<ResponseUserDto>> findAllUser() {
         return ResponseEntity.status(OK).body(userService.findAllUser());
     }
