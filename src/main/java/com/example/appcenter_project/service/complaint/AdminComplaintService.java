@@ -15,6 +15,8 @@ import com.example.appcenter_project.repository.complaint.ComplaintReplyReposito
 import com.example.appcenter_project.repository.complaint.ComplaintRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import com.example.appcenter_project.service.image.ImageService;
+import com.example.appcenter_project.service.notification.ComplaintNotificationService;
+import com.example.appcenter_project.service.notification.AdminComplaintNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,6 +42,8 @@ public class AdminComplaintService {
     private final UserRepository userRepository;
     private final AttachedFileRepository attachedFileRepository;
     private final ImageService imageService;
+    private final ComplaintNotificationService complaintNotificationService;
+    private final AdminComplaintNotificationService adminComplaintNotificationService;
 
     // 민원 답변 등록
     public ResponseComplaintReplyDto addReply(Long adminId, Long complaintId, RequestComplaintReplyDto dto, List<MultipartFile> images) {
@@ -68,6 +72,14 @@ public class AdminComplaintService {
 
         imageService.saveImages(ImageType.COMPLAINT_REPLY, reply.getId(), images);
 
+        // 민원 답변 알림 발송
+        try {
+            complaintNotificationService.sendNewReplyNotification(complaintId);
+            log.info("민원 답변 알림 발송 완료 - 민원ID: {}", complaintId);
+        } catch (Exception e) {
+            log.error("민원 답변 알림 발송 실패 - 민원ID: {}", complaintId, e);
+        }
+
         return ResponseComplaintReplyDto.builder()
                 .replyTitle(reply.getReplyTitle())
                 .replyContent(reply.getReplyContent())
@@ -81,8 +93,27 @@ public class AdminComplaintService {
         Complaint complaint = complaintRepository.findById(complaintId)
                 .orElseThrow(() -> new CustomException(COMPLAINT_NOT_FOUND));
 
-        ComplaintStatus status = ComplaintStatus.from(dto.getStatus());
-        complaint.updateStatus(status);
+        ComplaintStatus oldStatus = complaint.getStatus();
+        ComplaintStatus newStatus = ComplaintStatus.from(dto.getStatus());
+        complaint.updateStatus(newStatus);
+        
+        // 상태가 실제로 변경된 경우에만 알림 발송
+        if (!oldStatus.equals(newStatus)) {
+            try {
+                // 일반 유저에게 알림 발송
+                complaintNotificationService.sendStatusChangeNotification(complaintId, newStatus);
+                log.info("민원 상태 변경 알림 발송 완료 - 민원ID: {}, 상태: {} -> {}", 
+                        complaintId, oldStatus.getDescription(), newStatus.getDescription());
+                
+                // 관리자에게 상태 변경 알림 발송
+                adminComplaintNotificationService.sendStatusChangeNotification(complaintId, oldStatus, newStatus);
+                log.info("관리자 민원 상태 변경 알림 발송 완료 - 민원ID: {}, 상태: {} -> {}", 
+                        complaintId, oldStatus.getDescription(), newStatus.getDescription());
+            } catch (Exception e) {
+                log.error("민원 상태 변경 알림 발송 실패 - 민원ID: {}, 상태: {} -> {}", 
+                        complaintId, oldStatus.getDescription(), newStatus.getDescription(), e);
+            }
+        }
     }
 
     public void updateReply(Long userId, Long complaintId, RequestComplaintReplyDto dto, List<MultipartFile> images) {
