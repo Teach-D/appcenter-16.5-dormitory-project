@@ -23,7 +23,7 @@ public class ManualAnnouncement extends Announcement {
     @Lob
     private String content;
 
-    @OneToMany(mappedBy = "manualAnnouncement")
+    @OneToMany(mappedBy = "manualAnnouncement", cascade = CascadeType.REMOVE)
     private List<ManualAnnouncementFile> manualAnnouncementFiles = new ArrayList<>();
 
     @Builder
@@ -49,5 +49,12 @@ public class ManualAnnouncement extends Announcement {
 
     public void plusViewCount() {
         super.viewCount += 1;
+    }
+
+    public void update(RequestAnnouncementDto requestAnnouncementDto) {
+        this.title = requestAnnouncementDto.getTitle();
+        this.writer = requestAnnouncementDto.getWriter();
+        this.content = requestAnnouncementDto.getContent();
+        this.isEmergency = requestAnnouncementDto.getIsEmergency();
     }
 }
