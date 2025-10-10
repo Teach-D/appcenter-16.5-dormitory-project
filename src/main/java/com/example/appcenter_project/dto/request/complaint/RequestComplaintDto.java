@@ -10,9 +10,9 @@ import lombok.NoArgsConstructor;
 public class RequestComplaintDto {
 
     @Schema(description = "민원 유형", 
-            example = "기물", 
-            allowableValues = {"기물", "시설", "청소/위생", "소음", "기타"})
-    private String type;        // 유형 (기물, 시설, 청소/위생, 소음, 기타)
+            example = "소음",
+            allowableValues = {"소음", "흡연", "음주", "룸메이트변경", "벌점상쇄","벌점사유확인"})
+    private String type;
     
     @Schema(description = "기숙사 구분", 
             example = "1기숙사", 

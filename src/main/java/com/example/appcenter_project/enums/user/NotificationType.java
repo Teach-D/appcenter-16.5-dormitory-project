@@ -13,7 +13,8 @@ public enum NotificationType {
     GROUP_ORDER("공동구매"),
     DORMITORY("생활원"),
     UNI_DORM("유니돔"),
-    SUPPORTERS("서포터즈");
+    SUPPORTERS("서포터즈"),
+    COMPLAINT("민원");
 
     private final String description;
 
