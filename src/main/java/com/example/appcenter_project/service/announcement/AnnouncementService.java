@@ -238,7 +238,7 @@ public class AnnouncementService {
     private String getStaticAttachedFileUrl(String filePath, String baseUrl) {
         try {
             String fileName = Paths.get(filePath).getFileName().toString();
-            return baseUrl + "/files/announcement/" + fileName;
+            return baseUrl + "/files/manual-announcement/" + fileName;
         } catch (Exception e) {
             log.warn("Could not generate static URL for Attached file path: {}", filePath);
             return null;
