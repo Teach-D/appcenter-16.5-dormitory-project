@@ -75,6 +75,10 @@ public class PopupNotificationService {
         PopupNotification popupNotification = popupNotificationRepository.findById(popupNotificationId).orElseThrow(() -> new CustomException(POPUP_NOTIFICATION_NOT_FOUND));
         popupNotification.update(requestPopupNotificationDto);
 
+        if (images == null || images.isEmpty()) {
+            return;
+        }
+
         imageService.updateImages(ImageType.POPUP_NOTIFICATION, popupNotificationId, images);
     }
 
