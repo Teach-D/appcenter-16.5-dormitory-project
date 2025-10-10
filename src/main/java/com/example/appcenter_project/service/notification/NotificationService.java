@@ -4,7 +4,6 @@ import com.example.appcenter_project.dto.request.notification.RequestNotificatio
 import com.example.appcenter_project.dto.response.notification.ResponseNotificationDto;
 import com.example.appcenter_project.entity.notification.Notification;
 import com.example.appcenter_project.entity.notification.UserNotification;
-import com.example.appcenter_project.entity.user.FcmToken;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.user.DormType;
 import com.example.appcenter_project.enums.user.NotificationType;
@@ -17,9 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static com.example.appcenter_project.enums.user.NotificationType.*;
 import static com.example.appcenter_project.exception.ErrorCode.USER_NOT_FOUND;
@@ -33,6 +30,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final FcmMessageService fcmMessageService;
+    private final UnidormNotificationService unidormNotificationService;
 
     public List<ResponseNotificationDto> findNotifications(Long userId) {
         List<ResponseNotificationDto> responseNotificationDtos = new ArrayList<>();
@@ -55,6 +53,7 @@ public class NotificationService {
         return  ResponseNotificationDto.entityToDto(userNotification);
     }
 
+
     public void saveNotification(RequestNotificationDto requestNotificationDto) {
         Notification notification = RequestNotificationDto.dtoToEntity(requestNotificationDto);
         notificationRepository.save(notification);
@@ -62,8 +61,9 @@ public class NotificationService {
         NotificationType notificationType = from(requestNotificationDto.getNotificationType());
 
         if (notificationType == UNI_DORM) {
-            sendAllUsers(notification);
-        } else if (notificationType == DORMITORY) {
+            unidormNotificationService.saveAndSendUnidormNotification(notification);
+        }
+        else if (notificationType == DORMITORY) {
             sendAllDormitoryStudent(notification);
         }
     }
@@ -77,9 +77,8 @@ public class NotificationService {
                     .build();
             userNotificationRepository.save(userNotification);
 
-            if (user.getReceiveNotificationTypes().contains(DORMITORY)) {
-                fcmMessageService.sendNotification(user, notification.getTitle(), notification.getBody());
-            }
+            fcmMessageService.sendDormitoryNotification(user, notification.getTitle(), notification.getBody());
+
         }
     }
 

@@ -1,6 +1,7 @@
 package com.example.appcenter_project.dto.request.notification;
 
 import com.example.appcenter_project.entity.notification.Notification;
+import com.example.appcenter_project.enums.ApiType;
 import com.example.appcenter_project.enums.user.NotificationType;
 import lombok.Getter;
 
@@ -18,6 +19,7 @@ public class RequestNotificationDto {
                 .title(requestNotificationDto.getTitle())
                 .body(requestNotificationDto.getBody())
                 .notificationType(NotificationType.from(requestNotificationDto.getNotificationType()))
+                .apiType(ApiType.NOTIFICATION)
                 .build();
     }
 }

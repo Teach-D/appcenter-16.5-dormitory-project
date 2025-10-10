@@ -4,6 +4,7 @@ import com.example.appcenter_project.entity.complaint.Complaint;
 import com.example.appcenter_project.entity.notification.Notification;
 import com.example.appcenter_project.entity.notification.UserNotification;
 import com.example.appcenter_project.entity.user.User;
+import com.example.appcenter_project.enums.ApiType;
 import com.example.appcenter_project.enums.complaint.ComplaintStatus;
 import com.example.appcenter_project.enums.user.NotificationType;
 import com.example.appcenter_project.enums.user.Role;

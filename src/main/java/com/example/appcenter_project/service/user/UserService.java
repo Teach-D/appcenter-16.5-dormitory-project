@@ -25,7 +25,6 @@ import com.example.appcenter_project.repository.like.GroupOrderLikeRepository;
 import com.example.appcenter_project.repository.like.RoommateBoardLikeRepository;
 import com.example.appcenter_project.repository.like.TipLikeRepository;
 import com.example.appcenter_project.repository.user.SchoolLoginRepository;
-import com.example.appcenter_project.repository.user.UserGroupOrderKeywordRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import com.example.appcenter_project.security.jwt.JwtTokenProvider;
 import com.example.appcenter_project.service.fcm.FcmMessageService;
@@ -68,7 +67,6 @@ public class UserService {
     private final GroupOrderQueryService groupOrderQueryService;
     private final TipQueryService tipQueryService;
     private final RoommateQueryService roommateQueryService;
-    private final UserGroupOrderKeywordRepository userGroupOrderKeywordRepository;
     private final ImageService imageService;
     private final FcmTokenService fcmTokenService;
     private final FcmMessageService fcmMessageService;
@@ -121,13 +119,13 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
-        // 기존 사용자의 이름과 다른 경우에만 중복 체크
+/*        // 기존 사용자의 이름과 다른 경우에만 중복 체크
         // 기존 사용자의 이름이 null이 아니고, 새로운 이름과 다른 경우에만 중복 체크
         if (user.getName() != null &&
                 !user.getName().equals(requestUserDto.getName()) &&
                 userRepository.existsByName(requestUserDto.getName())) {
             throw new CustomException(DUPLICATE_USER_NAME);
-        }
+        }*/
 
         user.update(requestUserDto);
 

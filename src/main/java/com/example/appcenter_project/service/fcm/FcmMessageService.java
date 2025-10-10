@@ -127,4 +127,70 @@ public class FcmMessageService {
         // todo 임시로 null
         return null;
     }
+
+    public void sendGroupOrderNotification(User user, String title, String body) {
+        if (!user.getReceiveNotificationTypes().contains(NotificationType.GROUP_ORDER)) {
+            return;
+        }
+
+        sendMessageToUser(user, title, body);
+    }
+
+    public void sendDormitoryNotification(User user, String title, String body) {
+        if (!user.getReceiveNotificationTypes().contains(NotificationType.DORMITORY)) {
+            return;
+        }
+
+        sendMessageToUser(user, title, body);
+
+    }
+
+    public void sendUnidormNotification(User user, String title, String body) {
+        if (!user.getReceiveNotificationTypes().contains(NotificationType.UNI_DORM)) {
+            return;
+        }
+
+        sendMessageToUser(user, title, body);
+    }
+
+    private void sendMessageToUser(User user, String title, String body) {
+        for (FcmToken fcmToken : user.getFcmTokenList()) {
+            String targetToken = fcmToken.getToken();
+
+            Notification notification = Notification.builder()
+                    .setTitle(title)
+                    .setBody(body)
+                    .build();
+
+            Message message = Message.builder()
+                    .setToken(targetToken)
+                    .setNotification(notification)
+                    .build();
+
+            try {
+                String response = FirebaseMessaging.getInstance().send(message);
+                log.info("Successfully sent FCM message: {}", response);
+            } catch (Exception e) {
+                log.error("Error sending FCM message", e);
+                fcmTokenRepository.deleteByToken(targetToken);
+                throw new RuntimeException("FCM 발송 실패", e);
+            }
+        }
+    }
+
+    public void sendSupportersNotification(User user, String title, String body) {
+        if (!user.getReceiveNotificationTypes().contains(NotificationType.SUPPORTERS)) {
+            return;
+        }
+
+        sendMessageToUser(user, title, body);
+    }
+
+    public void sendUnidormAnnouncementNotification(User user, String title, String body) {
+        if (!user.getReceiveNotificationTypes().contains(NotificationType.UNI_DORM)) {
+            return;
+        }
+
+        sendMessageToUser(user, title, body);
+    }
 }
