@@ -1,10 +1,7 @@
 package com.example.appcenter_project.controller.user;
 
 import com.example.appcenter_project.dto.ImageLinkDto;
-import com.example.appcenter_project.dto.request.user.RequestTokenDto;
-import com.example.appcenter_project.dto.request.user.RequestUserDto;
-import com.example.appcenter_project.dto.request.user.RequestUserRole;
-import com.example.appcenter_project.dto.request.user.SignupUser;
+import com.example.appcenter_project.dto.request.user.*;
 import com.example.appcenter_project.dto.response.user.ResponseBoardDto;
 import com.example.appcenter_project.dto.response.user.ResponseLoginDto;
 import com.example.appcenter_project.dto.response.user.ResponseUserDto;
@@ -52,6 +49,12 @@ public class UserController implements UserApiSpecification {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh Token이 유효하지 않습니다.");
     }
 
+    @PostMapping("/push-notification")
+    public ResponseEntity<Void> sendPushNotification(@RequestBody RequestUserPushNotification requestUserPushNotification) {
+        userService.sendPushNotification(requestUserPushNotification);
+        return ResponseEntity.status(CREATED).build();
+    }
+
     @PostMapping("/role")
     public ResponseEntity<Void> changeUserRole(@RequestBody RequestUserRole requestUserRole) {
         userService.changeUserRole(requestUserRole);
@@ -66,6 +69,11 @@ public class UserController implements UserApiSpecification {
     @GetMapping("/role")
     public ResponseEntity<List<ResponseUserRole>> findUserDormitoryRole() {
         return ResponseEntity.status(OK).body(userService.findUserDormitoryRole());
+    }
+
+    @GetMapping("/admin")
+    public ResponseEntity<List<ResponseUserDto>> findAllUser() {
+        return ResponseEntity.status(OK).body(userService.findAllUser());
     }
 
 /*

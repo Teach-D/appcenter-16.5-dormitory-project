@@ -52,12 +52,16 @@ public class SecurityConfig {
                         /** 유저 **/
                         // 로그인
                         .requestMatchers(POST, "/users", "/users/refreshToken").permitAll()
+                        // 관리자 모든 유저 조회
+                        .requestMatchers("/users/all/admin").hasRole("ADMIN")
+                        // 특정 유저 푸시 알림 전송
+                        .requestMatchers( "/users/push-notification").hasRole("ADMIN")
                         // 사용자 권한 수정 및 조회
                         .requestMatchers("/users/role")
                             .hasAnyRole("DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "ADMIN")
                         // 사용자 정보 조회 및 수정
                         .requestMatchers("/users", "/users/image", "/users/time-table-image").authenticated()
-                        // 사용자 게시글 조회(좋아요, 자신의 게시글
+                        // 사용자 게시글 조회(좋아요, 자신의 게시글)
                         .requestMatchers("/users/board", "/users/like").authenticated()
 
                         /** 공지사항 **/

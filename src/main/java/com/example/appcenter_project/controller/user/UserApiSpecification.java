@@ -1,10 +1,7 @@
 package com.example.appcenter_project.controller.user;
 
 import com.example.appcenter_project.dto.ImageLinkDto;
-import com.example.appcenter_project.dto.request.user.RequestTokenDto;
-import com.example.appcenter_project.dto.request.user.RequestUserDto;
-import com.example.appcenter_project.dto.request.user.RequestUserRole;
-import com.example.appcenter_project.dto.request.user.SignupUser;
+import com.example.appcenter_project.dto.request.user.*;
 import com.example.appcenter_project.dto.response.user.ResponseBoardDto;
 import com.example.appcenter_project.dto.response.user.ResponseLoginDto;
 import com.example.appcenter_project.dto.response.user.ResponseUserDto;
@@ -71,6 +68,12 @@ public interface UserApiSpecification {
     );
 
     @Operation(
+            summary = "특정 유저 푸시 알림 전송",
+            description = "userId, title, body를 받아서 특정 유저에게 푸시 알림 전송(관리자용)"
+    )
+    ResponseEntity<Void> sendPushNotification(@RequestBody RequestUserPushNotification requestUserPushNotification);
+
+    @Operation(
             summary = "사용자 권한 변경",
             description = "생활원 직원, 관리자만 특정 사용자의 권한을 생활원 직원으로 변경할 수 있음" +
                     "(role : 기숙사 담당자, 기숙사 생활민원 담당자, 기숙사 룸메이트민원 담당자)"
@@ -90,22 +93,30 @@ public interface UserApiSpecification {
     )
     ResponseEntity<ResponseUserDto> findUserByUserId(@AuthenticationPrincipal CustomUserDetails user);
 
+
     @Operation(
-            summary = "사용자 프로필 이미지 조회",
-            description = "현재 로그인한 사용자의 프로필 이미지를 조회합니다.",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "이미지 조회 성공",
-                            content = @Content(mediaType = "image/*")),
-                    @ApiResponse(responseCode = "403", description = "인증되지 않은 사용자입니다.", content = @Content(examples = {})),
-                    @ApiResponse(responseCode = "404",
-                            description = """
-                            다음 중 하나일 수 있습니다:
-                            - 사용자를 찾을 수 없습니다. (USER_NOT_FOUND)
-                            - 이미지를 찾을 수 없습니다. (IMAGE_NOT_FOUND)
-                            """,
-                            content = @Content(examples = {})
-                    )
-            }
+            summary = "모든 유저의 정보 조회",
+            description = "모든 유저의 id, studentNumber를 조회합니다(관리자요)"
+    )
+    ResponseEntity<List<ResponseUserDto>> findAllUser();
+
+
+    @Operation(
+        summary = "사용자 프로필 이미지 조회",
+        description = "현재 로그인한 사용자의 프로필 이미지를 조회합니다.",
+        responses = {
+                @ApiResponse(responseCode = "200", description = "이미지 조회 성공",
+                        content = @Content(mediaType = "image/*")),
+                @ApiResponse(responseCode = "403", description = "인증되지 않은 사용자입니다.", content = @Content(examples = {})),
+                @ApiResponse(responseCode = "404",
+                        description = """
+                        다음 중 하나일 수 있습니다:
+                        - 사용자를 찾을 수 없습니다. (USER_NOT_FOUND)
+                        - 이미지를 찾을 수 없습니다. (IMAGE_NOT_FOUND)
+                        """,
+                        content = @Content(examples = {})
+                )
+        }
     )
     ResponseEntity<ImageLinkDto> findUserImageByUserId(@AuthenticationPrincipal CustomUserDetails user, HttpServletRequest request);
 
