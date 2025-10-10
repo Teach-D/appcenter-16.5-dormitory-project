@@ -212,7 +212,7 @@ public class GroupOrderService {
 
         imageService.saveImages(ImageType.GROUP_ORDER, groupOrder.getId(), images);
 
-        // GroupOrderChatRoom 저장
+/*        // GroupOrderChatRoom 저장
         GroupOrderChatRoom groupOrderChatRoom = new GroupOrderChatRoom(groupOrder.getTitle());
         UserGroupOrderChatRoom userGroupOrderChatRoom = UserGroupOrderChatRoom.builder()
                 .groupOrderChatRoom(groupOrderChatRoom)
@@ -226,7 +226,7 @@ public class GroupOrderService {
         groupOrderChatRoom.updateGroupOrder(groupOrder);
 
         groupOrderChatRoomRepository.save(groupOrderChatRoom);
-        userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);
+        userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);*/
 
         // 키워드, 카테고리 중복 알림 방지 유저 목록
         Set<User> receivedUsers = new HashSet<>();
