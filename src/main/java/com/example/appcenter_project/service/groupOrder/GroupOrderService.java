@@ -179,10 +179,6 @@ public class GroupOrderService {
 
         String userImageUrl = getRepresentativeUserImageUrl(request, findUser);
         flatDto.updateAuthorImagePath(userImageUrl);
-
-        // 게시글 조회 수 증가
-        groupOrder.plusViewCount();
-
 /*
         // 게시글 작성자의 평점 조회
         Float averageRating = groupOrder.getUser().getAverageRating();
@@ -216,7 +212,7 @@ public class GroupOrderService {
 
         imageService.saveImages(ImageType.GROUP_ORDER, groupOrder.getId(), images);
 
-        // GroupOrderChatRoom 저장
+/*        // GroupOrderChatRoom 저장
         GroupOrderChatRoom groupOrderChatRoom = new GroupOrderChatRoom(groupOrder.getTitle());
         UserGroupOrderChatRoom userGroupOrderChatRoom = UserGroupOrderChatRoom.builder()
                 .groupOrderChatRoom(groupOrderChatRoom)
@@ -230,7 +226,7 @@ public class GroupOrderService {
         groupOrderChatRoom.updateGroupOrder(groupOrder);
 
         groupOrderChatRoomRepository.save(groupOrderChatRoom);
-        userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);
+        userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);*/
 
         // 키워드, 카테고리 중복 알림 방지 유저 목록
         Set<User> receivedUsers = new HashSet<>();
@@ -399,6 +395,10 @@ public class GroupOrderService {
             responseGroupOrderDtoList.add(ResponseGroupOrderDto.entityToDto(groupOrder, imagePath));
         }
 
+        if (sort == GroupOrderSort.LATEST) {
+            Collections.reverse(responseGroupOrderDtoList);
+        }
+
         return responseGroupOrderDtoList;
     }
 
@@ -406,9 +406,9 @@ public class GroupOrderService {
     public void updateGroupOrder(Long userId, Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto, List<MultipartFile> images) {
         GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_OWNED_BY_USER));
 
-        if (groupOrderRepository.existsByTitle(requestGroupOrderDto.getTitle())) {
+/*        if (groupOrderRepository.existsByTitle(requestGroupOrderDto.getTitle())) {
             throw new CustomException(GROUP_ORDER_TITLE_DUPLICATE);
-        }
+        }*/
 
         groupOrder.update(requestGroupOrderDto);
 
