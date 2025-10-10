@@ -22,6 +22,7 @@ import com.example.appcenter_project.repository.complaint.ComplaintRepository;
 import com.example.appcenter_project.repository.complaint.ComplaintSpecification;
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
+import com.example.appcenter_project.service.notification.AdminComplaintNotificationService;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -52,6 +53,7 @@ public class ComplaintService {
     private final UserRepository userRepository;
     private final ImageRepository imageRepository;
     private final AttachedFileRepository attachedFileRepository;
+    private final AdminComplaintNotificationService adminComplaintNotificationService;
     private final ImageService imageService;
 
     // 민원 등록
@@ -89,6 +91,14 @@ public class ComplaintService {
         // 이미지 저장
         if (images != null && !images.isEmpty()) {
             imageService.saveImages(ImageType.COMPLAINT, complaint.getId(), images);
+        }
+
+        // 관리자에게 새 민원 접수 알림 발송
+        try {
+            adminComplaintNotificationService.sendNewComplaintNotification(saved.getId());
+            log.info("관리자 새 민원 알림 발송 완료 - 민원ID: {}", saved.getId());
+        } catch (Exception e) {
+            log.error("관리자 새 민원 알림 발송 실패 - 민원ID: {}", saved.getId(), e);
         }
 
         return ResponseComplaintDto.builder()
