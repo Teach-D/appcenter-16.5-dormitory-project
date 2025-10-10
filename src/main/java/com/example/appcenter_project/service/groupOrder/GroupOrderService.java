@@ -179,10 +179,6 @@ public class GroupOrderService {
 
         String userImageUrl = getRepresentativeUserImageUrl(request, findUser);
         flatDto.updateAuthorImagePath(userImageUrl);
-
-        // 게시글 조회 수 증가
-        groupOrder.plusViewCount();
-
 /*
         // 게시글 작성자의 평점 조회
         Float averageRating = groupOrder.getUser().getAverageRating();
