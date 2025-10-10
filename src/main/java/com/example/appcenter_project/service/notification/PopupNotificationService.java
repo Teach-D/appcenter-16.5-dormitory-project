@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import static com.example.appcenter_project.exception.ErrorCode.POPUP_NOTIFICATION_NOT_FOUND;
@@ -46,10 +47,28 @@ public class PopupNotificationService {
         return ResponsePopupNotificationDto.entityToDto(popupNotification, imageUrls);
     }
 
-    public List<ResponsePopupNotificationDto> findAllPopupNotifications(HttpServletRequest request) {
+    public List<ResponsePopupNotificationDto> findActivePopupNotifications(HttpServletRequest request) {
+        LocalDate now = LocalDate.now();
 
-        return popupNotificationRepository.findAll().stream().map(popupNotification ->
-                ResponsePopupNotificationDto.entityToDto(popupNotification, imageService.findStaticImageUrls(ImageType.POPUP_NOTIFICATION, popupNotification.getId(), request))).toList();
+        return popupNotificationRepository.findAll().stream()
+                .filter(popupNotification -> {
+                    LocalDate startDate = popupNotification.getStartDate();
+                    LocalDate deadline = popupNotification.getDeadline();
+                    
+                    if (startDate != null && deadline != null) {
+                        // 현재 날짜가 startDate 이상이고 deadline 이하인 경우만 포함
+                        return !now.isBefore(startDate) && !now.isAfter(deadline);
+                    }
+                    
+                    return false;
+                })
+                .map(popupNotification ->
+                        ResponsePopupNotificationDto.entityToDto(
+                                popupNotification, 
+                                imageService.findStaticImageUrls(ImageType.POPUP_NOTIFICATION, popupNotification.getId(), request)
+                        )
+                )
+                .toList();
     }
 
     public void updatePopupNotification(Long popupNotificationId, RequestPopupNotificationDto requestPopupNotificationDto, List<MultipartFile> images) {
@@ -62,5 +81,11 @@ public class PopupNotificationService {
     public void deletePopupNotification(Long popupNotificationId) {
         popupNotificationRepository.deleteById(popupNotificationId);
         imageService.deleteImages(ImageType.POPUP_NOTIFICATION, popupNotificationId);
+    }
+
+    public List<ResponsePopupNotificationDto> findAllPopupNotifications(HttpServletRequest request) {
+        return popupNotificationRepository.findAll().stream().map(popupNotification ->
+                ResponsePopupNotificationDto.entityToDto(popupNotification, imageService.findStaticImageUrls(ImageType.POPUP_NOTIFICATION, popupNotification.getId(), request))).toList();
+
     }
 }

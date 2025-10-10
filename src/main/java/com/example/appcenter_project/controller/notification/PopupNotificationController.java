@@ -2,14 +2,11 @@ package com.example.appcenter_project.controller.notification;
 
 import com.example.appcenter_project.dto.request.notification.RequestPopupNotificationDto;
 import com.example.appcenter_project.dto.response.notification.ResponsePopupNotificationDto;
-import com.example.appcenter_project.entity.notification.PopupNotification;
-import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.notification.PopupNotificationService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -36,9 +33,13 @@ public class PopupNotificationController implements PopupNotificationApiSpecific
     }
 
     @GetMapping
+    public ResponseEntity<List<ResponsePopupNotificationDto>> findActivePopupNotifications(HttpServletRequest request) {
+        return ResponseEntity.status(OK).body(popupNotificationService.findActivePopupNotifications(request));
+    }
+
+    @GetMapping("/admin")
     public ResponseEntity<List<ResponsePopupNotificationDto>> findAllPopupNotifications(HttpServletRequest request) {
         return ResponseEntity.status(OK).body(popupNotificationService.findAllPopupNotifications(request));
-
     }
 
     @PutMapping(value = "/{popupNotificationId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

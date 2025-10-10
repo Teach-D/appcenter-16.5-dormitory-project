@@ -59,8 +59,8 @@ public interface PopupNotificationApiSpecification {
             HttpServletRequest request);
 
     @Operation(
-            summary = "모든 팝업 알림 조회",
-            description = "등록된 모든 팝업 알림을 조회합니다. " +
+            summary = "오늘 보여야하는 팝업 알림 조회",
+            description = "생성날짜와 마감날짜를 기준으로 유효한 팝업 알림 목록 조회 " +
                     "각 팝업 알림의 이미지 URL을 포함한 전체 정보를 리스트로 반환합니다.",
             responses = {
                     @ApiResponse(
@@ -73,10 +73,27 @@ public interface PopupNotificationApiSpecification {
                     )
             }
     )
-    ResponseEntity<List<ResponsePopupNotificationDto>> findAllPopupNotifications(
+    ResponseEntity<List<ResponsePopupNotificationDto>> findActivePopupNotifications(
             HttpServletRequest request);
 
     @Operation(
+            summary = "관리자 전용 모든 팝업 알림 목록 조회",
+            description = "생성날짜와 마감날짜를 무시하고 모든 팝업 알림 목록 조회, 관리자 전용" +
+                    "각 팝업 알림의 이미지 URL을 포함한 전체 정보를 리스트로 반환합니다.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "팝업 알림 목록 조회 성공",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    array = @ArraySchema(schema = @Schema(implementation = ResponsePopupNotificationDto.class))
+                            )
+                    )
+            }
+    )
+    ResponseEntity<List<ResponsePopupNotificationDto>> findAllPopupNotifications(HttpServletRequest request);
+
+        @Operation(
             summary = "팝업 알림 수정",
             description = "팝업 알림 ID로 특정 팝업 알림의 내용을 수정합니다. " +
                     "이미지는 선택사항이며, 이미지를 제공하면 기존 이미지가 모두 삭제되고 새로운 이미지로 교체됩니다. " +
