@@ -179,7 +179,7 @@ public class AnnouncementService {
             return attachedFileDtos;
         }
 
-        List<AttachedFile> attachedFiles = attachedFileRepository.findByAnnouncement(announcement);
+        List<AttachedFile> attachedFiles = manualAnnouncementFileRepository.findByManualAnnouncementId(announcement.getId());
 
         if (attachedFiles.isEmpty()) {
             log.info("No file found for announcement {}", announcementId);
@@ -193,7 +193,7 @@ public class AnnouncementService {
         for (AttachedFile attachedFile : attachedFiles) {
             File file = new File(attachedFile.getFilePath());
             if (file.exists()) {
-                String fileUrl = baseUrl + "/api/files/announcement/" + attachedFile.getId();
+                String fileUrl = baseUrl + "/api/files/manual-announcement/" + attachedFile.getId();
 
                 // 정적 리소스 URL 생성 (User와 동일한 방식)
                 String staticImageUrl = getStaticAttachedFileUrl(attachedFile.getFilePath(), baseUrl);
@@ -338,6 +338,7 @@ public class AnnouncementService {
         // 서포터즈 계정은 서포터즈 공지만 삭제 가능
         if (role == Role.ROLE_DORM_SUPPORTERS) {
             if ((announcement.getAnnouncementType()) == SUPPORTERS) {
+                deleteExistingAttachedFiles(announcement);
                 announcementRepository.deleteById(announcementId);
             } else {
                 throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
@@ -346,6 +347,7 @@ public class AnnouncementService {
         // 기숙사 계정은 기숙사 공지만 삭제
         else if (role == Role.ROLE_DORM_MANAGER || role == Role.ROLE_DORM_ROOMMATE_MANAGER || role == Role.ROLE_DORM_LIFE_MANAGER) {
             if ((announcement.getAnnouncementType()) == DORMITORY) {
+                deleteExistingAttachedFiles(announcement);
                 announcementRepository.deleteById(announcementId);
             } else {
                 throw new CustomException(ANNOUNCEMENT_FORBIDDEN);
@@ -353,8 +355,10 @@ public class AnnouncementService {
         }
         // 관리자 계정은 모든 공지 삭제 가능
         else if (role == Role.ROLE_ADMIN) {
+            deleteExistingAttachedFiles(announcement);
             announcementRepository.deleteById(announcementId);
         }
+
     }
 
     public ResponseAnnouncementDto updateAnnouncement(Long userId, RequestAnnouncementDto requestAnnouncementDto, Long announcementId) {
@@ -424,33 +428,30 @@ public class AnnouncementService {
     }
 
     private ResponseAnnouncementDto updateAnnouncementDetailWithFiles(RequestAnnouncementDto requestAnnouncementDto, Long announcementId, List<MultipartFile> files) {
+
+
         // 1. 공지사항 조회
-        Announcement announcement = announcementRepository.findById(announcementId)
+        ManualAnnouncement manualAnnouncement = manualAnnouncementRepository.findById(announcementId)
                 .orElseThrow(() -> new CustomException(ANNOUNCEMENT_NOT_REGISTERED));
 
-        // 크롤링 공지사항은 수정 불가
-        if (announcement instanceof CrawledAnnouncement) {
-            return null;
-        }
-
         // 2. 기존 첨부파일 삭제 (DB + 파일시스템)
-        deleteExistingAttachedFiles(announcement);
+        deleteExistingAttachedFiles(manualAnnouncement);
 
-/*        // 3. 공지사항 내용 업데이트
-        ((ManualAnnouncement) announcement).update(requestAnnouncementDto);
+        // 3. 공지사항 내용 업데이트
+        manualAnnouncement.update(requestAnnouncementDto);
 
         // 4. 새로운 첨부파일 저장
         if (files != null && !files.isEmpty()) {
-            saveUploadFile(announcement, files);
-        }*/
+            saveUploadFile(manualAnnouncement, files);
+        }
 
-        return ResponseAnnouncementDto.entityToDto(announcement);
+        return ResponseAnnouncementDto.entityToDto(manualAnnouncement);
     }
 
     private void deleteExistingAttachedFiles(Announcement announcement) {
         log.info("[deleteExistingAttachedFiles] 기존 첨부파일 삭제 시작 - announcementId={}", announcement.getId());
 
-        List<AttachedFile> existingFiles = attachedFileRepository.findByAnnouncement(announcement);
+        List<AttachedFile> existingFiles = manualAnnouncementFileRepository.findByManualAnnouncementId(announcement.getId());
 
         for (AttachedFile attachedFile : existingFiles) {
             // 파일시스템에서 파일 삭제
@@ -465,13 +466,8 @@ public class AnnouncementService {
             } else {
                 log.warn("삭제할 파일이 존재하지 않음: {}", attachedFile.getFilePath());
             }
+            attachedFileRepository.delete(attachedFile);
         }
-
-        // DB에서 첨부파일 레코드 삭제 (cascade로 자동 삭제되지만 명시적으로 처리)
-        attachedFileRepository.deleteByAnnouncement(announcement);
-
-        // 엔티티의 컬렉션도 정리
-//        announcement.getAttachedFiles().clear();
 
         log.info("[deleteExistingAttachedFiles] 기존 첨부파일 삭제 완료 - 삭제된 파일 수: {}", existingFiles.size());
     }

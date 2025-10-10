@@ -24,7 +24,7 @@ public class CrawledAnnouncement extends Announcement {
     @Lob
     private String content;
 
-    @OneToMany(mappedBy = "crawledAnnouncement")
+    @OneToMany(mappedBy = "crawledAnnouncement", cascade = CascadeType.REMOVE)
     private List<CrawledAnnouncementFile> crawledAnnouncementFiles = new ArrayList<>();
 
     private LocalDate crawledDate;
