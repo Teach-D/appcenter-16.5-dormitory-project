@@ -395,6 +395,10 @@ public class GroupOrderService {
             responseGroupOrderDtoList.add(ResponseGroupOrderDto.entityToDto(groupOrder, imagePath));
         }
 
+        if (sort == GroupOrderSort.LATEST) {
+            Collections.reverse(responseGroupOrderDtoList);
+        }
+
         return responseGroupOrderDtoList;
     }
 
