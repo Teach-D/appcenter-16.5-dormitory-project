@@ -97,7 +97,7 @@ public class User extends BaseTimeEntity {
     @CollectionTable(name = "user_receive_notification_type", joinColumns =
     @JoinColumn(name = "user_id")
     )
-    @Column(name = "notificaiton_type")
+    @Column(name = "notification_type")
     // 모든 유저가 초기에는 모든 알림을 받도록
     private List<NotificationType> receiveNotificationTypes = new ArrayList<>(List.of(ROOMMATE, GROUP_ORDER, DORMITORY, UNI_DORM, SUPPORTERS));
 
