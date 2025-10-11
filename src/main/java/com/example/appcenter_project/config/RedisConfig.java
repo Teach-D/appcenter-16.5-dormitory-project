@@ -33,8 +33,7 @@ public class RedisConfig {
         redisConfiguration.setHostName(redisHost);
         redisConfiguration.setPort(redisPort);
         redisConfiguration.setPassword(redisPassword);
-        LettuceConnectionFactory lettuceConnectionFactory = new LettuceConnectionFactory(redisConfiguration);
-        return lettuceConnectionFactory;
+        return new LettuceConnectionFactory(redisConfiguration);
     }
 
     @Bean
