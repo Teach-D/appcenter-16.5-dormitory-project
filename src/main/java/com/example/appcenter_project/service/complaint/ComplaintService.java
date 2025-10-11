@@ -154,8 +154,7 @@ public class ComplaintService {
                 .map(c -> ResponseComplaintListDto.builder()
                         .id(c.getId())
                         .date(c.getCreatedDate()
-                                .toLocalDate()
-                                .format(DateTimeFormatter.ofPattern("MM.dd")))
+                                .format(DateTimeFormatter.ofPattern("yyyy.MM.dd")))
                         .type(c.getType().toValue())
                         .title(c.getTitle())
                         .status(c.getStatus().toValue())
@@ -165,7 +164,6 @@ public class ComplaintService {
                         .floor(c.getFloor())
                         .roomNumber(c.getRoomNumber())
                         .bedNumber(c.getBedNumber())
-                        .createDate(LocalDate.from(c.getCreatedDate()))
                         .build())
                 .collect(Collectors.toList());
     }

@@ -20,5 +20,4 @@ public class ResponseComplaintListDto {
     private String roomNumber;
     private String bedNumber;
     private String dormType; // 기숙사
-    private LocalDate createDate;
 }
