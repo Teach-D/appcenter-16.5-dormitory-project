@@ -1,11 +1,13 @@
 package com.example.appcenter_project.service.notification;
 
 import com.example.appcenter_project.entity.complaint.Complaint;
+import com.example.appcenter_project.entity.complaint.ComplaintReply;
 import com.example.appcenter_project.entity.notification.Notification;
 import com.example.appcenter_project.entity.notification.UserNotification;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.ApiType;
 import com.example.appcenter_project.enums.complaint.ComplaintStatus;
+import com.example.appcenter_project.enums.complaint.ComplaintType;
 import com.example.appcenter_project.enums.user.NotificationType;
 import com.example.appcenter_project.enums.user.Role;
 import com.example.appcenter_project.exception.CustomException;
@@ -14,8 +16,10 @@ import com.example.appcenter_project.repository.notification.NotificationReposit
 import com.example.appcenter_project.repository.notification.UserNotificationRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import com.example.appcenter_project.service.fcm.FcmMessageService;
+import com.example.appcenter_project.utils.WorkingHoursValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +42,8 @@ public class AdminComplaintNotificationService {
     private final UserRepository userRepository;
     private final ComplaintRepository complaintRepository;
     private final FcmMessageService fcmMessageService;
+    private final WorkingHoursValidator workingHoursValidator;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     /**
      * 새 민원 접수 시 관리자에게 알림 발송
@@ -167,5 +173,107 @@ public class AdminComplaintNotificationService {
         } else {
             return "민원 상태가 " + oldStatus.getDescription() + "에서 " + newStatus.getDescription() + "으로 변경되었습니다";
         }
+    }
+
+    public void sendAndSaveComplaintNotification(Complaint complaint) {
+
+        if (complaint.getType() == ComplaintType.ROOMMATE_CHANGE) {
+            String title = "새로운 룸메이트 민원이 작성되었습니다!";
+
+            Notification notification = Notification.builder()
+                    .boardId(complaint.getId())
+                    .title(title)
+                    .body(complaint.getTitle())
+                    .notificationType(NotificationType.COMPLAINT)
+                    .apiType(ApiType.COMPLAINT)
+                    .build();
+
+            notificationRepository.save(notification);
+
+            List<User> roommateComplaintManagers = userRepository.findByRole(Role.ROLE_DORM_ROOMMATE_MANAGER);
+            for (User roommateComplaintManager : roommateComplaintManagers) {
+                UserNotification userNotification = UserNotification.of(roommateComplaintManager, notification);
+                userNotificationRepository.save(userNotification);
+
+                if (workingHoursValidator.isNotWorkingHours()) {
+                    redisTemplate.opsForValue().set("complaint_queue:user_notification:" + userNotification.getId(), userNotification.getId());
+                } else {
+                    fcmMessageService.sendNotification(roommateComplaintManager, title, notification.getTitle());
+                }
+
+            }
+        } else {
+            String title = "새로운 생활 민원이 작성되었습니다!";
+
+            Notification notification = Notification.builder()
+                    .boardId(complaint.getId())
+                    .title(title)
+                    .body(complaint.getTitle())
+                    .notificationType(NotificationType.COMPLAINT)
+                    .apiType(ApiType.COMPLAINT)
+                    .build();
+
+            notificationRepository.save(notification);
+
+            List<User> lifeComplaintManagers = userRepository.findByRole(Role.ROLE_DORM_LIFE_MANAGER);
+            for (User lifeComplaintManager : lifeComplaintManagers) {
+                UserNotification userNotification = UserNotification.of(lifeComplaintManager, notification);
+                userNotificationRepository.save(userNotification);
+
+                if (workingHoursValidator.isNotWorkingHours()) {
+                    redisTemplate.opsForValue().set("complaint_queue:user_notification:" + userNotification.getId(), userNotification.getId());
+                } else {
+                    fcmMessageService.sendNotification(lifeComplaintManager, title, notification.getTitle());
+                }
+            }
+        }
+    }
+
+    public void sendAndSaveComplaintReplyNotification(Complaint complaint) {
+        String title = "새로운 답변이 올라왔어요!";
+
+        Notification notification = Notification.builder()
+                .boardId(complaint.getId())
+                .title(title)
+                .body(complaint.getTitle())
+                .notificationType(NotificationType.COMPLAINT)
+                .apiType(ApiType.COMPLAINT)
+                .build();
+
+        notificationRepository.save(notification);
+
+        User user = complaint.getUser();
+
+        UserNotification userNotification = UserNotification.of(user, notification);
+        userNotificationRepository.save(userNotification);
+
+        fcmMessageService.sendNotification(user, title, notification.getTitle());
+    }
+
+    public void sendAndSaveComplaintStatusNotification(Complaint complaint) {
+        String title = null;
+
+        if (complaint.getStatus() == ComplaintStatus.COMPLETED) {
+            title = "접수 민원의 상태가 " + complaint.getStatus().toValue() + "로 변경되었어요";
+        } else {
+            title = "접수 민원의 상태가 " + complaint.getStatus().toValue() + "으로 변경되었어요";
+        }
+
+        Notification notification = Notification.builder()
+                .boardId(complaint.getId())
+                .title(title)
+                .body(complaint.getTitle())
+                .notificationType(NotificationType.COMPLAINT)
+                .apiType(ApiType.COMPLAINT)
+                .build();
+
+        notificationRepository.save(notification);
+
+        User user = complaint.getUser();
+
+        UserNotification userNotification = UserNotification.of(user, notification);
+        userNotificationRepository.save(userNotification);
+
+        fcmMessageService.sendNotification(user, title, notification.getTitle());
     }
 }
