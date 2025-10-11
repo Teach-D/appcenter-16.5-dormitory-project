@@ -93,13 +93,21 @@ public class ComplaintService {
             imageService.saveImages(ImageType.COMPLAINT, complaint.getId(), images);
         }
 
-        // 관리자에게 새 민원 접수 알림 발송
+        try {
+            adminComplaintNotificationService.sendAndSaveComplaintNotification(complaint);
+            log.info("관리자 새 민원 알림 발송 완료 - 민원ID: {}", saved.getId());
+        } catch (Exception e) {
+            log.error("관리자 새 민원 알림 발송 실패 - 민원ID: {}", saved.getId(), e);
+        }
+
+
+/*        // 관리자에게 새 민원 접수 알림 발송
         try {
             adminComplaintNotificationService.sendNewComplaintNotification(saved.getId());
             log.info("관리자 새 민원 알림 발송 완료 - 민원ID: {}", saved.getId());
         } catch (Exception e) {
             log.error("관리자 새 민원 알림 발송 실패 - 민원ID: {}", saved.getId(), e);
-        }
+        }*/
 
         return ResponseComplaintDto.builder()
                 .id(saved.getId())

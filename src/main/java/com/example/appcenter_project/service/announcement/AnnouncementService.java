@@ -15,13 +15,13 @@ import com.example.appcenter_project.enums.announcement.AnnouncementType;
 import com.example.appcenter_project.enums.user.Role;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.repository.announcement.AnnouncementRepository;
-import com.example.appcenter_project.repository.announcement.CrawledAnnouncementRepository;
 import com.example.appcenter_project.repository.announcement.ManualAnnouncementRepository;
 import com.example.appcenter_project.repository.file.AttachedFileRepository;
 import com.example.appcenter_project.repository.file.CrawledAnnouncementFileRepository;
 import com.example.appcenter_project.repository.file.ManualAnnouncementFileRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import com.example.appcenter_project.service.fcm.FcmMessageService;
+import com.example.appcenter_project.service.notification.AnnouncementNotificationService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +35,6 @@ import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -57,6 +56,7 @@ public class AnnouncementService {
     private final CrawledAnnouncementFileRepository crawledAnnouncementFileRepository;
     private final ManualAnnouncementFileRepository manualAnnouncementFileRepository;
     private final FcmMessageService fcmMessageService;
+    private final AnnouncementNotificationService announcementNotificationService;
 
     public void saveAnnouncement(Long userId, RequestAnnouncementDto requestAnnouncementDto, List<MultipartFile> files) {
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
@@ -84,16 +84,16 @@ public class AnnouncementService {
         // 첨부파일 저장
         saveUploadFile(manualAnnouncement, files);
 
-        sendNotification(requestAnnouncementDto, announcementType);
+        sendNotification(manualAnnouncement, announcementType);
     }
 
-    private void sendNotification(RequestAnnouncementDto requestAnnouncementDto, AnnouncementType announcementType) {
+    private void sendNotification(Announcement announcement, AnnouncementType announcementType) {
         if (announcementType == DORMITORY) {
-            fcmMessageService.sendNotificationDormitoryPerson(requestAnnouncementDto.getTitle(), requestAnnouncementDto.getContent());
+            announcementNotificationService.saveAndSendDormitoryNotification(announcement);
         } else if (announcementType == SUPPORTERS) {
-            fcmMessageService.sendNotificationDormitoryPerson(requestAnnouncementDto.getTitle(), requestAnnouncementDto.getContent());
+            announcementNotificationService.saveAndSendSupportersNotification(announcement);
         }else if (announcementType == UNI_DORM) {
-            fcmMessageService.sendNotificationToAllUsers(requestAnnouncementDto.getTitle(), requestAnnouncementDto.getContent());
+            announcementNotificationService.saveAndSendUnidormNotification(announcement);
         }
     }
 

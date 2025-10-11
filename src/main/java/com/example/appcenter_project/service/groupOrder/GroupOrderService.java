@@ -5,8 +5,6 @@ import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto
 import com.example.appcenter_project.dto.response.groupOrder.*;
 import com.example.appcenter_project.entity.groupOrder.*;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
-import com.example.appcenter_project.entity.notification.Notification;
-import com.example.appcenter_project.entity.notification.UserNotification;
 import com.example.appcenter_project.entity.user.*;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
@@ -18,12 +16,11 @@ import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.like.GroupOrderLikeRepository;
 import com.example.appcenter_project.repository.notification.NotificationRepository;
 import com.example.appcenter_project.repository.notification.UserNotificationRepository;
-import com.example.appcenter_project.repository.user.UserGroupOrderCategoryRepository;
-import com.example.appcenter_project.repository.user.UserGroupOrderKeywordRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.fcm.FcmMessageService;
 import com.example.appcenter_project.service.image.ImageService;
+import com.example.appcenter_project.service.notification.GroupOrderNotificationOrderService;
 import com.example.appcenter_project.utils.MealTimeChecker;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -32,11 +29,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
 
-import static com.example.appcenter_project.enums.user.NotificationType.*;
 import static com.example.appcenter_project.exception.ErrorCode.*;
 
 @Slf4j
@@ -57,11 +52,11 @@ public class GroupOrderService {
     private final ImageService imageService;
     private final AsyncViewCountService asyncViewCountService;
     private final MealTimeChecker mealTimeChecker;
-    private final UserGroupOrderKeywordRepository userGroupOrderKeywordRepository;
     private final FcmMessageService fcmMessageService;
-    private final UserGroupOrderCategoryRepository userGroupOrderCategoryRepository;
     private final NotificationRepository notificationRepository;
     private final UserNotificationRepository userNotificationRepository;
+    private final GroupOrderNotificationOrderService groupOrderNotificationOrderService;
+
 
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto) {
         // GroupOrder 저장
@@ -212,158 +207,11 @@ public class GroupOrderService {
 
         imageService.saveImages(ImageType.GROUP_ORDER, groupOrder.getId(), images);
 
-/*        // GroupOrderChatRoom 저장
-        GroupOrderChatRoom groupOrderChatRoom = new GroupOrderChatRoom(groupOrder.getTitle());
-        UserGroupOrderChatRoom userGroupOrderChatRoom = UserGroupOrderChatRoom.builder()
-                .groupOrderChatRoom(groupOrderChatRoom)
-                .user(user)
-                .build();
-        // User - UserGroupOrderChatRoom 1대 N 매핑
-        user.getUserGroupOrderChatRoomList().add(userGroupOrderChatRoom);
-
-        // GroupOrder - GroupOrderChatRoom 1대 1 양방향 매핑
-        groupOrder.updateGroupOrderChatRoom(groupOrderChatRoom);
-        groupOrderChatRoom.updateGroupOrder(groupOrder);
-
-        groupOrderChatRoomRepository.save(groupOrderChatRoom);
-        userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);*/
-
-        // 키워드, 카테고리 중복 알림 방지 유저 목록
-        Set<User> receivedUsers = new HashSet<>();
-
-        // 키워드를 등록한 유저에게 푸시 알림 전송(제목 또는 내용에 키워드가 포함되어 있는 경우)
-        keywordNotificationUser(groupOrder, receivedUsers);
-
-        // 카테고리를 등록한 유저에게 푸시 알림 전송
-        categoryNotificationUser(groupOrder, receivedUsers);
-    }
-
-    private void keywordNotificationUser(GroupOrder groupOrder, Set<User> receivedUsers) {
-        List<UserGroupOrderKeyword> allKeyword = userGroupOrderKeywordRepository.findAll();
-        List<Long> sendUser = new ArrayList<>();
-
-
-        for (UserGroupOrderKeyword userGroupOrderKeyword : allKeyword) {
-            if (groupOrder.getTitle().contains(userGroupOrderKeyword.getKeyword()) || groupOrder.getDescription().contains(userGroupOrderKeyword.getKeyword())) {
-                if (!sendUser.contains(userGroupOrderKeyword.getId())) {
-                    sendUser.add(userGroupOrderKeyword.getId());
-
-                    // 알림 저장
-                    User user = userGroupOrderKeyword.getUser();
-
-                    String title = "[" +  userGroupOrderKeyword.getKeyword() + "]" + " 공동구매 게시글이 등록되었습니다.";
-                    String body = groupOrder.getTitle();
-
-
-                    Notification notification = Notification.builder()
-                            .boardId(groupOrder.getId())
-                            .title(title)
-                            .body(body)
-                            .notificationType(GROUP_ORDER)
-                            .build();
-
-                    notificationRepository.save(notification);
-
-                    UserNotification userNotification = UserNotification.builder()
-                            .user(user)
-                            .notification(notification)
-                            .build();
-
-                    userNotificationRepository.save(userNotification);
-
-                    // 알림 수신 선택이 되어 있는 유저한테만 알림 전송
-                    if (user.getReceiveNotificationTypes().contains(GROUP_ORDER)) {
-                        fcmMessageService.sendNotification(user, title, body);
-                    }
-
-                    // 키워드 알림을 받은 유저로 등록, 카테고리 알림은 받으면 안됨
-                    receivedUsers.add(user);
-                }
-            }
-
-        }
-
-    }
-
-
-    private void categoryNotificationUser(GroupOrder groupOrder, Set<User> receivedUsers) {
-        GroupOrderType groupOrderType = groupOrder.getGroupOrderType();
-
-        List<UserGroupOrderCategory> allCategory = userGroupOrderCategoryRepository.findAll();
-        for (UserGroupOrderCategory category : allCategory) {
-
-            // 알림 저장
-            User user = category.getUser();
-
-            // 이미 키워드 알림을 받은 유저는 카테고리 알림에서는 제외
-            if (receivedUsers.contains(user)) {
-                return;
-            }
-
-            String title = "[" + groupOrderType.toValue() + "]" + " 공동구매 게시글이 등록되었습니다.";
-            String body = groupOrder.getTitle();
-
-            Notification notification = Notification.builder()
-                    .boardId(groupOrder.getId())
-                    .title(title)
-                    .body(body)
-                    .notificationType(GROUP_ORDER)
-                    .build();
-
-            notificationRepository.save(notification);
-
-            UserNotification userNotification = UserNotification.builder()
-                    .user(user)
-                    .notification(notification)
-                    .build();
-
-            userNotificationRepository.save(userNotification);
-
-            // 알림 전송
-            if (category.getCategory() == groupOrderType) {
-                // 알림 수신 선택이 되어 있는 유저한테만 알림 전송
-                if (user.getReceiveNotificationTypes().contains(GROUP_ORDER)) {
-                    fcmMessageService.sendNotification(user, title, body);
-                }
-            }
-        }
+        groupOrderNotificationOrderService.saveAndSendGroupOrderNotification(groupOrder);
     }
 
     public List<ImageLinkDto> findGroupOrderImageUrls(Long groupOrderId, HttpServletRequest request) {
         return imageService.findImages(ImageType.GROUP_ORDER, groupOrderId, request);
-    }
-
-
-
-    // 정적 GroupOrder 이미지 URL 생성 헬퍼 메소드
-    private String getStaticGroupOrderImageUrl(String filePath, String baseUrl) {
-        try {
-            String fileName = Paths.get(filePath).getFileName().toString();
-            return baseUrl + "/images/group-order/" + fileName;
-        } catch (Exception e) {
-            log.warn("Could not generate static URL for group-order image path: {}", filePath);
-            return null;
-        }
-    }
-
-    // 유틸리티: 베이스 URL 생성 (ImageService와 동일)
-    private String getBaseUrl(HttpServletRequest request) {
-        String scheme = request.getScheme();
-        String serverName = request.getServerName();
-        int serverPort = request.getServerPort();
-        String contextPath = request.getContextPath();
-
-        StringBuilder baseUrl = new StringBuilder();
-        baseUrl.append(scheme).append("://").append(serverName);
-
-        // 기본 포트가 아닌 경우에만 포트 추가
-        if ((scheme.equals("http") && serverPort != 80) ||
-                (scheme.equals("https") && serverPort != 443)) {
-            baseUrl.append(":").append(serverPort);
-        }
-
-        baseUrl.append(contextPath);
-        return baseUrl.toString();
     }
 
     public List<ResponseGroupOrderDto> findGroupOrders(CustomUserDetails jwtUser, GroupOrderSort sort, GroupOrderType type, String search, HttpServletRequest request) {
