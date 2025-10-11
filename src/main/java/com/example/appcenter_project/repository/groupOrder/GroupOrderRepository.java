@@ -28,4 +28,11 @@ public interface GroupOrderRepository extends JpaRepository<GroupOrder, Long>, J
     @Query("UPDATE GroupOrder g SET g.groupOrderViewCount = g.groupOrderViewCount + :count WHERE g.id = :id")
     int incrementViewCountBy(@Param("id") Long id, @Param("count") Long count);
 
+    @Query("SELECT g FROM GroupOrder g " +
+            "WHERE g.deadline > :now " +
+            "AND g.deadline <= :oneHourLater")
+    List<GroupOrder> findGroupOrdersEndingSoon(
+            @Param("now") LocalDateTime now,
+            @Param("oneHourLater") LocalDateTime oneHourLater
+    );
 }

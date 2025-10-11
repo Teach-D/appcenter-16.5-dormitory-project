@@ -8,6 +8,7 @@ import com.example.appcenter_project.enums.ApiType;
 import com.example.appcenter_project.enums.announcement.AnnouncementType;
 import com.example.appcenter_project.enums.user.DormType;
 import com.example.appcenter_project.enums.user.NotificationType;
+import com.example.appcenter_project.enums.user.Role;
 import com.example.appcenter_project.repository.notification.NotificationRepository;
 import com.example.appcenter_project.repository.notification.UserNotificationRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
@@ -15,6 +16,9 @@ import com.example.appcenter_project.service.fcm.FcmMessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Arrays;
+import java.util.List;
 
 
 @Service
@@ -40,7 +44,9 @@ public class AnnouncementNotificationService {
 
         notificationRepository.save(notification);
 
-        for (User user : userRepository.findByDormTypeNot(DormType.NONE)) {
+        List<Role> dormitoryUserRoles = Arrays.asList(Role.ROLE_DORM_MANAGER, Role.ROLE_DORM_LIFE_MANAGER, Role.ROLE_DORM_ROOMMATE_MANAGER);
+
+        for (User user : userRepository.findByDormTypeNotAndReceiveNotificationTypesContainsAndRoleNotIn(DormType.NONE, NotificationType.DORMITORY, dormitoryUserRoles)) {
             UserNotification userNotification = UserNotification.of(user, notification);
             userNotificationRepository.save(userNotification);
             fcmMessageService.sendDormitoryNotification(user, title, announcement.getTitle());
@@ -60,7 +66,9 @@ public class AnnouncementNotificationService {
 
         notificationRepository.save(notification);
 
-        for (User user : userRepository.findByDormTypeNot(DormType.NONE)) {
+        List<Role> dormitoryUserRoles = Arrays.asList(Role.ROLE_DORM_MANAGER, Role.ROLE_DORM_LIFE_MANAGER, Role.ROLE_DORM_ROOMMATE_MANAGER);
+
+        for (User user : userRepository.findByDormTypeNotAndReceiveNotificationTypesContainsAndRoleNotIn(DormType.NONE, NotificationType.SUPPORTERS, dormitoryUserRoles)) {
             UserNotification userNotification = UserNotification.of(user, notification);
             userNotificationRepository.save(userNotification);
             fcmMessageService.sendSupportersNotification(user, title, announcement.getTitle());
@@ -80,7 +88,9 @@ public class AnnouncementNotificationService {
 
         notificationRepository.save(notification);
 
-        for (User user : userRepository.findAll()) {
+        List<Role> dormitoryUserRoles = Arrays.asList(Role.ROLE_DORM_MANAGER, Role.ROLE_DORM_LIFE_MANAGER, Role.ROLE_DORM_ROOMMATE_MANAGER);
+
+        for (User user : userRepository.findByReceiveNotificationTypesContainsAndRoleNotIn(NotificationType.UNI_DORM, dormitoryUserRoles)) {
             UserNotification userNotification = UserNotification.of(user, notification);
             userNotificationRepository.save(userNotification);
             fcmMessageService.sendUnidormAnnouncementNotification(user, title, announcement.getTitle());

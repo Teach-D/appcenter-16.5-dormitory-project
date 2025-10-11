@@ -7,6 +7,7 @@ import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.ApiType;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import com.example.appcenter_project.enums.user.NotificationType;
+import com.example.appcenter_project.enums.user.Role;
 import com.example.appcenter_project.repository.notification.NotificationRepository;
 import com.example.appcenter_project.repository.notification.UserNotificationRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
@@ -15,10 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -42,7 +40,9 @@ public class GroupOrderNotificationOrderService {
     private Set<User> saveAndSendUserGroupOrderByKeyword(GroupOrder groupOrder) {
         String combinedText = groupOrder.getTitle() + groupOrder.getDescription();
 
-        List<User> allUsers = userRepository.findAll();
+        List<Role> dormitoryUserRoles = Arrays.asList(Role.ROLE_DORM_MANAGER, Role.ROLE_DORM_LIFE_MANAGER, Role.ROLE_DORM_ROOMMATE_MANAGER);
+
+        List<User> allUsers = userRepository.findByReceiveNotificationTypesContainsAndRoleNotIn(NotificationType.GROUP_ORDER, dormitoryUserRoles);
 
         // 각 유저당 매칭된 첫 번째 키워드만
         Map<User, String> userKeywordMap = allUsers.stream()
@@ -92,7 +92,9 @@ public class GroupOrderNotificationOrderService {
     }
 
     private void saveAndSendUserGroupOrderByCategory(GroupOrder groupOrder, Set<User> excludedUsers) {
-        List<User> allUsers = userRepository.findAll();
+        List<Role> dormitoryUserRoles = Arrays.asList(Role.ROLE_DORM_MANAGER, Role.ROLE_DORM_LIFE_MANAGER, Role.ROLE_DORM_ROOMMATE_MANAGER);
+
+        List<User> allUsers = userRepository.findByReceiveNotificationTypesContainsAndRoleNotIn(NotificationType.GROUP_ORDER, dormitoryUserRoles);
 
         // 각 유저당 매칭된 첫 번째 GroupOrderType만 (이미 알림받은 유저 제외)
         Map<User, GroupOrderType> userTypeMap = allUsers.stream()

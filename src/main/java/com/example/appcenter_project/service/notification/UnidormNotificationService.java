@@ -4,6 +4,7 @@ import com.example.appcenter_project.entity.notification.Notification;
 import com.example.appcenter_project.entity.notification.UserNotification;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.ApiType;
+import com.example.appcenter_project.enums.user.NotificationType;
 import com.example.appcenter_project.repository.notification.NotificationRepository;
 import com.example.appcenter_project.repository.notification.UserNotificationRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
@@ -22,7 +23,7 @@ public class UnidormNotificationService {
     private final FcmMessageService fcmMessageService;
 
     public void saveAndSendUnidormNotification(Notification notification) {
-        for (User user : userRepository.findAll()) {
+        for (User user : userRepository.findByReceiveNotificationTypesContains(NotificationType.UNI_DORM)) {
             UserNotification userNotification = UserNotification.of(user, notification);
             userNotificationRepository.save(userNotification);
 

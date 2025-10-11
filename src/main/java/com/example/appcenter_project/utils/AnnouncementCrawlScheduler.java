@@ -2,9 +2,19 @@ package com.example.appcenter_project.utils;
 
 import com.example.appcenter_project.entity.announcement.CrawledAnnouncement;
 import com.example.appcenter_project.entity.file.CrawledAnnouncementFile;
+import com.example.appcenter_project.entity.notification.Notification;
+import com.example.appcenter_project.entity.notification.UserNotification;
+import com.example.appcenter_project.entity.user.User;
+import com.example.appcenter_project.enums.ApiType;
 import com.example.appcenter_project.enums.announcement.AnnouncementType;
+import com.example.appcenter_project.enums.user.DormType;
+import com.example.appcenter_project.enums.user.NotificationType;
 import com.example.appcenter_project.repository.announcement.CrawledAnnouncementRepository;
 import com.example.appcenter_project.repository.file.CrawledAnnouncementFileRepository;
+import com.example.appcenter_project.repository.notification.NotificationRepository;
+import com.example.appcenter_project.repository.notification.UserNotificationRepository;
+import com.example.appcenter_project.repository.user.UserRepository;
+import com.example.appcenter_project.service.fcm.FcmMessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.By;
@@ -34,8 +44,12 @@ public class AnnouncementCrawlScheduler {
 
     private final CrawledAnnouncementRepository crawledAnnouncementRepository;
     private final CrawledAnnouncementFileRepository crawledAnnouncementFileRepository;
+    private final NotificationRepository notificationRepository;
+    private final UserRepository userRepository;
+    private final UserNotificationRepository userNotificationRepository;
+    private final FcmMessageService fcmMessageService;
 
-    @Scheduled(cron = "0 50 13,22 * * ?")
+    @Scheduled(cron = "0 0 9,18 * * ?")
     public void crawling() {
         List<String> crawlLinks = crawlWithSelenium();
         saveCrawlAnnouncements(crawlLinks);
@@ -208,6 +222,24 @@ public class AnnouncementCrawlScheduler {
                 attachedFile.updateCrawledAnnouncement(crawledAnnouncement);
                 crawledAnnouncementFileRepository.save(attachedFile);
             }
+
+            Notification notification = Notification.builder()
+                    .boardId(crawledAnnouncement.getId())
+                    .title("새로운 공지사항이 올라왔어요!")
+                    .body(crawledAnnouncement.getTitle())
+                    .notificationType(NotificationType.DORMITORY)
+                    .apiType(ApiType.ANNOUNCEMENT)
+                    .build();
+
+            notificationRepository.save(notification);
+
+            for (User receiveUser : userRepository.findByDormTypeNotAndReceiveNotificationTypesContains(DormType.NONE, NotificationType.DORMITORY)) {
+                UserNotification userNotification = UserNotification.of(receiveUser, notification);
+                userNotificationRepository.save(userNotification);
+
+                fcmMessageService.sendNotification(receiveUser, notification.getTitle(), notification.getBody());
+            }
+
 
         } catch (Exception e) {
             log.error("링크 크롤링 실패: {}", e.getMessage(), e);
