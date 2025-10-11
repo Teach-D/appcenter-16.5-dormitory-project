@@ -280,8 +280,11 @@ public class UserService {
     }
 
     public void sendPushNotification(RequestUserPushNotification requestUserPushNotification) {
-        User user = userRepository.findById(requestUserPushNotification.getUserId())
-                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-        fcmMessageService.sendNotification(user, requestUserPushNotification.getTitle(), requestUserPushNotification.getBody());
+        for (Long userId : requestUserPushNotification.getUserIds()) {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+            fcmMessageService.sendNotification(user, requestUserPushNotification.getTitle(), requestUserPushNotification.getBody());
+        }
+
     }
 }

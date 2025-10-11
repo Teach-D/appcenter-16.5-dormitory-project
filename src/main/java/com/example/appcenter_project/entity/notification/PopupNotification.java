@@ -47,6 +47,7 @@ public class PopupNotification extends BaseTimeEntity {
         this.title = requestPopupNotificationDto.getTitle();
         this.content = requestPopupNotificationDto.getContent();
         this.notificationType = NotificationType.from(requestPopupNotificationDto.getNotificationType());
-        this.deadline = LocalDate.now();
+        this.startDate = requestPopupNotificationDto.getStartDate();
+        this.deadline = requestPopupNotificationDto.getDeadline();
     }
 }
