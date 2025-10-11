@@ -1,10 +1,9 @@
 package com.example.appcenter_project.controller.user;
 
+import com.example.appcenter_project.dto.response.user.ResponseUserNotificationDto;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
-import com.example.appcenter_project.enums.user.NotificationType;
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.user.UserNotificationService;
-import com.example.appcenter_project.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -39,6 +38,12 @@ public class UserNotificationController implements UserNotificationApiSpecificat
         userNotificationService.addGroupOrderCategory(user.getId(), GroupOrderType.from(category));
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/preferences")
+    public ResponseEntity<ResponseUserNotificationDto> findReceiveNotificationType(@AuthenticationPrincipal CustomUserDetails user) {
+        return ResponseEntity.status(OK).body(userNotificationService.findReceiveNotificationType(user.getId()));
+    }
+
 
     @GetMapping("/group-order/keyword")
     public ResponseEntity<List<String>> findUserGroupOrderKeyword(@AuthenticationPrincipal CustomUserDetails user) {
@@ -86,4 +91,5 @@ public class UserNotificationController implements UserNotificationApiSpecificat
     public ResponseEntity<Void> deleteUserNotification(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long notificationId) {
         userNotificationService.deleteUserNotification(user.getId(), notificationId);
         return ResponseEntity.status(NO_CONTENT).build();
-    }}
+    }
+}

@@ -2,6 +2,8 @@ package com.example.appcenter_project.entity.notification;
 
 import com.example.appcenter_project.entity.BaseTimeEntity;
 import com.example.appcenter_project.entity.user.User;
+import com.example.appcenter_project.enums.ApiType;
+import com.example.appcenter_project.enums.user.NotificationType;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -10,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor
-public class  UserNotification extends BaseTimeEntity {
+public class UserNotification extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,7 +25,6 @@ public class  UserNotification extends BaseTimeEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "notification_id")
     private Notification notification;
-
     private boolean isRead = false;
 
     @Builder
@@ -32,6 +33,14 @@ public class  UserNotification extends BaseTimeEntity {
         this.notification = notification;
         this.isRead = isRead;
     }
+
+    public static UserNotification of(User user, Notification notification) {
+        return UserNotification.builder()
+                .user(user)
+                .notification(notification)
+                .build();
+    }
+
 
     public void updateIsRead(boolean isRead) {
         this.isRead = isRead;

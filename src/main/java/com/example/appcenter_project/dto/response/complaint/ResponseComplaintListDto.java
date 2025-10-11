@@ -3,6 +3,8 @@ package com.example.appcenter_project.dto.response.complaint;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDate;
+
 @Getter
 @Builder
 public class ResponseComplaintListDto {

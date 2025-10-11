@@ -16,6 +16,7 @@ public class ResponseNotificationDto {
     private String title;
     private String body;
     private String notificationType;
+    private String apiType;
     private boolean isRead;
     private LocalDateTime createdDate;
 
@@ -23,13 +24,14 @@ public class ResponseNotificationDto {
         Notification notification = userNotification.getNotification();
 
         return ResponseNotificationDto.builder()
-                .id(notification.getId())
+                .id(userNotification.getId())
                 .boardId(notification.getBoardId())
                 .title(notification.getTitle())
                 .body(notification.getBody())
                 .notificationType(notification.getNotificationType().toValue())
+                .apiType(String.valueOf(notification.getApiType()))
                 .isRead(userNotification.isRead())
-                .createdDate(notification.getCreatedDate())
+                .createdDate(userNotification.getCreatedDate())
                 .build();
     }
 }

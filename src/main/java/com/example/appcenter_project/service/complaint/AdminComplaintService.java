@@ -72,13 +72,20 @@ public class AdminComplaintService {
 
         imageService.saveImages(ImageType.COMPLAINT_REPLY, reply.getId(), images);
 
-        // 민원 답변 알림 발송
+        try {
+            adminComplaintNotificationService.sendAndSaveComplaintReplyNotification(complaint);
+            log.info("관리자 새 민원 알림 발송 완료 - 민원ID: {}", reply.getId());
+        } catch (Exception e) {
+            log.error("관리자 새 민원 알림 발송 실패 - 민원ID: {}", reply.getId(), e);
+        }
+
+/*        // 민원 답변 알림 발송
         try {
             complaintNotificationService.sendNewReplyNotification(complaintId);
             log.info("민원 답변 알림 발송 완료 - 민원ID: {}", complaintId);
         } catch (Exception e) {
             log.error("민원 답변 알림 발송 실패 - 민원ID: {}", complaintId, e);
-        }
+        }*/
 
         return ResponseComplaintReplyDto.builder()
                 .replyTitle(reply.getReplyTitle())
@@ -96,8 +103,11 @@ public class AdminComplaintService {
         ComplaintStatus oldStatus = complaint.getStatus();
         ComplaintStatus newStatus = ComplaintStatus.from(dto.getStatus());
         complaint.updateStatus(newStatus);
-        
-        // 상태가 실제로 변경된 경우에만 알림 발송
+
+        adminComplaintNotificationService.sendAndSaveComplaintStatusNotification(complaint);
+
+
+        /*// 상태가 실제로 변경된 경우에만 알림 발송
         if (!oldStatus.equals(newStatus)) {
             try {
                 // 일반 유저에게 알림 발송
@@ -113,7 +123,7 @@ public class AdminComplaintService {
                 log.error("민원 상태 변경 알림 발송 실패 - 민원ID: {}, 상태: {} -> {}", 
                         complaintId, oldStatus.getDescription(), newStatus.getDescription(), e);
             }
-        }
+        }*/
     }
 
     public void updateReply(Long userId, Long complaintId, RequestComplaintReplyDto dto, List<MultipartFile> images) {

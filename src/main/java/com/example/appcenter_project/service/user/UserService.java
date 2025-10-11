@@ -2,6 +2,7 @@ package com.example.appcenter_project.service.user;
 
 import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.dto.request.user.RequestUserDto;
+import com.example.appcenter_project.dto.request.user.RequestUserPushNotification;
 import com.example.appcenter_project.dto.request.user.RequestUserRole;
 import com.example.appcenter_project.dto.request.user.SignupUser;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
@@ -11,7 +12,6 @@ import com.example.appcenter_project.dto.response.user.ResponseBoardDto;
 import com.example.appcenter_project.dto.response.user.ResponseLoginDto;
 import com.example.appcenter_project.dto.response.user.ResponseUserDto;
 import com.example.appcenter_project.dto.response.user.ResponseUserRole;
-import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.notification.UserNotification;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.image.ImageType;
@@ -25,9 +25,10 @@ import com.example.appcenter_project.repository.like.GroupOrderLikeRepository;
 import com.example.appcenter_project.repository.like.RoommateBoardLikeRepository;
 import com.example.appcenter_project.repository.like.TipLikeRepository;
 import com.example.appcenter_project.repository.user.SchoolLoginRepository;
-import com.example.appcenter_project.repository.user.UserGroupOrderKeywordRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import com.example.appcenter_project.security.jwt.JwtTokenProvider;
+import com.example.appcenter_project.service.fcm.FcmMessageService;
+import com.example.appcenter_project.service.fcm.FcmTokenService;
 import com.example.appcenter_project.service.groupOrder.GroupOrderQueryService;
 import com.example.appcenter_project.service.image.ImageService;
 import com.example.appcenter_project.service.roommate.RoommateQueryService;
@@ -66,8 +67,9 @@ public class UserService {
     private final GroupOrderQueryService groupOrderQueryService;
     private final TipQueryService tipQueryService;
     private final RoommateQueryService roommateQueryService;
-    private final UserGroupOrderKeywordRepository userGroupOrderKeywordRepository;
     private final ImageService imageService;
+    private final FcmTokenService fcmTokenService;
+    private final FcmMessageService fcmMessageService;
 
     public ResponseLoginDto saveUser(SignupUser signupUser) {
         boolean existsByStudentNumber = userRepository.existsByStudentNumber(signupUser.getStudentNumber());
@@ -117,13 +119,13 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
-        // 기존 사용자의 이름과 다른 경우에만 중복 체크
+/*        // 기존 사용자의 이름과 다른 경우에만 중복 체크
         // 기존 사용자의 이름이 null이 아니고, 새로운 이름과 다른 경우에만 중복 체크
         if (user.getName() != null &&
                 !user.getName().equals(requestUserDto.getName()) &&
                 userRepository.existsByName(requestUserDto.getName())) {
             throw new CustomException(DUPLICATE_USER_NAME);
-        }
+        }*/
 
         user.update(requestUserDto);
 
@@ -269,5 +271,20 @@ public class UserService {
 
     public void deleteUserTimeTableImage(Long userId) {
         imageService.deleteImage(ImageType.TIME_TABLE, userId);
+    }
+
+    public List<ResponseUserDto> findAllUser() {
+        return userRepository.findAll().stream()
+                .map(ResponseUserDto::entityToDtoNull)
+                .toList();
+    }
+
+    public void sendPushNotification(RequestUserPushNotification requestUserPushNotification) {
+        for (Long userId : requestUserPushNotification.getUserIds()) {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+            fcmMessageService.sendNotification(user, requestUserPushNotification.getTitle(), requestUserPushNotification.getBody());
+        }
+
     }
 }

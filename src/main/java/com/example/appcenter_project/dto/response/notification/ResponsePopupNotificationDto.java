@@ -29,6 +29,7 @@ public class ResponsePopupNotificationDto {
     private String notificationType;
     private LocalDate deadline;
     private LocalDate createdDate;
+    private LocalDate startDate;
     private List<String> imagePath;
 
     public static ResponsePopupNotificationDto entityToDto(PopupNotification popupNotification, List<String> imageUrls) {
@@ -37,6 +38,7 @@ public class ResponsePopupNotificationDto {
                 .title(popupNotification.getTitle())
                 .content(popupNotification.getContent())
                 .notificationType(popupNotification.getNotificationType().toValue())
+                .startDate(popupNotification.getStartDate())
                 .deadline(popupNotification.getDeadline())
                 .createdDate(popupNotification.getCreatedDate().toLocalDate())
                 .imagePath(imageUrls)

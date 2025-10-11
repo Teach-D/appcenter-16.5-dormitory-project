@@ -62,10 +62,10 @@ dependencies {
 	implementation 'org.seleniumhq.selenium:selenium-java:4.15.0'
 
 	// redis
-//	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 //	implementation 'org.redisson:redisson-spring-boot-starter:3.24.3'
-//	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate6'
-//	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate6'
+	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
 	// Querydsl
 	implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'

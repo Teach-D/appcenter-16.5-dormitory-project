@@ -54,4 +54,11 @@ public class ResponseUserDto {
                 .hasUnreadNotifications(hasUnreadNotifications)
                 .build();
     }
+
+    public static ResponseUserDto entityToDtoNull(User user) {
+        return ResponseUserDto.builder()
+                .id(user.getId())
+                .studentNumber(user.getStudentNumber())
+                .build();
+    }
 }

@@ -4,6 +4,7 @@ import com.example.appcenter_project.entity.notification.Notification;
 import com.example.appcenter_project.entity.notification.UserNotification;
 import com.example.appcenter_project.entity.roommate.MyRoommate;
 import com.example.appcenter_project.entity.user.User;
+import com.example.appcenter_project.enums.ApiType;
 import com.example.appcenter_project.enums.user.NotificationType;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.repository.notification.NotificationRepository;
@@ -45,14 +46,19 @@ public class QuickMessageService {
             throw new CustomException(MY_ROOMMATE_NOT_REGISTERED);
         }
 
+        if (!roommate.getReceiveNotificationTypes().contains(NotificationType.ROOMMATE)) {
+            return;
+        }
+
         // 3. 알림 데이터 생성
-        String title = "룸메이트";
-        String body = sender.getName() + "님이 퀵메시지를 보냈어요!\n" + messageBody;
+        String title = sender.getName() + "님이 퀵메시지를 보냈어요!";
+        String body = messageBody;
 
         Notification notification = Notification.builder()
                 .title(title)
                 .body(body)
-                .notificationType(NotificationType.DORMITORY)
+                .notificationType(NotificationType.ROOMMATE)
+                .apiType(ApiType.ROOMMATE)
                 .build();
         notificationRepository.save(notification);
 

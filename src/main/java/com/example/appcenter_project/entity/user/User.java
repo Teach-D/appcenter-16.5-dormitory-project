@@ -12,6 +12,7 @@ import com.example.appcenter_project.entity.notification.UserNotification;
 import com.example.appcenter_project.entity.roommate.RoommateBoard;
 import com.example.appcenter_project.entity.roommate.RoommateCheckList;
 import com.example.appcenter_project.entity.tip.Tip;
+import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import com.example.appcenter_project.enums.user.College;
 import com.example.appcenter_project.enums.user.DormType;
 import com.example.appcenter_project.enums.user.NotificationType;
@@ -23,6 +24,8 @@ import lombok.NoArgsConstructor;
 import org.apache.ibatis.annotations.One;
 
 import java.util.*;
+
+import static com.example.appcenter_project.enums.user.NotificationType.*;
 
 @Entity
 @NoArgsConstructor
@@ -76,12 +79,27 @@ public class User extends BaseTimeEntity {
 
     @ElementCollection
     @Enumerated(EnumType.STRING)
+    @CollectionTable(name = "group_order_type", joinColumns =
+    @JoinColumn(name = "user_id")
+    )
+    @Column(name = "group_order_type")
+    private List<GroupOrderType> groupOrderTypes = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "group_order_keyword", joinColumns =
+    @JoinColumn(name = "user_id")
+    )
+    @Column(name = "group_order_keyword")
+    private List<String> groupOrderKeywords = new ArrayList<>();
+
+    @ElementCollection
+    @Enumerated(EnumType.STRING)
     @CollectionTable(name = "user_receive_notification_type", joinColumns =
     @JoinColumn(name = "user_id")
     )
-    @Column(name = "notificaiton_type")
-    // 모든 유저가 초기에는 유니돔과 관련된 공지사항을 받도록
-    private List<NotificationType> receiveNotificationTypes = new ArrayList<>(List.of(NotificationType.UNI_DORM));
+    @Column(name = "notification_type")
+    // 모든 유저가 초기에는 모든 알림을 받도록
+    private List<NotificationType> receiveNotificationTypes = new ArrayList<>(List.of(ROOMMATE, GROUP_ORDER, DORMITORY, UNI_DORM, SUPPORTERS));
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "image_id")
@@ -156,7 +174,7 @@ public class User extends BaseTimeEntity {
 
         if (DormType.from(requestUserDto.getDormType()) == DormType.DORM_1 || DormType.from(requestUserDto.getDormType()) == DormType.DORM_2
         || DormType.from(requestUserDto.getDormType()) == DormType.DORM_3) {
-            receiveNotificationTypes.add(NotificationType.DORMITORY);
+            receiveNotificationTypes.add(DORMITORY);
         }
 
     }

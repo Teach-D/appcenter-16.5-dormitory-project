@@ -2,6 +2,7 @@ package com.example.appcenter_project.entity.notification;
 
 import com.example.appcenter_project.dto.request.notification.RequestNotificationDto;
 import com.example.appcenter_project.entity.BaseTimeEntity;
+import com.example.appcenter_project.enums.ApiType;
 import com.example.appcenter_project.enums.user.NotificationType;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -23,17 +24,23 @@ public class Notification extends BaseTimeEntity {
     private Long boardId;
     private String title;
     private String body;
+
+    @Enumerated(EnumType.STRING)
     private NotificationType notificationType;
 
-    @OneToMany(mappedBy = "notification")
+    @Enumerated(EnumType.STRING)
+    private ApiType apiType;
+
+    @OneToMany(mappedBy = "notification", cascade = CascadeType.ALL)
     private List<UserNotification> userNotifications = new ArrayList<>();
 
     @Builder
-    public Notification(Long boardId, String title, String body, NotificationType notificationType, List<UserNotification> userNotifications) {
+    public Notification(Long boardId, String title, String body, NotificationType notificationType, ApiType apiType, List<UserNotification> userNotifications) {
         this.boardId = boardId;
         this.title = title;
         this.body = body;
         this.notificationType = notificationType;
+        this.apiType = apiType;
         this.userNotifications = userNotifications;
     }
 

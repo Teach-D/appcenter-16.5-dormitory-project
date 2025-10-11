@@ -30,13 +30,16 @@ public class PopupNotification extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     private NotificationType notificationType;
 
+    private LocalDate startDate;
+
     private LocalDate deadline;
 
     @Builder
-    public PopupNotification(String title, String content, NotificationType notificationType, LocalDate deadline) {
+    public PopupNotification(String title, String content, NotificationType notificationType, LocalDate startDate, LocalDate deadline) {
         this.title = title;
         this.content = content;
         this.notificationType = notificationType;
+        this.startDate = startDate;
         this.deadline = deadline;
     }
 
@@ -44,6 +47,7 @@ public class PopupNotification extends BaseTimeEntity {
         this.title = requestPopupNotificationDto.getTitle();
         this.content = requestPopupNotificationDto.getContent();
         this.notificationType = NotificationType.from(requestPopupNotificationDto.getNotificationType());
-        this.deadline = LocalDate.now();
+        this.startDate = requestPopupNotificationDto.getStartDate();
+        this.deadline = requestPopupNotificationDto.getDeadline();
     }
 }
