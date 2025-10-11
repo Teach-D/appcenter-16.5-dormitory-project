@@ -1,6 +1,6 @@
 package com.example.appcenter_project.service.user;
 
-import com.example.appcenter_project.dto.response.user.ResponseUserAgreementDto;
+import com.example.appcenter_project.dto.response.user.ResponseUserNotificationDto;
 import com.example.appcenter_project.entity.notification.UserNotification;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.entity.user.UserGroupOrderCategory;
@@ -12,14 +12,13 @@ import com.example.appcenter_project.repository.notification.UserNotificationRep
 import com.example.appcenter_project.repository.user.UserGroupOrderCategoryRepository;
 import com.example.appcenter_project.repository.user.UserGroupOrderKeywordRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
-import com.example.appcenter_project.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.example.appcenter_project.exception.ErrorCode.*;
@@ -137,12 +136,20 @@ public class UserNotificationService {
         userNotificationRepository.delete(userNotification);
     }
 
-    public ResponseUserAgreementDto findReceiveNotificationType(Long userId) {
+    public ResponseUserNotificationDto findReceiveNotificationType(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-        boolean privacyAgreed = user.isPrivacyAgreed();
-        boolean termsAgreed = user.isTermsAgreed();
 
-        return ResponseUserAgreementDto.of(termsAgreed, privacyAgreed);
+        List<NotificationType> receiveTypes = user.getReceiveNotificationTypes();
+
+        ResponseUserNotificationDto responseDto = ResponseUserNotificationDto.builder()
+                .roommateNotification(receiveTypes.contains(NotificationType.ROOMMATE))
+                .groupOrderNotification(receiveTypes.contains(NotificationType.GROUP_ORDER))
+                .dormitoryNotification(receiveTypes.contains(NotificationType.DORMITORY))
+                .unidormNotification(receiveTypes.contains(NotificationType.UNI_DORM))
+                .supportersNotification(receiveTypes.contains(NotificationType.SUPPORTERS))
+                .build();
+
+        return responseDto;
     }
 }
