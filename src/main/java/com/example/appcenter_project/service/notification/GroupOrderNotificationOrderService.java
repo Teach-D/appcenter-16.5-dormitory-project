@@ -42,7 +42,7 @@ public class GroupOrderNotificationOrderService {
     private Set<User> saveAndSendUserGroupOrderByKeyword(GroupOrder groupOrder) {
         String combinedText = groupOrder.getTitle() + groupOrder.getDescription();
 
-        List<User> allUsers = userRepository.findAll();
+        List<User> allUsers = userRepository.findByReceiveNotificationTypesContains(NotificationType.GROUP_ORDER);
 
         // 각 유저당 매칭된 첫 번째 키워드만
         Map<User, String> userKeywordMap = allUsers.stream()
@@ -92,7 +92,7 @@ public class GroupOrderNotificationOrderService {
     }
 
     private void saveAndSendUserGroupOrderByCategory(GroupOrder groupOrder, Set<User> excludedUsers) {
-        List<User> allUsers = userRepository.findAll();
+        List<User> allUsers = userRepository.findByReceiveNotificationTypesContains(NotificationType.GROUP_ORDER);
 
         // 각 유저당 매칭된 첫 번째 GroupOrderType만 (이미 알림받은 유저 제외)
         Map<User, GroupOrderType> userTypeMap = allUsers.stream()

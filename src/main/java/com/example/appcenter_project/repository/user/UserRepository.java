@@ -2,6 +2,7 @@ package com.example.appcenter_project.repository.user;
 
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.user.DormType;
+import com.example.appcenter_project.enums.user.NotificationType;
 import com.example.appcenter_project.enums.user.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -21,4 +22,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByRoleIn(List<Role> roles);
 
     List<User> findByRole(Role role);
+
+    List<User> findByDormTypeNotAndReceiveNotificationTypesContains(DormType dormType, NotificationType notificationType);
+
+    List<User> findByReceiveNotificationTypesContains(NotificationType notificationType);
 }

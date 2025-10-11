@@ -40,7 +40,7 @@ public class AnnouncementNotificationService {
 
         notificationRepository.save(notification);
 
-        for (User user : userRepository.findByDormTypeNot(DormType.NONE)) {
+        for (User user : userRepository.findByDormTypeNotAndReceiveNotificationTypesContains(DormType.NONE, NotificationType.DORMITORY)) {
             UserNotification userNotification = UserNotification.of(user, notification);
             userNotificationRepository.save(userNotification);
             fcmMessageService.sendDormitoryNotification(user, title, announcement.getTitle());
@@ -60,7 +60,7 @@ public class AnnouncementNotificationService {
 
         notificationRepository.save(notification);
 
-        for (User user : userRepository.findByDormTypeNot(DormType.NONE)) {
+        for (User user : userRepository.findByDormTypeNotAndReceiveNotificationTypesContains(DormType.NONE, NotificationType.SUPPORTERS)) {
             UserNotification userNotification = UserNotification.of(user, notification);
             userNotificationRepository.save(userNotification);
             fcmMessageService.sendSupportersNotification(user, title, announcement.getTitle());
@@ -80,7 +80,7 @@ public class AnnouncementNotificationService {
 
         notificationRepository.save(notification);
 
-        for (User user : userRepository.findAll()) {
+        for (User user : userRepository.findByReceiveNotificationTypesContains(NotificationType.UNI_DORM)) {
             UserNotification userNotification = UserNotification.of(user, notification);
             userNotificationRepository.save(userNotification);
             fcmMessageService.sendUnidormAnnouncementNotification(user, title, announcement.getTitle());

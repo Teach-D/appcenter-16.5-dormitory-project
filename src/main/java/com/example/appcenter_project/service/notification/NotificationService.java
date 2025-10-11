@@ -69,7 +69,7 @@ public class NotificationService {
     }
 
     private void sendAllDormitoryStudent(Notification notification) {
-        for (User user : userRepository.findByDormTypeNot(DormType.NONE)) {
+        for (User user : userRepository.findByDormTypeNotAndReceiveNotificationTypesContains(DormType.NONE, NotificationType.DORMITORY)) {
             // 유저 알림 저장
             UserNotification userNotification = UserNotification.builder()
                     .notification(notification)

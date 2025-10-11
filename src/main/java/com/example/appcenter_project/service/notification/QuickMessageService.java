@@ -46,6 +46,10 @@ public class QuickMessageService {
             throw new CustomException(MY_ROOMMATE_NOT_REGISTERED);
         }
 
+        if (!roommate.getReceiveNotificationTypes().contains(NotificationType.ROOMMATE)) {
+            return;
+        }
+
         // 3. 알림 데이터 생성
         String title = sender.getName() + "님이 퀵메시지를 보냈어요!";
         String body = messageBody;
