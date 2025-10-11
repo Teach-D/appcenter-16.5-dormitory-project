@@ -3,6 +3,8 @@ package com.example.appcenter_project.dto.response.complaint;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDate;
+
 @Getter
 @Builder
 public class ResponseComplaintListDto {
@@ -18,4 +20,5 @@ public class ResponseComplaintListDto {
     private String roomNumber;
     private String bedNumber;
     private String dormType; // 기숙사
+    private LocalDate createDate;
 }

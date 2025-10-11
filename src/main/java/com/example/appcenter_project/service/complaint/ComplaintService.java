@@ -26,6 +26,7 @@ import com.example.appcenter_project.service.notification.AdminComplaintNotifica
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -164,6 +165,7 @@ public class ComplaintService {
                         .floor(c.getFloor())
                         .roomNumber(c.getRoomNumber())
                         .bedNumber(c.getBedNumber())
+                        .createDate(LocalDate.from(c.getCreatedDate()))
                         .build())
                 .collect(Collectors.toList());
     }
