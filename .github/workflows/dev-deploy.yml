@@ -75,9 +75,12 @@ jobs:
             docker volume create inu-dormitory-images || true
             docker volume create inu-dormitory-uploads || true
             docker volume create inu-dormitory-logs || true
+            docker volume create inu-dormitory-redis-data || true
             
+            # Docker Network 생성 및 기존 컨테이너 연결
             docker network create inu-network || true
             docker network connect inu-network inu-dormitory-dev-mysql || true
+            docker network connect inu-network unidorm-dev-redis || true
             
             docker run -d --name ${{ secrets.DOCKER_IMAGE }} \
               --network inu-network \
