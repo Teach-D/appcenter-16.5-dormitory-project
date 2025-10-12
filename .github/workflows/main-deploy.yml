@@ -75,10 +75,12 @@ jobs:
             docker volume create unidorm-images || true
             docker volume create unidorm-uploads || true
             docker volume create unidorm-logs || true
+            docker volume create unidorm-main-redis-data || true
 
             docker network create unidorm-network || true
             docker network connect unidorm-network unidorm-main-mysql || true
-            
+            docker network connect inu-network unidorm-main-redis || true
+
             docker run -d --name ${{ secrets.MAIN_CONTAINER_NAME }} \
               --network unidorm-network \
               -p 8056:8080 \
