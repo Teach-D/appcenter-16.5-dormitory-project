@@ -12,6 +12,7 @@ import com.example.appcenter_project.repository.groupOrder.GroupOrderRepository;
 import com.example.appcenter_project.repository.notification.NotificationRepository;
 import com.example.appcenter_project.repository.notification.UserNotificationRepository;
 import com.example.appcenter_project.service.fcm.FcmMessageService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -21,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@Transactional
 @Component
 @RequiredArgsConstructor
 public class GroupOrderCleanupScheduler {
