@@ -109,10 +109,10 @@ public class UserService {
         if (user.getRoommateCheckList() == null) {
             log.info("RoommateCheckList 존재 여부: false");
 
-            return ResponseUserDto.entityToDto(user, hasUnreadNotifications, false);
+            return ResponseUserDto.entityToDto(user, false, hasUnreadNotifications);
         }
 
-        return ResponseUserDto.entityToDto(user, hasUnreadNotifications, true);
+        return ResponseUserDto.entityToDto(user, true, hasUnreadNotifications);
     }
 
     public ResponseUserDto updateUser(Long userId, RequestUserDto requestUserDto) {
