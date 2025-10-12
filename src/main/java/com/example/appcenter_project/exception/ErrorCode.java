@@ -26,6 +26,10 @@ public enum ErrorCode {
     INVALID_REFRESH_TOKEN(UNAUTHORIZED, 2002, "[User] 유효하지 않은 Refresh Token입니다."),
     REFRESH_TOKEN_USER_NOT_FOUND(NOT_FOUND, 2003, "[User] 해당 Refresh Token과 일치하는 사용자가 없습니다."),
     DUPLICATE_USER_NAME(CONFLICT, 2004, "[User] 중복된 닉네임 입니다."),
+    FCM_TOKEN_NOT_ENABLE(NOT_ACCEPTABLE, 2005, "[User] 해당 Fcm 토큰을 이용한 알림이 실패했습니다." ),
+    USER_KEYWORD_ALREADY_EXISTS(NOT_ACCEPTABLE, 2006, "[User] 해당 키워드는 이미 존재합니다."),
+    USER_KEYWORD_NOT_FOUND(NOT_FOUND, 2007, "[User] 해당 키워드는 이미 존재하지 않습니다."),
+    USER_NOTIFICATION_NOT_FOUND(NOT_FOUND, 2008, "[UserNotification] 해당 유저 알림은 존재하지 않습니다."),
 
     // GROUP_ORDER
     GROUP_ORDER_NOT_FOUND(NOT_FOUND, 3001, "[GroupOrder] 공동구매 글을 찾을 수 없습니다."),
@@ -53,8 +57,12 @@ public enum ErrorCode {
     VALIDATION_FAILED(BAD_REQUEST, 5001, "[Validation] Request에서 요청한 값이 올바르지 않습니다."),
 
     // IMAGE
-    DEFAULT_IMAGE_NOT_FOUND(NOT_FOUND, 6002, "[Image] 기본 이미지를 찾을 수 없습니다."),
     IMAGE_NOT_FOUND(NOT_FOUND, 6001, "[Image] 이미지를 찾을 수 없습니다."),
+    DEFAULT_IMAGE_NOT_FOUND(NOT_FOUND, 6002, "[Image] 기본 이미지를 찾을 수 없습니다."),
+    IMAGE_SAVE_FAIL(FORBIDDEN, 6003, "[Image] 저장에 실패했습니다."),
+    IMAGE_DIRECTORY_SAVE_FAIL(FORBIDDEN, 6003, "[Image] 이미지 폴더 저장에 실패했습니다."),
+
+
 
     // ROOMMATE
     // ROOMMATE
@@ -97,13 +105,35 @@ public enum ErrorCode {
 
     // ANNOUNCEMENT
     ANNOUNCEMENT_NOT_REGISTERED(NOT_FOUND, 12001, "[ANNOUNCEMENT] 해당 공지사항 정보를 찾을 수 없습니다"),
+    ANNOUNCEMENT_FORBIDDEN(FORBIDDEN, 12002, "[ANNOUNCEMENT] 해당 유형의 공지사항에 대한 권한이 없습니다."),
 
     // ATTACHEDFILE
     ATTACHEDFILE_NOT_REGISTERED(NOT_FOUND, 13001, "[ATTACHEDFILE] 해당 파일을 찾을 수 없습니다"),
 
     // CALENDER
-    CALENDER_NOT_REGISTERED(NOT_FOUND, 13001, "[CALENDER] 해당 캘린더 정보를 찾을 수 없습니다");
+    CALENDER_NOT_REGISTERED(NOT_FOUND, 13001, "[CALENDER] 해당 캘린더 정보를 찾을 수 없습니다"),
 
+    // COMPLAINT
+    COMPLAINT_NOT_FOUND(NOT_FOUND, 14001, "[Complaint] 해당 민원을 찾을 수 없습니다."),
+    COMPLAINT_REPLY_NOT_FOUND(NOT_FOUND, 14002, "[Complaint] 해당 민원의 답변을 찾을 수 없습니다."),
+    COMPLAINT_NOT_OWNED_BY_USER(FORBIDDEN, 14003, "[Complaint] 본인이 작성한 민원이 아니기 때문에 수정 및 삭제할 권한이 없습니다."),
+    COMPLAINT_ALREADY_REPLIED(CONFLICT, 14004, "[Complaint] 이미 답변이 등록된 민원입니다."),
+    INVALID_COMPLAINT_TYPE(BAD_REQUEST, 14005, "[Complaint] 올바르지 않은 민원 유형입니다."),
+    INVALID_COMPLAINT_STATUS(BAD_REQUEST, 14006, "[Complaint] 올바르지 않은 민원 상태입니다."),
+    INVALID_DORM_TYPE(BAD_REQUEST, 14007, "[Complaint] 올바르지 않은 기숙사 유형입니다."),
+    COMPLAINT_REQUIRED_FIELD_MISSING(BAD_REQUEST, 14008, "[Complaint] 필수 입력값이 누락되었습니다."),
+
+    // USER_GROUP_ORDER
+    USER_GROUP_ORDER_KEYWORD_NOT_FOUND(NOT_FOUND, 15001, "[UserGroupOrderKeyword] 해당 유저공동구매키워드를 찾을 수 없습니다."),
+    USER_GROUP_ORDER_KEYWORD_ALREADY_EXISTS(FORBIDDEN, 15001, "[UserGroupOrderKeyword] 해당 유저공동구매 키워드가 이미 존재합니다"),
+    USER_GROUP_ORDER_CATEGORY_ALREADY_EXISTS(FORBIDDEN, 15001, "[UserGroupOrderKeyword] 해당 유저공동구매 카테고리가 이미 존재합니다"),
+
+    // POPUP_NOTIFICATION
+    POPUP_NOTIFICATION_NOT_FOUND(NOT_FOUND, 16001, "[PopupNotification] 해당 팝업 공지를 찾을 수 없습니다."),
+
+    // FCM
+    FCM_TOKEN_NOT_FOUND(NOT_FOUND, 17001, "[FCM] 전체 사용자에게 보낼 FCM 토큰이 존재하지 않습니다."),
+    FCM_SEND_FAILED(INTERNAL_SERVER_ERROR, 17002, "[FCM] FCM 메시지 전송 중 오류가 발생했습니다.");
 
     private final HttpStatus httpStatus;
     private final Integer code;

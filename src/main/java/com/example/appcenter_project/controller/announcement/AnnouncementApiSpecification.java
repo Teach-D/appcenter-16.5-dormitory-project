@@ -110,6 +110,7 @@ public interface AnnouncementApiSpecification {
             }
     )
     ResponseEntity<ResponseAnnouncementDto> updateAnnouncement(
+            @AuthenticationPrincipal CustomUserDetails user,
             @Valid @RequestBody
             @Parameter(description = "수정할 공지사항 정보", required = true) RequestAnnouncementDto requestAnnouncementDto,
             @PathVariable
@@ -149,6 +150,7 @@ public interface AnnouncementApiSpecification {
             }
     )
     void deleteAnnouncement(
+            @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable
             @Parameter(description = "공지사항 ID", required = true, example = "1") Long announcementId);
 }

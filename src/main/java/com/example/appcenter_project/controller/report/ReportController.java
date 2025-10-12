@@ -29,7 +29,7 @@ public class ReportController implements ReportApiSpecification {
     }
 
     @PostMapping
-    public void createReport(@Valid @RequestBody RequestReportDto requestReportDto, @AuthenticationPrincipal CustomUserDetails user) {
+    public void createReport(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestBody RequestReportDto requestReportDto) {
         reportService.saveReport(requestReportDto, user.getId());
     }
 

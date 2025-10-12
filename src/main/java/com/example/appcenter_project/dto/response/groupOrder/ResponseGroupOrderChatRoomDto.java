@@ -32,8 +32,6 @@ public class ResponseGroupOrderChatRoomDto {
                 .recentChatContent(userGroupOrderChatRoom.getRecentChatContent())
                 .recentChatTime(userGroupOrderChatRoom.getModifiedDate())
                 .chatRoomType(ChatRoomType.GROUP_ORDER)
-                .currentPeople(userGroupOrderChatRoom.getGroupOrderChatRoom().getGroupOrder().getCurrentPeople())
-                .maxPeople(userGroupOrderChatRoom.getGroupOrderChatRoom().getGroupOrder().getMaxPeople())
                 .deadline(userGroupOrderChatRoom.getGroupOrderChatRoom().getGroupOrder().getDeadline())
                 .build();
     }

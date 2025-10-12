@@ -1,383 +1,396 @@
 package com.example.appcenter_project.service.image;
 
-import com.example.appcenter_project.dto.ImageDto;
 import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.entity.Image;
-import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.exception.ErrorCode;
 import com.example.appcenter_project.repository.image.ImageRepository;
-import com.example.appcenter_project.repository.user.UserRepository;
-import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.sql.Timestamp;
-import java.util.Arrays;
-import java.util.UUID;
+import java.util.*;
 
 import static com.example.appcenter_project.exception.ErrorCode.*;
 
-@Slf4j
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional
 public class ImageService {
 
+    private static final String USER_IMAGE_PREFIX = "user";
+    private static final String TIP_IMAGE_PREFIX = "tip";
+    private static final String GROUP_ORDER_IMAGE_PREFIX = "group_order";
+    private static final String TIME_TABLE_IMAGE_PREFIX = "time_table";
+    private static final String COMPLAINT_IMAGE_PREFIX = "complaint";
+    private static final String COMPLAINT_REPLY_IMAGE_PREFIX = "complaint_reply";
+    private static final String POPUP_NOTIFICATION_IMAGE_PREFIX = "popup_notification";
+    private static final String DEFAULT_IMAGE_EXTENSION = ".jpg";
+
     private final ImageRepository imageRepository;
-    private final UserRepository userRepository;
 
-    @PostConstruct
-    public void initializeDefaultUserImage() {
-        try {
-            // 이미 기본 유저 이미지가 존재하는지 확인
-            boolean defaultImageExists = imageRepository.existsByImageTypeAndIsDefault(ImageType.USER, true);
-
-            if (!defaultImageExists) {
-                createDefaultUserImage();
-            }
-        } catch (Exception e) {
-            log.error("Failed to initialize default user image", e);
-            // 기본 이미지 초기화 실패 시에도 애플리케이션이 시작되도록 함
+    // todo saveImages
+    public void saveImages(ImageType imageType, Long entityId, List<MultipartFile> images) {
+        if (isImagesNotEmpty(images)) {
+            String directoryPath = createDirectory(imageType);
+            createAndSaveImages(directoryPath, images, entityId, imageType);
         }
     }
 
-    private void createDefaultUserImage() {
-        String storagePath = System.getProperty("user.dir") + "/images/user/";
+    // todo saveImage
+    public void saveImage(ImageType imageType, Long entityId, MultipartFile image) {
+        if (isImageNotEmpty(image)) {
+            String directoryPath = createDirectory(imageType);
+            createAndSaveImage(directoryPath, image, entityId, imageType);
+        }
+    }
 
-        // 기본 이미지 파일명
-        String defaultImageFileName = "default_user_image.png";
-        String defaultImagePath = storagePath + defaultImageFileName;
+    // todo findImages
+    public List<ImageLinkDto> findImages(ImageType imageType, Long entityId, HttpServletRequest request) {
+        try {
+            List<Image> images = findImagesByImageTypeAndEntityId(imageType, entityId);
+            return createImageDtos(imageType, request, images);
+        } catch (Exception e) {
+            log.error("타입: {} id: {} 이미지 조회에 실패했습니다", imageType, entityId, e);
+            throw new CustomException(IMAGE_NOT_FOUND);
+        }
+    }
 
-        // 디렉토리가 없으면 생성
-        File directory = new File(storagePath);
-        if (!directory.exists()) {
+    // todo findImage
+    public ImageLinkDto findImage(ImageType imageType, Long entityId, HttpServletRequest request) {
+        try {
+            Optional<Image> image = findImageByImageTypeAndEntityId(imageType, entityId);
+            return createImageDto(imageType, request, image);
+        } catch (Exception e) {
+            log.error("타입: {} id: {} 이미지 조회에 실패했습니다", imageType, entityId, e);
+            throw new CustomException(IMAGE_NOT_FOUND);
+        }
+    }
+
+    public List<String> findStaticImageUrls(ImageType imageType, Long entityId, HttpServletRequest request) {
+        try {
+            return findImagesByImageTypeAndEntityId(imageType, entityId).stream()
+                    .map(findImage -> createImageUrl(imageType, request, findImage))
+                    .toList();
+        } catch (Exception e) {
+            log.error("타입: {} id: {} 이미지 조회에 실패했습니다", imageType, entityId, e);
+            throw new CustomException(IMAGE_NOT_FOUND);
+        }
+    }
+
+    // todo updateImages
+    public void updateImages(ImageType imageType, Long entityId, List<MultipartFile> images) {
+        deleteImages(imageType, entityId);
+        saveImages(imageType, entityId, images);
+    }
+
+    // todo updateImage
+    public void updateImage(ImageType imageType, Long entityId, MultipartFile image) {
+        deleteImage(imageType, entityId);
+        saveImage(imageType, entityId, image);
+    }
+
+    // todo deleteImages
+    public void deleteImages(ImageType imageType, Long entityId) {
+        List<Image> images = findImagesByImageTypeAndEntityId(imageType, entityId);
+        for (Image image : images) {
+            deleteImageFromDirectory(image);
+            deleteImageFromDB(image);
+        }
+    }
+
+    // todo deleteImage
+    public void deleteImage(ImageType imageType, Long entityId) {
+        Optional<Image> image = findImageByImageTypeAndEntityId(imageType, entityId);
+
+        image.ifPresent(img -> {
+            deleteImageFromDirectory(img);
+            deleteImageFromDB(img);
+        });
+    }
+
+    public String findStaticImageUrl(ImageType imageType, Long entityId, HttpServletRequest request) {
+        return findImage(imageType, entityId, request).getImageUrl();
+    }
+
+    private String findStaticImageUrl(ImageType imageType, String imagePath, String appcenterHttpsUrl) {
+        try {
+            String imageName = getImageName(imagePath);
+            if (imageType == ImageType.USER) {
+                imageName = "/images/" + USER_IMAGE_PREFIX + "/" + imageName;
+            }
+            if (imageType == ImageType.TIP) {
+                imageName = "/images/" + TIP_IMAGE_PREFIX + "/" + imageName;
+            }
+            if (imageType == ImageType.GROUP_ORDER) {
+                imageName = "/images/" + GROUP_ORDER_IMAGE_PREFIX + "/" + imageName;
+            }
+            if (imageType == ImageType.TIME_TABLE) {
+                imageName = "/images/" + TIME_TABLE_IMAGE_PREFIX + "/" + imageName;
+            }
+            if (imageType == ImageType.COMPLAINT) {
+                imageName = "/images/" + COMPLAINT_IMAGE_PREFIX + "/" + imageName;
+            }
+            if (imageType == ImageType.COMPLAINT_REPLY) {
+                imageName = "/images/" + COMPLAINT_REPLY_IMAGE_PREFIX + "/" + imageName;
+            }
+            if (imageType == ImageType.POPUP_NOTIFICATION) {
+                imageName = "/images/" + POPUP_NOTIFICATION_IMAGE_PREFIX + "/" + imageName;
+            }
+
+            return appcenterHttpsUrl + imageName;
+        } catch (Exception e) {
+            log.warn("Could not generate static URL for group-order image path: {}", imagePath);
+            return null;
+        }
+    }
+
+    public String getImageUrl(ImageType imageType, Image image, HttpServletRequest request) {
+        return createImageUrl(imageType, request, image);
+    }
+
+    private boolean isImagesNotEmpty(List<MultipartFile> images) {
+        return images != null && !images.isEmpty();
+    }
+
+    private boolean isImageNotEmpty(MultipartFile image) {
+        return image != null && !image.isEmpty();
+    }
+
+
+    private String createDirectory(ImageType imageType) {
+        String directoryPath = createDirectoryPath(imageType);
+        createDirectoryDetail(directoryPath);
+
+        return directoryPath;
+    }
+
+    private String createDirectoryPath(ImageType imageType) {
+        String basePath = System.getProperty("user.dir");
+        String directoryPath = basePath + "/images/";
+
+        if (imageType == ImageType.USER) {
+            directoryPath += (USER_IMAGE_PREFIX + "/");
+        }
+        if (imageType == ImageType.TIP) {
+            directoryPath += (TIP_IMAGE_PREFIX + "/");
+        }
+        if (imageType == ImageType.GROUP_ORDER) {
+            directoryPath += (GROUP_ORDER_IMAGE_PREFIX + "/");
+        }
+        if (imageType == ImageType.TIME_TABLE) {
+            directoryPath += (TIME_TABLE_IMAGE_PREFIX + "/");
+        }
+        if (imageType == ImageType.COMPLAINT) {
+            directoryPath += (COMPLAINT_IMAGE_PREFIX + "/");
+        }
+        if (imageType == ImageType.COMPLAINT_REPLY) {
+            directoryPath += (COMPLAINT_REPLY_IMAGE_PREFIX + "/");
+        }
+        if (imageType == ImageType.POPUP_NOTIFICATION) {
+            directoryPath += (POPUP_NOTIFICATION_IMAGE_PREFIX + "/");
+        }
+
+        return directoryPath;
+    }
+
+    private void createDirectoryDetail(String directoryPath) {
+        File directory = new File(directoryPath);
+        if (doesNotDirectoryExists(directory)) {
             boolean created = directory.mkdirs();
             if (!created) {
-                log.error("Failed to create directory: {}", storagePath);
-                throw new CustomException(IMAGE_NOT_FOUND);
-            }
-        }
-
-        // 기본 이미지 파일이 존재하는지 확인
-        File defaultImageFile = new File(defaultImagePath);
-        if (!defaultImageFile.exists()) {
-            // 클래스패스에서 기본 이미지 복사
-            try {
-                ClassPathResource resource = new ClassPathResource("static/images/user/default_user_image.png");
-                if (resource.exists()) {
-                    try (InputStream inputStream = resource.getInputStream();
-                         FileOutputStream outputStream = new FileOutputStream(defaultImageFile)) {
-
-                        byte[] buffer = new byte[1024];
-                        int bytesRead;
-                        while ((bytesRead = inputStream.read(buffer)) != -1) {
-                            outputStream.write(buffer, 0, bytesRead);
-                        }
-                        log.info("Default image copied from classpath to: {}", defaultImagePath);
-                    }
-                } else {
-                    log.warn("Default image not found in classpath, skipping default image creation");
-                    return; // 기본 이미지가 없으면 그냥 건너뛰기
-                }
-            } catch (IOException e) {
-                log.error("Failed to copy default image from classpath", e);
-                return; // 예외 발생 시 건너뛰기
-            }
-        }
-
-        // 이미지 객체 생성 후 저장
-        Image image = Image.builder()
-                .filePath(defaultImagePath)
-                .imageType(ImageType.USER)
-                .isDefault(true)
-                .build();
-
-        imageRepository.save(image);
-    }
-
-    public void updateUserImage(Long userId, MultipartFile file) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-
-        // 이미 user의 이미지가 defaultImage인 경우
-        if (file != null && user.getImage().getIsDefault()) {
-            // 개발 환경에 맞는 경로 설정
-            String basePath = System.getProperty("user.dir");
-            String imagePath = basePath + "/images/user/";
-
-            // 파일 확장자 추출
-            String fileExtension = getFileExtension(file.getOriginalFilename());
-
-            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-
-            // 사용자별 고유 파일명 생성 (user_${userId}.확장자)
-            String imageFileName = "user_" + userId + timestamp.getTime() + fileExtension;
-
-            // 디렉토리 생성 (존재하지 않으면)
-            File directory = new File(imagePath);
-            if (!directory.exists()) {
-                directory.mkdirs();
-            }
-
-            File destinationFile = new File(imagePath + imageFileName);
-
-            try {
-                file.transferTo(destinationFile);
-
-                // 이미지 객체 생성 후 저장
-                Image image = Image.builder()
-                        .filePath(destinationFile.getAbsolutePath())
-                        .isDefault(false)
-                        .imageType(ImageType.USER)
-                        .build();
-                imageRepository.save(image);
-
-                // user에 image 연관관계 세팅
-                user.updateImage(image);
-
-            } catch (IOException e) {
-                log.error("Failed to save image file for user {}: ", userId, e);
-            }
-        }
-        // 해당 유저의 이미지가 defaultImage가 아닌 이미지일 때 새로운 이미지로 수정하는 경우
-        else if (file != null) {
-            String oldFilePath = user.getImage().getFilePath();
-
-            // 기존 파일 삭제
-            File oldFile = new File(oldFilePath);
-            if (oldFile.exists()) {
-                oldFile.delete();
-            }
-
-            // 새 파일 경로 설정
-            String basePath = System.getProperty("user.dir");
-            String imagePath = basePath + "/images/user/";
-
-            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-            String fileExtension = getFileExtension(file.getOriginalFilename());
-            String imageFileName = "user_" + userId + timestamp.getTime() + fileExtension;
-
-            // 디렉토리 생성 (존재하지 않으면)
-            File directory = new File(imagePath);
-            if (!directory.exists()) {
-                directory.mkdirs();
-            }
-
-            File destinationFile = new File(imagePath + imageFileName);
-
-            Image image = imageRepository.findByFilePath(oldFilePath)
-                    .orElseThrow(() -> new CustomException(IMAGE_NOT_FOUND));
-            image.updateFilePath(destinationFile.getAbsolutePath());
-
-            try {
-                file.transferTo(destinationFile);
-            } catch (IOException e) {
-                log.error("Failed to update image file for user {}: ", userId, e);
+                log.error("폴더를 만드는 것을 실패했습니다: {}", directoryPath);
+                throw new CustomException(IMAGE_DIRECTORY_SAVE_FAIL);
             }
         }
     }
 
-    // 파일 확장자 추출 헬퍼 메소드
+    private static boolean doesNotDirectoryExists(File directory) {
+        return !directory.exists();
+    }
+
+    private void createAndSaveImages(String directoryPath, List<MultipartFile> images, Long entityId, ImageType imageType) {
+        for (MultipartFile imageFile : images) {
+           createAndSaveImage(directoryPath, imageFile, entityId, imageType);
+        }
+    }
+
+    private void createAndSaveImage(String directoryPath, MultipartFile image, Long entityId, ImageType imageType) {
+        String imageName = createImageName(entityId, image, imageType);
+        try {
+            File savedImageInDirectory = saveImageToDirectory(directoryPath, image, imageName);
+            saveImageToDB(entityId, imageType, savedImageInDirectory, imageName);
+        } catch (IOException e) {
+            log.error("{} 타입의 entityId : {} 이미지가 저장 실패했습니다 ", imageType, entityId, e);
+            throw new CustomException(IMAGE_SAVE_FAIL);
+        }
+    }
+
+    private String createImageName(Long entityId, MultipartFile imageFile, ImageType imageType) {
+        String imageName = createFixedImageName(entityId, imageFile);
+
+        if (imageType == ImageType.USER) {
+            imageName = USER_IMAGE_PREFIX + "_" + imageName;
+        }
+        if (imageType == ImageType.TIP) {
+            imageName = TIP_IMAGE_PREFIX + "_" + imageName;
+        }
+        if (imageType == ImageType.GROUP_ORDER) {
+            imageName = GROUP_ORDER_IMAGE_PREFIX + "_" + imageName;
+        }
+        if (imageType == ImageType.TIME_TABLE) {
+            imageName = TIME_TABLE_IMAGE_PREFIX + "_" + imageName;
+        }
+        if (imageType == ImageType.COMPLAINT) {
+            imageName = COMPLAINT_IMAGE_PREFIX + "_" + imageName;
+        }
+        if (imageType == ImageType.COMPLAINT_REPLY) {
+            imageName = COMPLAINT_REPLY_IMAGE_PREFIX + "_" + imageName;
+        }
+        if (imageType == ImageType.POPUP_NOTIFICATION) {
+            imageName = POPUP_NOTIFICATION_IMAGE_PREFIX + "_" + imageName;
+        }
+
+
+        return imageName;
+    }
+
+    private String createFixedImageName(Long entityId, MultipartFile imageFile) {
+        String fileExtension = getFileExtension(imageFile.getOriginalFilename());
+        String uuid = createImageUUID();
+        String imageName = entityId + "_" + uuid + fileExtension;
+        return imageName;
+    }
+
     private String getFileExtension(String fileName) {
         if (fileName == null || fileName.isEmpty()) {
-            return ".jpg"; // 기본 확장자
+            return DEFAULT_IMAGE_EXTENSION;
         }
 
         int lastDotIndex = fileName.lastIndexOf(".");
         if (lastDotIndex == -1) {
-            return ".jpg"; // 확장자가 없으면 기본값
+            return DEFAULT_IMAGE_EXTENSION;
         }
 
         return fileName.substring(lastDotIndex).toLowerCase();
     }
 
-    // 안전한 파일명 생성 (특수문자 제거)
-    private String sanitizeFileName(String fileName) {
-        if (fileName == null) return "image";
-
-        // 특수문자를 언더스코어로 대체
-        return fileName.replaceAll("[^a-zA-Z0-9._-]", "_");
+    private String createImageUUID() {
+        return UUID.randomUUID().toString();
     }
 
-    public ImageDto findUserImageByUserId(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-        Image image = user.getImage();
+    private File saveImageToDirectory(String directoryPath, MultipartFile imageFile, String imageName) throws IOException {
+        File destinationFile = new File(directoryPath + imageName);
+        imageFile.transferTo(destinationFile);
 
-        File file = new File(image.getFilePath());
+        log.info("Image transfer successfully: {}", destinationFile.getAbsolutePath());
+
+        return destinationFile;
+    }
+
+    private void saveImageToDB(Long entityId, ImageType imageType, File destinationFile, String imageName) {
+        Image image = Image.of(destinationFile.getAbsolutePath(), imageName, imageType, entityId);
+        imageRepository.save(image);
+    }
+
+    private List<Image> findImagesByImageTypeAndEntityId(ImageType imageType, Long entityId) {
+        return imageRepository.findByImageTypeAndEntityId(imageType, entityId);
+    }
+
+    private Optional<Image> findImageByImageTypeAndEntityId(ImageType imageType, Long entityId) {
+        List<Image> images = imageRepository.findByImageTypeAndEntityId(imageType, entityId);
+
+        if (images == null || images.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(imageRepository.findByImageTypeAndEntityId(imageType, entityId).get(0));
+    }
+
+    private List<ImageLinkDto> createImageDtos(ImageType imageType, HttpServletRequest request, List<Image> images) {
+        List<ImageLinkDto> imageLinkDtos = new ArrayList<>();
+
+        for (Image image : images) {
+            ImageLinkDto imageLinkDto = createImageDto(imageType, request, image);
+            imageLinkDtos.add(imageLinkDto);
+        }
+
+        return imageLinkDtos;
+    }
+
+    public ImageLinkDto createImageDto(ImageType imageType, HttpServletRequest request, Optional<Image> optionalImage) {
+        if (isOptionalImageNull(optionalImage)) {
+            return ImageLinkDto.ofNull();
+        }
+        Image image = optionalImage.get();
+
+        File findImage = getImageInDirectory(image);
+
+        checkImageAndDirectoryExists(image, findImage);
+
+        String staticImageUrl = createImageUrl(imageType, request, image);
+
+        String contentType = getImageContentType(findImage);
+
+        String imageName = getImageName(image.getImagePath());
+
+        return ImageLinkDto.of(imageName, staticImageUrl, contentType, findImage.length());
+    }
+
+    public ImageLinkDto createImageDto(ImageType imageType, HttpServletRequest request, Image image) {
+        File findImage = getImageInDirectory(image);
+
+        checkImageAndDirectoryExists(image, findImage);
+
+        String staticImageUrl = createImageUrl(imageType, request, image);
+
+        String contentType = getImageContentType(findImage);
+
+        String imageName = getImageName(image.getImagePath());
+
+        return ImageLinkDto.of(imageName, staticImageUrl, contentType, findImage.length());
+    }
+
+    private static boolean isOptionalImageNull(Optional<Image> optionalImage) {
+        return !optionalImage.isPresent();
+    }
+
+    private String createImageUrl(ImageType imageType, HttpServletRequest request, Image image) {
+        String appcenterHttpsUrl = getAppcenterHttpsUrl(request);
+        String staticImageUrl = findStaticImageUrl(imageType, image.getImagePath(), appcenterHttpsUrl).replace("http", "https");
+        return staticImageUrl;
+    }
+
+    private File getImageInDirectory(Image image) {
+        File file = new File(image.getImagePath());
+        return file;
+    }
+
+    private void checkImageAndDirectoryExists(Image image, File file) {
         if (!file.exists()) {
-            throw new CustomException(IMAGE_NOT_FOUND);
-        }
+            log.error("이미지 파일이 존재하지 않습니다 : {}", image.getImagePath());
 
-        Resource resource = new FileSystemResource(file);
-
-        String contentType;
-        try {
-            contentType = Files.probeContentType(file.toPath());
-            if (contentType == null) {
-                contentType = "application/octet-stream";
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Could not determine file type.", e);
-        }
-
-        return ImageDto.builder().resource(resource).contentType(contentType).build();
-    }
-
-    public void setDefaultUserImage(MultipartFile file) {
-        String projectPath = System.getProperty("user.dir") + "\\src\\main\\resources\\static\\images\\user\\";
-        UUID uuid = UUID.randomUUID();
-        String imageFileName = uuid + "_" + file.getOriginalFilename();
-
-        File destinationFile = new File(projectPath + imageFileName);
-
-        try {
-            file.transferTo(destinationFile);
-            // 이미지 객체 생성 후 저장
-            Image image = Image.builder()
-                    .filePath(projectPath + imageFileName)
-                    .imageType(ImageType.USER)
-                    .isDefault(true)
-                    .build();
-            imageRepository.save(image);
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public ImageLinkDto findUserImageUrlByUserId(Long userId, HttpServletRequest request) {
-        try {
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-            Image image = user.getImage();
-            if (image == null) {
-                throw new CustomException(ErrorCode.IMAGE_NOT_FOUND);
+            // 디렉토리 존재 여부도 확인
+            File directory = file.getParentFile();
+            log.error("해당 이미지의 폴더가 존재한다에 대한 여부 : {}", directory.exists());
+            if (directory.exists()) {
+                log.error("폴더는 존재하는데 이미지 파일이 존재하지 않는다: {}", Arrays.toString(directory.listFiles()));
             }
 
-            // 파일 존재 확인
-            File file = new File(image.getFilePath());
-            log.info("Checking file: {}", image.getFilePath());
-            log.info("File exists: {}", file.exists());
-            log.info("File readable: {}", file.canRead());
-            log.info("File size: {}", file.length());
-
-            if (!file.exists()) {
-                log.error("Image file not found: {}", image.getFilePath());
-
-                // 디렉토리 존재 여부도 확인
-                File parentDir = file.getParentFile();
-                log.error("Parent directory exists: {}", parentDir.exists());
-                if (parentDir.exists()) {
-                    log.error("Files in directory: {}", Arrays.toString(parentDir.listFiles()));
-                }
-
-                throw new CustomException(ErrorCode.IMAGE_NOT_FOUND);
-            }
-
-            // 이미지 URL 생성 (기존 API 방식)
-            String baseUrl = getBaseUrl(request);
-            String imageUrl = baseUrl + "/api/images/" + image.getId();
-
-            // 정적 리소스 URL 생성 (직접 접근 가능)
-            String staticImageUrl = getStaticImageUrl(image.getFilePath(), baseUrl);
-            String changeUrl = staticImageUrl.replace("http", "https");
-
-            // 안전한 컨텐츠 타입 확인
-            String contentType = getSafeContentType(file);
-
-            // 실제 파일명 추출 (경로에서 파일명만)
-            String actualFileName = Paths.get(image.getFilePath()).getFileName().toString();
-
-
-            return ImageLinkDto.builder()
-                    .imageUrl(imageUrl)
-                    .fileName(changeUrl)  // 정적 리소스로 직접 접근 가능한 URL
-                    .contentType(contentType)
-                    .fileSize(file.length())
-                    .build();
-        } catch (Exception e) {
-            log.error("Error in findUserImageByUserId: ", e);
-            throw e;
+            throw new CustomException(ErrorCode.IMAGE_NOT_FOUND);
         }
     }
 
-    // 정적 리소스 URL 생성 헬퍼 메소드
-    private String getStaticImageUrl(String filePath, String baseUrl) {
-        try {
-            // 파일 경로에서 static 이후 경로 추출
-            // 예: /path/to/resources/static/images/user/file.png -> /images/user/file.png
-            String staticPath = extractStaticPath(filePath);
-            return baseUrl + staticPath;
-        } catch (Exception e) {
-            log.warn("Could not generate static URL for path: {}", filePath);
-            return null;
-        }
-    }
-
-    // static 폴더 이후의 경로를 추출
-    private String extractStaticPath(String fullPath) {
-        // 실제 파일 경로에서 resources/static 이후의 경로를 추출
-        // 또는 단순히 파일명으로만 구성된 경우 /images/user/ 경로로 조합
-        String fileName = Paths.get(fullPath).getFileName().toString();
-        return "/images/user/" + fileName;
-    }
-
-    // 유틸리티: 안전한 파일 컨텐츠 타입 확인
-    private String getSafeContentType(File file) {
-        try {
-            String fileName = file.getName().toLowerCase();
-
-            // 확장자 기반으로 먼저 판단 (더 안정적)
-            if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) {
-                return "image/jpeg";
-            } else if (fileName.endsWith(".png")) {
-                return "image/png";
-            } else if (fileName.endsWith(".gif")) {
-                return "image/gif";
-            } else if (fileName.endsWith(".webp")) {
-                return "image/webp";
-            } else if (fileName.endsWith(".svg")) {
-                return "image/svg+xml";
-            }
-
-            // Files.probeContentType이 실패할 수 있으므로 try-catch
-            try {
-                String detectedType = Files.probeContentType(file.toPath());
-                if (detectedType != null && detectedType.startsWith("image/")) {
-                    return detectedType;
-                }
-            } catch (Exception e) {
-                log.warn("Could not probe content type for file: {}", file.getName());
-            }
-
-            // 기본값
-            return "image/jpeg";
-
-        } catch (Exception e) {
-            log.error("Error determining content type for file: {}", file.getName(), e);
-            return "image/jpeg"; // 안전한 기본값
-        }
-    }
-
-    // 유틸리티: 베이스 URL 생성
-    private String getBaseUrl(HttpServletRequest request) {
+    private String getAppcenterHttpsUrl(HttpServletRequest request) {
         String scheme = request.getScheme();
         String serverName = request.getServerName();
         int serverPort = request.getServerPort();
@@ -396,287 +409,56 @@ public class ImageService {
         return baseUrl.toString();
     }
 
-    public void updateUserTimeTableImage(Long userId, MultipartFile file) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+    private String getImageContentType(File file) {
+        try {
+            String fileName = file.getName().toLowerCase();
 
-        if (file == null || file.isEmpty()) {
-            throw new CustomException(IMAGE_NOT_FOUND);
-        }
+            if (fileName.endsWith(DEFAULT_IMAGE_EXTENSION) || fileName.endsWith(".jpeg")) {
+                return "image/jpeg";
+            } else if (fileName.endsWith(".png")) {
+                return "image/png";
+            } else if (fileName.endsWith(".gif")) {
+                return "image/gif";
+            } else if (fileName.endsWith(".webp")) {
+                return "image/webp";
+            } else if (fileName.endsWith(".svg")) {
+                return "image/svg+xml";
+            }
 
-        // 기존 시간표 이미지가 있다면 파일 삭제
-        if (user.getTimeTableImage() != null) {
-            String oldFilePath = user.getTimeTableImage().getFilePath();
-            File oldFile = new File(oldFilePath);
-            if (oldFile.exists()) {
-                boolean deleted = oldFile.delete();
-                if (!deleted) {
-                    log.warn("Failed to delete old timetable image file: {}", oldFilePath);
+            try {
+                String detectedType = Files.probeContentType(file.toPath());
+                if (detectedType != null && detectedType.startsWith("image/")) {
+                    return detectedType;
                 }
-            }
-            // 기존 이미지 엔티티 삭제
-            imageRepository.delete(user.getTimeTableImage());
-        }
-
-        // 개발 환경에 맞는 경로 설정 (기존 user 이미지 방식과 동일)
-        String basePath = System.getProperty("user.dir");
-        String imagePath = basePath + "/images/user/timetable/";
-
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        String fileExtension = getFileExtension(file.getOriginalFilename());
-        String imageFileName = "timetable_user_" + userId + timestamp.getTime() + fileExtension;
-
-        // 디렉토리 생성 (존재하지 않으면)
-        File directory = new File(imagePath);
-        if (!directory.exists()) {
-            boolean created = directory.mkdirs();
-            if (!created) {
-                log.error("Failed to create timetable directory: {}", imagePath);
-                throw new CustomException(IMAGE_NOT_FOUND);
-            }
-        }
-
-        File destinationFile = new File(imagePath + imageFileName);
-
-        try {
-            file.transferTo(destinationFile);
-            log.info("Timetable image saved successfully: {}", destinationFile.getAbsolutePath());
-
-            // 이미지 객체 생성 후 저장
-            Image image = Image.builder()
-                    .filePath(destinationFile.getAbsolutePath())
-                    .isDefault(false)
-                    .imageType(ImageType.TIME_TABLE)
-                    .boardId(userId)
-                    .build();
-            imageRepository.save(image);
-
-            // user에 시간표 이미지 연관관계 세팅
-            user.updateTimeTableImage(image);
-
-        } catch (IOException e) {
-            log.error("Failed to save timetable image file for user {}: ", userId, e);
-            throw new CustomException(IMAGE_NOT_FOUND);
-        }
-    }
-
-    public ImageLinkDto findUserTimeTableImageUrlByUserId(Long userId, HttpServletRequest request) {
-        try {
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-            Image timeTableImage = user.getTimeTableImage();
-            if (timeTableImage == null) {
-                throw new CustomException(ErrorCode.IMAGE_NOT_FOUND);
+            } catch (Exception e) {
+                log.warn("파일의 콘텐츠 타입을 감지할 수 없습니다: {}", file.getName());
             }
 
-            // 파일 존재 확인
-            File file = new File(timeTableImage.getFilePath());
-            log.info("Checking timetable file: {}", timeTableImage.getFilePath());
-            log.info("File exists: {}", file.exists());
-
-            if (!file.exists()) {
-                log.error("Timetable image file not found: {}", timeTableImage.getFilePath());
-                throw new CustomException(ErrorCode.IMAGE_NOT_FOUND);
-            }
-
-            // 이미지 URL 생성
-            String baseUrl = getBaseUrl(request);
-            String imageUrl = baseUrl + "/api/images/timetable/" + timeTableImage.getId();
-
-            // 정적 리소스 URL 생성
-            String staticImageUrl = getStaticTimeTableImageUrl(timeTableImage.getFilePath(), baseUrl);
-            String changeUrl = staticImageUrl.replace("http", "https");
-
-            // 안전한 컨텐츠 타입 확인
-            String contentType = getSafeContentType(file);
-
-            return ImageLinkDto.builder()
-                    .imageUrl(imageUrl)
-                    .fileName(changeUrl)
-                    .contentType(contentType)
-                    .fileSize(file.length())
-                    .build();
+            return "image/jpeg";
         } catch (Exception e) {
-            log.error("Error in findUserTimeTableImageUrlByUserId: ", e);
-            throw e;
+            log.error("파일의 콘텐츠 타입을 결정하는 중 오류가 발생했습니다: {}", file.getName(), e);
+            return "image/jpeg";
         }
     }
 
-    public void deleteUserTimeTableImage(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+    private String getImageName(String imagePath) {
+        return Paths.get(imagePath).getFileName().toString();
+    }
 
-        Image timeTableImage = user.getTimeTableImage();
-        if (timeTableImage == null) {
-            throw new CustomException(IMAGE_NOT_FOUND);
-        }
-
-        // 파일 삭제
-        String filePath = timeTableImage.getFilePath();
-        File file = new File(filePath);
-        if (file.exists()) {
-            boolean deleted = file.delete();
-            if (!deleted) {
-                log.warn("Failed to delete timetable image file: {}", filePath);
+    private void deleteImageFromDirectory(Image image) {
+        File findImage = new File(image.getImagePath());
+        if (findImage.exists()) {
+            if (canNotDeleteImage(findImage)) {
+                log.warn("{} 이미지 삭제에 실패했습니다", image.getImagePath());
             }
         }
-
-        // 데이터베이스에서 이미지 엔티티 삭제
-        imageRepository.delete(timeTableImage);
-
-        // 사용자 엔티티에서 시간표 이미지 참조 제거
-        user.removeTimeTableImage();
     }
 
-    // 정적 시간표 이미지 URL 생성 헬퍼 메소드
-    private String getStaticTimeTableImageUrl(String filePath, String baseUrl) {
-        try {
-            String fileName = Paths.get(filePath).getFileName().toString();
-            return baseUrl + "/images/user/timetable/" + fileName;
-        } catch (Exception e) {
-            log.warn("Could not generate static URL for timetable path: {}", filePath);
-            return null;
-        }
+    private boolean canNotDeleteImage(File findImage) {
+        return !findImage.delete();
     }
 
-    // Tip 이미지 업데이트
-    public void updateTipImage(Long tipId, MultipartFile file) {
-        // Tip 엔티티 조회는 TipService에서 하도록 수정할 수도 있지만,
-        // 일단 여기서는 tipId만으로 이미지를 관리하는 방식으로 구현
-
-        if (file == null || file.isEmpty()) {
-            throw new CustomException(IMAGE_NOT_FOUND);
-        }
-
-        // 개발 환경에 맞는 경로 설정
-        String basePath = System.getProperty("user.dir");
-        String imagePath = basePath + "/images/tip/";
-
-        String fileExtension = getFileExtension(file.getOriginalFilename());
-        String imageFileName = "tip_" + tipId + "_" + UUID.randomUUID() + fileExtension;
-
-        // 디렉토리 생성 (존재하지 않으면)
-        File directory = new File(imagePath);
-        if (!directory.exists()) {
-            boolean created = directory.mkdirs();
-            if (!created) {
-                log.error("Failed to create tip image directory: {}", imagePath);
-                throw new CustomException(IMAGE_NOT_FOUND);
-            }
-        }
-
-        File destinationFile = new File(imagePath + imageFileName);
-
-        try {
-            file.transferTo(destinationFile);
-            log.info("Tip image saved successfully: {}", destinationFile.getAbsolutePath());
-
-            // 이미지 객체 생성 후 저장
-            Image image = Image.builder()
-                    .filePath(destinationFile.getAbsolutePath())
-                    .isDefault(false)
-                    .imageType(ImageType.TIP)
-                    .boardId(tipId)
-                    .build();
-            imageRepository.save(image);
-
-        } catch (IOException e) {
-            log.error("Failed to save tip image file for tip {}: ", tipId, e);
-            throw new CustomException(IMAGE_NOT_FOUND);
-        }
-    }
-
-    // Tip 이미지 URL 조회
-    public ImageLinkDto findTipImageUrlByTipId(Long tipId, HttpServletRequest request) {
-        try {
-            // boardId와 imageType으로 이미지 조회
-            Image tipImage = imageRepository.findByBoardIdAndImageType(tipId, ImageType.TIP)
-                    .orElseThrow(() -> new CustomException(ErrorCode.IMAGE_NOT_FOUND));
-
-            // 파일 존재 확인
-            File file = new File(tipImage.getFilePath());
-            log.info("Checking tip image file: {}", tipImage.getFilePath());
-            log.info("File exists: {}", file.exists());
-
-            if (!file.exists()) {
-                log.error("Tip image file not found: {}", tipImage.getFilePath());
-                throw new CustomException(ErrorCode.IMAGE_NOT_FOUND);
-            }
-
-            // 이미지 URL 생성
-            String baseUrl = getBaseUrl(request);
-            String imageUrl = baseUrl + "/api/images/tip/" + tipImage.getId();
-
-            // 정적 리소스 URL 생성
-            String staticImageUrl = getStaticTipImageUrl(tipImage.getFilePath(), baseUrl);
-
-            // 안전한 컨텐츠 타입 확인
-            String contentType = getSafeContentType(file);
-
-            return ImageLinkDto.builder()
-                    .imageUrl(imageUrl)
-                    .fileName(staticImageUrl)
-                    .contentType(contentType)
-                    .fileSize(file.length())
-                    .build();
-        } catch (Exception e) {
-            log.error("Error in findTipImageUrlByTipId: ", e);
-            throw e;
-        }
-    }
-
-    // Tip 이미지 삭제
-    public void deleteTipImage(Long tipId) {
-        Image tipImage = imageRepository.findByBoardIdAndImageType(tipId, ImageType.TIP)
-                .orElseThrow(() -> new CustomException(IMAGE_NOT_FOUND));
-
-        // 파일 삭제
-        String filePath = tipImage.getFilePath();
-        File file = new File(filePath);
-        if (file.exists()) {
-            boolean deleted = file.delete();
-            if (!deleted) {
-                log.warn("Failed to delete tip image file: {}", filePath);
-            }
-        }
-
-        // 데이터베이스에서 이미지 엔티티 삭제
-        imageRepository.delete(tipImage);
-    }
-
-    // 정적 Tip 이미지 URL 생성 헬퍼 메소드
-    private String getStaticTipImageUrl(String filePath, String baseUrl) {
-        try {
-            String fileName = Paths.get(filePath).getFileName().toString();
-            return baseUrl + "/images/tip/" + fileName;
-        } catch (Exception e) {
-            log.warn("Could not generate static URL for tip image path: {}", filePath);
-            return null;
-        }
-    }
-    private String getContentType(File file) {
-        try {
-            String contentType = Files.probeContentType(file.toPath());
-            if (contentType == null) {
-                // 확장자 기반 fallback
-                String fileName = file.getName().toLowerCase();
-                if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) {
-                    return "image/jpeg";
-                } else if (fileName.endsWith(".png")) {
-                    return "image/png";
-                } else if (fileName.endsWith(".gif")) {
-                    return "image/gif";
-                } else if (fileName.endsWith(".webp")) {
-                    return "image/webp";
-                } else {
-                    return "application/octet-stream";
-                }
-            }
-            return contentType;
-        } catch (IOException e) {
-            log.error("Could not determine file type for: {}", file.getPath(), e);
-            throw new RuntimeException("Could not determine file type.", e);
-        }
+    private void deleteImageFromDB(Image image) {
+        imageRepository.delete(image);
     }
 }

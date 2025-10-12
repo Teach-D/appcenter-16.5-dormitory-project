@@ -20,17 +20,23 @@ public class ResponseGroupOrderCommentDto {
     private Long parentId;
     private Boolean isDeleted;
     private String commentAuthorImagePath;
+    private String createDate;
+    private String username;
 
     @Builder.Default
     private List<ResponseGroupOrderCommentDto> childGroupOrderCommentList = new ArrayList<>();
 
-    public static ResponseGroupOrderCommentDto entityToDto(GroupOrderComment groupOrderComment, User user) {
+    public static ResponseGroupOrderCommentDto entityToDto(GroupOrderComment groupOrderComment) {
         return ResponseGroupOrderCommentDto.builder()
-                .reply(groupOrderComment.getReply())
+                .parentId(groupOrderComment.getParentGroupOrderComment() == null ? null : groupOrderComment.getParentGroupOrderComment().getId())
+                .reply(groupOrderComment.isDeleted() ? "삭제된 댓글입니다" : groupOrderComment.getReply())
                 .groupOrderCommentId(groupOrderComment.getId())
-                .userId(user.getId())
+                .userId(groupOrderComment.getUser().getId())
+                .createDate(String.valueOf(groupOrderComment.getCreatedDate()))
+                .username(groupOrderComment.getUser().getName())
                 .build();
     }
+
 
     public void updateReply(String reply) {
         this.reply = reply;

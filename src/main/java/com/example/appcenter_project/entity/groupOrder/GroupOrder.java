@@ -25,7 +25,7 @@ public class GroupOrder extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 30)
+    @Column(nullable = false)
     private String title;
 
     @Enumerated(EnumType.STRING)
@@ -35,14 +35,11 @@ public class GroupOrder extends BaseTimeEntity {
     @Column(nullable = false)
     private Integer price;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false)
     private String link;
 
     @Column(nullable = false)
-    private int currentPeople = 0;
-
-    @Column(nullable = false)
-    private Integer maxPeople;
+    private String openChatLink;
 
     @Column(nullable = false)
     private LocalDateTime deadline;
@@ -53,7 +50,7 @@ public class GroupOrder extends BaseTimeEntity {
     @Column(nullable = false)
     private int groupOrderViewCount = 0;
 
-    @Column(nullable = false, length = 100)
+    @Lob
     private String description;
 
     @Column(nullable = false)
@@ -67,23 +64,19 @@ public class GroupOrder extends BaseTimeEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @OneToMany(orphanRemoval = true)
-    private List<Image> imageList = new ArrayList<>();
-
-    @OneToMany(mappedBy = "groupOrder", orphanRemoval = true)
+    @OneToMany(mappedBy = "groupOrder", cascade = CascadeType.REMOVE)
     private List<GroupOrderLike> groupOrderLikeList = new ArrayList<>();
 
-    @OneToMany(mappedBy = "groupOrder", orphanRemoval = true)
+    @OneToMany(mappedBy = "groupOrder", cascade = CascadeType.REMOVE)
     private List<GroupOrderComment> groupOrderCommentList = new ArrayList<>();
 
     @Builder
-    public GroupOrder(String title, GroupOrderType groupOrderType, Integer price, String link, int currentPeople, int maxPeople, LocalDateTime deadline, int groupOrderLike, String description, User user, GroupOrderChatRoom groupOrderChatRoom, int groupOrderViewCount) {
+    public GroupOrder(String title, GroupOrderType groupOrderType, Integer price, String link, String openChatLink, int currentPeople, int maxPeople, LocalDateTime deadline, int groupOrderLike, String description, User user, GroupOrderChatRoom groupOrderChatRoom, int groupOrderViewCount) {
         this.title = title;
         this.groupOrderType = groupOrderType;
         this.price = price;
         this.link = link;
-        this.currentPeople = currentPeople;
-        this.maxPeople = maxPeople;
+        this.openChatLink = openChatLink;
         this.deadline = deadline;
         this.groupOrderLike = groupOrderLike;
         this.groupOrderViewCount = groupOrderViewCount;
@@ -97,7 +90,7 @@ public class GroupOrder extends BaseTimeEntity {
         this.groupOrderType = requestGroupOrderDto.getGroupOrderType();
         this.price = requestGroupOrderDto.getPrice();
         this.link = requestGroupOrderDto.getLink();
-        this.maxPeople = requestGroupOrderDto.getMaxPeople();
+        this.openChatLink = requestGroupOrderDto.getOpenChatLink();
         this.deadline = requestGroupOrderDto.getDeadline();
         this.description = requestGroupOrderDto.getDescription();
     }
@@ -108,10 +101,6 @@ public class GroupOrder extends BaseTimeEntity {
 
     public void updateGroupOrderChatRoom(GroupOrderChatRoom groupOrderChatRoom) {
         this.groupOrderChatRoom = groupOrderChatRoom;
-    }
-
-    public void plusCurrentPeople() {
-        this.currentPeople += 1;
     }
 
     public Integer minusLike() {

@@ -6,6 +6,7 @@ import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import com.example.appcenter_project.exception.CustomException;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
@@ -20,48 +21,35 @@ import static com.example.appcenter_project.exception.ErrorCode.IMAGE_NOT_FOUND;
 public class ResponseGroupOrderDto extends ResponseBoardDto {
     private String deadline;
     private int price;
-    private int currentPeople;
-    private int maxPeople;
     private GroupOrderType groupOrderType;
     private boolean isRecruitmentComplete;
+    private int viewCount;
 
     public ResponseGroupOrderDto(Long id, String title, String type, int price, String link,
-                                 int currentPeople, int maxPeople, String deadline,
-                                 int groupOrderLike, String description, LocalDateTime createTime, String fileName, String groupOrderType, boolean isRecruitmentComplete) {
-        super(id, title, type, createTime, fileName);
+                                 int currentPeople, int maxPeople, String deadline, int viewCount,
+                                 int groupOrderLike, String description, LocalDateTime createTime, String imagePath, String groupOrderType, boolean isRecruitmentComplete) {
+        super(id, title, type, createTime, imagePath);
         this.price = price;
-        this.currentPeople = currentPeople;
-        this.maxPeople = maxPeople;
         this.deadline = deadline;
         // from() 메서드를 사용하여 안전하게 변환
         this.groupOrderType = GroupOrderType.from(groupOrderType);
+        this.viewCount = viewCount;
         this.isRecruitmentComplete = isRecruitmentComplete;
     }
 
     @Builder
-    public ResponseGroupOrderDto(Long id, String title, String type, LocalDateTime createTime, String fileName,
-                                 String deadline, int price, int currentPeople, int maxPeople, String groupOrderType, boolean isRecruitmentComplete) {
-        super(id, title, type, createTime, fileName);
+    public ResponseGroupOrderDto(Long id, String title, String type, LocalDateTime createTime, String imagePath, int viewCount,
+                                 String deadline, int price, String groupOrderType, boolean isRecruitmentComplete) {
+        super(id, title, type, createTime, imagePath);
         this.deadline = deadline;
         this.price = price;
-        this.currentPeople = currentPeople;
-        this.maxPeople = maxPeople;
+        this.viewCount = viewCount;
         // from() 메서드를 사용하여 안전하게 변환
         this.groupOrderType = GroupOrderType.from(groupOrderType);
         this.isRecruitmentComplete = isRecruitmentComplete;
     }
 
-    // Keep your existing entityToDto method unchanged
-    public static ResponseGroupOrderDto entityToDto(GroupOrder groupOrder) {
-
-        String fileName = null;
-
-        // 이미지 리스트가 존재하고 비어있지 않은 경우에만 처리
-        if (groupOrder.getImageList() != null && !groupOrder.getImageList().isEmpty()) {
-            Image image = groupOrder.getImageList().get(0);
-            String fullPath = image.getFilePath();
-            fileName = extractFileName(fullPath);
-        }
+    public static ResponseGroupOrderDto entityToDto(GroupOrder groupOrder, String imagePath) {
 
         // groupOrderType이 null인 경우 기본값 설정
         String groupOrderTypeStr = groupOrder.getGroupOrderType() != null
@@ -74,52 +62,11 @@ public class ResponseGroupOrderDto extends ResponseBoardDto {
                 .type("GROUP_ORDER")
                 .deadline(String.valueOf(groupOrder.getDeadline()))
                 .price(groupOrder.getPrice())
-                .currentPeople(groupOrder.getCurrentPeople())
-                .maxPeople(groupOrder.getMaxPeople())
                 .createTime(groupOrder.getCreatedDate())
-                .fileName(fileName)
+                .imagePath(imagePath)
+                .viewCount(groupOrder.getGroupOrderViewCount())
                 .groupOrderType(groupOrderTypeStr)
                 .isRecruitmentComplete(groupOrder.isRecruitmentComplete())
                 .build();
     }
-
-    public static ResponseGroupOrderDto entityToDto(GroupOrder groupOrder, String fileName) {
-
-        // groupOrderType이 null인 경우 기본값 설정
-        String groupOrderTypeStr = groupOrder.getGroupOrderType() != null
-                ? groupOrder.getGroupOrderType().name()
-                : GroupOrderType.ETC.name();
-
-        return ResponseGroupOrderDto.builder()
-                .id(groupOrder.getId())
-                .title(groupOrder.getTitle())
-                .type("GROUP_ORDER")
-                .deadline(String.valueOf(groupOrder.getDeadline()))
-                .price(groupOrder.getPrice())
-                .currentPeople(groupOrder.getCurrentPeople())
-                .maxPeople(groupOrder.getMaxPeople())
-                .createTime(groupOrder.getCreatedDate())
-                .fileName(fileName)
-                .groupOrderType(groupOrderTypeStr)
-                .isRecruitmentComplete(groupOrder.isRecruitmentComplete())
-                .build();
-    }
-
-    private static String extractFileName(String fullPath) {
-        String markerWin = "group-order\\";
-        String markerUnix = "group-order/";
-
-        int index = fullPath.lastIndexOf(markerWin);
-        if (index != -1) {
-            return fullPath.substring(index + markerWin.length());
-        }
-
-        index = fullPath.lastIndexOf(markerUnix);
-        if (index != -1) {
-            return fullPath.substring(index + markerUnix.length());
-        }
-
-        return Paths.get(fullPath).getFileName().toString();
-    }
-
 }

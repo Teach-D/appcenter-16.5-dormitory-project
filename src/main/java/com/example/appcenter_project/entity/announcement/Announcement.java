@@ -1,10 +1,10 @@
 package com.example.appcenter_project.entity.announcement;
 
-import com.example.appcenter_project.dto.request.announement.RequestAnnouncementDto;
 import com.example.appcenter_project.entity.BaseTimeEntity;
+import com.example.appcenter_project.entity.file.AttachedFile;
+import com.example.appcenter_project.enums.announcement.AnnouncementType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Inheritance(strategy = InheritanceType.JOINED)
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -21,33 +22,17 @@ public class Announcement extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String title;
-    private String writer;
-    private int viewCount = 0;
-    private Boolean isEmergency = false;
+    protected String title;
+    protected String writer;
+    protected int viewCount = 0;
 
-    @Lob
-    private String content;
+    @Enumerated(EnumType.STRING)
+    private AnnouncementType announcementType;
 
-    @OneToMany(mappedBy = "announcement", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AttachedFile> attachedFiles = new ArrayList<>();
-
-    @Builder
-    public Announcement(String title, String writer, String content, boolean isEmergency) {
+    public Announcement(String title, String writer, int viewCount, AnnouncementType announcementType, List<AttachedFile> attachedFiles) {
         this.title = title;
         this.writer = writer;
-        this.content = content;
-        this.isEmergency = isEmergency;
-    }
-
-    public void plusViewCount() {
-        this.viewCount++;
-    }
-
-    public void update(RequestAnnouncementDto requestAnnouncementDto) {
-        this.title = requestAnnouncementDto.getTitle();
-        this.writer = requestAnnouncementDto.getWriter();
-        this.content = requestAnnouncementDto.getContent();
-        this.isEmergency = requestAnnouncementDto.getIsEmergency();
+        this.viewCount = viewCount;
+        this.announcementType = announcementType;
     }
 }

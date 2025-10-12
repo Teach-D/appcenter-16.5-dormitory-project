@@ -1,22 +1,18 @@
 package com.example.appcenter_project.service.user;
 
+import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.dto.request.user.RequestUserDto;
+import com.example.appcenter_project.dto.request.user.RequestUserPushNotification;
+import com.example.appcenter_project.dto.request.user.RequestUserRole;
 import com.example.appcenter_project.dto.request.user.SignupUser;
 import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto;
-import com.example.appcenter_project.dto.response.like.ResponseLikeDto;
 import com.example.appcenter_project.dto.response.roommate.ResponseRoommatePostDto;
-import com.example.appcenter_project.dto.response.tip.ResponseTipDetailDto;
 import com.example.appcenter_project.dto.response.tip.ResponseTipDto;
 import com.example.appcenter_project.dto.response.user.ResponseBoardDto;
 import com.example.appcenter_project.dto.response.user.ResponseLoginDto;
 import com.example.appcenter_project.dto.response.user.ResponseUserDto;
-import com.example.appcenter_project.entity.Image;
-import com.example.appcenter_project.entity.groupOrder.GroupOrder;
-import com.example.appcenter_project.entity.like.GroupOrderLike;
-import com.example.appcenter_project.entity.like.RoommateBoardLike;
-import com.example.appcenter_project.entity.like.TipLike;
-import com.example.appcenter_project.entity.roommate.RoommateBoard;
-import com.example.appcenter_project.entity.tip.Tip;
+import com.example.appcenter_project.dto.response.user.ResponseUserRole;
+import com.example.appcenter_project.entity.notification.UserNotification;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.enums.user.Role;
@@ -31,21 +27,22 @@ import com.example.appcenter_project.repository.like.TipLikeRepository;
 import com.example.appcenter_project.repository.user.SchoolLoginRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import com.example.appcenter_project.security.jwt.JwtTokenProvider;
+import com.example.appcenter_project.service.fcm.FcmMessageService;
+import com.example.appcenter_project.service.fcm.FcmTokenService;
 import com.example.appcenter_project.service.groupOrder.GroupOrderQueryService;
+import com.example.appcenter_project.service.image.ImageService;
 import com.example.appcenter_project.service.roommate.RoommateQueryService;
 import com.example.appcenter_project.service.tip.TipQueryService;
-import com.example.appcenter_project.service.tip.TipService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.example.appcenter_project.exception.ErrorCode.*;
 
@@ -70,12 +67,12 @@ public class UserService {
     private final GroupOrderQueryService groupOrderQueryService;
     private final TipQueryService tipQueryService;
     private final RoommateQueryService roommateQueryService;
+    private final ImageService imageService;
+    private final FcmTokenService fcmTokenService;
+    private final FcmMessageService fcmMessageService;
 
     public ResponseLoginDto saveUser(SignupUser signupUser) {
         boolean existsByStudentNumber = userRepository.existsByStudentNumber(signupUser.getStudentNumber());
-
-        Image defaultImage = imageRepository.findAllByImageTypeAndIsDefault(ImageType.USER, true)
-                .orElseThrow(() -> new CustomException(DEFAULT_IMAGE_NOT_FOUND));
 
         // studentNumber가 "admin"으로 시작하지 않는 경우만 DB 저장 로직 실행
         if (!signupUser.getStudentNumber().startsWith("admin")) {
@@ -85,7 +82,7 @@ public class UserService {
                         .studentNumber(signupUser.getStudentNumber())
                         .password(passwordEncoder.encode(signupUser.getPassword())) // null 방지 + 인코딩 필수
                         .penalty(0) // null 방지
-                        .image(defaultImage)
+                        .image(null)
                         .role(Role.ROLE_USER)
                         .penalty(0)
                         .build();
@@ -97,58 +94,70 @@ public class UserService {
     }
 
     public ResponseUserDto findUserByUserId(Long userId) {
-        log.info("[findUserByUserId] 사용자 정보 조회 요청 - userId={}", userId);
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
-        if (user.getRoommateCheckList() == null) {
-            log.info("[findUserByUserId] RoommateCheckList 존재 여부: false");
+        boolean hasUnreadNotifications = false;
 
-            return ResponseUserDto.entityToDto(user, false);
+        for (UserNotification userNotification : user.getUserNotifications()) {
+            // 읽지 않은 알림이 하나라도 있을 때
+            if (!userNotification.isRead()) {
+                hasUnreadNotifications = true;
+            }
         }
 
-        return ResponseUserDto.entityToDto(user, true);
+        if (user.getRoommateCheckList() == null) {
+            log.info("RoommateCheckList 존재 여부: false");
+
+            return ResponseUserDto.entityToDto(user, false, hasUnreadNotifications);
+        }
+
+        return ResponseUserDto.entityToDto(user, true, hasUnreadNotifications);
     }
 
     public ResponseUserDto updateUser(Long userId, RequestUserDto requestUserDto) {
-        log.info("[updateUser] 사용자 정보 수정 요청 시작 - userId={}", userId);
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
-        // 기존 사용자의 이름과 다른 경우에만 중복 체크
+/*        // 기존 사용자의 이름과 다른 경우에만 중복 체크
         // 기존 사용자의 이름이 null이 아니고, 새로운 이름과 다른 경우에만 중복 체크
         if (user.getName() != null &&
                 !user.getName().equals(requestUserDto.getName()) &&
                 userRepository.existsByName(requestUserDto.getName())) {
             throw new CustomException(DUPLICATE_USER_NAME);
-        }
+        }*/
 
         user.update(requestUserDto);
-        log.info("[updateUser] 사용자 정보 업데이트 완료 - userId={}", userId);
 
-        return ResponseUserDto.entityToDto(user);
+        for (UserNotification userNotification : user.getUserNotifications()) {
+            // 읽지 않은 알림이 하나라도 있을 때
+            if (!userNotification.isRead()) {
+                return ResponseUserDto.entityToDto(user, true);
+            }
+        }
+
+        // 모든 알림을 읽었을 때
+        return ResponseUserDto.entityToDto(user, false);
     }
 
     public void deleteUser(Long userId) {
         if (!userRepository.existsById(userId)) {
             throw new CustomException(USER_NOT_FOUND);
         }
+        
         userRepository.deleteById(userId);
     }
 
     public ResponseLoginDto login(SignupUser signupUser) {
         String studentNumber = signupUser.getStudentNumber();
-
-        // admin으로 시작하지 않는 경우에만 학교 로그인 체크
+/*        // admin으로 시작하지 않는 경우에만 학교 로그인 체크
         if (!studentNumber.startsWith("admin")) {
             String loginCheck = schoolLoginRepository.loginCheck(studentNumber, signupUser.getPassword());
 
             if (Objects.equals(loginCheck, "N")) {
                 throw new CustomException(USER_NOT_FOUND);
             }
-        }
+        }*/
 
         log.info("[로그인 시도] loginId: {}", studentNumber);
 
@@ -159,72 +168,10 @@ public class UserService {
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId(), user.getStudentNumber(), String.valueOf(user.getRole()));
         user.updateRefreshToken(refreshToken);
 
-        return new ResponseLoginDto(accessToken, refreshToken);
-    }
-
-    public List<ResponseBoardDto> findLikeByUserId(Long userId) {
-        log.info("[findLikeByUserId] userId={}의 좋아요 게시물 조회 시작", userId);
-
-        List<ResponseBoardDto> responseBoardDtoList = new ArrayList<>();
-
-//        List<ResponseGroupOrderDto> likeGroupOrders = groupOrderMapper.findLikeGroupOrders(userId);
-//        responseBoardDtoList.addAll(likeGroupOrders);
-
-        List<ResponseRoommatePostDto> responseLikeDtoList = new ArrayList<>();
-        // N+1 문제 해결: Fetch Join 사용
-        List<RoommateBoardLike> likeRoommateBoardLikes = roommateBoardLikeRepository.findByUserId(userId);
-        for (RoommateBoardLike likeRoommateBoardLike : likeRoommateBoardLikes) {
-            RoommateBoard roommateBoard = likeRoommateBoardLike.getRoommateBoard();
-            ResponseRoommatePostDto responseRoommatePostDto = ResponseRoommatePostDto.entityToDto(roommateBoard, false,null);
-            responseLikeDtoList.add(responseRoommatePostDto);
-        }
-
-        List<ResponseTipDto> responseTipDtos = new ArrayList<>();
-        // Tip N+1 문제 해결: Fetch Join 사용
-        List<TipLike> tipLikes = tipLikeRepository.findByUserIdWithTip(userId);
-        for (TipLike tipLike : tipLikes) {
-            Tip tip = tipLike.getTip();
-            ResponseTipDto responseTipDto = ResponseTipDto.entityToDto(tip);
-            responseTipDtos.add(responseTipDto);
-        }
-
-        List<ResponseGroupOrderDto> responseGroupOrderDtos = new ArrayList<>();
-        List<GroupOrderLike> groupOrderLikes = groupOrderLikeRepository.findByUserId(userId);
-        for (GroupOrderLike groupOrderLike : groupOrderLikes) {
-            GroupOrder groupOrder = groupOrderLike.getGroupOrder();
-            ResponseGroupOrderDto responseGroupOrderDto = ResponseGroupOrderDto.entityToDto(groupOrder);
-            responseGroupOrderDtos.add(responseGroupOrderDto);
-        }
-
-        responseBoardDtoList.addAll(responseGroupOrderDtos);
-        responseBoardDtoList.addAll(responseLikeDtoList);
-        responseBoardDtoList.addAll(responseTipDtos);
-
-        log.info("[findLikeByUserId] 총 좋아요 게시물 수: {}", responseBoardDtoList.size());
-
-        // 로그 추가로 디버깅
-        log.debug("[findLikeByUserId] 정렬 전 데이터:");
-        for (ResponseBoardDto board : responseBoardDtoList) {
-            log.debug("  - Type: {}, CreateDate: {}, Title: {}", board.getType(), board.getCreateDate(), board.getTitle());
-        }
-
-        // 최신순 정렬 (createTime이 가장 최근인 것부터)
-        responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateDate).reversed());
-
-        // 정렬 후 로그
-        log.debug("[findLikeByUserId] 정렬 후 데이터:");
-        for (ResponseBoardDto board : responseBoardDtoList) {
-            log.debug("  - Type: {}, CreateDate: {}, Title: {}", board.getType(), board.getCreateDate(), board.getTitle());
-        }
-
-        log.info("[findLikeByUserId] userId={}의 좋아요 게시물 조회 완료", userId);
-
-        return responseBoardDtoList;
+        return new ResponseLoginDto(accessToken, refreshToken, user.getRole().toString());
     }
 
     public List<ResponseBoardDto> findLikeByUserId_optimization(Long userId, HttpServletRequest request) {
-        log.info("[findLikeByUserId] userId={}의 좋아요 게시물 조회 시작", userId);
-
         List<ResponseBoardDto> responseBoardDtoList = new ArrayList<>();
 
         List<ResponseRoommatePostDto> responseLikeDtoList = roommateQueryService.findGroupOrderDtosWithImages(userId);
@@ -238,40 +185,10 @@ public class UserService {
         // 최신순 정렬 (createTime이 가장 최근인 것부터)
         responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateDate).reversed());
 
-        log.info("[findLikeByUserId] userId={}의 좋아요 게시물 조회 완료", userId);
-
-        return responseBoardDtoList;
-    }
-
-    public List<ResponseBoardDto> findBoardByUserId(Long userId) {
-        log.info("[findBoardByUserId] userId={}의 작성한 게시물 조회 시작", userId);
-
-        List<ResponseBoardDto> responseBoardDtoList = new ArrayList<>();
-
-        List<ResponseTipDto> tipsByUserId = tipMapper.findTipsByUserId(userId);
-        log.info("[findBoardByUserId] Tip 게시물 개수: {}", tipsByUserId.size());
-
-        List<ResponseGroupOrderDto> responseGroupOrderDtos = new ArrayList<>();
-        List<GroupOrder> groupOrders = groupOrderRepository.findByUserId(userId);
-        for (GroupOrder groupOrder : groupOrders) {
-            ResponseGroupOrderDto responseGroupOrderDto = ResponseGroupOrderDto.entityToDto(groupOrder);
-            responseGroupOrderDtos.add(responseGroupOrderDto);
-        }
-
-        responseBoardDtoList.addAll(responseGroupOrderDtos);
-        responseBoardDtoList.addAll(tipsByUserId);
-
-        // 최신순 정렬 (createTime이 가장 최근인 것부터)
-        responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateDate).reversed());
-
-        log.info("[findBoardByUserId] userId={}의 게시물 조회 완료", userId);
-
         return responseBoardDtoList;
     }
 
     public List<ResponseBoardDto> findBoardByUserId_optimization(Long userId, HttpServletRequest request) {
-        log.info("[findBoardByUserId] userId={}의 작성한 게시물 조회 시작", userId);
-
         List<ResponseBoardDto> responseBoardDtoList = new ArrayList<>();
 
         List<ResponseTipDto> responseTipDtos = tipQueryService.findTipDtosWithImages(userId, request);
@@ -283,8 +200,6 @@ public class UserService {
 
         // 최신순 정렬 (createTime이 가장 최근인 것부터)
         responseBoardDtoList.sort(Comparator.comparing(ResponseBoardDto::getCreateDate).reversed());
-
-        log.info("[findBoardByUserId] userId={}의 게시물 조회 완료", userId);
 
         return responseBoardDtoList;
     }
@@ -303,5 +218,73 @@ public class UserService {
                 user.getStudentNumber(),
                 String.valueOf(user.getRole())
         );
+    }
+
+    public void changeUserRole(RequestUserRole requestUserStudentNumber) {
+        User user = userRepository.findByStudentNumber(requestUserStudentNumber.getStudentNumber()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        
+        // 유저 권한 변경, 관리자/서포터즈로는 변경 불가능
+        Role role = Role.from(requestUserStudentNumber.getRole());
+        if (role == Role.ROLE_USER || role == Role.ROLE_DORM_LIFE_MANAGER
+                || role == Role.ROLE_DORM_ROOMMATE_MANAGER || role == Role.ROLE_DORM_MANAGER) {
+            user.changeRole(role);
+        }
+    }
+
+    public List<ResponseUserRole> findUserDormitoryRole() {
+        List<Role> roles = new ArrayList<>();
+        roles.add(Role.ROLE_DORM_LIFE_MANAGER);
+        roles.add(Role.ROLE_DORM_ROOMMATE_MANAGER);
+        roles.add(Role.ROLE_DORM_MANAGER);
+
+        List<User> users = userRepository.findByRoleIn(roles);
+
+        return users.stream()
+                .map(user -> ResponseUserRole.builder()
+                        .studentNumber(user.getStudentNumber())
+                        .role(user.getRole().getDescription())
+                        .build())
+                .toList();
+    }
+
+    public void updateAgreement(Long userId, boolean isTermsAgreed, boolean isPrivacyAgreed) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        user.updateTermsAgreed(isTermsAgreed);
+        user.updatePrivacyAgreed(isPrivacyAgreed);
+    }
+
+    public ImageLinkDto findUserImage(Long userId, HttpServletRequest request) {
+        return imageService.findImage(ImageType.USER, userId, request);
+    }
+
+    public void updateUserImage(Long userId, MultipartFile image) {
+        imageService.updateImage(ImageType.USER, userId, image);
+    }
+
+    public void updateUserTimeTableImage(Long userId, MultipartFile image) {
+        imageService.updateImage(ImageType.TIME_TABLE, userId, image);
+    }
+
+    public ImageLinkDto findUserTimeTableImage(Long userId, HttpServletRequest request) {
+        return imageService.findImage(ImageType.TIME_TABLE, userId, request);
+    }
+
+    public void deleteUserTimeTableImage(Long userId) {
+        imageService.deleteImage(ImageType.TIME_TABLE, userId);
+    }
+
+    public List<ResponseUserDto> findAllUser() {
+        return userRepository.findAll().stream()
+                .map(ResponseUserDto::entityToDtoNull)
+                .toList();
+    }
+
+    public void sendPushNotification(RequestUserPushNotification requestUserPushNotification) {
+        for (Long userId : requestUserPushNotification.getUserIds()) {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+            fcmMessageService.sendNotification(user, requestUserPushNotification.getTitle(), requestUserPushNotification.getBody());
+        }
+
     }
 }

@@ -28,7 +28,21 @@ public class FcmController implements FcmApiSpecification{
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/send")
+    // 전체 사용자에게 알림 전송 (user_id가 NULL인 토큰도 포함)
+    @PostMapping("/send/all")
+    public ResponseEntity<ResponseFcmMessageDto> sendMessageToAllUsers(
+            @RequestBody RequestFcmMessageDto requestDto
+    ) {
+        ResponseFcmMessageDto response = fcmMessageService.sendNotificationToAllUsers(
+                requestDto.getTitle(),
+                requestDto.getBody()
+        );
+        return ResponseEntity.ok(response);
+    }
+
+
+
+/*    @PostMapping("/send")
     public ResponseEntity<ResponseFcmMessageDto> sendMessage(
             @RequestBody RequestFcmMessageDto requestDto
     ) {
@@ -44,5 +58,5 @@ public class FcmController implements FcmApiSpecification{
                         .status("SUCCESS")
                         .build()
         );
-    }
+    }*/
 }

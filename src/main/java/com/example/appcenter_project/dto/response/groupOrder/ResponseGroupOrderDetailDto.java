@@ -19,23 +19,21 @@ public class ResponseGroupOrderDetailDto {
     private String createDate;
     private GroupOrderType groupOrderType;
     private int price;
-    private int currentPeople;
-    private int maxPeople;
-    private int groupOrderLike;
+    private int likeCount;
+    private int viewCount;
     private String description;
     private String link;
+    private String openChatLink;
     private boolean isMyPost = false;
     private String authorImagePath;
+    private String username;
     private boolean isCheckLikeCurrentUser = false;
-    private float authorRating = 5.0f;
-
-    @Builder.Default
-    private List<Long> groupOrderLikeUserList = new ArrayList<>();
+    private boolean isRecruitmentComplete;
 
     @Builder.Default
     private List<ResponseGroupOrderCommentDto> groupOrderCommentDtoList = new ArrayList<>();
 
-    public static ResponseGroupOrderDetailDto detailEntityToDto(GroupOrder groupOrder, List<ResponseGroupOrderCommentDto> responseGroupOrderCommentDto, List<Long> groupOrderLikeUserList) {
+    public static ResponseGroupOrderDetailDto entityToDto(GroupOrder groupOrder, List<ResponseGroupOrderCommentDto> responseGroupOrderCommentDto) {
         return ResponseGroupOrderDetailDto.builder()
                 .id(groupOrder.getId())
                 .title(groupOrder.getTitle())
@@ -43,13 +41,14 @@ public class ResponseGroupOrderDetailDto {
                 .createDate(String.valueOf(groupOrder.getCreatedDate()))
                 .groupOrderType(groupOrder.getGroupOrderType())
                 .price(groupOrder.getPrice())
-                .currentPeople(groupOrder.getCurrentPeople())
-                .maxPeople(groupOrder.getMaxPeople())
-                .groupOrderLike(groupOrder.getGroupOrderLike())
+                .likeCount(groupOrder.getGroupOrderLike())
+                .viewCount(groupOrder.getGroupOrderViewCount())
                 .description(groupOrder.getDescription())
                 .link(groupOrder.getLink())
+                .openChatLink(groupOrder.getOpenChatLink())
                 .groupOrderCommentDtoList(responseGroupOrderCommentDto)
-                .groupOrderLikeUserList(groupOrderLikeUserList)
+                .username(groupOrder.getUser().getName())
+                .isRecruitmentComplete(groupOrder.isRecruitmentComplete())
                 .build();
     }
 
@@ -69,7 +68,4 @@ public class ResponseGroupOrderDetailDto {
         this.isCheckLikeCurrentUser = check;
     }
 
-    public void updateAuthorRating(float rating) {
-        this.authorRating = rating;
-    }
 }

@@ -4,9 +4,11 @@ import com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderD
 import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.groupOrder.GroupOrder;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
+import com.example.appcenter_project.enums.image.ImageType;
 import com.example.appcenter_project.repository.groupOrder.GroupOrderRepository;
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.like.GroupOrderLikeRepository;
+import com.example.appcenter_project.service.image.ImageService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,7 +29,7 @@ public class GroupOrderQueryService {
     private final ImageRepository imageRepository;
     private final GroupOrderService groupOrderService;
     private final GroupOrderLikeRepository groupOrderLikeRepository;
-
+    private final ImageService imageService;
     /**
      * GroupOrder + Image 최적화 조회
      * N+1 문제 해결을 위한 전용 서비스
@@ -48,12 +50,12 @@ public class GroupOrderQueryService {
                             .map(images -> images.get(0))
                             .orElse(null);
 
-                    String fileName = null;
+                    String imageUrl = null;
                     if (image != null) {
-                        fileName = groupOrderService.getGroupOrderImage(image, request).getFileName();
+                        imageUrl = imageService.getImageUrl(ImageType.GROUP_ORDER, image, request);
                     }
 
-                    return ResponseGroupOrderDto.entityToDto(groupOrder, fileName);
+                    return ResponseGroupOrderDto.entityToDto(groupOrder, imageUrl);
                 })
                 .collect(Collectors.toList());
     }
@@ -79,20 +81,20 @@ public class GroupOrderQueryService {
                             .map(images -> images.get(0))
                             .orElse(null);
 
-                    String fileName = null;
+                    String imageUrl = null;
                     if (image != null) {
-                        fileName = groupOrderService.getGroupOrderImage(image, request).getFileName();
+                        imageUrl = imageService.getImageUrl(ImageType.GROUP_ORDER, image, request);
                     }
 
-                    return ResponseGroupOrderDto.entityToDto(groupOrder, fileName);
+                    return ResponseGroupOrderDto.entityToDto(groupOrder, imageUrl);
                 })
                 .collect(Collectors.toList());
     }
 
     private Map<Long, List<Image>> findGroupOrderImageMap(List<Long> groupOrderIds) {
-        List<Image> findGroupOrderImages = imageRepository.findGroupOrderImagesByBoardIds(groupOrderIds);
+        List<Image> findGroupOrderImages = imageRepository.findGroupOrderImagesByEntityIds(groupOrderIds);
         return findGroupOrderImages.stream()
-                .collect(Collectors.groupingBy(Image::getBoardId));
+                .collect(Collectors.groupingBy(Image::getEntityId));
     }
 
     private List<Long> toGroupOrderIds(List<GroupOrder> groupOrders) {
