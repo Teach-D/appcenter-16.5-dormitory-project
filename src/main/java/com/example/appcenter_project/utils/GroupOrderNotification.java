@@ -5,6 +5,7 @@ import com.example.appcenter_project.entity.like.GroupOrderLike;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.repository.groupOrder.GroupOrderRepository;
 import com.example.appcenter_project.service.fcm.FcmMessageService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -19,6 +20,7 @@ public class GroupOrderNotification {
     private final FcmMessageService fcmMessageService;
 
     @Scheduled(cron = "0 */30 * * * ?")
+    @Transactional
     public void notifyLikedPostsNearDeadline() {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime oneHourLater = now.plusHours(1);

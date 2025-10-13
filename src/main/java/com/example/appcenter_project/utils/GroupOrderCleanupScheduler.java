@@ -22,7 +22,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Transactional
 @Component
 @RequiredArgsConstructor
 public class GroupOrderCleanupScheduler {
@@ -33,6 +32,7 @@ public class GroupOrderCleanupScheduler {
     private final FcmMessageService fcmMessageService;
 
     @Scheduled(cron = "0 0 8-23 * * *")
+    @Transactional
     public void findGroupOrdersEndingSoon() {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime oneHourLater = now.plusHours(1);
@@ -67,7 +67,8 @@ public class GroupOrderCleanupScheduler {
 
     }
 
-    @Scheduled(cron = "0 0 0 * * ?")
+    @Scheduled(cron = "0 0 1 * * ?")
+    @Transactional
     public void deleteGroupOrder() {
         LocalDate now = LocalDate.now();
         List<GroupOrder> groupOrders = groupOrderRepository.findAll();
