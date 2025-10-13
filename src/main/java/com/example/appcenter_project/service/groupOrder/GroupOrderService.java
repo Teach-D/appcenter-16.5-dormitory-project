@@ -126,13 +126,7 @@ public class GroupOrderService {
         List<ResponseGroupOrderCommentDto> topLevelComments = new ArrayList<>();
 
         for (ResponseGroupOrderCommentDto comment : flatComments) {
-            // 삭제된 댓글 처리
-            if (Boolean.TRUE.equals(comment.getIsDeleted())) {
-                comment.updateReply("삭제된 메시지입니다.");
-            }
-
-
-
+            // 이미지 경로 업데이트
             comment.updateCommentAuthorImagePath(imageService.findStaticImageUrl(ImageType.USER, comment.getUserId(), request));
 
             // 계층 구조 구성
