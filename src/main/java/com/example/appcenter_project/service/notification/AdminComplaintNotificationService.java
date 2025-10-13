@@ -230,7 +230,7 @@ public class AdminComplaintNotificationService {
     }
 
     public void sendAndSaveComplaintReplyNotification(Complaint complaint) {
-        String title = "새로운 답변이 올라왔어요!";
+        String title = "접수한 민원에 답변이 등록되었어요!";
 
         Notification notification = Notification.builder()
                 .boardId(complaint.getId())
@@ -247,16 +247,20 @@ public class AdminComplaintNotificationService {
         UserNotification userNotification = UserNotification.of(user, notification);
         userNotificationRepository.save(userNotification);
 
-        fcmMessageService.sendNotification(user, title, notification.getTitle());
+        fcmMessageService.sendNotification(user, title, notification.getBody());
     }
 
     public void sendAndSaveComplaintStatusNotification(Complaint complaint) {
         String title = null;
 
+        if (complaint.getStatus() == ComplaintStatus.ASSIGNED) {
+            title = "접수한 민원에 담당자가 배정되었어요!";
+        }
+        if (complaint.getStatus() == ComplaintStatus.IN_PROGRESS) {
+            title = "접수한 민원이 처리중입니다!";
+        }
         if (complaint.getStatus() == ComplaintStatus.COMPLETED) {
-            title = "접수 민원의 상태가 " + complaint.getStatus().toValue() + "로 변경되었어요";
-        } else {
-            title = "접수 민원의 상태가 " + complaint.getStatus().toValue() + "으로 변경되었어요";
+            title = "접수한 민원의 처리가 완료되었어요!";
         }
 
         Notification notification = Notification.builder()
@@ -274,6 +278,6 @@ public class AdminComplaintNotificationService {
         UserNotification userNotification = UserNotification.of(user, notification);
         userNotificationRepository.save(userNotification);
 
-        fcmMessageService.sendNotification(user, title, notification.getTitle());
+        fcmMessageService.sendNotification(user, title, notification.getBody());
     }
 }

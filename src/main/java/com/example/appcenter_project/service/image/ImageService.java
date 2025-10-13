@@ -434,6 +434,8 @@ public class ImageService {
                 return "image/webp";
             } else if (fileName.endsWith(".svg")) {
                 return "image/svg+xml";
+            } else if (fileName.endsWith(".heic")) {
+                return "image/heic";
             }
 
             try {
