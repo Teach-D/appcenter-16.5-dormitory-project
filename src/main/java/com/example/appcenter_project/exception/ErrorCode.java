@@ -125,7 +125,7 @@ public enum ErrorCode {
 
     // USER_GROUP_ORDER
     USER_GROUP_ORDER_KEYWORD_NOT_FOUND(NOT_FOUND, 15001, "[UserGroupOrderKeyword] 해당 유저공동구매키워드를 찾을 수 없습니다."),
-    USER_GROUP_ORDER_KEYWORD_ALREADY_EXISTS(FORBIDDEN, 15001, "[UserGroupOrderKeyword] 해당 유저공동구매 키워드가 이미 존재합니다"),
+    USER_GROUP_ORDER_KEYWORD_ALREADY_EXISTS(NOT_ACCEPTABLE, 15001, "[UserGroupOrderKeyword] 해당 유저공동구매 키워드가 이미 존재합니다"),
     USER_GROUP_ORDER_CATEGORY_ALREADY_EXISTS(FORBIDDEN, 15001, "[UserGroupOrderKeyword] 해당 유저공동구매 카테고리가 이미 존재합니다"),
 
     // POPUP_NOTIFICATION
