@@ -1,6 +1,7 @@
 package com.example.appcenter_project.dto.response.complaint;
 
 import com.example.appcenter_project.dto.AttachedFileDto;
+import com.example.appcenter_project.dto.ImageLinkDto;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -12,6 +13,6 @@ public class ResponseComplaintReplyDto {
     private String replyTitle;
     private String replyContent;
     private String responderName;
-    private List<AttachedFileDto> attachmentUrl;
+    private List<ImageLinkDto> attachmentUrl;
     private String createdDate;
 }

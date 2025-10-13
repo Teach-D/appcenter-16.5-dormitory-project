@@ -178,14 +178,13 @@ public class ComplaintService {
         ComplaintReply r = c.getReply();
 
         if (r != null) {
-            List<AttachedFile> attachedFiles = attachedFileRepository.findByComplaintReply(r);
-            List<AttachedFileDto> attachedFileDtos = getAttachedFile(attachedFiles, request);
+            List<ImageLinkDto> images = imageService.findImages(ImageType.COMPLAINT_REPLY, r.getId(), request);
 
             replyDto = ResponseComplaintReplyDto.builder()
                     .replyTitle(r.getReplyTitle())
                     .replyContent(r.getReplyContent())
                     .responderName(r.getResponderName())
-                    .attachmentUrl(attachedFileDtos)
+                    .attachmentUrl(images)
                     .createdDate(r.getCreatedDate().toString())
                     .build();
         }
@@ -219,15 +218,16 @@ public class ComplaintService {
         ResponseComplaintReplyDto replyDto = null;
         ComplaintReply r = c.getReply();
 
-        List<AttachedFile> attachedFiles = attachedFileRepository.findByComplaintReply(r);
-        List<AttachedFileDto> attachedFileDtos = getAttachedFile(attachedFiles, request);
+        Long replyId = c.getReply().getId();
+
+        List<ImageLinkDto> images = imageService.findImages(ImageType.COMPLAINT_REPLY, replyId, request);
 
         if (r != null) {
             replyDto = ResponseComplaintReplyDto.builder()
                     .replyTitle(r.getReplyTitle())
                     .replyContent(r.getReplyContent())
                     .responderName(r.getResponderName())
-                    .attachmentUrl(attachedFileDtos)
+                    .attachmentUrl(images)
                     .createdDate(r.getCreatedDate().toString())
                     .build();
         }
@@ -267,7 +267,7 @@ public class ComplaintService {
         for (AttachedFile attachedFile : attachedFiles) {
             File file = new File(attachedFile.getFilePath());
             if (file.exists()) {
-                String fileUrl = baseUrl + "/api/files/complaint_reply/" + attachedFile.getId();
+                String fileUrl = baseUrl + "/api/images/complaint_reply/" + attachedFile.getId();
 
                 // 정적 리소스 URL 생성 (User와 동일한 방식)
                 String staticImageUrl = getStaticAttachedFileUrl(attachedFile.getFilePath(), baseUrl);
