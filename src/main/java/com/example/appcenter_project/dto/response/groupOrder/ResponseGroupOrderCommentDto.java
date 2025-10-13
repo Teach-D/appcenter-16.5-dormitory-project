@@ -27,13 +27,15 @@ public class ResponseGroupOrderCommentDto {
     private List<ResponseGroupOrderCommentDto> childGroupOrderCommentList = new ArrayList<>();
 
     public static ResponseGroupOrderCommentDto entityToDto(GroupOrderComment groupOrderComment) {
+        boolean isDeleted = groupOrderComment.isDeleted();
         return ResponseGroupOrderCommentDto.builder()
                 .parentId(groupOrderComment.getParentGroupOrderComment() == null ? null : groupOrderComment.getParentGroupOrderComment().getId())
-                .reply(groupOrderComment.isDeleted() ? "삭제된 댓글입니다" : groupOrderComment.getReply())
+                .reply(isDeleted ? "삭제된 댓글입니다" : groupOrderComment.getReply())
                 .groupOrderCommentId(groupOrderComment.getId())
                 .userId(groupOrderComment.getUser().getId())
                 .createDate(String.valueOf(groupOrderComment.getCreatedDate()))
-                .username(groupOrderComment.getUser().getName())
+                .username(isDeleted ? "알 수 없는 사용자" : groupOrderComment.getUser().getName())
+                .isDeleted(isDeleted)
                 .build();
     }
 
@@ -48,5 +50,9 @@ public class ResponseGroupOrderCommentDto {
 
     public void updateCommentAuthorImagePath(String commentAuthorImagePath) {
         this.commentAuthorImagePath = commentAuthorImagePath;
+    }
+
+    public void updateUsername(String username) {
+        this.username = username;
     }
 }

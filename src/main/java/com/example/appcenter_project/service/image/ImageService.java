@@ -93,6 +93,11 @@ public class ImageService {
         saveImages(imageType, entityId, images);
     }
 
+    public void updateGroupOrderImages(ImageType imageType, Long entityId, List<MultipartFile> images) {
+//        deleteImages(imageType, entityId);
+        saveImages(imageType, entityId, images);
+    }
+
     // todo updateImage
     public void updateImage(ImageType imageType, Long entityId, MultipartFile image) {
         deleteImage(imageType, entityId);
@@ -116,6 +121,11 @@ public class ImageService {
             deleteImageFromDirectory(img);
             deleteImageFromDB(img);
         });
+    }
+
+    public void deleteImage(Image image) {
+        deleteImageFromDirectory(image);
+        deleteImageFromDB(image);
     }
 
     public String findStaticImageUrl(ImageType imageType, Long entityId, HttpServletRequest request) {
