@@ -376,8 +376,9 @@ public class ImageService {
 
     private String createImageUrl(ImageType imageType, HttpServletRequest request, Image image) {
         String appcenterHttpsUrl = getAppcenterHttpsUrl(request);
-        String staticImageUrl = findStaticImageUrl(imageType, image.getImagePath(), appcenterHttpsUrl).replace("http", "https");
-        return staticImageUrl;
+        String imagePath = (image != null) ? image.getImagePath() : null;
+        String staticImageUrl = findStaticImageUrl(imageType, imagePath, appcenterHttpsUrl);
+        return staticImageUrl != null ? staticImageUrl.replace("http", "https") : null;
     }
 
     private File getImageInDirectory(Image image) {

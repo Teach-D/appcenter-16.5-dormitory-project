@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,10 +28,10 @@ public class ResponseAnnouncementDto {
     private String content;
 
     @Schema(description = "생성일", example = "2025-08-05")
-    private LocalDate createdDate;
+    private LocalDateTime createdDate;
 
     @Schema(description = "수정일", example = "2025-08-05")
-    private LocalDate updatedDate;
+    private LocalDateTime updatedDate;
 
     @Schema(description = "긴급", example = "true")
     private boolean isEmergency;
@@ -52,8 +53,8 @@ public class ResponseAnnouncementDto {
                     .id(manualAnnouncement.getId())
                     .title(manualAnnouncement.getTitle())
                     .content(truncatedContent)
-                    .createdDate(LocalDate.from(manualAnnouncement.getCreatedDate()))
-                    .updatedDate(manualAnnouncement.getModifiedDate().toLocalDate())
+                    .createdDate(manualAnnouncement.getCreatedDate())
+                    .updatedDate(manualAnnouncement.getModifiedDate())
                     .isEmergency(manualAnnouncement.isEmergency())
                     .viewCount(manualAnnouncement.getViewCount())
                     .announcementType(manualAnnouncement.getAnnouncementType().toValue())
@@ -72,7 +73,7 @@ public class ResponseAnnouncementDto {
                     .id(crawledAnnouncement.getId())
                     .title(crawledAnnouncement.getTitle())
                     .content(truncatedContent)
-                    .createdDate(LocalDate.from(crawledAnnouncement.getCreatedDate()))
+                    .createdDate(crawledAnnouncement.getCreatedDate())
                     .updatedDate(null)
                     .isEmergency(false)
                     .viewCount(crawledAnnouncement.getViewCount())
