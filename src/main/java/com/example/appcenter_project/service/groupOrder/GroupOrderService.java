@@ -3,6 +3,7 @@ package com.example.appcenter_project.service.groupOrder;
 import com.example.appcenter_project.dto.ImageLinkDto;
 import com.example.appcenter_project.dto.request.groupOrder.RequestGroupOrderDto;
 import com.example.appcenter_project.dto.response.groupOrder.*;
+import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.groupOrder.*;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
 import com.example.appcenter_project.entity.user.*;
@@ -260,7 +261,7 @@ public class GroupOrderService {
 
         groupOrder.update(requestGroupOrderDto);
 
-        imageService.updateImages(ImageType.GROUP_ORDER, groupOrderId, images);
+        imageService.updateGroupOrderImages(ImageType.GROUP_ORDER, groupOrderId, images);
     }
 
     public void deleteGroupOrder(Long userId, Long groupOrderId) {
@@ -357,5 +358,16 @@ public class GroupOrderService {
         }
 
         return responseGroupOrderPopularSearchList;
+    }
+
+    public void deleteGroupOrderImage(Long userId, String imageName) {
+        Image image = imageRepository.findByImageName(imageName).orElseThrow(() -> new CustomException(IMAGE_NOT_FOUND));
+        GroupOrder groupOrder = groupOrderRepository.findById(image.getEntityId()).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+
+        if (groupOrder.getUser().getId() != userId) {
+            throw new CustomException(IMAGE_UPDATE_NOT_ALLOWED);
+        }
+
+        imageService.deleteImage(image);
     }
 }
