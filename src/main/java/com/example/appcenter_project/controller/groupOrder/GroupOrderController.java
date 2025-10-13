@@ -105,4 +105,10 @@ public class GroupOrderController implements GroupOrderApiSpecification {
         groupOrderService.deleteGroupOrder(user.getId(), groupOrderId);
         return ResponseEntity.status(NO_CONTENT).build();
     }
+
+    @DeleteMapping("/image-name/{imageName}")
+    public ResponseEntity<Void> deleteGroupOrderImage(@AuthenticationPrincipal CustomUserDetails user, @RequestParam String imageName) {
+        groupOrderService.deleteGroupOrderImage(user.getId(), imageName);
+        return ResponseEntity.status(NO_CONTENT).build();
+    }
 }

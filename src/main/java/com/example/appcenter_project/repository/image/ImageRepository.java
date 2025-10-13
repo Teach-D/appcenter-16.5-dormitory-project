@@ -26,4 +26,6 @@ public interface ImageRepository extends JpaRepository<Image, Long> {
     List<Image> findGroupOrderImagesByEntityIds(@Param("boardIds") List<Long> boardIds);
 
     List<Image> findByImageTypeAndEntityId(ImageType imageType, Long entityId);
+
+    Optional<Image> findByImageName(String imageName);
 }
