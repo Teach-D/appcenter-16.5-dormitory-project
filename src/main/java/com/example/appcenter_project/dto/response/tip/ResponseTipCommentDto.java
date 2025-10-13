@@ -21,7 +21,7 @@ public class ResponseTipCommentDto {
     private String reply;
     private Long parentId;
     private Boolean isDeleted;
-    private LocalDateTime createdDate;
+    private LocalDateTime createDate;
     private String name;
     private String writerImageFile;
 
@@ -35,7 +35,7 @@ public class ResponseTipCommentDto {
                 .reply(tipComment.getReply())
                 .parentId(tipComment.getParentTipComment() != null ? tipComment.getParentTipComment().getId() : null)
                 .isDeleted(tipComment.isDeleted())
-                .createdDate(tipComment.getCreatedDate())
+                .createDate(tipComment.getCreatedDate())
                 .name(user.getName())
                 .build();
     }
