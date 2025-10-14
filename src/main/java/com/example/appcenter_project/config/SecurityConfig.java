@@ -137,10 +137,10 @@ public class SecurityConfig {
 
                         /** 팝업 알림 **/
                         // 팝업 알림 조회
-                        .requestMatchers(GET, "/popup-notifications/admin").hasRole("ADMIN") // 전체 조회는 ADMIN만 가능
+                        .requestMatchers(GET, "/popup-notifications/admin").hasAnyRole("ADMIN", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_SUPPORTERS") // 전체 조회는 ADMIN만 가능
                         .requestMatchers(GET, "/popup-notifications/**").permitAll()
                         // 팝업 알림 등록, 수정, 삭제(관리자)
-                        .requestMatchers("/popup-notifications/**").hasRole("ADMIN")
+                        .requestMatchers("/popup-notifications/**").hasAnyRole("ADMIN", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_SUPPORTERS")
 
                         /** 사용자 알림 **/
                         .requestMatchers("/user-notifications/**").authenticated()
