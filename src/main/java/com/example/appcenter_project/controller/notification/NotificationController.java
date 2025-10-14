@@ -37,6 +37,12 @@ public class NotificationController implements NotificationApiSpecification {
         return ResponseEntity.status(OK).body(notificationService.findNotification(user.getId(), notificationId));
     }
 
+    @PostMapping("/student-number/{studentNumber}")
+    public ResponseEntity<Void> saveNotificationByStudentNumber(@RequestBody RequestNotificationDto requestNotificationDto, String studentNumber) {
+        notificationService.saveNotificationByStudentNumber(requestNotificationDto, studentNumber);
+        return ResponseEntity.status(CREATED).build();
+    }
+
     @PutMapping("/{notificationId}")
     public ResponseEntity<Void> updateNotification(@PathVariable Long notificationId, @RequestBody RequestNotificationDto requestNotificationDto) {
         notificationService.updateNotification(notificationId, requestNotificationDto);
