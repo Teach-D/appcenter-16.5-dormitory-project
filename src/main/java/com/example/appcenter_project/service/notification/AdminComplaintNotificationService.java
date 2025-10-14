@@ -262,6 +262,9 @@ public class AdminComplaintNotificationService {
         if (complaint.getStatus() == ComplaintStatus.COMPLETED) {
             title = "접수한 민원의 처리가 완료되었어요!";
         }
+        if (complaint.getStatus() == ComplaintStatus.REJECTION) {
+            title = "접수한 민원이 반려되었어요!";
+        }
 
         Notification notification = Notification.builder()
                 .boardId(complaint.getId())
