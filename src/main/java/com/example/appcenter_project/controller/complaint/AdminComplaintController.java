@@ -13,12 +13,18 @@ import java.util.List;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
@@ -104,6 +110,44 @@ public class AdminComplaintController implements AdminComplaintApiSpecification 
         return ResponseEntity.ok(
                 complaintService.searchComplaints(null, dto)
         );
+    }
+
+    // 민원 목록 CSV 다운로드 (전체)
+    @GetMapping("/export/csv")
+    public ResponseEntity<byte[]> exportComplaintsToCsv() {
+        byte[] csvData = complaintService.exportComplaintsToCsv();
+        
+        String fileName = "민원목록_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".csv";
+        String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.valueOf("text/csv; charset=UTF-8"));
+        headers.set("Content-Disposition", "attachment; filename=\"" + encodedFileName + "\"; filename*=UTF-8''" + encodedFileName);
+        headers.setContentLength(csvData.length);
+        
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(csvData);
+    }
+
+    // 민원 목록 CSV 다운로드 (필터링된)
+    @GetMapping("/export/csv/search")
+    public ResponseEntity<byte[]> exportComplaintsToCsvWithFilter(
+            @ModelAttribute RequestComplaintSearchDto dto
+    ) {
+        byte[] csvData = complaintService.exportComplaintsToCsv(dto);
+        
+        String fileName = "민원목록_필터링_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".csv";
+        String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.valueOf("text/csv; charset=UTF-8"));
+        headers.set("Content-Disposition", "attachment; filename=\"" + encodedFileName + "\"; filename*=UTF-8''" + encodedFileName);
+        headers.setContentLength(csvData.length);
+        
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(csvData);
     }
 
 
