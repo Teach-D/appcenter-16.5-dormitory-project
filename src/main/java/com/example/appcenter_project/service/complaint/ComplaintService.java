@@ -23,6 +23,8 @@ import com.example.appcenter_project.repository.complaint.ComplaintSpecification
 import com.example.appcenter_project.repository.image.ImageRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import com.example.appcenter_project.service.notification.AdminComplaintNotificationService;
+import com.example.appcenter_project.dto.response.complaint.ResponseComplaintCsvDto;
+import com.example.appcenter_project.utils.CsvUtils;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -56,6 +58,7 @@ public class ComplaintService {
     private final AttachedFileRepository attachedFileRepository;
     private final AdminComplaintNotificationService adminComplaintNotificationService;
     private final ImageService imageService;
+    private final CsvUtils csvUtils;
 
     // 민원 등록
     public ResponseComplaintDto createComplaint(Long userId, RequestComplaintDto dto, List<MultipartFile> images) {
@@ -376,6 +379,74 @@ public class ComplaintService {
                         .bedNumber(c.getBedNumber())
                         .build())
                 .toList();
+    }
+
+    // 민원 목록을 CSV로 변환 (전체 조회)
+    public byte[] exportComplaintsToCsv() {
+        List<Complaint> complaints = complaintRepository.findAllByOrderByCreatedDateDesc();
+        List<ResponseComplaintCsvDto> csvData = complaints.stream()
+                .map(this::convertToCsvDto)
+                .collect(Collectors.toList());
+        
+        return csvUtils.generateComplaintCsv(csvData);
+    }
+
+    // 민원 목록을 CSV로 변환 (필터링된 조회)
+    public byte[] exportComplaintsToCsv(RequestComplaintSearchDto searchDto) {
+        Specification<Complaint> spec = Specification
+                .where(ComplaintSpecification.hasDormType(searchDto.getDormType()))
+                .and(ComplaintSpecification.hasOfficer(searchDto.getOfficer()))
+                .and(ComplaintSpecification.hasStatus(searchDto.getStatus()))
+                .and(ComplaintSpecification.hasKeyword(searchDto.getKeyword()))
+                .and(ComplaintSpecification.hasType(searchDto.getType()))
+                .and(ComplaintSpecification.hasBuilding(
+                        searchDto.getBuilding() != null && !searchDto.getBuilding().isBlank()
+                                ? DormBuilding.valueOf(searchDto.getBuilding())
+                                : null
+                ))
+                .and(ComplaintSpecification.hasFloor(searchDto.getFloor()))
+                .and(ComplaintSpecification.hasRoomNumber(searchDto.getRoomNumber()))
+                .and(ComplaintSpecification.hasBedNumber(searchDto.getBedNumber()));
+
+        List<Complaint> complaints = complaintRepository.findAll(spec);
+        List<ResponseComplaintCsvDto> csvData = complaints.stream()
+                .map(this::convertToCsvDto)
+                .collect(Collectors.toList());
+        
+        return csvUtils.generateComplaintCsv(csvData);
+    }
+
+    // Complaint 엔티티를 CSV DTO로 변환
+    private ResponseComplaintCsvDto convertToCsvDto(Complaint complaint) {
+        User user = complaint.getUser();
+        ComplaintReply reply = complaint.getReply();
+        
+        return ResponseComplaintCsvDto.builder()
+                .id(complaint.getId())
+                .date(complaint.getCreatedDate() != null 
+                    ? complaint.getCreatedDate().toLocalDate().format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))
+                    : null)
+                .type(complaint.getType() != null ? complaint.getType().toValue() : null)
+                .title(complaint.getTitle())
+                .content(complaint.getContent())
+                .status(complaint.getStatus() != null ? complaint.getStatus().toValue() : null)
+                .officer(complaint.getOfficer())
+                .dormType(complaint.getDormType() != null ? complaint.getDormType().toValue() : null)
+                .building(complaint.getBuilding() != null ? complaint.getBuilding().toValue() : null)
+                .floor(complaint.getFloor())
+                .roomNumber(complaint.getRoomNumber())
+                .bedNumber(complaint.getBedNumber())
+                .userName(user != null ? user.getName() : null)
+                .userEmail(null) // User 엔티티에 email 필드가 없음
+                .userPhone(null) // User 엔티티에 phone 필드가 없음
+                .replyTitle(reply != null ? reply.getReplyTitle() : null)
+                .replyContent(reply != null ? reply.getReplyContent() : null)
+                .responderName(reply != null ? reply.getResponderName() : null)
+                .replyDate(reply != null && reply.getCreatedDate() != null 
+                    ? reply.getCreatedDate().toLocalDate().format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))
+                    : null)
+                .isPrivacyAgreed(complaint.isPrivacyAgreed())
+                .build();
     }
 
 
