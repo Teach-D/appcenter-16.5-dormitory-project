@@ -22,4 +22,5 @@ public class ResponseComplaintDetailDto {
     private String officer;
     private ResponseComplaintReplyDto reply; // null 가능
     private List<String> images;
+    private String studentNumber;
 }

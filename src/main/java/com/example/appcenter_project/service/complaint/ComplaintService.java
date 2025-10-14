@@ -146,6 +146,7 @@ public class ComplaintService {
                         .floor(c.getFloor())
                         .roomNumber(c.getRoomNumber())
                         .bedNumber(c.getBedNumber())
+                        .studentNumber(c.getUser().getStudentNumber())
                         .build())
                 .collect(Collectors.toList());
     }
@@ -257,6 +258,7 @@ public class ComplaintService {
                 .reply(replyDto)
                 .images(complaintImages)
                 .officer(c.getOfficer())
+                .studentNumber(c.getUser().getStudentNumber())
                 .build();
     }
 
