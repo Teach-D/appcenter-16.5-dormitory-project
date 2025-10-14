@@ -13,8 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -235,9 +236,26 @@ public class ImageService {
     }
 
     private void createAndSaveImage(String directoryPath, MultipartFile image, Long entityId, ImageType imageType) {
-        String imageName = createImageName(entityId, image, imageType);
         try {
-            File savedImageInDirectory = saveImageToDirectory(directoryPath, image, imageName);
+            // HEIC 파일인 경우 처리
+            MultipartFile processedImage = image;
+            String imageName;
+            
+            if (isHeicFile(image)) {
+                log.warn("HEIC 파일 감지: {}. 변환을 시도합니다.", image.getOriginalFilename());
+                try {
+                    processedImage = convertHeicToJpeg(image, entityId);
+                    imageName = createImageName(entityId, processedImage, imageType);
+                    log.info("HEIC 파일 변환 성공: {}", imageName);
+                } catch (Exception e) {
+                    log.error("HEIC 변환 실패. 원본 파일명 그대로 저장합니다: {}", e.getMessage());
+                    imageName = createImageName(entityId, image, imageType);
+                }
+            } else {
+                imageName = createImageName(entityId, image, imageType);
+            }
+            
+            File savedImageInDirectory = saveImageToDirectory(directoryPath, processedImage, imageName);
             saveImageToDB(entityId, imageType, savedImageInDirectory, imageName);
         } catch (IOException e) {
             log.error("{} 타입의 entityId : {} 이미지가 저장 실패했습니다 ", imageType, entityId, e);
@@ -434,8 +452,9 @@ public class ImageService {
                 return "image/webp";
             } else if (fileName.endsWith(".svg")) {
                 return "image/svg+xml";
-            } else if (fileName.endsWith(".heic")) {
-                return "image/heic";
+            } else if (fileName.endsWith(".heic") || fileName.endsWith(".heif")) {
+                // HEIC는 이미 JPEG로 변환되었으므로 jpeg 타입 반환
+                return "image/jpeg";
             }
 
             try {
@@ -473,5 +492,177 @@ public class ImageService {
 
     private void deleteImageFromDB(Image image) {
         imageRepository.delete(image);
+    }
+
+    /**
+     * HEIC 파일 여부 확인
+     */
+    private boolean isHeicFile(MultipartFile file) {
+        if (file == null || file.getOriginalFilename() == null) {
+            return false;
+        }
+        String fileName = file.getOriginalFilename().toLowerCase();
+        return fileName.endsWith(".heic") || fileName.endsWith(".heif");
+    }
+
+    /**
+     * HEIC 파일을 JPEG로 변환
+     */
+    private MultipartFile convertHeicToJpeg(MultipartFile heicFile, Long entityId) throws IOException {
+        try {
+            log.info("HEIC 파일 변환 시작: {}", heicFile.getOriginalFilename());
+            
+            // 임시 HEIC 파일 저장
+            File tempHeicFile = File.createTempFile("heic_input_" + entityId + "_", ".heic");
+            heicFile.transferTo(tempHeicFile);
+            
+            // 출력 JPEG 파일 생성
+            File tempJpegFile = File.createTempFile("converted_" + entityId + "_", ".jpg");
+            
+            // ImageMagick 명령어 실행 (convert 또는 magick 명령어)
+            ProcessBuilder processBuilder = new ProcessBuilder();
+            
+            // Windows의 경우 "magick", Linux/Mac의 경우 "convert" 사용
+            String os = System.getProperty("os.name").toLowerCase();
+            if (os.contains("win")) {
+                processBuilder.command("magick", "convert", 
+                    tempHeicFile.getAbsolutePath(), 
+                    "-quality", "90",
+                    tempJpegFile.getAbsolutePath());
+            } else {
+                processBuilder.command("convert", 
+                    tempHeicFile.getAbsolutePath(), 
+                    "-quality", "90",
+                    tempJpegFile.getAbsolutePath());
+            }
+            
+            try {
+                Process process = processBuilder.start();
+                int exitCode = process.waitFor();
+                
+                if (exitCode != 0) {
+                    // ImageMagick이 없거나 실패한 경우 - 순수 Java로 시도
+                    log.warn("ImageMagick 변환 실패. 순수 Java 방식으로 시도합니다.");
+                    return convertHeicToJpegPureJava(heicFile, entityId, tempHeicFile, tempJpegFile);
+                }
+                
+                log.info("HEIC -> JPEG 변환 성공: {}", heicFile.getOriginalFilename());
+                
+                // 임시 HEIC 파일 삭제
+                tempHeicFile.delete();
+                tempJpegFile.deleteOnExit();
+                
+                // MultipartFile로 변환하여 반환
+                return new ConvertedMultipartFile(tempJpegFile, getJpegFileName(heicFile.getOriginalFilename()));
+                
+            } catch (Exception e) {
+                log.error("ImageMagick 실행 중 오류: {}", e.getMessage());
+                // ImageMagick이 설치되지 않은 경우 대체 방법 사용
+                return convertHeicToJpegPureJava(heicFile, entityId, tempHeicFile, tempJpegFile);
+            }
+            
+        } catch (IOException e) {
+            log.error("HEIC 변환 중 오류 발생: {}", heicFile.getOriginalFilename(), e);
+            throw new CustomException(IMAGE_SAVE_FAIL);
+        }
+    }
+
+    /**
+     * 순수 Java로 HEIC 변환 시도 (ImageIO 사용)
+     */
+    private MultipartFile convertHeicToJpegPureJava(MultipartFile heicFile, Long entityId, 
+                                                      File tempHeicFile, File tempJpegFile) throws IOException {
+        try {
+            // ImageIO로 읽기 시도
+            BufferedImage bufferedImage = ImageIO.read(tempHeicFile);
+            
+            if (bufferedImage == null) {
+                log.error("HEIC 파일을 읽을 수 없습니다. 원본 파일을 사용합니다: {}", heicFile.getOriginalFilename());
+                // 변환 실패 시 원본 파일 그대로 반환
+                throw new CustomException(IMAGE_SAVE_FAIL);
+            }
+            
+            // JPEG로 저장
+            boolean written = ImageIO.write(bufferedImage, "jpg", tempJpegFile);
+            if (!written) {
+                log.error("JPEG 변환에 실패했습니다: {}", heicFile.getOriginalFilename());
+                throw new CustomException(IMAGE_SAVE_FAIL);
+            }
+            
+            log.info("순수 Java 방식으로 HEIC -> JPEG 변환 성공");
+            tempHeicFile.delete();
+            tempJpegFile.deleteOnExit();
+            
+            return new ConvertedMultipartFile(tempJpegFile, getJpegFileName(heicFile.getOriginalFilename()));
+            
+        } catch (Exception e) {
+            log.error("순수 Java 변환도 실패: {}", e.getMessage());
+            tempHeicFile.delete();
+            tempJpegFile.delete();
+            throw new CustomException(IMAGE_SAVE_FAIL);
+        }
+    }
+
+    /**
+     * HEIC 파일명을 JPEG 파일명으로 변환
+     */
+    private String getJpegFileName(String originalFileName) {
+        if (originalFileName == null) {
+            return "converted.jpg";
+        }
+        return originalFileName.replaceAll("(?i)\\.heic$|\\.heif$", ".jpg");
+    }
+
+    /**
+     * 변환된 파일을 MultipartFile로 래핑하는 내부 클래스
+     */
+    private static class ConvertedMultipartFile implements MultipartFile {
+        private final File file;
+        private final String originalFilename;
+
+        public ConvertedMultipartFile(File file, String originalFilename) {
+            this.file = file;
+            this.originalFilename = originalFilename;
+        }
+
+        @Override
+        public String getName() {
+            return "file";
+        }
+
+        @Override
+        public String getOriginalFilename() {
+            return originalFilename;
+        }
+
+        @Override
+        public String getContentType() {
+            return "image/jpeg";
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return file.length() == 0;
+        }
+
+        @Override
+        public long getSize() {
+            return file.length();
+        }
+
+        @Override
+        public byte[] getBytes() throws IOException {
+            return Files.readAllBytes(file.toPath());
+        }
+
+        @Override
+        public InputStream getInputStream() throws IOException {
+            return new FileInputStream(file);
+        }
+
+        @Override
+        public void transferTo(File dest) throws IOException {
+            Files.copy(file.toPath(), dest.toPath());
+        }
     }
 }
