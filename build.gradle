@@ -75,6 +75,9 @@ dependencies {
 
 	// aop
 	implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+	// CSV
+	implementation 'com.opencsv:opencsv:5.9'
 }
 
 tasks.named('test') {
