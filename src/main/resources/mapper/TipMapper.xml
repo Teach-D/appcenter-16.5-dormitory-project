@@ -97,7 +97,7 @@
             <result property="reply" column="reply"/>
             <result property="parentId" column="parent_id"/>
             <result property="isDeleted" column="is_deleted"/>
-            <result property="createdDate" column="comment_created_date"/>
+            <result property="createDate" column="comment_created_date"/>
             <result property="name" column="user_name"/>
         </collection>
     </resultMap>
