@@ -218,11 +218,13 @@ public class ComplaintService {
         ResponseComplaintReplyDto replyDto = null;
         ComplaintReply r = c.getReply();
 
-        Long replyId = c.getReply().getId();
 
-        List<ImageLinkDto> images = imageService.findImages(ImageType.COMPLAINT_REPLY, replyId, request);
 
         if (r != null) {
+            Long replyId = c.getReply().getId();
+
+            List<ImageLinkDto> images = imageService.findImages(ImageType.COMPLAINT_REPLY, replyId, request);
+
             replyDto = ResponseComplaintReplyDto.builder()
                     .replyTitle(r.getReplyTitle())
                     .replyContent(r.getReplyContent())
