@@ -95,7 +95,7 @@ public class ImageService {
     }
 
     public void updateGroupOrderImages(ImageType imageType, Long entityId, List<MultipartFile> images) {
-//        deleteImages(imageType, entityId);
+        deleteImages(imageType, entityId);
         saveImages(imageType, entityId, images);
     }
 
