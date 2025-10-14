@@ -12,7 +12,8 @@ public enum ComplaintStatus {
     PENDING("대기중"),
     ASSIGNED("담당자 배정"),
     IN_PROGRESS("처리중"),
-    COMPLETED("처리완료");
+    COMPLETED("처리완료"),
+    REJECTION("반려");
 
     private final String description;
 

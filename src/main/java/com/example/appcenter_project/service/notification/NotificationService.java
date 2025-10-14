@@ -68,8 +68,22 @@ public class NotificationService {
         }
     }
 
+    public void saveNotificationByStudentNumber(RequestNotificationDto requestNotificationDto, String studentNumber) {
+        String title = "유니돔으로부터 알림이 도착했습니다!";
+
+        Notification notification = RequestNotificationDto.dtoToEntity(requestNotificationDto);
+        notificationRepository.save(notification);
+
+        User user = userRepository.findByStudentNumber(studentNumber).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+        UserNotification userNotification = UserNotification.of(user, notification);
+        userNotificationRepository.save(userNotification);
+
+        fcmMessageService.sendNotification(user, title, notification.getTitle());
+    }
+
     private void sendAllDormitoryStudent(Notification notification) {
-        for (User user : userRepository.findByDormTypeNotAndReceiveNotificationTypesContains(DormType.NONE, NotificationType.DORMITORY)) {
+        for (User user : userRepository.findByReceiveNotificationTypesContains(NotificationType.DORMITORY)) {
             // 유저 알림 저장
             UserNotification userNotification = UserNotification.builder()
                     .notification(notification)

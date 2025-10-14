@@ -59,6 +59,13 @@ public interface NotificationApiSpecification {
             @AuthenticationPrincipal CustomUserDetails user);
 
     @Operation(
+            summary = "개인 알림 전송",
+            description = "학번을 통해서 개인 알림이 전송됩니다.(푸시 알림 포함)"
+    )
+    ResponseEntity<Void> saveNotificationByStudentNumber(@RequestBody RequestNotificationDto requestNotificationDto, String studentNumber);
+
+
+        @Operation(
             summary = "특정 알림 상세 조회",
             description = "알림 ID로 특정 알림의 상세 정보를 조회합니다.",
             responses = {

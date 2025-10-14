@@ -46,7 +46,7 @@ public class AnnouncementNotificationService {
 
         List<Role> dormitoryUserRoles = Arrays.asList(Role.ROLE_DORM_MANAGER, Role.ROLE_DORM_LIFE_MANAGER, Role.ROLE_DORM_ROOMMATE_MANAGER);
 
-        for (User user : userRepository.findByDormTypeNotAndReceiveNotificationTypesContainsAndRoleNotIn(DormType.NONE, NotificationType.DORMITORY, dormitoryUserRoles)) {
+        for (User user : userRepository.findByReceiveNotificationTypesContainsAndRoleNotIn(NotificationType.DORMITORY, dormitoryUserRoles)) {
             UserNotification userNotification = UserNotification.of(user, notification);
             userNotificationRepository.save(userNotification);
             fcmMessageService.sendDormitoryNotification(user, title, announcement.getTitle());
@@ -68,7 +68,7 @@ public class AnnouncementNotificationService {
 
         List<Role> dormitoryUserRoles = Arrays.asList(Role.ROLE_DORM_MANAGER, Role.ROLE_DORM_LIFE_MANAGER, Role.ROLE_DORM_ROOMMATE_MANAGER);
 
-        for (User user : userRepository.findByDormTypeNotAndReceiveNotificationTypesContainsAndRoleNotIn(DormType.NONE, NotificationType.SUPPORTERS, dormitoryUserRoles)) {
+        for (User user : userRepository.findByReceiveNotificationTypesContainsAndRoleNotIn(NotificationType.SUPPORTERS, dormitoryUserRoles)) {
             UserNotification userNotification = UserNotification.of(user, notification);
             userNotificationRepository.save(userNotification);
             fcmMessageService.sendSupportersNotification(user, title, announcement.getTitle());
