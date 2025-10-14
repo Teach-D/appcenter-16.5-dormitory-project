@@ -1,6 +1,7 @@
 package com.example.appcenter_project.controller.complaint;
 
 import com.example.appcenter_project.dto.request.complaint.RequestComplaintReplyDto;
+import com.example.appcenter_project.dto.request.complaint.RequestComplaintSearchDto;
 import com.example.appcenter_project.dto.request.complaint.RequestComplaintStatusDto;
 import com.example.appcenter_project.dto.response.complaint.ResponseComplaintDetailDto;
 import com.example.appcenter_project.dto.response.complaint.ResponseComplaintListDto;
@@ -174,5 +175,34 @@ public interface AdminComplaintApiSpecification {
             @PathVariable
             @Parameter(description = "담당자명", required = true, example = "김관리")
             String officer
+    );
+
+    @Operation(
+            summary = "민원 목록 CSV 다운로드 (전체)",
+            description = "등록된 모든 민원을 CSV 파일로 다운로드합니다.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "CSV 다운로드 성공",
+                            content = @Content(mediaType = "application/octet-stream")
+                    )
+            }
+    )
+    ResponseEntity<byte[]> exportComplaintsToCsv();
+
+    @Operation(
+            summary = "민원 목록 CSV 다운로드 (필터링)",
+            description = "검색 조건에 맞는 민원을 CSV 파일로 다운로드합니다.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "CSV 다운로드 성공",
+                            content = @Content(mediaType = "application/octet-stream")
+                    )
+            }
+    )
+    ResponseEntity<byte[]> exportComplaintsToCsvWithFilter(
+            @Parameter(description = "검색 조건", required = true)
+            RequestComplaintSearchDto dto
     );
 }
