@@ -51,6 +51,7 @@ public class Complaint extends BaseTimeEntity {
     private boolean isPrivacyAgreed; // 개인정보 동의 여부
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 100)
     private ComplaintStatus status = ComplaintStatus.PENDING; // 상태 (기본값 대기중)
 
     @ManyToOne(fetch = FetchType.LAZY)

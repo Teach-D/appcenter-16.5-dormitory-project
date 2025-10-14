@@ -98,7 +98,7 @@ public interface AdminComplaintApiSpecification {
 
     @Operation(
             summary = "민원 상태 변경",
-            description = "관리자가 민원의 상태를 변경합니다. (예: 대기중 → 담당자 배정 → 처리중 → 처리완료)",
+            description = "관리자가 민원의 상태를 변경합니다. (예: 대기중 → 담당자 배정 → 처리중 → 처리완료 -> 반려)",
             responses = {
                     @ApiResponse(responseCode = "200", description = "상태 변경 성공"),
                     @ApiResponse(responseCode = "400", description = "잘못된 상태 값"),
