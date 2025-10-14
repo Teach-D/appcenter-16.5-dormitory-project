@@ -14,7 +14,7 @@ public enum ComplaintType {
     DRINKING("음주"),
     ROOMMATE_CHANGE("호실변경신청"),
     POINT_INQUIRY("벌점 및 상점 문의"),
-    HALLWAY_OBSTRUCTION("복도물건 적지 신고");
+    HALLWAY_OBSTRUCTION("물건 적치 신고");
 
     private final String description;
 
