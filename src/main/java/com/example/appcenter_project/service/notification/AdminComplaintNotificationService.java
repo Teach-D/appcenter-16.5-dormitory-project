@@ -198,7 +198,7 @@ public class AdminComplaintNotificationService {
                 if (workingHoursValidator.isNotWorkingHours()) {
                     redisTemplate.opsForValue().set("complaint_queue:user_notification:" + userNotification.getId(), userNotification.getId());
                 } else {
-                    fcmMessageService.sendNotification(roommateComplaintManager, title, notification.getTitle());
+                    fcmMessageService.sendNotification(roommateComplaintManager, title, notification.getBody());
                 }
 
             }
@@ -223,7 +223,7 @@ public class AdminComplaintNotificationService {
                 if (workingHoursValidator.isNotWorkingHours()) {
                     redisTemplate.opsForValue().set("complaint_queue:user_notification:" + userNotification.getId(), userNotification.getId());
                 } else {
-                    fcmMessageService.sendNotification(lifeComplaintManager, title, notification.getTitle());
+                    fcmMessageService.sendNotification(lifeComplaintManager, title, notification.getBody());
                 }
             }
         }
