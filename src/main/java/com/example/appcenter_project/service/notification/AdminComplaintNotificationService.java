@@ -283,4 +283,32 @@ public class AdminComplaintNotificationService {
 
         fcmMessageService.sendNotification(user, title, notification.getBody());
     }
+
+    public void sendAndSaveExpeditedComplaintNotification(Complaint complaint) {
+        String title = null;
+
+        if (complaint.getType() == ComplaintType.SMOKING) {
+            title = "새로운 흡연 민원이 작성되었습니다!";
+        }
+        if  (complaint.getType() == ComplaintType.NOISE) {
+            title = "새로운 소음 민원이 작성되었습니다!";
+        }
+
+        Notification notification = Notification.builder()
+                .boardId(complaint.getId())
+                .title(title)
+                .body(complaint.getTitle())
+                .notificationType(NotificationType.COMPLAINT)
+                .apiType(ApiType.COMPLAINT)
+                .build();
+
+        notificationRepository.save(notification);
+
+        List<User> expeditedComplaintManagers = userRepository.findByRole(Role.ROLE_DORM_EXPEDITED_COMPLAINT_MANAGER);
+        for (User expeditedComplaintManager : expeditedComplaintManagers) {
+            UserNotification userNotification = UserNotification.of(expeditedComplaintManager, notification);
+            userNotificationRepository.save(userNotification);
+            fcmMessageService.sendNotification(expeditedComplaintManager, title, notification.getBody());
+        }
+    }
 }

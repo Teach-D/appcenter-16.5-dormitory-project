@@ -58,7 +58,7 @@ public class SecurityConfig {
                         .requestMatchers( "/users/push-notification").hasRole("ADMIN")
                         // 사용자 권한 수정 및 조회
                         .requestMatchers("/users/role")
-                            .hasAnyRole("DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "ADMIN")
+                            .hasAnyRole("DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_EXPEDITED_COMPLAINT_MANAGER","ADMIN")
                         // 사용자 정보 조회 및 수정
                         .requestMatchers("/users", "/users/image", "/users/time-table-image").authenticated()
                         // 사용자 게시글 조회(좋아요, 자신의 게시글)
@@ -69,7 +69,7 @@ public class SecurityConfig {
                         .requestMatchers(GET, "/announcements/**").permitAll()
                         // 공지사항 등록, 수정, 삭제
                         .requestMatchers("/announcements/**")
-                            .hasAnyRole("DORM_SUPPORTERS", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "ADMIN")
+                            .hasAnyRole("DORM_SUPPORTERS", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_EXPEDITED_COMPLAINT_MANAGER","ADMIN")
 
                         /** 공동구매 **/
                         // 검색 기록 조회
@@ -120,7 +120,7 @@ public class SecurityConfig {
                         .requestMatchers("/complaints/**").authenticated()
                         // 관리자, 기숙사 담당자
                         .requestMatchers("/admin/complaints/**")
-                            .hasAnyRole("DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "ADMIN")
+                            .hasAnyRole("DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_EXPEDITED_COMPLAINT_MANAGER","ADMIN")
 
                         /** 캘린더 **/
                         // 캘린더 조회
@@ -133,14 +133,14 @@ public class SecurityConfig {
                         // 알림 조회(로그인한 사용자)
                         .requestMatchers(GET, "/notifications/**").permitAll()
                         // 알림 등록, 수정, 삭제(관리자)
-                        .requestMatchers("/notifications/**").hasAnyRole("ADMIN", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER")
+                        .requestMatchers("/notifications/**").hasAnyRole("ADMIN", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_EXPEDITED_COMPLAINT_MANAGER","DORM_MANAGER")
 
                         /** 팝업 알림 **/
                         // 팝업 알림 조회
-                        .requestMatchers(GET, "/popup-notifications/admin").hasAnyRole("ADMIN", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_SUPPORTERS") // 전체 조회는 ADMIN만 가능
+                        .requestMatchers(GET, "/popup-notifications/admin").hasAnyRole("ADMIN", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_EXPEDITED_COMPLAINT_MANAGER","DORM_SUPPORTERS") // 전체 조회는 ADMIN만 가능
                         .requestMatchers(GET, "/popup-notifications/**").permitAll()
                         // 팝업 알림 등록, 수정, 삭제(관리자)
-                        .requestMatchers("/popup-notifications/**").hasAnyRole("ADMIN", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_SUPPORTERS")
+                        .requestMatchers("/popup-notifications/**").hasAnyRole("ADMIN", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_EXPEDITED_COMPLAINT_MANAGER", "DORM_SUPPORTERS")
 
                         /** 사용자 알림 **/
                         .requestMatchers("/user-notifications/**").authenticated()
