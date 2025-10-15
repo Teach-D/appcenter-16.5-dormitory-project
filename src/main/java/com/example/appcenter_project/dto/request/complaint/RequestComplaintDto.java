@@ -11,7 +11,7 @@ public class RequestComplaintDto {
 
     @Schema(description = "민원 유형", 
             example = "소음",
-            allowableValues = {"소음", "흡연", "음주", "룸메이트변경", "벌점상쇄","벌점사유확인"})
+            allowableValues = {"소음", "흡연", "음주", "호실 변경", "공용공간"})
     private String type;
     
     @Schema(description = "기숙사 구분", 
