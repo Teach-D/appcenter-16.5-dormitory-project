@@ -12,9 +12,8 @@ public enum ComplaintType {
     NOISE("소음"),
     SMOKING("흡연"),
     DRINKING("음주"),
-    ROOMMATE_CHANGE("룸메이트변경"),
-    POINT_OFFSET("벌점상쇄"),
-    POINT_REASON_CHECK("벌점사유확인");
+    ROOM_CHANGE("호실 변경"),
+    COMMON_AREA("공용공간");
 
     private final String description;
 
