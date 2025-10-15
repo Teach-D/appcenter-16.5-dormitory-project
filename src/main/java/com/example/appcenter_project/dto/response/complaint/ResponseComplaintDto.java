@@ -17,6 +17,9 @@ public class ResponseComplaintDto {
     private String roomNumber;
     private String bedNumber;
     private String status;      // 상태 (대기중, 처리중 등)
+    private String specificLocation; // 구체적 장소
+    private String incidentDate; // 사건 발생 날짜
+    private String incidentTime; // 사건 발생 시간
     private String createdDate; // 등록일시 (문자열 변환)
     private boolean isPrivacyAgreed;
 }
