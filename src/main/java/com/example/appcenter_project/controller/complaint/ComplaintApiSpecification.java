@@ -28,7 +28,7 @@ public interface ComplaintApiSpecification {
     @Operation(
             summary = "민원 등록",
             description = "로그인한 사용자가 민원을 등록합니다. 상태는 기본 대기중으로 저장됩니다. 파일 첨부가 가능합니다." +
-            "type : 소음,흡연,음주,호실변경신청,벌점 및 상점 문의, 물건 적치 신고",
+            "type : 소음,흡연,음주,호실 변경,공용공간",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
