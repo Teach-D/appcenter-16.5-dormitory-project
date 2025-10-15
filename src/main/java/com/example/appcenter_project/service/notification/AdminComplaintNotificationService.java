@@ -177,7 +177,7 @@ public class AdminComplaintNotificationService {
 
     public void sendAndSaveComplaintNotification(Complaint complaint) {
 
-        if (complaint.getType() == ComplaintType.ROOMMATE_CHANGE) {
+        if (complaint.getType() == ComplaintType.ROOM_CHANGE) {
             String title = "새로운 룸메이트 민원이 작성되었습니다!";
 
             Notification notification = Notification.builder()
