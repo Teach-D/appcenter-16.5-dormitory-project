@@ -29,3 +29,4 @@ public class ResponseComplaintCsvDto {
     private String replyDate;
     private boolean isPrivacyAgreed;
 }
+
