@@ -18,6 +18,9 @@ public class ResponseComplaintDetailDto {
     private String floor;
     private String roomNumber;
     private String bedNumber;
+    private String specificLocation; // 구체적 장소
+    private String incidentDate; // 사건 발생 날짜
+    private String incidentTime; // 사건 발생 시간
     private String createdDate; // ISO 또는 포맷 문자열
     private String officer;
     private ResponseComplaintReplyDto reply; // null 가능

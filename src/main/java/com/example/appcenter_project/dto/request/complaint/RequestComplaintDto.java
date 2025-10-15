@@ -1,6 +1,7 @@
 package com.example.appcenter_project.dto.request.complaint;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -11,7 +12,7 @@ public class RequestComplaintDto {
 
     @Schema(description = "민원 유형", 
             example = "소음",
-            allowableValues = {"소음", "흡연", "음주", "룸메이트변경", "벌점상쇄","벌점사유확인"})
+            allowableValues = {"소음", "흡연", "음주", "호실 변경", "공용공간"})
     private String type;
     
     @Schema(description = "기숙사 구분", 
@@ -37,6 +38,21 @@ public class RequestComplaintDto {
     @Schema(description = "민원 내용", 
             example = "3층 301호 화장실 변기가 막혀서 사용할 수 없습니다. 빠른 수리 부탁드립니다.")
     private String content;     // 민원 내용
+
+    @Schema(description = "구체적 장소",
+            example = "3층 301호",
+            required = true)
+    private String specificLocation; // 구체적 장소
+
+    @Schema(description = "사건 발생 날짜",
+            example = "2024-01-15", 
+            required = true)
+    private String incidentDate; // 사건 발생 날짜
+
+    @Schema(description = "사건 발생 시간 (필수)", 
+            example = "14:30", 
+            required = true)
+    private String incidentTime; // 사건 발생 시간
 
     @Schema(description = "개인정보 동의 여부", example = "true")
     private boolean isPrivacyAgreed;

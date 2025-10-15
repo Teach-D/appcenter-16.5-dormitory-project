@@ -28,7 +28,10 @@ import com.example.appcenter_project.utils.CsvUtils;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -69,7 +72,10 @@ public class ComplaintService {
         if (dto.getTitle() == null || dto.getTitle().isBlank()
                 || dto.getContent() == null || dto.getContent().isBlank()
                 || dto.getDormType() == null || dto.getDormType().isBlank()
-                || dto.getBuilding() == null || dto.getBuilding().isBlank()) {
+                || dto.getBuilding() == null || dto.getBuilding().isBlank()
+                || dto.getSpecificLocation() == null || dto.getSpecificLocation().isBlank()
+                || dto.getIncidentDate() == null || dto.getIncidentDate().isBlank()
+                || dto.getIncidentTime() == null || dto.getIncidentTime().isBlank()) {
             throw new CustomException(COMPLAINT_REQUIRED_FIELD_MISSING);
         }
 
@@ -87,6 +93,9 @@ public class ComplaintService {
                 .floor(dto.getFloor())
                 .roomNumber(dto.getRoomNumber())
                 .bedNumber(dto.getBedNumber())
+                .specificLocation(dto.getSpecificLocation())
+                .incidentDate(dto.getIncidentDate())
+                .incidentTime(dto.getIncidentTime())
                 .isPrivacyAgreed(dto.isPrivacyAgreed())
                 .build();
 
@@ -95,6 +104,23 @@ public class ComplaintService {
         // 이미지 저장
         if (images != null && !images.isEmpty()) {
             imageService.saveImages(ImageType.COMPLAINT, complaint.getId(), images);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        DayOfWeek dayOfWeek = now.getDayOfWeek();
+        int hour = now.getHour();
+
+        // 평일(월~금)인지 확인
+        boolean isWeekday = dayOfWeek != DayOfWeek.SATURDAY && dayOfWeek != DayOfWeek.SUNDAY;
+
+        // 18시 이상 22시 미만인지 확인
+        boolean isEvening = !now.toLocalTime().isBefore(LocalTime.of(18, 0)) &&
+                now.toLocalTime().isBefore(LocalTime.of(22, 0));
+
+        // 신속 민원
+        if (isWeekday && isEvening && (complaint.getType() == ComplaintType.NOISE || complaint.getType() == ComplaintType.SMOKING)) {
+            adminComplaintNotificationService.sendAndSaveExpeditedComplaintNotification(complaint);
         }
 
         try {
@@ -123,6 +149,9 @@ public class ComplaintService {
                 .floor(saved.getFloor())
                 .roomNumber(saved.getRoomNumber())
                 .bedNumber(saved.getBedNumber())
+                .specificLocation(saved.getSpecificLocation())
+                .incidentDate(saved.getIncidentDate())
+                .incidentTime(saved.getIncidentTime())
                 .isPrivacyAgreed(saved.isPrivacyAgreed())
                 .status(saved.getStatus().toValue())
                 .createdDate(saved.getCreatedDate().toString())
@@ -206,6 +235,9 @@ public class ComplaintService {
                 .floor(c.getFloor())
                 .roomNumber(c.getRoomNumber())
                 .bedNumber(c.getBedNumber())
+                .specificLocation(c.getSpecificLocation())
+                .incidentDate(c.getIncidentDate())
+                .incidentTime(c.getIncidentTime())
                 .status(c.getStatus().toValue())
                 .createdDate(c.getCreatedDate().toString())
                 .reply(replyDto)
@@ -253,6 +285,9 @@ public class ComplaintService {
                 .floor(c.getFloor())
                 .roomNumber(c.getRoomNumber())
                 .bedNumber(c.getBedNumber())
+                .specificLocation(c.getSpecificLocation())
+                .incidentDate(c.getIncidentDate())
+                .incidentTime(c.getIncidentTime())
                 .status(c.getStatus().toValue())
                 .createdDate(c.getCreatedDate().toString())
                 .reply(replyDto)
