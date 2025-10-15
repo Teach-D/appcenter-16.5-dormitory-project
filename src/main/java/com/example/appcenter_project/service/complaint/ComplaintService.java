@@ -69,7 +69,10 @@ public class ComplaintService {
         if (dto.getTitle() == null || dto.getTitle().isBlank()
                 || dto.getContent() == null || dto.getContent().isBlank()
                 || dto.getDormType() == null || dto.getDormType().isBlank()
-                || dto.getBuilding() == null || dto.getBuilding().isBlank()) {
+                || dto.getBuilding() == null || dto.getBuilding().isBlank()
+                || dto.getSpecificLocation() == null || dto.getSpecificLocation().isBlank()
+                || dto.getIncidentDate() == null || dto.getIncidentDate().isBlank()
+                || dto.getIncidentTime() == null || dto.getIncidentTime().isBlank()) {
             throw new CustomException(COMPLAINT_REQUIRED_FIELD_MISSING);
         }
 
@@ -87,6 +90,9 @@ public class ComplaintService {
                 .floor(dto.getFloor())
                 .roomNumber(dto.getRoomNumber())
                 .bedNumber(dto.getBedNumber())
+                .specificLocation(dto.getSpecificLocation())
+                .incidentDate(dto.getIncidentDate())
+                .incidentTime(dto.getIncidentTime())
                 .isPrivacyAgreed(dto.isPrivacyAgreed())
                 .build();
 
@@ -123,6 +129,9 @@ public class ComplaintService {
                 .floor(saved.getFloor())
                 .roomNumber(saved.getRoomNumber())
                 .bedNumber(saved.getBedNumber())
+                .specificLocation(saved.getSpecificLocation())
+                .incidentDate(saved.getIncidentDate())
+                .incidentTime(saved.getIncidentTime())
                 .isPrivacyAgreed(saved.isPrivacyAgreed())
                 .status(saved.getStatus().toValue())
                 .createdDate(saved.getCreatedDate().toString())
@@ -206,6 +215,9 @@ public class ComplaintService {
                 .floor(c.getFloor())
                 .roomNumber(c.getRoomNumber())
                 .bedNumber(c.getBedNumber())
+                .specificLocation(c.getSpecificLocation())
+                .incidentDate(c.getIncidentDate())
+                .incidentTime(c.getIncidentTime())
                 .status(c.getStatus().toValue())
                 .createdDate(c.getCreatedDate().toString())
                 .reply(replyDto)
@@ -253,6 +265,9 @@ public class ComplaintService {
                 .floor(c.getFloor())
                 .roomNumber(c.getRoomNumber())
                 .bedNumber(c.getBedNumber())
+                .specificLocation(c.getSpecificLocation())
+                .incidentDate(c.getIncidentDate())
+                .incidentTime(c.getIncidentTime())
                 .status(c.getStatus().toValue())
                 .createdDate(c.getCreatedDate().toString())
                 .reply(replyDto)
