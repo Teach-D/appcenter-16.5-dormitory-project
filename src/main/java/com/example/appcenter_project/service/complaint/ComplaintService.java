@@ -28,7 +28,10 @@ import com.example.appcenter_project.utils.CsvUtils;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -95,6 +98,23 @@ public class ComplaintService {
         // 이미지 저장
         if (images != null && !images.isEmpty()) {
             imageService.saveImages(ImageType.COMPLAINT, complaint.getId(), images);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        DayOfWeek dayOfWeek = now.getDayOfWeek();
+        int hour = now.getHour();
+
+        // 평일(월~금)인지 확인
+        boolean isWeekday = dayOfWeek != DayOfWeek.SATURDAY && dayOfWeek != DayOfWeek.SUNDAY;
+
+        // 18시 이상 22시 미만인지 확인
+        boolean isEvening = !now.toLocalTime().isBefore(LocalTime.of(18, 0)) &&
+                now.toLocalTime().isBefore(LocalTime.of(22, 0));
+
+        // 신속 민원
+        if (isWeekday && isEvening && (complaint.getType() == ComplaintType.NOISE || complaint.getType() == ComplaintType.SMOKING)) {
+            adminComplaintNotificationService.sendAndSaveExpeditedComplaintNotification(complaint);
         }
 
         try {
