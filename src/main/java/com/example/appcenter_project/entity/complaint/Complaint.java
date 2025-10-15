@@ -48,6 +48,15 @@ public class Complaint extends BaseTimeEntity {
     @Lob
     private String content;    // 내용
 
+    @Column(nullable = false)
+    private String specificLocation; // 구체적 장소
+
+    @Column(nullable = false)
+    private String incidentDate; // 사건 발생 날짜
+
+    @Column(nullable = false)
+    private String incidentTime; // 사건 발생 시간
+
     private boolean isPrivacyAgreed; // 개인정보 동의 여부
 
     @Enumerated(EnumType.STRING)
@@ -67,6 +76,9 @@ public class Complaint extends BaseTimeEntity {
                      String floor,
                      String roomNumber,
                      String bedNumber,
+                     String specificLocation,
+                     String incidentDate,
+                     String incidentTime,
                      boolean isPrivacyAgreed) {
         this.type = type;
         this.dormType = dormType;
@@ -79,6 +91,9 @@ public class Complaint extends BaseTimeEntity {
         this.floor = floor;
         this.roomNumber = roomNumber;
         this.bedNumber = bedNumber;
+        this.specificLocation = specificLocation;
+        this.incidentDate = incidentDate;
+        this.incidentTime = incidentTime;
         this.isPrivacyAgreed = isPrivacyAgreed;
     }
 
@@ -106,6 +121,9 @@ public class Complaint extends BaseTimeEntity {
         this.floor = dto.getFloor();
         this.roomNumber = dto.getRoomNumber();
         this.bedNumber = dto.getBedNumber();
+        this.specificLocation = dto.getSpecificLocation();
+        this.incidentDate = dto.getIncidentDate();
+        this.incidentTime = dto.getIncidentTime();
         this.isPrivacyAgreed = dto.isPrivacyAgreed();
     }
 
