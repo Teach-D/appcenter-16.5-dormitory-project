@@ -9,6 +9,7 @@ import com.example.appcenter_project.enums.ApiType;
 import com.example.appcenter_project.enums.announcement.AnnouncementType;
 import com.example.appcenter_project.enums.user.DormType;
 import com.example.appcenter_project.enums.user.NotificationType;
+import com.example.appcenter_project.enums.user.Role;
 import com.example.appcenter_project.repository.announcement.CrawledAnnouncementRepository;
 import com.example.appcenter_project.repository.file.CrawledAnnouncementFileRepository;
 import com.example.appcenter_project.repository.notification.NotificationRepository;
@@ -27,12 +28,13 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
@@ -50,6 +52,7 @@ public class AnnouncementCrawlScheduler {
     private final FcmMessageService fcmMessageService;
 
     @Scheduled(cron = "0 0 9,18 * * ?")
+    @Transactional
     public void crawling() {
         List<String> crawlLinks = crawlWithSelenium();
         saveCrawlAnnouncements(crawlLinks);
@@ -66,7 +69,6 @@ public class AnnouncementCrawlScheduler {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void saveCrawlAnnouncement(String link) {
         WebDriver driver = null;
 
@@ -233,7 +235,11 @@ public class AnnouncementCrawlScheduler {
 
             notificationRepository.save(notification);
 
-            for (User receiveUser : userRepository.findByDormTypeNotAndReceiveNotificationTypesContains(DormType.NONE, NotificationType.DORMITORY)) {
+            List<Role> dormitoryUserRoles = Arrays.asList(Role.ROLE_DORM_MANAGER, Role.ROLE_DORM_LIFE_MANAGER, Role.ROLE_DORM_ROOMMATE_MANAGER);
+
+            List<User> allUsers = userRepository.findByReceiveNotificationTypesContainsAndRoleNotIn(NotificationType.DORMITORY, dormitoryUserRoles);
+
+            for (User receiveUser : allUsers) {
                 UserNotification userNotification = UserNotification.of(receiveUser, notification);
                 userNotificationRepository.save(userNotification);
 
