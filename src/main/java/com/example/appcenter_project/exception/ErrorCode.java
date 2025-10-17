@@ -133,7 +133,10 @@ public enum ErrorCode {
 
     // FCM
     FCM_TOKEN_NOT_FOUND(NOT_FOUND, 17001, "[FCM] 전체 사용자에게 보낼 FCM 토큰이 존재하지 않습니다."),
-    FCM_SEND_FAILED(INTERNAL_SERVER_ERROR, 17002, "[FCM] FCM 메시지 전송 중 오류가 발생했습니다.");
+    FCM_SEND_FAILED(INTERNAL_SERVER_ERROR, 17002, "[FCM] FCM 메시지 전송 중 오류가 발생했습니다."),
+
+    // COUPON
+    COUPON_NOT_FOUND(NOT_FOUND, 18002, "[COUPON] 쿠폰이 존재하지 않습니다.");
 
     private final HttpStatus httpStatus;
     private final Integer code;
