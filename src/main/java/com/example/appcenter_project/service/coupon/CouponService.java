@@ -14,6 +14,7 @@ import com.example.appcenter_project.repository.notification.NotificationReposit
 import com.example.appcenter_project.repository.notification.UserNotificationRepository;
 import com.example.appcenter_project.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -39,7 +41,7 @@ public class CouponService {
     private final RedisTemplate<String, String> redisTemplate;
 
     public ResponseCouponDto findCoupon(Long userId) {
-        if (couponRepository.findAll().isEmpty()) {
+        if (couponRepository.count() == 0) {
             return ResponseCouponDto.builder()
                     .success(false)
                     .build();
