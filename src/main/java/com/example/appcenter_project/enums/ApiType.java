@@ -3,5 +3,5 @@ package com.example.appcenter_project.enums;
 import com.example.appcenter_project.entity.announcement.Announcement;
 
 public enum ApiType {
-    ANNOUNCEMENT, COMPLAINT, GROUP_ORDER, NOTIFICATION, ROOMMATE
+    ANNOUNCEMENT, COMPLAINT, GROUP_ORDER, NOTIFICATION, ROOMMATE, COUPON
 }
