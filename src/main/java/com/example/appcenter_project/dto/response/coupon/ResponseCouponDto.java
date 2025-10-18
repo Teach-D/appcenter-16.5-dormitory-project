@@ -10,7 +10,5 @@ import java.time.LocalDate;
 public class ResponseCouponDto {
 
     private boolean success;
-    private String code;
-    private LocalDate startDate;
-    private LocalDate endDate;
+    private boolean isIssued;
 }
