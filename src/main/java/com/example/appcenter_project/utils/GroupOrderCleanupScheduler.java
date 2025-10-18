@@ -57,10 +57,14 @@ public class GroupOrderCleanupScheduler {
             for (GroupOrderLike groupOrderLike : groupOrder.getGroupOrderLikeList()) {
                 User user = groupOrderLike.getUser();
 
-                UserNotification userNotification = UserNotification.of(user, notification);
-                userNotificationRepository.save(userNotification);
+                if (user.getReceiveNotificationTypes().contains(NotificationType.GROUP_ORDER)) {
+                    UserNotification userNotification = UserNotification.of(user, notification);
+                    userNotificationRepository.save(userNotification);
 
-                fcmMessageService.sendNotification(user, notification.getTitle(), notification.getBody());
+                    fcmMessageService.sendNotification(user, notification.getTitle(), notification.getBody());
+                }
+
+
             }
 
         }
