@@ -148,6 +148,9 @@ public class SecurityConfig {
                         /** FCM 토큰 **/
                         .requestMatchers("/fcm/token/**").permitAll()
 
+                        /** 쿠폰 **/
+                        .requestMatchers("/coupons/**").authenticated()
+
                         /** 나머지 **/
                         .anyRequest().authenticated()
                 )
