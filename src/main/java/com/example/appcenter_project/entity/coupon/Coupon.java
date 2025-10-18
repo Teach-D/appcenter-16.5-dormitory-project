@@ -18,7 +18,4 @@ public class Coupon {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String code;
-    private LocalDate startDate;
-    private LocalDate endDate;
 }
