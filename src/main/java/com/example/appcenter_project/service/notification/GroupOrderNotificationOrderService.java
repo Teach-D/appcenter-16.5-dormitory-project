@@ -57,7 +57,7 @@ public class GroupOrderNotificationOrderService {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         for (Map.Entry<User, String> userStringEntry : userKeywordMap.entrySet()) {
-            String title = "[" + userStringEntry.getValue() + "]" + " 공동구매 게시글이 등록되었습니다!";
+            String title = "[" + userStringEntry.getValue() + "]" + " 공동구매 새 글이 올라왔어요";
 
             Notification notification = null;
 
@@ -110,7 +110,7 @@ public class GroupOrderNotificationOrderService {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         for (Map.Entry<User, GroupOrderType> userTypeEntry : userTypeMap.entrySet()) {
-            String title = "[" + userTypeEntry.getValue().toValue() + "]" + " 공동구매 게시글이 등록되었습니다!";
+            String title = "[" + userTypeEntry.getValue().toValue() + "]" + " 공동구매 새 글이 올라왔어요";
 
             Notification notification = null;
 
