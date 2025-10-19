@@ -261,8 +261,8 @@ public class GroupOrderService {
             throw new CustomException(GROUP_ORDER_TITLE_DUPLICATE);
         }*/
 
-        if (!(requestGroupOrderDto.getOpenChatLink() == null || requestGroupOrderDto.getOpenChatLink() == "")
-                && requestGroupOrderDto.getOpenChatLink() != groupOrder.getOpenChatLink()) {
+        if (!(requestGroupOrderDto.getOpenChatLink() == null || requestGroupOrderDto.getOpenChatLink().isEmpty())
+                && !requestGroupOrderDto.getOpenChatLink().equals(groupOrder.getOpenChatLink())) {
 
             // 좋아요 누른 유저들에게 알림
             Notification likeNotification = Notification.builder()
