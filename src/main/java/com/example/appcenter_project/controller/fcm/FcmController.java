@@ -24,7 +24,7 @@ public class FcmController implements FcmApiSpecification{
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody RequestFcmTokenDto requestDto
     ) {
-        fcmTokenService.saveToken(userDetails.getId(), requestDto.getFcmToken());
+        fcmTokenService.saveToken(userDetails, requestDto.getFcmToken());
         return ResponseEntity.ok().build();
     }
 
