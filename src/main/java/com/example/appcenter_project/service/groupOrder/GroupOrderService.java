@@ -261,22 +261,26 @@ public class GroupOrderService {
             throw new CustomException(GROUP_ORDER_TITLE_DUPLICATE);
         }*/
 
-        groupOrder.update(requestGroupOrderDto);
+        if (!(requestGroupOrderDto.getOpenChatLink() == null || requestGroupOrderDto.getOpenChatLink() == "")
+                && requestGroupOrderDto.getOpenChatLink() != groupOrder.getOpenChatLink()) {
 
-        imageService.updateGroupOrderImages(ImageType.GROUP_ORDER, groupOrderId, images);
-
-        if (!(requestGroupOrderDto.getOpenChatLink() == null || requestGroupOrderDto.getOpenChatLink() == "")) {
+            // 좋아요 누른 유저들에게 알림
             Notification likeNotification = Notification.builder()
                     .title("좋아요한 공동구매 게시글의 오픈채팅방이 만들어졌어요!")
                     .body(groupOrder.getTitle())
                     .notificationType(NotificationType.GROUP_ORDER)
                     .apiType(ApiType.GROUP_ORDER)
+                    .boardId(groupOrder.getId())
                     .build();
 
             notificationRepository.save(likeNotification);
 
+            // 좋아요 누른 유저 ID 수집
+            Set<Long> likedUserIds = new HashSet<>();
+
             for (GroupOrderLike groupOrderLike : groupOrder.getGroupOrderLikeList()) {
                 User user = groupOrderLike.getUser();
+                likedUserIds.add(user.getId());
 
                 UserNotification userNotification = UserNotification.of(user, likeNotification);
                 userNotificationRepository.save(userNotification);
@@ -284,11 +288,13 @@ public class GroupOrderService {
                 fcmMessageService.sendNotification(user, likeNotification.getTitle(), likeNotification.getBody());
             }
 
+            // 댓글 작성한 유저들에게 알림 (좋아요 누른 유저 제외)
             Notification commentNotification = Notification.builder()
                     .title("댓글을 단 공동구매 게시글의 오픈채팅방이 만들어졌어요!")
                     .body(groupOrder.getTitle())
                     .notificationType(NotificationType.GROUP_ORDER)
                     .apiType(ApiType.GROUP_ORDER)
+                    .boardId(groupOrder.getId())
                     .build();
 
             notificationRepository.save(commentNotification);
@@ -296,12 +302,19 @@ public class GroupOrderService {
             for (GroupOrderComment groupOrderComment : groupOrder.getGroupOrderCommentList()) {
                 User user = groupOrderComment.getUser();
 
-                UserNotification userNotification = UserNotification.of(user, commentNotification);
-                userNotificationRepository.save(userNotification);
+                // 이미 좋아요로 알림을 받은 유저는 제외
+                if (!likedUserIds.contains(user.getId())) {
+                    UserNotification userNotification = UserNotification.of(user, commentNotification);
+                    userNotificationRepository.save(userNotification);
 
-                fcmMessageService.sendNotification(user, commentNotification.getTitle(), commentNotification.getBody());
+                    fcmMessageService.sendNotification(user, commentNotification.getTitle(), commentNotification.getBody());
+                }
             }
         }
+
+        groupOrder.update(requestGroupOrderDto);
+
+        imageService.updateGroupOrderImages(ImageType.GROUP_ORDER, groupOrderId, images);
     }
 
     public void deleteGroupOrder(Long userId, Long groupOrderId) {
