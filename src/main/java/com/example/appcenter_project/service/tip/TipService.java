@@ -107,24 +107,26 @@ public class TipService {
         List<ResponseTipCommentDto> topLevelComments = new ArrayList<>();
 
         for (ResponseTipCommentDto comment : flatComments) {
-            // 삭제된 댓글 내용 처리
+            // 삭제된 댓글 처리
             if (Boolean.TRUE.equals(comment.getIsDeleted())) {
                 comment.updateReply("삭제된 메시지입니다.");
+                comment.updateName("알 수 없는 사용자");
+                comment.updateWriterImageFile(null);
+            } else {
+                // 삭제되지 않은 댓글의 작성자 이미지 처리
+                Long userId = comment.getUserId();
+                String commentWriterImageUrl = imageService.findStaticImageUrl(ImageType.USER, userId, request);
+                comment.updateWriterImageFile(commentWriterImageUrl);
             }
 
             // 댓글 계층 구조 구성
             if (comment.getParentId() == null) {
+                // 부모 댓글
                 comment.updateChildTipCommentList(new ArrayList<>());
-
-                // 대댓글 작성자 이미지 url
-                Long userId = comment.getUserId();
-                String commentWriterImageUrl = imageService.findStaticImageUrl(ImageType.USER, userId, request);
-
-                comment.updateWriterImageFile(commentWriterImageUrl);
-
                 parentMap.put(comment.getTipCommentId(), comment);
                 topLevelComments.add(comment);
             } else {
+                // 자식 댓글 (대댓글)
                 ResponseTipCommentDto parent = parentMap.get(comment.getParentId());
                 if (parent != null) {
                     if (parent.getChildTipCommentList() == null) {
@@ -132,10 +134,6 @@ public class TipService {
                     }
                     parent.getChildTipCommentList().add(comment);
                 }
-                Long userId = comment.getUserId();
-                String commentWriterImageUrl = imageService.findStaticImageUrl(ImageType.USER, userId, request);
-
-                comment.updateWriterImageFile(commentWriterImageUrl);
             }
         }
 
