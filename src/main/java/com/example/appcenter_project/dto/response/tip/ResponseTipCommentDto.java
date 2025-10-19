@@ -60,4 +60,8 @@ public class ResponseTipCommentDto {
     public void updateWriterImageFile(String  writerImageFile) {
         this.writerImageFile = writerImageFile;
     }
+
+    public void updateName(String name) {
+        this.name = name;
+    }
 }
