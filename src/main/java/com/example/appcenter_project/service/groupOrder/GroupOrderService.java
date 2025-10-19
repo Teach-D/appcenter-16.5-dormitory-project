@@ -261,11 +261,8 @@ public class GroupOrderService {
             throw new CustomException(GROUP_ORDER_TITLE_DUPLICATE);
         }*/
 
-        groupOrder.update(requestGroupOrderDto);
-
-        imageService.updateGroupOrderImages(ImageType.GROUP_ORDER, groupOrderId, images);
-
-        if (!(requestGroupOrderDto.getOpenChatLink() == null || requestGroupOrderDto.getOpenChatLink() == "")) {
+        if (!(requestGroupOrderDto.getOpenChatLink() == null || requestGroupOrderDto.getOpenChatLink() == "")
+                && requestGroupOrderDto.getOpenChatLink() != groupOrder.getOpenChatLink()) {
             Notification likeNotification = Notification.builder()
                     .title("좋아요한 공동구매 게시글의 오픈채팅방이 만들어졌어요!")
                     .body(groupOrder.getTitle())
@@ -302,6 +299,12 @@ public class GroupOrderService {
                 fcmMessageService.sendNotification(user, commentNotification.getTitle(), commentNotification.getBody());
             }
         }
+
+        groupOrder.update(requestGroupOrderDto);
+
+        imageService.updateGroupOrderImages(ImageType.GROUP_ORDER, groupOrderId, images);
+
+
     }
 
     public void deleteGroupOrder(Long userId, Long groupOrderId) {
