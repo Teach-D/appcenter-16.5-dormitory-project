@@ -27,7 +27,6 @@ import com.example.appcenter_project.service.fcm.FcmMessageService;
 import com.example.appcenter_project.service.image.ImageService;
 import com.example.appcenter_project.service.notification.GroupOrderNotificationOrderService;
 import com.example.appcenter_project.utils.MealTimeChecker;
-import io.micrometer.core.annotation.Counted;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -218,7 +217,6 @@ public class GroupOrderService {
         return imageService.findImages(ImageType.GROUP_ORDER, groupOrderId, request);
     }
 
-    @Counted("group.orders")
     public List<ResponseGroupOrderDto> findGroupOrders(CustomUserDetails jwtUser, GroupOrderSort sort, GroupOrderType type, String search, HttpServletRequest request) {
         if (jwtUser != null && search != null) {
                 User user = userRepository.findById(jwtUser.getId())
