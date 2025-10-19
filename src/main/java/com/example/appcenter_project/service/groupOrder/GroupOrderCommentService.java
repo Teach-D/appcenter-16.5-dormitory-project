@@ -91,21 +91,25 @@ public class GroupOrderCommentService {
 
             String commentTitle = "[" + parentGroupOrderComment.getReply() + "]" + " 에 대댓글이 달렸어요";
 
-            Notification commentNotification = Notification.builder()
-                    .boardId(groupOrder.getId())
-                    .title(commentTitle)
-                    .body(groupOrderComment.getReply())
-                    .notificationType(NotificationType.GROUP_ORDER)
-                    .apiType(ApiType.GROUP_ORDER)
-                    .build();
+            if (parentGroupOrderComment.getUser() != user) {
+                Notification commentNotification = Notification.builder()
+                        .boardId(groupOrder.getId())
+                        .title(commentTitle)
+                        .body(groupOrderComment.getReply())
+                        .notificationType(NotificationType.GROUP_ORDER)
+                        .apiType(ApiType.GROUP_ORDER)
+                        .build();
 
-            notificationRepository.save(commentNotification);
+                notificationRepository.save(commentNotification);
 
-            UserNotification commentUserNotification = UserNotification.of(parentGroupOrderComment.getUser(), commentNotification);
-            userNotificationRepository.save(commentUserNotification);
+                UserNotification commentUserNotification = UserNotification.of(parentGroupOrderComment.getUser(), commentNotification);
+                userNotificationRepository.save(commentUserNotification);
 
-            fcmMessageService.sendNotification(parentGroupOrderComment.getUser(), commentNotification.getTitle(), commentNotification.getBody());
-        }
+                fcmMessageService.sendNotification(parentGroupOrderComment.getUser(), commentNotification.getTitle(), commentNotification.getBody());
+
+            }
+
+         }
 
         // 양방향 매핑
         groupOrder.getGroupOrderCommentList().add(groupOrderComment);
