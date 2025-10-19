@@ -7,6 +7,7 @@ import com.example.appcenter_project.entity.notification.UserNotification;
 import com.example.appcenter_project.entity.user.User;
 import com.example.appcenter_project.enums.ApiType;
 import com.example.appcenter_project.enums.user.NotificationType;
+import com.example.appcenter_project.enums.user.Role;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.exception.ErrorCode;
 import com.example.appcenter_project.repository.coupon.CouponRepository;
@@ -41,6 +42,17 @@ public class CouponService {
 
     @Transactional
     public ResponseCouponDto findCoupon(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        if (user.getRole() != Role.ROLE_USER) {
+            log.info("관리자는 쿠폰을 받을 수 없습니다", userId);
+            return ResponseCouponDto.builder()
+                    .isIssued(false)
+                    .success(false)
+                    .build();
+        }
+
         log.info("쿠폰 조회 요청 - userId: {}", userId);
 
         // 1. 가장 먼저 중복 발급 체크 (가장 빠른 반환)
