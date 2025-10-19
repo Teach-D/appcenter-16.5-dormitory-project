@@ -29,4 +29,8 @@ public class FcmToken {
     public void updateToken(String newToken) {
         this.token = newToken;
     }
+
+    public void updateUser(User user) {
+        this.user = user;
+    }
 }
