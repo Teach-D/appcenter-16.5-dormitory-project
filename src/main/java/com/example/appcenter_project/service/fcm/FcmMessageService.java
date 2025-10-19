@@ -49,7 +49,6 @@ public class FcmMessageService {
             } catch (Exception e) {
                 log.error("Error sending FCM message", e);
                 fcmTokenRepository.deleteByToken(targetToken);
-                throw new RuntimeException("FCM 발송 실패", e);
             }
         }
         // todo 임시로 null
@@ -85,7 +84,6 @@ public class FcmMessageService {
             } catch (Exception e) {
                 log.error("Error sending FCM message to token: {}", targetToken, e);
                 fcmTokenRepository.deleteByToken(targetToken);
-                throw new CustomException(ErrorCode.FCM_SEND_FAILED);
             }
         }
 
@@ -118,7 +116,6 @@ public class FcmMessageService {
                     } catch (Exception e) {
                         log.error("Error sending FCM message", e);
                         fcmTokenRepository.deleteByToken(targetToken);
-                        throw new RuntimeException("FCM 발송 실패", e);
                     }
                 }
             }
@@ -206,7 +203,6 @@ public class FcmMessageService {
             } catch (Exception e) {
                 log.error("      ❌ FCM 전송 실패", e);
                 fcmTokenRepository.deleteByToken(targetToken);
-                throw new RuntimeException("FCM 발송 실패", e);
             }
         }
 
