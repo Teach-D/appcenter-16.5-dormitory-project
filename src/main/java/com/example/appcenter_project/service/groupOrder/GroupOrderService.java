@@ -6,10 +6,14 @@ import com.example.appcenter_project.dto.response.groupOrder.*;
 import com.example.appcenter_project.entity.Image;
 import com.example.appcenter_project.entity.groupOrder.*;
 import com.example.appcenter_project.entity.like.GroupOrderLike;
+import com.example.appcenter_project.entity.notification.Notification;
+import com.example.appcenter_project.entity.notification.UserNotification;
 import com.example.appcenter_project.entity.user.*;
+import com.example.appcenter_project.enums.ApiType;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderSort;
 import com.example.appcenter_project.enums.groupOrder.GroupOrderType;
 import com.example.appcenter_project.enums.image.ImageType;
+import com.example.appcenter_project.enums.user.NotificationType;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.mapper.GroupOrderMapper;
 import com.example.appcenter_project.repository.groupOrder.*;
@@ -260,6 +264,44 @@ public class GroupOrderService {
         groupOrder.update(requestGroupOrderDto);
 
         imageService.updateGroupOrderImages(ImageType.GROUP_ORDER, groupOrderId, images);
+
+        if (!(requestGroupOrderDto.getOpenChatLink() == null || requestGroupOrderDto.getOpenChatLink() == "")) {
+            Notification likeNotification = Notification.builder()
+                    .title("좋아요한 공동구매 게시글의 오픈채팅방이 만들어졌어요!")
+                    .body(groupOrder.getTitle())
+                    .notificationType(NotificationType.GROUP_ORDER)
+                    .apiType(ApiType.GROUP_ORDER)
+                    .build();
+
+            notificationRepository.save(likeNotification);
+
+            for (GroupOrderLike groupOrderLike : groupOrder.getGroupOrderLikeList()) {
+                User user = groupOrderLike.getUser();
+
+                UserNotification userNotification = UserNotification.of(user, likeNotification);
+                userNotificationRepository.save(userNotification);
+
+                fcmMessageService.sendNotification(user, likeNotification.getTitle(), likeNotification.getBody());
+            }
+
+            Notification commentNotification = Notification.builder()
+                    .title("댓글을 단 공동구매 게시글의 오픈채팅방이 만들어졌어요!")
+                    .body(groupOrder.getTitle())
+                    .notificationType(NotificationType.GROUP_ORDER)
+                    .apiType(ApiType.GROUP_ORDER)
+                    .build();
+
+            notificationRepository.save(commentNotification);
+
+            for (GroupOrderComment groupOrderComment : groupOrder.getGroupOrderCommentList()) {
+                User user = groupOrderComment.getUser();
+
+                UserNotification userNotification = UserNotification.of(user, commentNotification);
+                userNotificationRepository.save(userNotification);
+
+                fcmMessageService.sendNotification(user, commentNotification.getTitle(), commentNotification.getBody());
+            }
+        }
     }
 
     public void deleteGroupOrder(Long userId, Long groupOrderId) {
