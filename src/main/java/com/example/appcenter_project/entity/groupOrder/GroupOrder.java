@@ -25,35 +25,26 @@ public class GroupOrder extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
     private String title;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private GroupOrderType groupOrderType;
 
-    @Column(nullable = false)
     private Integer price;
 
-    @Column(nullable = false)
     private String link;
 
-    @Column(nullable = false)
     private String openChatLink;
 
-    @Column(nullable = false)
     private LocalDateTime deadline;
 
-    @Column(nullable = false)
     private int groupOrderLike = 0;
 
-    @Column(nullable = false)
     private int groupOrderViewCount = 0;
 
     @Lob
     private String description;
 
-    @Column(nullable = false)
     private boolean recruitmentComplete = false;
 
     @OneToOne(fetch = FetchType.LAZY)
