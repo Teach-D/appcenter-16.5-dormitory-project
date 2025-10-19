@@ -46,20 +46,24 @@ public class GroupOrderCommentService {
 
         String title = "[" + groupOrder.getTitle() + "]" + " 에 댓글이 달렸어요";
 
-        Notification notification = Notification.builder()
-                .boardId(groupOrder.getId())
-                .title(title)
-                .body(responseGroupOrderCommentDto.getReply())
-                .notificationType(NotificationType.GROUP_ORDER)
-                .apiType(ApiType.GROUP_ORDER)
-                .build();
+        if (groupOrder.getUser() != user) {
+            Notification notification = Notification.builder()
+                    .boardId(groupOrder.getId())
+                    .title(title)
+                    .body(responseGroupOrderCommentDto.getReply())
+                    .notificationType(NotificationType.GROUP_ORDER)
+                    .apiType(ApiType.GROUP_ORDER)
+                    .build();
 
-        notificationRepository.save(notification);
+            notificationRepository.save(notification);
 
-        UserNotification userNotification = UserNotification.of(groupOrder.getUser(), notification);
-        userNotificationRepository.save(userNotification);
+            UserNotification userNotification = UserNotification.of(groupOrder.getUser(), notification);
+            userNotificationRepository.save(userNotification);
 
-        fcmMessageService.sendNotification(groupOrder.getUser(), notification.getTitle(), notification.getBody());
+            fcmMessageService.sendNotification(groupOrder.getUser(), notification.getTitle(), notification.getBody());
+
+        }
+
 
         GroupOrderComment groupOrderComment;
         // 부모 댓글이 없을 때
@@ -87,21 +91,25 @@ public class GroupOrderCommentService {
 
             String commentTitle = "[" + parentGroupOrderComment.getReply() + "]" + " 에 대댓글이 달렸어요";
 
-            Notification commentNotification = Notification.builder()
-                    .boardId(groupOrder.getId())
-                    .title(commentTitle)
-                    .body(groupOrderComment.getReply())
-                    .notificationType(NotificationType.GROUP_ORDER)
-                    .apiType(ApiType.GROUP_ORDER)
-                    .build();
+            if (parentGroupOrderComment.getUser() != user) {
+                Notification commentNotification = Notification.builder()
+                        .boardId(groupOrder.getId())
+                        .title(commentTitle)
+                        .body(groupOrderComment.getReply())
+                        .notificationType(NotificationType.GROUP_ORDER)
+                        .apiType(ApiType.GROUP_ORDER)
+                        .build();
 
-            notificationRepository.save(commentNotification);
+                notificationRepository.save(commentNotification);
 
-            UserNotification commentUserNotification = UserNotification.of(parentGroupOrderComment.getUser(), commentNotification);
-            userNotificationRepository.save(commentUserNotification);
+                UserNotification commentUserNotification = UserNotification.of(parentGroupOrderComment.getUser(), commentNotification);
+                userNotificationRepository.save(commentUserNotification);
 
-            fcmMessageService.sendNotification(parentGroupOrderComment.getUser(), commentNotification.getTitle(), commentNotification.getBody());
-        }
+                fcmMessageService.sendNotification(parentGroupOrderComment.getUser(), commentNotification.getTitle(), commentNotification.getBody());
+
+            }
+
+         }
 
         // 양방향 매핑
         groupOrder.getGroupOrderCommentList().add(groupOrderComment);
