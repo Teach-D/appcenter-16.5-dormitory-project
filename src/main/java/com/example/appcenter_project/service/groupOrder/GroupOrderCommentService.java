@@ -46,20 +46,24 @@ public class GroupOrderCommentService {
 
         String title = "[" + groupOrder.getTitle() + "]" + " 에 댓글이 달렸어요";
 
-        Notification notification = Notification.builder()
-                .boardId(groupOrder.getId())
-                .title(title)
-                .body(responseGroupOrderCommentDto.getReply())
-                .notificationType(NotificationType.GROUP_ORDER)
-                .apiType(ApiType.GROUP_ORDER)
-                .build();
+        if (groupOrder.getUser() != user) {
+            Notification notification = Notification.builder()
+                    .boardId(groupOrder.getId())
+                    .title(title)
+                    .body(responseGroupOrderCommentDto.getReply())
+                    .notificationType(NotificationType.GROUP_ORDER)
+                    .apiType(ApiType.GROUP_ORDER)
+                    .build();
 
-        notificationRepository.save(notification);
+            notificationRepository.save(notification);
 
-        UserNotification userNotification = UserNotification.of(groupOrder.getUser(), notification);
-        userNotificationRepository.save(userNotification);
+            UserNotification userNotification = UserNotification.of(groupOrder.getUser(), notification);
+            userNotificationRepository.save(userNotification);
 
-        fcmMessageService.sendNotification(groupOrder.getUser(), notification.getTitle(), notification.getBody());
+            fcmMessageService.sendNotification(groupOrder.getUser(), notification.getTitle(), notification.getBody());
+
+        }
+
 
         GroupOrderComment groupOrderComment;
         // 부모 댓글이 없을 때
