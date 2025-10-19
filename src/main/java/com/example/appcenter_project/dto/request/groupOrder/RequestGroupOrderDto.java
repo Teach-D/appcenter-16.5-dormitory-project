@@ -14,33 +14,24 @@ import java.time.LocalDateTime;
 
 @Schema(description = "공동구매 정보 입력")
 @Getter
-public class
-RequestGroupOrderDto {
+public class RequestGroupOrderDto {
 
-    @NotBlank(message = "제목은 필수 입력 값입니다.")
     private String title;
 
     @Schema(description = "공동구매 유형",
             allowableValues = {"배달", "식자재", "생활용품",
                     "기타"})
-    @NotNull(message = "공동구매 유형은 필수 입력 값입니다.")
     private GroupOrderType groupOrderType;
 
-    @NotNull(message = "가격은 필수 입력 값입니다.")
-    @Min(value = 1, message = "가격은 1원 이상이어야 합니다.")
     private Integer price;
 
-    @NotBlank(message = "공동구매 링크는 필수 입력 값입니다.")
     private String link;
 
-    @NotBlank(message = "오픈채팅방 링크는 필수 입력 값입니다.")
     private String openChatLink;
 
-    @NotNull(message = "마감일은 필수 입력 값입니다.")
     @Future(message = "마감일은 미래의 날짜여야 합니다.")
     private LocalDateTime deadline;
 
-    @NotBlank(message = "공동구매 설명은 필수 입력 값입니다.")
     private String description;
 
     public static GroupOrder dtoToEntity(RequestGroupOrderDto dto, User user) {
