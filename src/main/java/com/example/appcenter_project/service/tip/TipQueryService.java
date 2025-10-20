@@ -34,7 +34,7 @@ public class TipQueryService {
      * Tip + Image 최적화 조회
      * N+1 문제 해결을 위한 전용 서비스
      */
-    public List<ResponseTipDto> findTipDtosWithImages(Long userId, HttpServletRequest request) {
+    public List<ResponseTipDto> findTipsByUser(Long userId, HttpServletRequest request) {
         List<Tip> tips = tipRepository.findByUserId(userId);
 
         if (tips.isEmpty()) {
@@ -64,7 +64,7 @@ public class TipQueryService {
      * TipLike + Tip + Image 최적화 조회
      * N+1 문제 해결을 위한 전용 서비스
      */
-    public List<ResponseTipDto> findTipLikeDtosWithImages(Long userId, HttpServletRequest request) {
+    public List<ResponseTipDto> findLikedByUser(Long userId, HttpServletRequest request) {
         List<TipLike> tipLikes = tipLikeRepository.findByUserIdWithTip(userId);
         List<Tip> tips = tipLikes.stream().map(TipLike::getTip).toList();
 

@@ -14,14 +14,11 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -78,7 +75,7 @@ public interface UserApiSpecification {
             description = "생활원 직원, 관리자만 특정 사용자의 권한을 생활원 직원으로 변경할 수 있음" +
                     "(role : 기숙사 담당자, 기숙사 생활민원 담당자, 기숙사 룸메이트민원 담당자)"
     )
-    ResponseEntity<Void> changeUserRole(@RequestBody RequestUserRole requestUserRole);
+    ResponseEntity<Void> changeUserRole(@RequestBody RequestUserRoleDto requestUserRoleDto);
 
     @Operation(
             summary = "사용자 정보 조회",
@@ -91,14 +88,14 @@ public interface UserApiSpecification {
                     @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다. (USER_NOT_FOUND)")
             }
     )
-    ResponseEntity<ResponseUserDto> findUserByUserId(@AuthenticationPrincipal CustomUserDetails user);
+    ResponseEntity<ResponseUserDto> findUser(@AuthenticationPrincipal CustomUserDetails user);
 
 
     @Operation(
             summary = "모든 유저의 정보 조회",
             description = "모든 유저의 id, studentNumber를 조회합니다(관리자요)"
     )
-    ResponseEntity<List<ResponseUserDto>> findAllUser();
+    ResponseEntity<List<ResponseUserDto>> findAllUsers();
 
 
     @Operation(
@@ -118,7 +115,7 @@ public interface UserApiSpecification {
                 )
         }
     )
-    ResponseEntity<ImageLinkDto> findUserImageByUserId(@AuthenticationPrincipal CustomUserDetails user, HttpServletRequest request);
+    ResponseEntity<ImageLinkDto> findUserImage(@AuthenticationPrincipal CustomUserDetails user, HttpServletRequest request);
 
     @Operation(
             summary = "사용자가 작성한 게시글 조회",
@@ -131,7 +128,7 @@ public interface UserApiSpecification {
                     @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다. (USER_NOT_FOUND)", content = @Content(examples = {}))
             }
     )
-    ResponseEntity<List<ResponseBoardDto>> findBoardByUserId(@AuthenticationPrincipal CustomUserDetails user, HttpServletRequest request);
+    ResponseEntity<List<ResponseBoardDto>> findUserBoards(@AuthenticationPrincipal CustomUserDetails user, HttpServletRequest request);
 
     @Operation(
             summary = "사용자가 좋아요한 게시글 조회",
@@ -144,12 +141,12 @@ public interface UserApiSpecification {
                     @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다. (USER_NOT_FOUND)", content = @Content(examples = {}))
             }
     )
-    ResponseEntity<List<ResponseBoardDto>> findLikeByUserId(@AuthenticationPrincipal CustomUserDetails user, HttpServletRequest request);
+    ResponseEntity<List<ResponseBoardDto>> findUserLikedBoards(@AuthenticationPrincipal CustomUserDetails user, HttpServletRequest request);
 
     @Operation(
             summary = "개인정보, 이용약관 동의 처리"
     )
-    ResponseEntity<Void> updateAgreement(@AuthenticationPrincipal CustomUserDetails user, @Parameter(description = "이용약관 동의") boolean isTermsAgreed, @Parameter(description = "개인정보처리방침 동의") boolean isPrivacyAgreed);
+    ResponseEntity<Void> updateUserAgreement(@AuthenticationPrincipal CustomUserDetails user, @Parameter(description = "이용약관 동의") boolean isTermsAgreed, @Parameter(description = "개인정보처리방침 동의") boolean isPrivacyAgreed);
 
 
     @Operation(
@@ -231,7 +228,7 @@ public interface UserApiSpecification {
                     )
             }
     )
-    ResponseEntity<ImageLinkDto> findUserTimeTableImageByUserId(@AuthenticationPrincipal CustomUserDetails user, HttpServletRequest request);
+    ResponseEntity<ImageLinkDto> findUserTimeTableImage(@AuthenticationPrincipal CustomUserDetails user, HttpServletRequest request);
 
     @Operation(
             summary = "사용자 시간표 이미지 삭제",
@@ -260,5 +257,5 @@ public interface UserApiSpecification {
                     @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다. (USER_NOT_FOUND)", content = @Content(examples = {}))
             }
     )
-    public ResponseEntity<Void> deleteUser(@AuthenticationPrincipal CustomUserDetails user);
+    ResponseEntity<Void> deleteUser(@AuthenticationPrincipal CustomUserDetails user);
 }
