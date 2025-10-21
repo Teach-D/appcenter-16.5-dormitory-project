@@ -15,18 +15,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByStudentNumber(String studentNumber);
     Boolean existsByStudentNumber(String studentNumber);
     Optional<User> findByRefreshToken(String refreshToken);
-
-    boolean existsByName(String name);
-
     List<User> findByDormTypeNot(DormType dormType);
-    
-    // 특정 역할들을 가진 사용자들 조회
     List<User> findByRoleIn(List<Role> roles);
-
     List<User> findByRole(Role role);
-
-    List<User> findByDormTypeNotAndReceiveNotificationTypesContains(DormType dormType, NotificationType notificationType);
-
     List<User> findByReceiveNotificationTypesContains(NotificationType notificationType);
 
     @Query("SELECT u FROM User u " +

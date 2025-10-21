@@ -6,6 +6,7 @@ import com.example.appcenter_project.dto.response.user.ResponseBoardDto;
 import com.example.appcenter_project.dto.response.user.ResponseLoginDto;
 import com.example.appcenter_project.dto.response.user.ResponseUserDto;
 import com.example.appcenter_project.dto.response.user.ResponseUserRole;
+import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.security.CustomUserDetails;
 import com.example.appcenter_project.service.user.UserService;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -40,55 +41,54 @@ public class UserController implements UserApiSpecification {
     }
 
     @PostMapping("/refreshToken")
-    public ResponseEntity<?> reissueAccessToken(@RequestBody RequestTokenDto requestTokenDto) {
-        if (requestTokenDto.getRefreshToken() != null && requestTokenDto.getRefreshToken().startsWith("Bearer ")) {
-            String refreshToken = requestTokenDto.getRefreshToken().substring(7);
-            String newAccessToken = userService.reissueAccessToken(refreshToken);
+    public ResponseEntity<?> reissueAccessToken(@RequestBody RequestTokenDto request) {
+        try {
+            String newAccessToken = userService.reissueAccessToken(request);
             return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
+        } catch (IllegalArgumentException | CustomException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh Token이 유효하지 않습니다.");
     }
 
     @PostMapping("/push-notification")
-    public ResponseEntity<Void> sendPushNotification(@RequestBody RequestUserPushNotification requestUserPushNotification) {
-        userService.sendPushNotification(requestUserPushNotification);
+    public ResponseEntity<Void> sendPushNotification(@RequestBody RequestUserPushNotification request) {
+        userService.sendPushNotification(request);
         return ResponseEntity.status(CREATED).build();
     }
 
     @PostMapping("/role")
-    public ResponseEntity<Void> changeUserRole(@RequestBody RequestUserRole requestUserRole) {
-        userService.changeUserRole(requestUserRole);
+    public ResponseEntity<Void> changeUserRole(@RequestBody RequestUserRoleDto request) {
+        userService.changeUserRole(request);
         return ResponseEntity.status(CREATED).build();
     }
 
     @GetMapping
-    public ResponseEntity<ResponseUserDto> findUserByUserId(@AuthenticationPrincipal CustomUserDetails user) {
-        return ResponseEntity.status(OK).body(userService.findUserByUserId(user.getId()));
-    }
-
-    @GetMapping("/role")
-    public ResponseEntity<List<ResponseUserRole>> findUserDormitoryRole() {
-        return ResponseEntity.status(OK).body(userService.findUserDormitoryRole());
+    public ResponseEntity<ResponseUserDto> findUser(@AuthenticationPrincipal CustomUserDetails user) {
+        return ResponseEntity.status(OK).body(userService.findUser(user.getId()));
     }
 
     @GetMapping("/admin")
-    public ResponseEntity<List<ResponseUserDto>> findAllUser() {
-        return ResponseEntity.status(OK).body(userService.findAllUser());
+    public ResponseEntity<List<ResponseUserDto>> findAllUsers() {
+        return ResponseEntity.status(OK).body(userService.findAllUsers());
     }
 
-/*
-    @GetMapping("/image")
-    public ResponseEntity<Resource> findUserImageByUserId(@AuthenticationPrincipal CustomUserDetails user) {
-        ImageDto imageDto = imageService.findUserImageByUserId(user.getId());
-
-        return ResponseEntity.status(OK)
-                .contentType(MediaType.parseMediaType(imageDto.getContentType()))
-                .body(imageDto.getResource());
+    @GetMapping("/role")
+    public ResponseEntity<List<ResponseUserRole>> findUsersDormitoryRoles() {
+        return ResponseEntity.status(OK).body(userService.findUsersDormitoryRoles());
     }
-*/
+
+    @GetMapping("/board")
+    public ResponseEntity<List<ResponseBoardDto>> findUserBoards(@AuthenticationPrincipal CustomUserDetails user, HttpServletRequest request) {
+        return ResponseEntity.status(OK).body(userService.findUserBoards(user.getId(), request));
+    }
+
+    @GetMapping("/like")
+    public ResponseEntity<List<ResponseBoardDto>> findUserLikedBoards(@AuthenticationPrincipal CustomUserDetails user, HttpServletRequest request) {
+        return ResponseEntity.status(OK).body(userService.findUserLikedBoards(user.getId(), request));
+    }
 
     @GetMapping(value = "/image")
-    public ResponseEntity<ImageLinkDto> findUserImageByUserId(
+    public ResponseEntity<ImageLinkDto> findUserImage(
             @AuthenticationPrincipal CustomUserDetails user,
             HttpServletRequest request) {
         try {
@@ -102,41 +102,8 @@ public class UserController implements UserApiSpecification {
         }
     }
 
-    @GetMapping("/board")
-    public ResponseEntity<List<ResponseBoardDto>> findBoardByUserId(@AuthenticationPrincipal CustomUserDetails user, HttpServletRequest request) {
-        return ResponseEntity.status(OK).body(userService.findBoardByUserId_optimization(user.getId(), request));
-    }
-
-    @GetMapping("/like")
-    public ResponseEntity<List<ResponseBoardDto>> findLikeByUserId(@AuthenticationPrincipal CustomUserDetails user, HttpServletRequest request) {
-        return ResponseEntity.status(OK).body(userService.findLikeByUserId_optimization(user.getId(), request));
-    }
-
-    @PutMapping
-    public ResponseEntity<ResponseUserDto> updateUser(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestBody RequestUserDto requestUserDto) {
-        return ResponseEntity.status(OK).body(userService.updateUser(user.getId(), requestUserDto));
-    }
-
-    @PutMapping(value = "/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Void> updateUserImage(@AuthenticationPrincipal CustomUserDetails user, @RequestPart MultipartFile image) {
-        userService.updateUserImage(user.getId(), image);
-        return ResponseEntity.status(OK).build();
-    }
-
-    @PutMapping(value = "/time-table-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Void> updateUserTimeTableImage(@AuthenticationPrincipal CustomUserDetails user, @RequestPart MultipartFile image) {
-        userService.updateUserTimeTableImage(user.getId(), image);
-        return ResponseEntity.status(OK).build();
-    }
-
-    @PutMapping("/agreement")
-    public ResponseEntity<Void> updateAgreement(@AuthenticationPrincipal CustomUserDetails user, @Parameter boolean isTermsAgreed, @Parameter boolean isPrivacyAgreed) {
-        userService.updateAgreement(user.getId(), isTermsAgreed, isPrivacyAgreed);
-        return ResponseEntity.status(OK).build();
-    }
-
     @GetMapping("/time-table-image")
-    public ResponseEntity<ImageLinkDto> findUserTimeTableImageByUserId(
+    public ResponseEntity<ImageLinkDto> findUserTimeTableImage(
             @AuthenticationPrincipal CustomUserDetails user,
             HttpServletRequest request) {
         try {
@@ -151,15 +118,38 @@ public class UserController implements UserApiSpecification {
         }
     }
 
-    @DeleteMapping("/time-table-image")
-    public ResponseEntity<Void> deleteUserTimeTableImage(@AuthenticationPrincipal CustomUserDetails user) {
-        userService.deleteUserTimeTableImage(user.getId());
-        return ResponseEntity.status(NO_CONTENT).build();
+    @PutMapping
+    public ResponseEntity<ResponseUserDto> updateUser(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestBody RequestUserDto request) {
+        return ResponseEntity.status(OK).body(userService.updateUser(user.getId(), request));
+    }
+
+    @PutMapping("/agreement")
+    public ResponseEntity<Void> updateUserAgreement(@AuthenticationPrincipal CustomUserDetails user, @Parameter boolean isTermsAgreed, @Parameter boolean isPrivacyAgreed) {
+        userService.updateUserAgreement(user.getId(), isTermsAgreed, isPrivacyAgreed);
+        return ResponseEntity.status(OK).build();
+    }
+
+    @PutMapping(value = "/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> updateUserImage(@AuthenticationPrincipal CustomUserDetails user, @RequestPart MultipartFile image) {
+        userService.updateUserImage(user.getId(), image);
+        return ResponseEntity.status(OK).build();
+    }
+
+    @PutMapping(value = "/time-table-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> updateUserTimeTableImage(@AuthenticationPrincipal CustomUserDetails user, @RequestPart MultipartFile image) {
+        userService.updateUserTimeTableImage(user.getId(), image);
+        return ResponseEntity.status(OK).build();
     }
 
     @DeleteMapping
     public ResponseEntity<Void> deleteUser(@AuthenticationPrincipal CustomUserDetails user) {
         userService.deleteUser(user.getId());
+        return ResponseEntity.status(NO_CONTENT).build();
+    }
+
+    @DeleteMapping("/time-table-image")
+    public ResponseEntity<Void> deleteUserTimeTableImage(@AuthenticationPrincipal CustomUserDetails user) {
+        userService.deleteUserTimeTableImage(user.getId());
         return ResponseEntity.status(NO_CONTENT).build();
     }
 }

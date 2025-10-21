@@ -34,7 +34,7 @@ public class GroupOrderQueryService {
      * GroupOrder + Image 최적화 조회
      * N+1 문제 해결을 위한 전용 서비스
      */
-    public List<ResponseGroupOrderDto> findGroupOrderDtosWithImages(Long userId, HttpServletRequest request) {
+    public List<ResponseGroupOrderDto> findGroupOrdersByUser(Long userId, HttpServletRequest request) {
         List<GroupOrder> groupOrders = groupOrderRepository.findByUserId(userId);
 
         if (groupOrders.isEmpty()) {
@@ -64,7 +64,7 @@ public class GroupOrderQueryService {
      * GroupOrderLike + GroupOrder + Image 최적화 조회
      * N+1 문제 해결을 위한 전용 서비스
      */
-    public List<ResponseGroupOrderDto> findGroupOrderLikeDtosWithImages(Long userId, HttpServletRequest request) {
+    public List<ResponseGroupOrderDto> findLikedByUser(Long userId, HttpServletRequest request) {
         List<GroupOrderLike> groupOrderLikes = groupOrderLikeRepository.findByUserIdWithGroupOrder(userId);
         List<GroupOrder> groupOrders = groupOrderLikes.stream().map(GroupOrderLike::getGroupOrder).toList();
 

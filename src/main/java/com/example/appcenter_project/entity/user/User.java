@@ -38,13 +38,10 @@ public class User extends BaseTimeEntity {
 
     @Column(nullable = false)
     private String studentNumber;
-
-    @Column(unique = true)
     private String name;
-
     private String password;
-
     private String refreshToken;
+    private Integer penalty;
 
     @Enumerated(EnumType.STRING)
     private DormType dormType;
@@ -52,7 +49,8 @@ public class User extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     private College college;
 
-    private Integer penalty;
+    @Enumerated(EnumType.STRING)
+    private Role role;
 
     // 이용약관 동의 여부, 초기값 false
     private boolean isTermsAgreed = false;
@@ -60,8 +58,6 @@ public class User extends BaseTimeEntity {
     // 개인정보처리방침 동의 여부, 초기값 false
     private boolean isPrivacyAgreed = false;
 
-    @Enumerated(EnumType.STRING)
-    private Role role;
 
     @ElementCollection
     @CollectionTable(name = "user_search_logs", joinColumns =
@@ -140,14 +136,23 @@ public class User extends BaseTimeEntity {
     private List<FcmToken>  fcmTokenList = new ArrayList<>();
 
     @Builder
-    public User(String studentNumber, String name, String password, DormType dormType, Integer penalty, Role role, Image image) {
+    public User(String studentNumber, String name, String password, Integer penalty, DormType dormType, Role role, Image image) {
         this.name = name;
         this.studentNumber = studentNumber;
         this.password = password;
-        this.dormType = dormType;
         this.penalty = penalty;
+        this.dormType = dormType;
         this.role = role;
         this.image = image;
+    }
+
+    public boolean hasUnreadNotifications() {
+        return userNotifications.stream()
+                .anyMatch(userNotification -> !userNotification.isRead());
+    }
+
+    public boolean hasRoommateCheckList() {
+        return roommateCheckList != null;
     }
 
     public void updateTermsAgreed(boolean isTermsAgreed) {
@@ -170,7 +175,6 @@ public class User extends BaseTimeEntity {
         this.name = requestUserDto.getName();
         this.dormType = DormType.from(requestUserDto.getDormType());
         this.college = College.from(requestUserDto.getCollege());
-        this.penalty = requestUserDto.getPenalty();
 
         if (DormType.from(requestUserDto.getDormType()) == DormType.DORM_1 || DormType.from(requestUserDto.getDormType()) == DormType.DORM_2
         || DormType.from(requestUserDto.getDormType()) == DormType.DORM_3) {
@@ -191,28 +195,8 @@ public class User extends BaseTimeEntity {
         this.roommateBoardLikeList.remove(roommateBoardLike);
     }
 
-    public void addNotification(UserNotification userNotification) {
-        this.userNotifications.add(userNotification);
-    }
-
-    public void updateImage(Image image) {
-        this.image =image;
-    }
-
-    public void updateTimeTableImage(Image timeTableImage) {
-        this.timeTableImage = timeTableImage;
-    }
-
-    public void removeTimeTableImage() {
-        this.timeTableImage = null;
-    }
-
     public void addTip(Tip tip) {
         this.tipList.add(tip);
-    }
-
-    public void removeTip(Tip tip) {
-        this.tipList.remove(tip);
     }
 
     public void addGroupOrderLike(GroupOrderLike groupOrderLike) {
