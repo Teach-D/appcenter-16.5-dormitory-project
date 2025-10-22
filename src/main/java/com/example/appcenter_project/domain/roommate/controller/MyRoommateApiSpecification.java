@@ -1,0 +1,97 @@
+package com.example.appcenter_project.domain.roommate.controller;
+
+import com.example.appcenter_project.domain.roommate.dto.request.RequestRoommateRuleDto;
+import com.example.appcenter_project.domain.roommate.dto.response.ResponseMyRoommateInfoDto;
+import com.example.appcenter_project.domain.roommate.dto.response.ResponseRuleDto;
+import com.example.appcenter_project.global.security.CustomUserDetails;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.ResponseEntity;
+
+@Tag(name = "MyRoommate", description = "내 룸메이트 정보 관련 API")
+public interface MyRoommateApiSpecification {
+
+    @Operation(
+            summary = "내 룸메이트 정보 조회",
+            description = "현재 로그인한 사용자의 룸메이트 정보를 조회합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "조회 성공",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseMyRoommateInfoDto.class))),
+                    @ApiResponse(responseCode = "404", description = "룸메이트 정보가 등록되지 않음 (MY_ROOMMATE_NOT_REGISTERED)",
+                            content = @Content)
+            }
+    )
+    ResponseEntity<ResponseMyRoommateInfoDto> getMyRoommate(
+            @Parameter(hidden = true) CustomUserDetails userDetails,
+            @Parameter(hidden = true) HttpServletRequest request
+    );
+
+    @Operation(
+            summary = "방 규칙 생성",
+            description = "방 규칙을 새로 등록하거나 기존 규칙을 수정합니다.",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = RequestRoommateRuleDto.class)
+                    )
+            ),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "생성/수정 성공"),
+                    @ApiResponse(responseCode = "404", description = "룸메이트 정보 없음 (MY_ROOMMATE_NOT_REGISTERED)")
+            }
+    )
+    ResponseEntity<Void> createRule(
+            @Parameter(hidden = true) CustomUserDetails userDetails,
+            RequestRoommateRuleDto dto
+    );
+
+    @Operation(
+            summary = "방 규칙 삭제",
+            description = "등록된 방 규칙을 삭제합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "삭제 성공"),
+                    @ApiResponse(responseCode = "404", description = "룸메이트 정보 없음 (MY_ROOMMATE_NOT_REGISTERED)")
+            }
+    )
+    ResponseEntity<Void> deleteRule(@Parameter(hidden = true) CustomUserDetails userDetails);
+
+    @Operation(
+            summary = "방 규칙 조회",
+            description = "현재 로그인한 사용자의 방 규칙을 조회합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "조회 성공",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseRuleDto.class))),
+                    @ApiResponse(responseCode = "404", description = "룸메이트 정보 없음 (MY_ROOMMATE_NOT_REGISTERED)")
+            }
+    )
+    ResponseEntity<ResponseRuleDto> getRules(@Parameter(hidden = true) CustomUserDetails userDetails);
+
+    @Operation(
+            summary = "방 규칙 수정",
+            description = "등록된 방 규칙이 있을 경우 이를 수정합니다. 규칙이 등록되지 않은 경우 404 에러(RULE_NOT_FOUND)를 반환합니다.",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = RequestRoommateRuleDto.class)
+                    )
+            ),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "수정 성공"),
+                    @ApiResponse(responseCode = "404", description = "룸메이트 정보 없음 또는 수정할 룰 없음 (MY_ROOMMATE_NOT_REGISTERED, RULE_NOT_FOUND)")
+            }
+    )
+    ResponseEntity<Void> updateRules(
+            @Parameter(hidden = true) CustomUserDetails userDetails,
+            RequestRoommateRuleDto dto
+    );
+
+}
