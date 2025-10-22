@@ -171,7 +171,6 @@ public class UserService {
 
     // ========== Private Methods ========== //
 
-
     private void checkINUStudent(SignupUser signupUser) {
         if (isNotINUStudent(schoolLoginRepository.loginCheck(signupUser.getStudentNumber(), signupUser.getPassword()))) {
             throw new CustomException(USER_NOT_FOUND);
@@ -184,7 +183,7 @@ public class UserService {
 
     private User createUser(SignupUser signupUser) {
         if (existsUser(signupUser)) {
-            return null;
+            return userRepository.findByStudentNumber(signupUser.getStudentNumber()).get();
         }
 
         User user = User.builder()
