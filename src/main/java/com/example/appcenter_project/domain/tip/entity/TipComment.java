@@ -3,6 +3,7 @@ package com.example.appcenter_project.domain.tip.entity;
 import com.example.appcenter_project.common.BaseTimeEntity;
 import com.example.appcenter_project.domain.user.entity.User;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -48,6 +49,24 @@ public class TipComment extends BaseTimeEntity {
         this.childTipComments = childTipComments;
     }
 
+    public static TipComment createParentComment(String reply, Tip tip, User user) {
+        return TipComment.builder()
+                .reply(reply)
+                .tip(tip)
+                .user(user)
+                .parentTipComment(null)
+                .build();
+    }
+
+    public static TipComment createChildComment(String reply, Tip tip, User user, TipComment parentTipComment) {
+        return TipComment.builder()
+                .reply(reply)
+                .tip(tip)
+                .user(user)
+                .parentTipComment(parentTipComment)
+                .build();
+    }
+
     public void setParentTipCommentNull() {
         this.parentTipComment = null;
     }
@@ -57,6 +76,10 @@ public class TipComment extends BaseTimeEntity {
     }
 
     public void updateIsDeleted() {
+        this.isDeleted = true;
+    }
+
+    public void changeAsDeleted() {
         this.isDeleted = true;
     }
 }

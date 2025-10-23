@@ -55,7 +55,7 @@ public class TipQueryService {
                         imageUrl = imageService.getImageUrl(ImageType.TIP, image, request);
                     }
 
-                    return ResponseTipDto.entityToDto(tip, imageUrl);
+                    return ResponseTipDto.from(tip, imageUrl);
                 })
                 .collect(Collectors.toList());
     }
@@ -86,7 +86,7 @@ public class TipQueryService {
                         imageUrl = imageService.getImageUrl(ImageType.TIP, image, request);
                     }
 
-                    return ResponseTipDto.entityToDto(tip, imageUrl);
+                    return ResponseTipDto.from(tip, imageUrl);
                 })
                 .collect(Collectors.toList());
     }

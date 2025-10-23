@@ -47,7 +47,15 @@ public class Tip extends BaseTimeEntity {
         this.tipCommentCount = 0;
     }
 
-    public Integer plusLike() {
+    public static Tip createTip(String title, String content, User user) {
+        return Tip.builder()
+                .title(title)
+                .content(content)
+                .user(user)
+                .build();
+    }
+
+    public Integer increaseLike() {
         return this.tipLike += 1;
     }
 
@@ -66,5 +74,18 @@ public class Tip extends BaseTimeEntity {
 
     public void minusTipCommentCount() {
         this.tipCommentCount -= 1;
+    }
+
+    public Integer decreaseLike() {
+        if (this.tipLike > 0) {
+            this.tipLike -= 1;
+        }
+
+        return this.tipLike;
+    }
+
+    public boolean isLikedBy(User user) {
+        return this.tipLikeList.stream()
+                .anyMatch(tipLike -> tipLike.getUser().equals(user));
     }
 }

@@ -31,7 +31,7 @@ public class  ResponseTipDto extends ResponseBoardDto {
         this.tipCommentCount = tipCommentCount;
     }
 
-    public static ResponseTipDto entityToDto(Tip tip) {
+    public static ResponseTipDto from(Tip tip) {
         return ResponseTipDto.builder()
                 .boardId(tip.getId())
                 .title(tip.getTitle())
@@ -60,7 +60,7 @@ public class  ResponseTipDto extends ResponseBoardDto {
         return Paths.get(fullPath).getFileName().toString(); // fallback
     }
 
-    public static ResponseTipDto entityToDto(Tip tip, String fileName) {
+    public static ResponseTipDto from(Tip tip, String fileName) {
         return ResponseTipDto.builder()
                 .boardId(tip.getId())
                 .title(tip.getTitle())

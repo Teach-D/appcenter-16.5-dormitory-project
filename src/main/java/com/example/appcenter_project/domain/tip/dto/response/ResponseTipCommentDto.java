@@ -39,13 +39,24 @@ public class ResponseTipCommentDto {
                 .build();
     }
 
-    public static ResponseTipCommentDto detailEntityToDto(Tip tip, List<ResponseTipCommentDto> responseTipCommentDtoList) {
+    public static ResponseTipCommentDto from(TipComment comment) {
         return ResponseTipCommentDto.builder()
-                .tipCommentId(tip.getId())
-                .userId(tip.getUser().getId())
-                .reply(tip.getContent())
-                .childTipCommentList(responseTipCommentDtoList)
+                .tipCommentId(comment.getId())
+                .userId(comment.getUser().getId())
+                .parentId(extractParentCommentId(comment))
+                .isDeleted(comment.isDeleted())
+                .createDate(comment.getCreatedDate())
                 .build();
+    }
+
+    private static Long extractParentCommentId(TipComment comment) {
+        return comment.getParentTipComment() != null ? comment.getParentTipComment().getId() : null;
+    }
+
+    public void setDeletedCommentInfo() {
+        updateReply("삭제된 메시지입니다.");
+        updateName("알 수 없는 사용자");
+        updateWriterImageFile(null);
     }
 
     public void updateReply(String reply) {
