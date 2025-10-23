@@ -135,8 +135,19 @@ public enum ErrorCode {
     FCM_TOKEN_NOT_FOUND(NOT_FOUND, 17001, "[FCM] 전체 사용자에게 보낼 FCM 토큰이 존재하지 않습니다."),
     FCM_SEND_FAILED(INTERNAL_SERVER_ERROR, 17002, "[FCM] FCM 메시지 전송 중 오류가 발생했습니다."),
 
+    // SURVEY
+    SURVEY_NOT_FOUND(NOT_FOUND, 18001, "[Survey] 해당 설문을 찾을 수 없습니다."),
+    SURVEY_NOT_OWNED_BY_USER(FORBIDDEN, 18002, "[Survey] 설문을 생성한 유저가 아니기 때문에 수정 및 삭제할 권한이 없습니다."),
+    SURVEY_CLOSED(BAD_REQUEST, 18003, "[Survey] 해당 설문은 종료되었습니다."),
+    SURVEY_NOT_IN_PERIOD(BAD_REQUEST, 18004, "[Survey] 해당 설문의 응답 기간이 아닙니다."),
+    SURVEY_QUESTION_NOT_FOUND(NOT_FOUND, 18005, "[Survey] 해당 설문 질문을 찾을 수 없습니다."),
+    SURVEY_OPTION_NOT_FOUND(NOT_FOUND, 18006, "[Survey] 해당 설문 선택지를 찾을 수 없습니다."),
+    SURVEY_RESPONSE_NOT_FOUND(NOT_FOUND, 18007, "[Survey] 해당 설문 응답을 찾을 수 없습니다."),
+    ALREADY_SURVEY_RESPONSE(CONFLICT, 18008, "[Survey] 이미 해당 설문에 응답하였습니다."),
+    MULTIPLE_SELECTION_NOT_ALLOWED(BAD_REQUEST, 18009, "[Survey] 해당 질문은 단일 선택만 가능합니다."),
+
     // COUPON
-    COUPON_NOT_FOUND(NOT_FOUND, 18002, "[COUPON] 쿠폰이 존재하지 않습니다.");
+    COUPON_NOT_FOUND(NOT_FOUND, 19001, "[COUPON] 쿠폰이 존재하지 않습니다.");
 
     private final HttpStatus httpStatus;
     private final Integer code;
