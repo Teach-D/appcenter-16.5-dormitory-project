@@ -175,26 +175,26 @@ public class TipService {
     private List<ResponseTipCommentDto> buildCommentHierarchy(Long tipId, HttpServletRequest request) {
         List<TipComment> parentComments = tipCommentRepository.findByTipIdAndParentTipCommentIsNull(tipId);
 
-        if (parentComments == null || parentComments.isEmpty()) {
+        if (parentComments.isEmpty()) {
             return new ArrayList<>();
         }
 
-        List<ResponseTipCommentDto> commentDtos = new ArrayList<>();
-        for (TipComment parentComment : parentComments) {
-            ResponseTipCommentDto parentDto = convertCommentToDto(parentComment, request);
-            addChildCommentToParentComment(request, parentComment, parentDto);
-            commentDtos.add(parentDto);
-        }
+        return parentComments.stream()
+                .map(parentComment -> buildCommentDto(parentComment, request))
+                .toList();
+    }
 
-        return commentDtos;
+    private ResponseTipCommentDto buildCommentDto(TipComment parentComment, HttpServletRequest request) {
+        ResponseTipCommentDto parentDto = convertCommentToDto(parentComment, request);
+        addChildCommentToParentComment(request, parentComment, parentDto);
+        return parentDto;
     }
 
     private void addChildCommentToParentComment(HttpServletRequest request, TipComment parentComment, ResponseTipCommentDto parentDto) {
-        List<ResponseTipCommentDto> childDtos = new ArrayList<>();
-        for (TipComment childTipComment : parentComment.getChildTipComments()) {
-            ResponseTipCommentDto childDto = convertCommentToDto(childTipComment, request);
-            childDtos.add(childDto);
-        }
+        List<ResponseTipCommentDto> childDtos = parentComment.getChildTipComments().stream()
+                .map(childComment -> convertCommentToDto(childComment, request))
+                .toList();
+
         parentDto.updateChildTipCommentList(childDtos);
     }
 
