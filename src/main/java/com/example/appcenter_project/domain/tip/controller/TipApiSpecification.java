@@ -122,7 +122,7 @@ public interface TipApiSpecification {
                     )
             }
     )
-    ResponseEntity<Integer> likePlusTip(
+    ResponseEntity<Integer> likeTip(
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable
             @Parameter(description = "팁 게시글 ID", required = true, example = "1") Long tipId);
@@ -151,7 +151,7 @@ public interface TipApiSpecification {
                     )
             }
     )
-    ResponseEntity<Integer> unlikePlusTip(
+    ResponseEntity<Integer> unlikeTip(
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable
             @Parameter(description = "팁 게시글 ID", required = true, example = "1") Long tipId);

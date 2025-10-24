@@ -74,13 +74,13 @@ public class TipController implements TipApiSpecification {
     }
 
     @PatchMapping("/{tipId}/like")
-    public ResponseEntity<Integer> likePlusTip(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long tipId) {
-        return ResponseEntity.status(OK).body(tipService.likePlusTip(user.getId(), tipId));
+    public ResponseEntity<Integer> likeTip(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long tipId) {
+        return ResponseEntity.status(OK).body(tipService.likeTip(user.getId(), tipId));
     }
 
     @PatchMapping("/{tipId}/unlike")
-    public ResponseEntity<Integer> unlikePlusTip(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long tipId) {
-        return ResponseEntity.status(OK).body(tipService.unlikePlusTip(user.getId(), tipId));
+    public ResponseEntity<Integer> unlikeTip(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long tipId) {
+        return ResponseEntity.status(OK).body(tipService.unlikeTip(user.getId(), tipId));
     }
 
     @PutMapping(value = "/{tipId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
