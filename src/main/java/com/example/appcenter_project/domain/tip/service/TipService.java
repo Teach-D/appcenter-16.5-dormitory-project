@@ -87,7 +87,7 @@ public class TipService {
         return imageService.findImages(ImageType.TIP, tipId, request);
     }
 
-    public Integer likePlusTip(Long userId, Long tipId) {
+    public Integer likeTip(Long userId, Long tipId) {
         Tip tip = tipRepository.findById(tipId).orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
@@ -100,7 +100,7 @@ public class TipService {
         return tip.increaseLike();
     }
 
-    public Integer unlikePlusTip(Long userId, Long tipId) {
+    public Integer unlikeTip(Long userId, Long tipId) {
         Tip tip = tipRepository.findById(tipId).orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
