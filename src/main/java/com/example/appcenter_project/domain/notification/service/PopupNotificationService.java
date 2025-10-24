@@ -32,7 +32,7 @@ public class PopupNotificationService {
     private final ImageService imageService;
 
     public void savePopupNotification(RequestPopupNotificationDto requestPopupNotificationDto, List<MultipartFile> images) {
-        PopupNotification popupNotification = RequestPopupNotificationDto.dtoToEntity(requestPopupNotificationDto);
+        PopupNotification popupNotification = RequestPopupNotificationDto.from(requestPopupNotificationDto);
         popupNotificationRepository.save(popupNotification);
 
         imageService.saveImages(ImageType.POPUP_NOTIFICATION, popupNotification.getId(), images);
