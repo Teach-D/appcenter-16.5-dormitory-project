@@ -114,7 +114,7 @@ public class GroupOrderCommentService {
         groupOrder.getGroupOrderCommentList().add(groupOrderComment);
 
         groupOrderCommentRepository.save(groupOrderComment);
-        return ResponseGroupOrderCommentDto.entityToDto(groupOrderComment);
+        return ResponseGroupOrderCommentDto.from(groupOrderComment);
     }
 
     public List<ResponseGroupOrderCommentDto> findGroupOrderComment(Long userId, Long groupOrderId) {

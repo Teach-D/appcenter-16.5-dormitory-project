@@ -15,7 +15,7 @@ public class RequestPopupNotificationDto {
     private LocalDate startDate;
     private LocalDate deadline;
 
-    public static PopupNotification dtoToEntity(RequestPopupNotificationDto requestPopupNotificationDto) {
+    public static PopupNotification from(RequestPopupNotificationDto requestPopupNotificationDto) {
         return PopupNotification.builder()
                 .title(requestPopupNotificationDto.getTitle())
                 .content(requestPopupNotificationDto.getContent())

@@ -79,7 +79,7 @@ public interface GroupOrderApiSpecification {
                     @ApiResponse(responseCode = "404", description = "존재하지 않는 공동구매 게시글 ID입니다.")
             }
     )
-    ResponseEntity<ResponseGroupOrderDetailDto> findGroupOrderById(
+    ResponseEntity<ResponseGroupOrderDetailDto> findGroupOrder(
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable
             @Parameter(description = "공동구매 게시글 ID", required = true, example = "1") Long groupOrderId,
@@ -101,7 +101,7 @@ public interface GroupOrderApiSpecification {
                     @ApiResponse(responseCode = "404", description = "존재하지 않는 공동구매 게시글 ID입니다.")
             }
     )
-    ResponseEntity<List<ImageLinkDto>> getGroupOrderImages(
+    ResponseEntity<List<ImageLinkDto>> findGroupOrderImages(
             @PathVariable
             @Parameter(description = "공동구매 게시글 ID", required = true, example = "1") Long groupOrderId,
             HttpServletRequest request);
@@ -189,7 +189,7 @@ public interface GroupOrderApiSpecification {
                     @ApiResponse(responseCode = "404", description = "존재하지 않는 공동구매 게시글이거나 회원가입하지 않은 사용자입니다.")
             }
     )
-    ResponseEntity<Integer> likePlusGroupOrder(
+    ResponseEntity<Integer> likeGroupOrder(
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable
             @Parameter(description = "공동구매 게시글 ID", required = true, example = "1") Long groupOrderId);
@@ -212,7 +212,7 @@ public interface GroupOrderApiSpecification {
                     @ApiResponse(responseCode = "404", description = "존재하지 않는 공동구매 게시글이거나 회원가입하지 않은 사용자입니다.")
             }
     )
-    ResponseEntity<Integer> likeMinusGroupOrder(
+    ResponseEntity<Integer> unlikeGroupOrder(
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable
             @Parameter(description = "공동구매 게시글 ID", required = true, example = "1") Long groupOrderId);

@@ -83,7 +83,7 @@ public class GroupOrder extends BaseTimeEntity {
         this.description = requestGroupOrderDto.getDescription();
     }
 
-    public Integer plusLike() {
+    public Integer increaseLike() {
         this.groupOrderLike += 1;
         return this.groupOrderLike;}
 
@@ -91,7 +91,7 @@ public class GroupOrder extends BaseTimeEntity {
         this.groupOrderChatRoom = groupOrderChatRoom;
     }
 
-    public Integer minusLike() {
+    public Integer decreaseLike() {
         return this.groupOrderLike -= 1;
     }
 
@@ -101,5 +101,10 @@ public class GroupOrder extends BaseTimeEntity {
 
     public void updateRecruitmentComplete(boolean b) {
         this.recruitmentComplete = b;
+    }
+
+    public boolean isLikedBy(User user) {
+        return groupOrderLikeList.stream()
+                .anyMatch(groupOrderLike -> groupOrderLike.getUser().equals(user));
     }
 }

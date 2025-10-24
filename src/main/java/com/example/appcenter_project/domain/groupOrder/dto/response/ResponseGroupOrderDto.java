@@ -41,7 +41,7 @@ public class ResponseGroupOrderDto extends ResponseBoardDto {
         this.isRecruitmentComplete = isRecruitmentComplete;
     }
 
-    public static ResponseGroupOrderDto entityToDto(GroupOrder groupOrder, String imagePath) {
+    public static ResponseGroupOrderDto of(GroupOrder groupOrder, String imagePath) {
 
         // groupOrderType이 null인 경우 기본값 설정
         String groupOrderTypeStr = groupOrder.getGroupOrderType() != null

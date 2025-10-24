@@ -55,7 +55,7 @@ public class GroupOrderQueryService {
                         imageUrl = imageService.getImageUrl(ImageType.GROUP_ORDER, image, request);
                     }
 
-                    return ResponseGroupOrderDto.entityToDto(groupOrder, imageUrl);
+                    return ResponseGroupOrderDto.of(groupOrder, imageUrl);
                 })
                 .collect(Collectors.toList());
     }
@@ -86,7 +86,7 @@ public class GroupOrderQueryService {
                         imageUrl = imageService.getImageUrl(ImageType.GROUP_ORDER, image, request);
                     }
 
-                    return ResponseGroupOrderDto.entityToDto(groupOrder, imageUrl);
+                    return ResponseGroupOrderDto.of(groupOrder, imageUrl);
                 })
                 .collect(Collectors.toList());
     }
