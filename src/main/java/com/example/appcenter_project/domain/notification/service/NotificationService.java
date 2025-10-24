@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
-import static com.example.appcenter_project.domain.user.enums.NotificationType.*;
 import static com.example.appcenter_project.global.exception.ErrorCode.USER_NOT_FOUND;
 
 @Service
@@ -29,83 +28,46 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final FcmMessageService fcmMessageService;
-    private final UnidormNotificationService unidormNotificationService;
 
-    public List<ResponseNotificationDto> findNotifications(Long userId) {
-        List<ResponseNotificationDto> responseNotificationDtos = new ArrayList<>();
+    // ========== Public Methods ========== //
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-        for (UserNotification userNotification : user.getUserNotifications()) {
-            responseNotificationDtos.add(ResponseNotificationDto.entityToDto(userNotification));
+    public void saveAndSendNotification(RequestNotificationDto dto) {
+        Notification notification = createNotification(dto);
 
-            // 공지사항 읽음 처리
-            userNotification.updateIsRead(true);
-        }
+        NotificationType notificationType = NotificationType.from(dto.getNotificationType());
+        List<User> receiveUsers = userRepository.findByReceiveNotificationTypesContains(notificationType);
 
-        Collections.reverse(responseNotificationDtos);
-        return responseNotificationDtos;
-    }
-
-    public ResponseNotificationDto findNotification(Long userId, Long notificationId) {
-        UserNotification userNotification = userNotificationRepository.findByUserIdAndNotificationId(userId, notificationId).orElseThrow();
-        return  ResponseNotificationDto.entityToDto(userNotification);
-    }
-
-
-    public void saveNotification(RequestNotificationDto requestNotificationDto) {
-        Notification notification = RequestNotificationDto.dtoToEntity(requestNotificationDto);
-        notificationRepository.save(notification);
-
-        NotificationType notificationType = from(requestNotificationDto.getNotificationType());
-
-        if (notificationType == UNI_DORM) {
-            unidormNotificationService.saveAndSendUnidormNotification(notification);
-        }
-        else if (notificationType == DORMITORY) {
-            sendAllDormitoryStudent(notification);
-        }
+        saveUserNotifications(notification, receiveUsers);
+        sendFcmMessages(notification, receiveUsers);
     }
 
     public void saveNotificationByStudentNumber(RequestNotificationDto requestNotificationDto, String studentNumber) {
         String title = "유니돔으로부터 알림이 도착했습니다!";
 
-        Notification notification = RequestNotificationDto.dtoToEntity(requestNotificationDto);
-        notificationRepository.save(notification);
+        Notification notification = createNotification(requestNotificationDto);
 
         User user = userRepository.findByStudentNumber(studentNumber).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
-        UserNotification userNotification = UserNotification.of(user, notification);
-        userNotificationRepository.save(userNotification);
+        createUserNotification(user, notification);
 
         fcmMessageService.sendNotification(user, title, notification.getTitle());
     }
 
-    private void sendAllDormitoryStudent(Notification notification) {
-        for (User user : userRepository.findByReceiveNotificationTypesContains(NotificationType.DORMITORY)) {
-            // 유저 알림 저장
-            UserNotification userNotification = UserNotification.builder()
-                    .notification(notification)
-                    .user(user)
-                    .build();
-            userNotificationRepository.save(userNotification);
-
-            fcmMessageService.sendDormitoryNotification(user, notification.getTitle(), notification.getBody());
-
-        }
+    public ResponseNotificationDto findNotification(Long userId, Long notificationId) {
+        UserNotification userNotification = userNotificationRepository.findByUserIdAndNotificationId(userId, notificationId).orElseThrow();
+        return  ResponseNotificationDto.from(userNotification);
     }
 
-    private void sendAllUsers(Notification notification) {
-        for (User user : userRepository.findAll()) {
-            // 유저 알림 저장
-            UserNotification userNotification = UserNotification.builder()
-                    .notification(notification)
-                    .user(user)
-                    .build();
-            userNotificationRepository.save(userNotification);
-        }
+    public List<ResponseNotificationDto> findNotificationsByUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
-        fcmMessageService.sendNotificationToAllUsers(notification.getTitle(), notification.getBody());
+        return user.getUserNotifications().stream()
+                .map(userNotification -> {
+                    userNotification.changeReadStatus(true);
+                    return ResponseNotificationDto.from(userNotification);
+                })
+                .toList();
     }
 
     public void updateNotification(Long notificationId, RequestNotificationDto requestNotificationDto) {
@@ -116,4 +78,32 @@ public class NotificationService {
     public void deleteNotification(Long notificationId) {
         notificationRepository.deleteById(notificationId);
     }
+
+    // ========== Private Methods ========== //
+
+    private Notification createNotification(RequestNotificationDto requestNotificationDto) {
+        Notification notification = Notification.from(requestNotificationDto);
+        notificationRepository.save(notification);
+        return notification;
+    }
+
+    private void saveUserNotifications(Notification notification, List<User> receiveUsers) {
+        List<UserNotification> userNotifications = receiveUsers.stream()
+                .map(receiveUser -> UserNotification.of(receiveUser, notification))
+                .toList();
+
+        userNotificationRepository.saveAll(userNotifications);
+    }
+
+    private void sendFcmMessages(Notification notification, List<User> receiveUsers) {
+        receiveUsers.forEach(receiveUser -> {
+            fcmMessageService.sendNotification(receiveUser, notification.getTitle(), notification.getBody());
+        });
+    }
+
+    private void createUserNotification(User user, Notification notification) {
+        UserNotification userNotification = UserNotification.of(user, notification);
+        userNotificationRepository.save(userNotification);
+    }
+
 }

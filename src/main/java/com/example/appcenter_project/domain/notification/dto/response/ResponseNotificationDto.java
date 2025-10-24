@@ -20,7 +20,7 @@ public class ResponseNotificationDto {
     private boolean isRead;
     private LocalDateTime createdDate;
 
-    public static ResponseNotificationDto entityToDto(UserNotification userNotification) {
+    public static ResponseNotificationDto from(UserNotification userNotification) {
         Notification notification = userNotification.getNotification();
 
         return ResponseNotificationDto.builder()

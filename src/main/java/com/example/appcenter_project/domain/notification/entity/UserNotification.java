@@ -39,8 +39,7 @@ public class UserNotification extends BaseTimeEntity {
                 .build();
     }
 
-
-    public void updateIsRead(boolean isRead) {
+    public void changeReadStatus(boolean isRead) {
         this.isRead = isRead;
     }
 }

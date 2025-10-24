@@ -55,7 +55,7 @@ public interface NotificationApiSpecification {
                     @ApiResponse(responseCode = "404", description = "회원가입하지 않은 사용자입니다.")
             }
     )
-    ResponseEntity<List<ResponseNotificationDto>> findNotifications(
+    ResponseEntity<List<ResponseNotificationDto>> findNotificationsByUser(
             @AuthenticationPrincipal CustomUserDetails user);
 
     @Operation(

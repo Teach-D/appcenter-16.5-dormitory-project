@@ -22,13 +22,14 @@ public class NotificationController implements NotificationApiSpecification {
 
     @PostMapping
     public ResponseEntity<Void> saveNotification(@RequestBody RequestNotificationDto requestNotificationDto) {
-        notificationService.saveNotification(requestNotificationDto);
+        notificationService.saveAndSendNotification(requestNotificationDto);
         return ResponseEntity.status(CREATED).build();
     }
 
-    @GetMapping
-    public ResponseEntity<List<ResponseNotificationDto>> findNotifications(@AuthenticationPrincipal CustomUserDetails user) {
-        return ResponseEntity.status(OK).body(notificationService.findNotifications(user.getId()));
+    @PostMapping("/student-number/{studentNumber}")
+    public ResponseEntity<Void> saveNotificationByStudentNumber(@RequestBody RequestNotificationDto requestNotificationDto, String studentNumber) {
+        notificationService.saveNotificationByStudentNumber(requestNotificationDto, studentNumber);
+        return ResponseEntity.status(CREATED).build();
     }
 
     @GetMapping("/{notificationId}")
@@ -36,10 +37,9 @@ public class NotificationController implements NotificationApiSpecification {
         return ResponseEntity.status(OK).body(notificationService.findNotification(user.getId(), notificationId));
     }
 
-    @PostMapping("/student-number/{studentNumber}")
-    public ResponseEntity<Void> saveNotificationByStudentNumber(@RequestBody RequestNotificationDto requestNotificationDto, String studentNumber) {
-        notificationService.saveNotificationByStudentNumber(requestNotificationDto, studentNumber);
-        return ResponseEntity.status(CREATED).build();
+    @GetMapping
+    public ResponseEntity<List<ResponseNotificationDto>> findNotificationsByUser(@AuthenticationPrincipal CustomUserDetails user) {
+        return ResponseEntity.status(OK).body(notificationService.findNotificationsByUser(user.getId()));
     }
 
     @PutMapping("/{notificationId}")

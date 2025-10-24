@@ -44,6 +44,16 @@ public class Notification extends BaseTimeEntity {
         this.userNotifications = userNotifications;
     }
 
+    public static Notification from(RequestNotificationDto dto) {
+        return Notification.builder()
+                .boardId(dto.getBoardId())
+                .title(dto.getTitle())
+                .body(dto.getBody())
+                .notificationType(NotificationType.from(dto.getNotificationType()))
+                .apiType(ApiType.NOTIFICATION)
+                .build();
+    }
+
     public void update(RequestNotificationDto requestNotificationDto) {
         boardId = requestNotificationDto.getBoardId();
         title = requestNotificationDto.getTitle();
