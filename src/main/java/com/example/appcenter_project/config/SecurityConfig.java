@@ -127,7 +127,7 @@ public class SecurityConfig {
                         .requestMatchers(GET, "/calenders/**").permitAll()
                         // 캘린더 등록, 수정, 삭제
                         .requestMatchers("/calenders/**")
-                            .hasAnyRole("DORM_SUPPORTERS", "ADMIN")
+                            .hasAnyRole("DORM_SUPPORTERS", "ADMIN", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_EXPEDITED_COMPLAINT_MANAGER")
 
                         /** 알림 **/
                         // 알림 조회(로그인한 사용자)
