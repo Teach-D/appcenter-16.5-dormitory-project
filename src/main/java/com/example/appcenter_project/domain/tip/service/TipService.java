@@ -56,9 +56,9 @@ public class TipService {
 
         ResponseTipDetailDto tipDetailDto = ResponseTipDetailDto.from(tip);
 
-        addWriterInfoToResponse(tipDetailDto, tip.getUser(), request);
-        addCurrentUserLikeStatusToResponse(tipDetailDto, currentUser, tip);
-        addCommentToResponse(tipId, request, tipDetailDto);
+        addWriterInfoToDto(tipDetailDto, tip.getUser(), request);
+        addCurrentUserLikeStatusToDto(tipDetailDto, currentUser, tip);
+        addCommentToDto(tipId, request, tipDetailDto);
 
         return tipDetailDto;
     }
@@ -147,14 +147,14 @@ public class TipService {
         }
     }
 
-    private void addWriterInfoToResponse(ResponseTipDetailDto tipDetailDto, User writer, HttpServletRequest request) {
+    private void addWriterInfoToDto(ResponseTipDetailDto tipDetailDto, User writer, HttpServletRequest request) {
         tipDetailDto.updateWriterName(writer.getName());
 
         String writerImageUrl = imageService.findStaticImageUrl(ImageType.USER, writer.getId(), request);
         tipDetailDto.updateWriterImageUrl(writerImageUrl);
     }
 
-    private void addCurrentUserLikeStatusToResponse(ResponseTipDetailDto tipDetailDto, CustomUserDetails currentUser, Tip tip) {
+    private void addCurrentUserLikeStatusToDto(ResponseTipDetailDto tipDetailDto, CustomUserDetails currentUser, Tip tip) {
         if (currentUser == null) {
             tipDetailDto.updateIsCheckLikeCurrentUser(false);
             return;
@@ -167,7 +167,7 @@ public class TipService {
         tipDetailDto.updateIsCheckLikeCurrentUser(isCurrentUserLiked);
     }
 
-    private void addCommentToResponse(Long tipId, HttpServletRequest request, ResponseTipDetailDto tipDetailDto) {
+    private void addCommentToDto(Long tipId, HttpServletRequest request, ResponseTipDetailDto tipDetailDto) {
         List<ResponseTipCommentDto> commentDtos = buildCommentHierarchy(tipId, request);
         tipDetailDto.updateTipCommentDtoList(commentDtos);
     }
