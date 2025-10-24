@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,7 +32,7 @@ public interface ReportApiSpecification {
             )
     })
     @GetMapping
-    List<ResponseReportDto> getReports();
+    List<ResponseReportDto> findAllReports();
 
     @Operation(
             summary = "특정 신고 조회",
@@ -50,7 +51,7 @@ public interface ReportApiSpecification {
             )
     })
     @GetMapping("/{reportId}")
-    ResponseReportDto getReport(
+    ResponseReportDto findReport(
             @Parameter(description = "신고 ID", required = true, example = "1")
             @PathVariable Long reportId
     );
@@ -81,7 +82,7 @@ public interface ReportApiSpecification {
             )
     })
     @PostMapping
-    void createReport(
+    ResponseEntity<Void> saveReport(
             @Parameter(hidden = true)
             @AuthenticationPrincipal CustomUserDetails user,
             @Parameter(description = "신고 등록 요청 데이터", required = true)
@@ -104,7 +105,7 @@ public interface ReportApiSpecification {
             )
     })
     @DeleteMapping("/{reportId}")
-    void delete(
+    ResponseEntity<Void> deleteReport(
             @Parameter(description = "삭제할 신고 ID", required = true, example = "1")
             @PathVariable Long reportId
     );

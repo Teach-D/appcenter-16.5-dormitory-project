@@ -6,10 +6,13 @@ import com.example.appcenter_project.global.security.CustomUserDetails;
 import com.example.appcenter_project.domain.report.service.ReportService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+import static org.springframework.http.HttpStatus.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -18,23 +21,25 @@ public class ReportController implements ReportApiSpecification {
 
     private final ReportService reportService;
 
-    @GetMapping
-    public List<ResponseReportDto> getReports() {
-        return reportService.getAllReports();
+    @PostMapping
+    public ResponseEntity<Void> saveReport(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestBody RequestReportDto requestReportDto) {
+        reportService.saveReport(requestReportDto, user.getId());
+        return ResponseEntity.status(OK).build();
     }
 
     @GetMapping("/{reportId}")
-    public ResponseReportDto getReport(@PathVariable Long reportId) {
-        return reportService.getReport(reportId);
+    public ResponseReportDto findReport(@PathVariable Long reportId) {
+        return reportService.findReport(reportId);
     }
 
-    @PostMapping
-    public void createReport(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestBody RequestReportDto requestReportDto) {
-        reportService.saveReport(requestReportDto, user.getId());
+    @GetMapping
+    public List<ResponseReportDto> findAllReports() {
+        return reportService.findAllReports();
     }
 
     @DeleteMapping("/{reportId}")
-    public void delete(@PathVariable Long reportId) {
+    public ResponseEntity<Void> deleteReport(@PathVariable Long reportId) {
         reportService.deleteReport(reportId);
+        return ResponseEntity.status(NO_CONTENT).build();
     }
 }

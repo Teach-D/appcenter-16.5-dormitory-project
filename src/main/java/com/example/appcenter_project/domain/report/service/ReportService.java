@@ -27,29 +27,25 @@ public class ReportService {
     private final ReportRepository reportRepository;
     private final UserRepository userRepository;
 
-    public void saveReport(RequestReportDto requestReportDto, Long userId) {
+    public void saveReport(RequestReportDto dto, Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-        Report report = RequestReportDto.dtoToEntity(requestReportDto);
-        report.updateUser(user);
+        Report report = Report.of(
+                dto.getCategory(), dto.getTitle(), dto.getContent(), user
+        );
         reportRepository.save(report);
     }
 
-    public ResponseReportDto getReport(Long reportId) {
+    public ResponseReportDto findReport(Long reportId) {
         Report report = reportRepository.findById(reportId).orElseThrow(() -> new CustomException(REPORT_NOT_REGISTERED));
-        return ResponseReportDto.entityToDto(report);
+        return ResponseReportDto.from(report);
     }
 
-    public List<ResponseReportDto> getAllReports() {
+    public List<ResponseReportDto> findAllReports() {
         List<Report> reports = reportRepository.findAll();
-        Collections.reverse(reports);
-        List<ResponseReportDto> responseReportDtos = new ArrayList<>();
 
-        for (Report report : reports) {
-            ResponseReportDto responseReportDto = ResponseReportDto.entityToDto(report);
-            responseReportDtos.add(responseReportDto);
-        }
-
-        return responseReportDtos;
+        return reports.stream()
+                .map(ResponseReportDto::from)
+                .toList();
     }
 
     public void deleteReport(Long reportId) {
