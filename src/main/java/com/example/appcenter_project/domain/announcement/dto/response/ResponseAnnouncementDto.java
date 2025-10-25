@@ -36,7 +36,7 @@ public class ResponseAnnouncementDto {
 
     private String announcementType;
 
-    public static ResponseAnnouncementDto entityToDto(Announcement announcement) {
+    public static ResponseAnnouncementDto from(Announcement announcement) {
 
         if (announcement instanceof ManualAnnouncement) {
             ManualAnnouncement manualAnnouncement = (ManualAnnouncement) announcement;
@@ -71,7 +71,7 @@ public class ResponseAnnouncementDto {
                     .content(truncatedContent)
                     .createdDate(crawledAnnouncement.getCreatedDate())
                     .updatedDate(null)
-                    .isEmergency(false)
+                    .isEmergency(crawledAnnouncement.isEmergency())
                     .viewCount(crawledAnnouncement.getViewCount())
                     .announcementType(crawledAnnouncement.getAnnouncementType().toValue())
                     .build();

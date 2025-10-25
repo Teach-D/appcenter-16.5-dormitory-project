@@ -9,6 +9,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,6 +52,12 @@ public class ManualAnnouncement extends Announcement {
         super.viewCount += 1;
     }
 
+    @Override
+    public LocalDateTime getSortDate() {
+        return getCreatedDate();
+    }
+
+    @Override
     public void update(RequestAnnouncementDto requestAnnouncementDto) {
         this.title = requestAnnouncementDto.getTitle();
         this.writer = requestAnnouncementDto.getWriter();

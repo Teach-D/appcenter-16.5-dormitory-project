@@ -47,7 +47,7 @@ public class ResponseAnnouncementDetailDto {
 
     private String link;
 
-    public static ResponseAnnouncementDetailDto entityToDto(Announcement announcement) {
+    public static ResponseAnnouncementDetailDto from(Announcement announcement) {
 
         if (announcement instanceof ManualAnnouncement) {
             ManualAnnouncement manualAnnouncement = (ManualAnnouncement) announcement;

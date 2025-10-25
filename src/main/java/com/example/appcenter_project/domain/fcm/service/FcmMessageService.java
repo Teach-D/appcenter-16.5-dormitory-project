@@ -209,7 +209,7 @@ public class FcmMessageService {
         log.info("      🚀 sendMessageToUser 종료 (User ID: {}, 총 {}개 토큰 처리)", user.getId(), tokenIndex);
     }
 
-    public void sendSupportersNotification(User user, String title, String body) {
+    public void sendSupporterNotification(User user, String title, String body) {
         if (!user.getReceiveNotificationTypes().contains(NotificationType.SUPPORTERS)) {
             return;
         }
