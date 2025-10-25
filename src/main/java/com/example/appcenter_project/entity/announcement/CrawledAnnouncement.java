@@ -56,4 +56,8 @@ public class CrawledAnnouncement extends Announcement {
         this.content = content;
         this.crawledAnnouncementFiles = crawledAnnouncementFiles;
     }
+
+    public void updateViewCount(int viewCount) {
+        this.viewCount = viewCount;
+    }
 }
