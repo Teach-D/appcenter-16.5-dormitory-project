@@ -21,7 +21,6 @@ import com.example.appcenter_project.domain.groupOrder.repository.GroupOrderLike
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import com.example.appcenter_project.common.image.service.ImageService;
-import com.example.appcenter_project.domain.notification.service.GroupOrderNotificationOrderService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -63,7 +62,7 @@ public class GroupOrderService {
         GroupOrder groupOrder = createGroupOrder(requestGroupOrderDto, user);
         imageService.saveImages(ImageType.GROUP_ORDER, groupOrder.getId(), images);
 
-        groupOrderNotificationService.sendNotification(groupOrder);
+        groupOrderNotificationService.sendNotifications(groupOrder);
     }
 
     public void addRating(Long groupOrderId, Float ratingScore) {

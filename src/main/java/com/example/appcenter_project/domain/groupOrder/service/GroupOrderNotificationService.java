@@ -31,7 +31,7 @@ public class GroupOrderNotificationService {
     private final FcmMessageService fcmMessageService;
     private final UserRepository userRepository;
 
-    public void sendNotification(GroupOrder groupOrder) {
+    public void sendNotifications(GroupOrder groupOrder) {
         // 키워드로 매칭된 유저들
         Set<User> keywordSendUsers = sendKeywordNotifications(groupOrder);
 
@@ -152,7 +152,7 @@ public class GroupOrderNotificationService {
             return Set.of();
         }
 
-        sendNotification(likedUsers, "좋아요한 공동구매 게시글의 오픈채팅방이 만들어졌어요!", groupOrder);
+        sendNotifications(likedUsers, "좋아요한 공동구매 게시글의 오픈채팅방이 만들어졌어요!", groupOrder);
 
         return extractUserIds(likedUsers);
     }
@@ -163,7 +163,7 @@ public class GroupOrderNotificationService {
                 .collect(Collectors.toSet());
     }
 
-    private void sendNotification(List<User> likedUsers, String title, GroupOrder groupOrder) {
+    private void sendNotifications(List<User> likedUsers, String title, GroupOrder groupOrder) {
         Notification notification = createGroupOrderNotification(title, groupOrder);
         notificationRepository.save(notification);
 
@@ -197,7 +197,7 @@ public class GroupOrderNotificationService {
             return;
         }
 
-        sendNotification(commentUsers, "댓글을 단 공동구매 게시글의 오픈채팅방이 만들어졌어요!", groupOrder);
+        sendNotifications(commentUsers, "댓글을 단 공동구매 게시글의 오픈채팅방이 만들어졌어요!", groupOrder);
 
     }
 
