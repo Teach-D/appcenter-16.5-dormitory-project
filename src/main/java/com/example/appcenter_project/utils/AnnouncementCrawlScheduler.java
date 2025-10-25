@@ -69,6 +69,7 @@ public class AnnouncementCrawlScheduler {
         }
     }
 
+    @Transactional
     public void saveCrawlAnnouncement(String link) {
         WebDriver driver = null;
 
