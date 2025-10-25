@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.groupOrder.entity;
 
 import com.example.appcenter_project.common.BaseTimeEntity;
+import com.example.appcenter_project.domain.groupOrder.dto.request.RequestGroupOrderCommentDto;
 import com.example.appcenter_project.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -19,7 +20,7 @@ public class GroupOrderComment extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false)
     private String reply; // 댓글 내용
 
     private boolean isDeleted = false;
@@ -46,14 +47,6 @@ public class GroupOrderComment extends BaseTimeEntity {
         this.user = user;
         this.parentGroupOrderComment = parentGroupOrderComment;
         this.childGroupOrderComments = childGroupOrderComments != null ? childGroupOrderComments : new ArrayList<>();
-    }
-
-    public void setParentGroupOrderCommentNull() {
-        this.parentGroupOrderComment = null;
-    }
-
-    public void addChildGroupOrderComments(GroupOrderComment groupOrderComment) {
-        this.childGroupOrderComments.add(groupOrderComment);
     }
 
     public void updateIsDeleted() {
