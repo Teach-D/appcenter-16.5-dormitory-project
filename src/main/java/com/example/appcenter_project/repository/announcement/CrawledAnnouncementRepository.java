@@ -7,6 +7,5 @@ import java.util.Optional;
 
 public interface CrawledAnnouncementRepository extends JpaRepository <CrawledAnnouncement, Long> {
     boolean existsByNumber(String number);
-    CrawledAnnouncement findByNumber(String number);
-    Optional<CrawledAnnouncement> findByNumberOptional(String number);
+    Optional<CrawledAnnouncement> findByNumber(String number);
 }

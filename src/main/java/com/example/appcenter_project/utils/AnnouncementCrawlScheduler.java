@@ -136,7 +136,7 @@ public class AnnouncementCrawlScheduler {
                 
                 // 이미 저장되어 있는 공지사항은 저장 제외
                 Optional<CrawledAnnouncement> existingAnnouncement =
-                        crawledAnnouncementRepository.findByNumberOptional(number);
+                        crawledAnnouncementRepository.findByNumber(number);
 
                 if (existingAnnouncement.isPresent()) {
                     CrawledAnnouncement announcement = existingAnnouncement.get();
