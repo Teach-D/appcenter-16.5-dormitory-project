@@ -36,6 +36,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -52,7 +53,7 @@ public class AnnouncementCrawlScheduler {
     private final FcmMessageService fcmMessageService;
 
     @Scheduled(cron = "0 0 9,14,18 * * ?")
-    @Transactional
+    //@Transactional
     public void crawling() {
         List<String> crawlLinks = crawlWithSelenium();
         saveCrawlAnnouncements(crawlLinks);
@@ -69,6 +70,7 @@ public class AnnouncementCrawlScheduler {
         }
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void saveCrawlAnnouncement(String link) {
         WebDriver driver = null;
 
@@ -133,10 +135,14 @@ public class AnnouncementCrawlScheduler {
                 }
                 
                 // 이미 저장되어 있는 공지사항은 저장 제외
-                if (crawledAnnouncementRepository.existsByNumber(number)) {
-                    CrawledAnnouncement crawledAnnouncement = crawledAnnouncementRepository.findByNumber(number);
-                    crawledAnnouncement.updateViewCount(viewCountInt);
-                    log.debug("이미 존재하는 공지사항 번호: {}", number);
+                Optional<CrawledAnnouncement> existingAnnouncement =
+                        crawledAnnouncementRepository.findByNumber(number);
+
+                if (existingAnnouncement.isPresent()) {
+                    CrawledAnnouncement announcement = existingAnnouncement.get();
+                    announcement.updateViewCount(viewCountInt);
+                    crawledAnnouncementRepository.saveAndFlush(announcement); // 명시적 저장
+                    log.info("기존 공지사항 조회수 업데이트 - 번호: {}, 조회수: {}", number, viewCountInt);
                     return;
                 }
             } catch (Exception e) {
