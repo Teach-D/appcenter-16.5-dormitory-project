@@ -3,8 +3,10 @@ package com.example.appcenter_project.dto.request.survey;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
+@NoArgsConstructor
 public class RequestSurveyOptionDto {
 
     @NotBlank(message = "선택지 내용은 필수입니다.")

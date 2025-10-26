@@ -2,6 +2,7 @@ package com.example.appcenter_project.dto.response.survey;
 
 import com.example.appcenter_project.entity.survey.SurveyQuestion;
 import com.example.appcenter_project.enums.survey.QuestionType;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 import java.util.ArrayList;
@@ -18,7 +19,11 @@ public class ResponseSurveyQuestionDto {
     private String questionText;
     private QuestionType questionType;
     private Integer questionOrder;
+    
+    @JsonProperty("isRequired")
     private boolean isRequired;
+    
+    @JsonProperty("allowMultipleSelection")
     private boolean allowMultipleSelection;  // 다중 선택 허용 여부
 
     @Builder.Default
