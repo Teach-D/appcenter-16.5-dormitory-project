@@ -13,8 +13,8 @@ public interface SurveyRepository extends JpaRepository<Survey, Long> {
 
     List<Survey> findByCreatorId(Long creatorId);
 
-    @Query("SELECT s FROM Survey s WHERE s.isClosed = false AND s.startDate <= :now AND s.endDate >= :now")
-    List<Survey> findActiveSurveys(@Param("now") LocalDateTime now);
+    @Query("SELECT s FROM Survey s WHERE s.status = 'PROCEEDING'")
+    List<Survey> findActiveSurveys();
 
     @Query("SELECT DISTINCT s FROM Survey s LEFT JOIN FETCH s.questions WHERE s.id = :id")
     Optional<Survey> findByIdWithQuestions(@Param("id") Long id);
