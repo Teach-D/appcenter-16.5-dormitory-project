@@ -46,7 +46,7 @@ public interface CalenderApiSpecification {
                     )
             }
     )
-    ResponseEntity<List<ResponseCalenderDto>> getAllCalenders();
+    ResponseEntity<List<ResponseCalenderDto>> findAllCalenders();
 
     @Operation(
             summary = "특정 년월 캘린더 조회",
@@ -63,7 +63,7 @@ public interface CalenderApiSpecification {
                     @ApiResponse(responseCode = "400", description = "잘못된 년월 값")
             }
     )
-    ResponseEntity<List<ResponseCalenderDto>> getCalendersByYearAndMonth(
+    ResponseEntity<List<ResponseCalenderDto>> findCalendersByYearAndMonth(
             @RequestParam
             @Parameter(description = "조회할 년도", required = true, example = "2025") int year,
             @RequestParam
