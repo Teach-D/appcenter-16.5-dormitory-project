@@ -36,6 +36,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -51,8 +52,8 @@ public class AnnouncementCrawlScheduler {
     private final UserNotificationRepository userNotificationRepository;
     private final FcmMessageService fcmMessageService;
 
-    @Scheduled(cron = "0 0 9,18 * * ?")
-    @Transactional
+    @Scheduled(cron = "0 0 9,14,18 * * ?")
+    //@Transactional
     public void crawling() {
         List<String> crawlLinks = crawlWithSelenium();
         saveCrawlAnnouncements(crawlLinks);
@@ -69,6 +70,7 @@ public class AnnouncementCrawlScheduler {
         }
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void saveCrawlAnnouncement(String link) {
         WebDriver driver = null;
 
@@ -108,6 +110,18 @@ public class AnnouncementCrawlScheduler {
                 // 카테고리 없을 수 있음
             }
 
+            // 조회수
+            int viewCountInt = 0;
+            try {
+                WebElement viewCountElement = driver.findElement(By.cssSelector("dl.count dd"));
+                String viewCount = viewCountElement.getText().trim();
+                if (!viewCount.isEmpty() && viewCount.matches("\\d+")) {
+                    viewCountInt = Integer.parseInt(viewCount);
+                }
+            } catch (Exception e) {
+                log.debug("조회수 추출 실패, 기본값 0 사용");
+            }
+
             // 글번호 (String으로 처리)
             String number = "";
             try {
@@ -121,8 +135,14 @@ public class AnnouncementCrawlScheduler {
                 }
                 
                 // 이미 저장되어 있는 공지사항은 저장 제외
-                if (crawledAnnouncementRepository.existsByNumber(number)) {
-                    log.debug("이미 존재하는 공지사항 번호: {}", number);
+                Optional<CrawledAnnouncement> existingAnnouncement =
+                        crawledAnnouncementRepository.findByNumber(number);
+
+                if (existingAnnouncement.isPresent()) {
+                    CrawledAnnouncement announcement = existingAnnouncement.get();
+                    announcement.updateViewCount(viewCountInt);
+                    crawledAnnouncementRepository.saveAndFlush(announcement); // 명시적 저장
+                    log.info("기존 공지사항 조회수 업데이트 - 번호: {}, 조회수: {}", number, viewCountInt);
                     return;
                 }
             } catch (Exception e) {
@@ -148,17 +168,7 @@ public class AnnouncementCrawlScheduler {
                 log.debug("작성자 추출 실패");
             }
 
-            // 조회수
-            int viewCountInt = 0;
-            try {
-                WebElement viewCountElement = driver.findElement(By.cssSelector("dl.count dd"));
-                String viewCount = viewCountElement.getText().trim();
-                if (!viewCount.isEmpty() && viewCount.matches("\\d+")) {
-                    viewCountInt = Integer.parseInt(viewCount);
-                }
-            } catch (Exception e) {
-                log.debug("조회수 추출 실패, 기본값 0 사용");
-            }
+
 
             // 본문 내용
             String content = "";

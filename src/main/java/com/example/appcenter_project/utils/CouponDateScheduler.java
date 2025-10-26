@@ -19,7 +19,7 @@ public class CouponDateScheduler {
     private final RedisTemplate<String, Object> redisTemplate;
     private static final String REDIS_KEY = "coupon_date_time";
 
-    @Scheduled(cron = "0 0 9 * * MON-FRI")
+//    @Scheduled(cron = "0 0 9 * * MON-FRI")
     @Transactional
     public void setupCouponDateScheduler() {
         LocalTime randomTime = generateRandomTime();
