@@ -48,8 +48,10 @@ public class SurveyService {
                 .creator(creator)
                 .startDate(requestDto.getStartDate())
                 .endDate(requestDto.getEndDate())
-                .isClosed(false) // 초기에는 종료되지 않은 상태
                 .build();
+        
+        // 초기 상태 설정
+        survey.updateStatus();
 
         surveyRepository.save(survey);
         log.info("[createSurvey] 설문 저장 완료 surveyId={}", survey.getId());
@@ -91,12 +93,9 @@ public class SurveyService {
 
         List<Survey> surveys = surveyRepository.findAll();
 
-        // 종료일이 지난 설문 자동 종료 처리
-        LocalDateTime now = LocalDateTime.now();
+        // 설문 상태 자동 업데이트
         for (Survey survey : surveys) {
-            if (!survey.isClosed() && now.isAfter(survey.getEndDate())) {
-                survey.close();
-            }
+            survey.updateStatus();
         }
 
         // SecurityContext에서 userId 가져오기
@@ -128,11 +127,8 @@ public class SurveyService {
         Survey survey = surveyRepository.findByIdWithQuestions(surveyId)
                 .orElseThrow(() -> new CustomException(SURVEY_NOT_FOUND));
 
-        // 조회 시점에 종료일이 지났으면 자동 종료 처리
-        LocalDateTime now = LocalDateTime.now();
-        if (!survey.isClosed() && now.isAfter(survey.getEndDate())) {
-            survey.close();
-        }
+        // 조회 시점에 상태 자동 업데이트
+        survey.updateStatus();
 
         return ResponseSurveyDetailDto.entityToDto(survey);
     }
