@@ -1,6 +1,7 @@
 package com.example.appcenter_project.dto.response.survey;
 
 import com.example.appcenter_project.entity.survey.Survey;
+import com.example.appcenter_project.enums.survey.SurveyStatus;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -20,7 +21,7 @@ public class ResponseSurveyDetailDto {
     private String creatorName;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
-    private boolean isClosed;
+    private SurveyStatus status;
     private LocalDateTime createdDate;
     private Integer totalResponses;
 
@@ -35,7 +36,7 @@ public class ResponseSurveyDetailDto {
                 .creatorName(survey.getCreator().getName())
                 .startDate(survey.getStartDate())
                 .endDate(survey.getEndDate())
-                .isClosed(survey.isClosed())
+                .status(survey.getStatus())
                 .createdDate(survey.getCreatedDate())
                 .totalResponses(survey.getResponses().size())
                 .questions(survey.getQuestions().stream()
