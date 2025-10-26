@@ -8,8 +8,11 @@ import com.example.appcenter_project.enums.survey.QuestionType;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.repository.survey.*;
 import com.example.appcenter_project.repository.user.UserRepository;
+import com.example.appcenter_project.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -96,9 +99,25 @@ public class SurveyService {
             }
         }
 
-        return surveys.stream()
-                .map(ResponseSurveyDto::entityToDto)
-                .collect(Collectors.toList());
+        // SecurityContext에서 userId 가져오기
+        Long userId = null;
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof CustomUserDetails) {
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            userId = userDetails.getId();
+        }
+
+        // 각 설문에 대해 사용자 제출 여부 확인
+        List<ResponseSurveyDto> result = new ArrayList<>();
+        for (Survey survey : surveys) {
+            boolean hasSubmitted = false;
+            if (userId != null) {
+                hasSubmitted = surveyResponseRepository.existsBySurveyIdAndUserId(survey.getId(), userId);
+            }
+            result.add(ResponseSurveyDto.entityToDto(survey, hasSubmitted));
+        }
+        
+        return result;
     }
 
     // 설문 상세 조회
