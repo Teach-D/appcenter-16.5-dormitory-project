@@ -25,8 +25,9 @@ public class ResponseSurveyDto {
     @JsonProperty("hasSubmitted")
     @Builder.Default
     private boolean hasSubmitted = false;  // 사용자 제출 여부
-    
+  
     private SurveyStatus status;  // 설문 진행 상태 (진행전/진행중/마감)
+
 
     public static ResponseSurveyDto entityToDto(Survey survey) {
         return ResponseSurveyDto.builder()
@@ -55,6 +56,10 @@ public class ResponseSurveyDto {
                 .totalResponses(survey.getResponses().size())
                 .hasSubmitted(hasSubmitted)
                 .status(survey.getStatus())
+                .isClosed(survey.isClosed())
+                .createdDate(survey.getCreatedDate())
+                .totalResponses(survey.getResponses().size())
+                .hasSubmitted(hasSubmitted)
                 .build();
     }
 }
