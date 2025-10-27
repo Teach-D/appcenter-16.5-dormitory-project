@@ -100,7 +100,7 @@ public interface SurveyApiSpecification {
 
     @Operation(
             summary = "모든 설문 조회",
-            description = "등록된 모든 설문 목록을 조회합니다. 종료일이 지난 설문은 자동으로 종료 처리됩니다.",
+            description = "등록된 모든 설문 목록을 조회합니다. 종료일이 지난 설문은 자동으로 종료 처리됩니다. 로그인한 사용자의 경우 각 설문의 제출 여부(hasSubmitted)를 포함하여 반환합니다.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
