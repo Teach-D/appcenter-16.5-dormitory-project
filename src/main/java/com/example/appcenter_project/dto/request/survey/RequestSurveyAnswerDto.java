@@ -2,11 +2,13 @@ package com.example.appcenter_project.dto.request.survey;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Getter
+@NoArgsConstructor
 public class RequestSurveyAnswerDto {
 
     @NotNull(message = "질문 ID는 필수입니다.")
