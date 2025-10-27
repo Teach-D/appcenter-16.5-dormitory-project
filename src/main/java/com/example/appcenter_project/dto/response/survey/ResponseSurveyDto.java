@@ -56,7 +56,6 @@ public class ResponseSurveyDto {
                 .totalResponses(survey.getResponses().size())
                 .hasSubmitted(hasSubmitted)
                 .status(survey.getStatus())
-                .isClosed(survey.isClosed())
                 .createdDate(survey.getCreatedDate())
                 .totalResponses(survey.getResponses().size())
                 .hasSubmitted(hasSubmitted)
