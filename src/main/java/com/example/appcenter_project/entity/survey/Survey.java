@@ -2,6 +2,7 @@ package com.example.appcenter_project.entity.survey;
 
 import com.example.appcenter_project.entity.BaseTimeEntity;
 import com.example.appcenter_project.entity.user.User;
+import com.example.appcenter_project.enums.survey.SurveyStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -38,8 +39,10 @@ public class Survey extends BaseTimeEntity {
 
     private LocalDateTime endDate;  // 설문 종료일시 (이 시간 이후 자동 종료)
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     @Builder.Default
-    private boolean isClosed = false;  // 설문 종료 여부 (true: 종료됨, false: 진행중) - 관리자가 수동으로도 종료 가능
+    private SurveyStatus status = SurveyStatus.BEFORE;  // 설문 진행 상태
 
     @OneToMany(mappedBy = "survey", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
@@ -59,11 +62,31 @@ public class Survey extends BaseTimeEntity {
     }
 
     public void close() {
-        this.isClosed = true;
+        this.status = SurveyStatus.CLOSED;
     }
 
     public void reopen() {
-        this.isClosed = false;
+        updateStatus();
+    }
+    
+    public void updateStatus() {
+        // 관리자가 수동으로 종료한 경우는 날짜로 다시 활성화하지 않음
+        if (this.status == SurveyStatus.CLOSED) {
+            return;
+        }
+        
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(startDate)) {
+            this.status = SurveyStatus.BEFORE;
+        } else if (now.isAfter(endDate)) {
+            this.status = SurveyStatus.CLOSED;
+        } else {
+            this.status = SurveyStatus.PROCEEDING;
+        }
+    }
+    
+    public boolean isClosed() {
+        return status == SurveyStatus.CLOSED;
     }
 
     public void update(String title, String description, LocalDateTime startDate, LocalDateTime endDate) {
@@ -71,6 +94,7 @@ public class Survey extends BaseTimeEntity {
         this.description = description;
         this.startDate = startDate;
         this.endDate = endDate;
+        updateStatus();
     }
 }
 
