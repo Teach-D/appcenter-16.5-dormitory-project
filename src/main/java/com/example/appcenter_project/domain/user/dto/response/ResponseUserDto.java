@@ -22,7 +22,7 @@ public class ResponseUserDto {
     private boolean isPrivacyAgreed;
     private boolean hasUnreadNotifications;
 
-    public static ResponseUserDto entityToDto(User user, boolean checkList, boolean hasUnreadNotifications) {
+    public static ResponseUserDto from(User user, boolean checkList, boolean hasUnreadNotifications) {
         return ResponseUserDto.builder()
                 .id(user.getId())
                 .name(user.getName() != null ? user.getName() : "")
@@ -38,7 +38,7 @@ public class ResponseUserDto {
                 .build();
     }
 
-    public static ResponseUserDto entityToBasicDto(User user) {
+    public static ResponseUserDto createBasicDto(User user) {
         return ResponseUserDto.builder()
                 .id(user.getId())
                 .studentNumber(user.getStudentNumber())

@@ -146,6 +146,12 @@ public class User extends BaseTimeEntity {
         this.image = image;
     }
 
+    public static User createNewUser(String studentNumber, String password) {
+        return User.builder()
+                .studentNumber(studentNumber).password(password)
+                .penalty(0).image(null).role(Role.ROLE_USER).build();
+    }
+
     public boolean hasUnreadNotifications() {
         return userNotifications.stream()
                 .anyMatch(userNotification -> !userNotification.isRead());
@@ -195,28 +201,8 @@ public class User extends BaseTimeEntity {
         this.roommateBoardLikeList.remove(roommateBoardLike);
     }
 
-    public void addTip(Tip tip) {
-        this.tipList.add(tip);
-    }
-
-    public void addGroupOrderLike(GroupOrderLike groupOrderLike) {
-        this.groupOrderLikeList.add(groupOrderLike);
-    }
-
-    public void addLike(TipLike tipLike) {
-        this.tipLikeList.add(tipLike);
-    }
-
     public void updateRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
-    }
-
-    public void removeLike(TipLike tipLike) {
-        this.tipLikeList.remove(tipLike);
-    }
-
-    public void removeGroupOrderLike(GroupOrderLike groupOrderLike) {
-        this.groupOrderLikeList.remove(groupOrderLike);
     }
 
     public void addSearchLog(String searchLog) {
@@ -229,15 +215,6 @@ public class User extends BaseTimeEntity {
 
     public void addRating(Float rating) {
         ratings.add(rating);
-    }
-
-    public Float getAverageRating() {
-        Float sum = 0.0f;
-        for (Float rating : ratings) {
-            sum += rating;
-        }
-        Float average = sum / ratings.size();
-        return Math.round(average * 10.0f) / 10.0f;
     }
 
     public void changeRole(Role role) {

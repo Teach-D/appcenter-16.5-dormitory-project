@@ -16,7 +16,6 @@ import com.example.appcenter_project.domain.user.enums.Role;
 import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.domain.user.repository.SchoolLoginRepository;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
-import com.example.appcenter_project.global.exception.ErrorCode;
 import com.example.appcenter_project.global.security.jwt.JwtTokenProvider;
 import com.example.appcenter_project.domain.fcm.service.FcmMessageService;
 import com.example.appcenter_project.common.image.service.ImageService;
@@ -57,7 +56,7 @@ public class UserService {
     public ResponseLoginDto saveUser(SignupUser signupUser) {
         checkINUStudent(signupUser);
         User user = createUser(signupUser);
-        return createUserDto(user);
+        return createDto(user);
     }
 
     public String reissueAccessToken(RequestTokenDto request) {
@@ -71,9 +70,8 @@ public class UserService {
         String body = request.getBody();
 
         List<User> userIds = userRepository.findAllById(request.getUserIds());
-        sendNotificationToUsers(userIds, title, body);
+        sendMessageToUsers(userIds, title, body);
     }
-
 
     public void changeUserRole(RequestUserRoleDto request) {
         Role role = Role.from(request.getRole());
@@ -89,19 +87,20 @@ public class UserService {
         boolean hasUnreadNotifications = user.hasUnreadNotifications();
         boolean hasRoommateCheckList = user.hasRoommateCheckList();
 
-        return ResponseUserDto.entityToDto(user, hasRoommateCheckList, hasUnreadNotifications);
+        return ResponseUserDto.from(user, hasRoommateCheckList, hasUnreadNotifications);
     }
 
     public List<ResponseUserDto> findAllUsers() {
-        return userRepository.findAll().stream().map(ResponseUserDto::entityToBasicDto).toList();
+        return userRepository.findAll().stream().map(ResponseUserDto::createBasicDto).toList();
     }
 
     public List<ResponseUserRole> findUsersDormitoryRoles() {
         List<Role> roles = getDormitoryRoles();
         List<User> users = userRepository.findByRoleIn(roles);
+
         return users.stream()
-                .map(user -> ResponseUserRole.builder().studentNumber(user.getStudentNumber()).role(user.getRole().getDescription())
-                        .build()).toList();
+                .map(ResponseUserRole::from)
+                .toList();
     }
 
     public List<ResponseBoardDto> findUserBoards(Long userId, HttpServletRequest request) {
@@ -140,7 +139,7 @@ public class UserService {
         boolean hasUnreadNotifications = user.hasUnreadNotifications();
         boolean hasRoommateCheckList = user.hasRoommateCheckList();
 
-        return ResponseUserDto.entityToDto(user, hasRoommateCheckList, hasUnreadNotifications);
+        return ResponseUserDto.from(user, hasRoommateCheckList, hasUnreadNotifications);
     }
 
     public void updateUserAgreement(Long userId, boolean isTermsAgreed, boolean isPrivacyAgreed) {
@@ -158,19 +157,17 @@ public class UserService {
     }
 
     public void deleteUser(Long userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new CustomException(USER_NOT_FOUND);
-        }
-
+        checkExistsUser(userId);
         userRepository.deleteById(userId);
     }
 
     public void deleteUserTimeTableImage(Long userId) {
+        checkExistsUser(userId);
         imageService.deleteImage(ImageType.TIME_TABLE, userId);
     }
 
-    // ========== Private Methods ========== //
 
+    // ========== Private Methods ========== //
     private void checkINUStudent(SignupUser signupUser) {
         if (isNotINUStudent(schoolLoginRepository.loginCheck(signupUser.getStudentNumber(), signupUser.getPassword()))) {
             throw new CustomException(USER_NOT_FOUND);
@@ -186,10 +183,9 @@ public class UserService {
             return userRepository.findByStudentNumber(signupUser.getStudentNumber()).get();
         }
 
-        User user = User.builder()
-                .studentNumber(signupUser.getStudentNumber()).password(passwordEncoder.encode(signupUser.getPassword()))
-                .penalty(0).image(null).role(Role.ROLE_USER).build();
+        User user = User.createNewUser(signupUser.getStudentNumber(), passwordEncoder.encode(signupUser.getPassword()));
         userRepository.save(user);
+
         return user;
     }
 
@@ -197,7 +193,7 @@ public class UserService {
         return userRepository.existsByStudentNumber(signupUser.getStudentNumber());
     }
 
-    private ResponseLoginDto createUserDto(User user) {
+    private ResponseLoginDto createDto(User user) {
         String accessToken = createAccessToken(user);
         String refreshToken = createRefreshToken(user);
 
@@ -230,23 +226,28 @@ public class UserService {
         }
 
         User user = userRepository.findByRefreshToken(refreshToken).orElseThrow(() -> new CustomException(REFRESH_TOKEN_USER_NOT_FOUND));
+
         return jwtTokenProvider.generateAccessToken(user.getId(), user.getStudentNumber(), String.valueOf(user.getRole()));
     }
 
-    private void sendNotificationToUsers(List<User> userIds, String title, String body) {
+    private void sendMessageToUsers(List<User> userIds, String title, String body) {
         userIds.forEach(user ->
                 fcmMessageService.sendNotification(user, title, body)
         );
     }
 
     private static boolean isNotAdminRole(Role role) {
-        return role == Role.ROLE_USER || role == Role.ROLE_DORM_LIFE_MANAGER
-                || role == Role.ROLE_DORM_ROOMMATE_MANAGER || role == Role.ROLE_DORM_MANAGER
-                || role == Role.ROLE_DORM_SUPPORTERS || role == Role.ROLE_DORM_EXPEDITED_COMPLAINT_MANAGER;
+        return role != Role.ROLE_ADMIN;
     }
 
     private User findUserById(Long userId) {
         return userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+    }
+
+    private void checkExistsUser(Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new CustomException(USER_NOT_FOUND);
+        }
     }
 
     private static List<Role> getDormitoryRoles() {
