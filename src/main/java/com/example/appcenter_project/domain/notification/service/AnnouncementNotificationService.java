@@ -56,7 +56,7 @@ public class AnnouncementNotificationService {
         sendMessagesTo(targetUser, notification, notificationType);
     }
 
-    public Notification createNotification(Announcement announcement, NotificationType notificationType) {
+    private Notification createNotification(Announcement announcement, NotificationType notificationType) {
         String title = "새로운 공지사항이 올라왔어요!";
 
         Notification notification = Notification.of(

@@ -7,6 +7,4 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
     boolean existsByBoardIdAndTitle(Long boardId, String title);
     Notification findByBoardIdAndTitle(Long boardId, String title);
-
-    Notification findByBoardIdAndNotificationType(Long boardId, NotificationType notificationType);
 }

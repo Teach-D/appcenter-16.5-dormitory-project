@@ -31,23 +31,22 @@ public class NotificationService {
 
     // ========== Public Methods ========== //
 
-    public void saveAndSendNotification(RequestNotificationDto dto) {
-        Notification notification = createNotification(dto);
+    public void saveNotification(RequestNotificationDto requestDto) {
+        Notification notification = createNotification(requestDto);
 
-        NotificationType notificationType = NotificationType.from(dto.getNotificationType());
+        NotificationType notificationType = NotificationType.from(requestDto.getNotificationType());
         List<User> receiveUsers = userRepository.findByReceiveNotificationTypesContains(notificationType);
 
         saveUserNotifications(notification, receiveUsers);
         sendFcmMessages(notification, receiveUsers);
     }
 
-    public void saveNotificationByStudentNumber(RequestNotificationDto requestNotificationDto, String studentNumber) {
+    public void saveNotificationByStudentNumber(RequestNotificationDto requestDto, String studentNumber) {
         String title = "유니돔으로부터 알림이 도착했습니다!";
-
-        Notification notification = createNotification(requestNotificationDto);
 
         User user = userRepository.findByStudentNumber(studentNumber).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
+        Notification notification = createNotification(requestDto);
         createUserNotification(user, notification);
 
         fcmMessageService.sendNotification(user, title, notification.getTitle());
@@ -70,9 +69,9 @@ public class NotificationService {
                 .toList();
     }
 
-    public void updateNotification(Long notificationId, RequestNotificationDto requestNotificationDto) {
+    public void updateNotification(Long notificationId, RequestNotificationDto requestDto) {
         Notification notification = notificationRepository.findById(notificationId).orElseThrow();
-        notification.update(requestNotificationDto);
+        notification.update(requestDto);
     }
 
     public void deleteNotification(Long notificationId) {
@@ -81,8 +80,8 @@ public class NotificationService {
 
     // ========== Private Methods ========== //
 
-    private Notification createNotification(RequestNotificationDto requestNotificationDto) {
-        Notification notification = Notification.from(requestNotificationDto);
+    private Notification createNotification(RequestNotificationDto requestDto) {
+        Notification notification = Notification.from(requestDto);
         notificationRepository.save(notification);
         return notification;
     }
@@ -105,5 +104,4 @@ public class NotificationService {
         UserNotification userNotification = UserNotification.of(user, notification);
         userNotificationRepository.save(userNotification);
     }
-
 }

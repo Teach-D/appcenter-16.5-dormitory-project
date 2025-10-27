@@ -22,7 +22,7 @@ public class NotificationController implements NotificationApiSpecification {
 
     @PostMapping
     public ResponseEntity<Void> saveNotification(@RequestBody RequestNotificationDto requestNotificationDto) {
-        notificationService.saveAndSendNotification(requestNotificationDto);
+        notificationService.saveNotification(requestNotificationDto);
         return ResponseEntity.status(CREATED).build();
     }
 

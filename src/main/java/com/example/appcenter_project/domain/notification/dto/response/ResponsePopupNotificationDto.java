@@ -22,7 +22,7 @@ public class ResponsePopupNotificationDto {
     private LocalDate startDate;
     private List<String> imagePath;
 
-    public static ResponsePopupNotificationDto entityToDto(PopupNotification popupNotification, List<String> imageUrls) {
+    public static ResponsePopupNotificationDto of(PopupNotification popupNotification, List<String> imageUrls) {
         return ResponsePopupNotificationDto.builder()
                 .id(popupNotification.getId())
                 .title(popupNotification.getTitle())

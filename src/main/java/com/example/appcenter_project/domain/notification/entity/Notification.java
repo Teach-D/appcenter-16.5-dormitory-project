@@ -44,12 +44,12 @@ public class Notification extends BaseTimeEntity {
         this.userNotifications = userNotifications;
     }
 
-    public static Notification from(RequestNotificationDto dto) {
+    public static Notification from(RequestNotificationDto requestDto) {
         return Notification.builder()
-                .boardId(dto.getBoardId())
-                .title(dto.getTitle())
-                .body(dto.getBody())
-                .notificationType(NotificationType.from(dto.getNotificationType()))
+                .boardId(requestDto.getBoardId())
+                .title(requestDto.getTitle())
+                .body(requestDto.getBody())
+                .notificationType(NotificationType.from(requestDto.getNotificationType()))
                 .apiType(ApiType.NOTIFICATION)
                 .build();
     }
@@ -64,7 +64,6 @@ public class Notification extends BaseTimeEntity {
                 .build();
 
     }
-
 
     public void update(RequestNotificationDto requestNotificationDto) {
         boardId = requestNotificationDto.getBoardId();
