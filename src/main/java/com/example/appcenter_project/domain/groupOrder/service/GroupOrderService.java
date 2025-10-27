@@ -161,15 +161,15 @@ public class GroupOrderService {
         groupOrder.updateRecruitmentComplete(false);
     }
 
-    public void updateGroupOrder(Long userId, Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto, List<MultipartFile> images) {
+    public void updateGroupOrder(Long userId, Long groupOrderId, RequestGroupOrderDto requestDto, List<MultipartFile> images) {
         GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId)
                 .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_OWNED_BY_USER));
 
-        if (isChangeNewOpenChatLink(requestGroupOrderDto, groupOrder)) {
+        if (isChangeNewOpenChatLink(requestDto, groupOrder)) {
             groupOrderNotificationService.sendOpenChatLinkNotification(groupOrder);
         }
 
-        groupOrder.update(requestGroupOrderDto);
+        groupOrder.update(requestDto);
 
         imageService.updateGroupOrderImages(ImageType.GROUP_ORDER, groupOrderId, images);
     }
@@ -219,11 +219,11 @@ public class GroupOrderService {
     }
 
     private ResponseGroupOrderDetailDto createDto(HttpServletRequest request, GroupOrder groupOrder) {
-        String writerImageUrl = getRepresentativeUserImageUrl(request, groupOrder.getUser());
+        String writerImageUrl = findRepresentativeUserImageUrl(request, groupOrder.getUser());
         return ResponseGroupOrderDetailDto.of(groupOrder, writerImageUrl);
     }
 
-    private String getRepresentativeUserImageUrl(HttpServletRequest request, User findUser) {
+    private String findRepresentativeUserImageUrl(HttpServletRequest request, User findUser) {
         List<ImageLinkDto> imageLinkDtos = imageService.findImages(ImageType.USER, findUser.getId(), request);
 
         if (imageLinkDtos.isEmpty()) {
@@ -234,21 +234,25 @@ public class GroupOrderService {
     }
 
     private void checkGroupOrderOwnByCurrentUser(CustomUserDetails currentUser, GroupOrder groupOrder, ResponseGroupOrderDetailDto dto) {
-        if (isUserLogin(currentUser)) {
+        if (isLogin(currentUser)) {
             User user = userRepository.findById(currentUser.getId())
                     .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-            if (Objects.equals(groupOrder.getUser().getId(), user.getId())) {
+            if (isEqualUser(groupOrder.getUser(), user)) {
                 dto.updateIsMyPost(true);
             }
         }
     }
 
-    private static boolean isUserLogin(CustomUserDetails currentUser) {
+    private static boolean isEqualUser(User writtenUser, User currentUser) {
+        return Objects.equals(writtenUser.getId(), currentUser.getId());
+    }
+
+    private static boolean isLogin(CustomUserDetails currentUser) {
         return currentUser != null;
     }
 
     private void checkCurrentUserLiked(CustomUserDetails currentUser, GroupOrder groupOrder, ResponseGroupOrderDetailDto dto) {
-        if (isUserLogin(currentUser)) {
+        if (isLogin(currentUser)) {
             User user = userRepository.findById(currentUser.getId())
                     .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
             if (isCurrentUserLiked(groupOrder, user)) {
@@ -336,9 +340,13 @@ public class GroupOrderService {
     }
 
     private static void updateExpiredGroupOrder(GroupOrder groupOrder, LocalDateTime now) {
-        if (!groupOrder.isRecruitmentComplete() && now.isAfter(groupOrder.getDeadline())) {
+        if (isExpired(groupOrder, now)) {
             groupOrder.updateRecruitmentComplete(true);
         }
+    }
+
+    private static boolean isExpired(GroupOrder groupOrder, LocalDateTime now) {
+        return !groupOrder.isRecruitmentComplete() && now.isAfter(groupOrder.getDeadline());
     }
 
     private String findRepresentativeImage(HttpServletRequest request, GroupOrder groupOrder) {

@@ -45,7 +45,7 @@ public class GroupOrderCommentService {
         GroupOrderComment comment;
         if (isParentComment(requestDto)) {
             comment = createParentComment(requestDto, groupOrder, currentUser);
-            sendNotificationToWriter(currentUser, groupOrder, requestDto.getReply());
+            sendNotificationToGroupOrderWriter(currentUser, groupOrder, requestDto.getReply());
         } else {
             GroupOrderComment parentGroupOrderComment = groupOrderCommentRepository
                     .findById(requestDto.getParentCommentId()).orElseThrow(() -> new CustomException(GROUP_ORDER_COMMENT_NOT_FOUND));
@@ -75,14 +75,14 @@ public class GroupOrderCommentService {
         return groupOrderCommentRepository.save(comment);
     }
 
-    private void sendNotificationToWriter(User currentUser, GroupOrder groupOrder, String reply) {
-        User writerUser = groupOrder.getUser();
+    private void sendNotificationToGroupOrderWriter(User currentUser, GroupOrder groupOrder, String reply) {
+        User groupOrderWriterUser = groupOrder.getUser();
 
-        if (isDifferentUser(writerUser, currentUser)) {
+        if (isDifferentUser(groupOrderWriterUser, currentUser)) {
             String title = "[" + groupOrder.getTitle() + "] 에 댓글이 달렸어요";
             Notification notification = createNotification(title, reply, groupOrder);
-            createUserNotification(writerUser, notification);
-            sendMessageTo(writerUser, notification);
+            createUserNotification(groupOrderWriterUser, notification);
+            sendMessageTo(groupOrderWriterUser, notification);
         }
     }
 

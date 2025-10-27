@@ -198,7 +198,6 @@ public class GroupOrderNotificationService {
         }
 
         sendNotifications(commentUsers, "댓글을 단 공동구매 게시글의 오픈채팅방이 만들어졌어요!", groupOrder);
-
     }
 
     private static List<User> findCommentUsersWithOutLike(GroupOrder groupOrder, Set<Long> likedUserIds) {
