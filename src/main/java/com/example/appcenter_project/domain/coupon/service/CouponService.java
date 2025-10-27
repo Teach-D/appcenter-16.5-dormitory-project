@@ -39,6 +39,8 @@ public class CouponService {
     private final UserNotificationRepository userNotificationRepository;
     private final RedisTemplate<String, String> redisTemplate;
 
+    // ========== Public Methods ========== //
+
     @Transactional
     public ResponseCouponDto findCoupon(Long userId) {
         User user = userRepository.findById(userId)
@@ -50,7 +52,7 @@ public class CouponService {
             return ResponseCouponDto.of(false, false);
         }
 
-        if (isHaveCoupon(userId)) {
+        if (isAlreadyHaveCoupon(userId)) {
             log.info("사용자 {}는 이미 쿠폰을 발급받았습니다.", userId);
             return ResponseCouponDto.of(true, true);
         }
@@ -84,31 +86,13 @@ public class CouponService {
         return issuanceCoupon(userId, couponId);
     }
 
-    private static boolean isCurrentTimeIsBeforeCouponOpenTime(LocalTime currentTime, LocalTime couponOpenTime) {
-        return currentTime.isBefore(couponOpenTime);
-    }
-
-    private boolean isNotExistsCoupon() {
-        return couponRepository.count() == 0;
-    }
-
-    private boolean isHaveCoupon(Long userId) {
-        return userNotificationRepository
-                .existsByUserIdAndNotificationType(userId, NotificationType.COUPON);
-    }
-
-    private static boolean isNotUserRole(User user) {
-        return user.getRole() != Role.ROLE_USER;
-    }
-
-
     @Transactional
     public ResponseCouponDto issuanceCoupon(Long userId, Long couponId) {
         try {
             Coupon coupon = couponRepository.findByIdWithLock(couponId)
                     .orElse(null);
 
-            if (isHaveCoupon(userId)) {
+            if (isAlreadyHaveCoupon(userId)) {
                 log.info("사용자 {}는 이미 쿠폰을 발급받았습니다. (Lock 내부 체크)", userId);
                 return ResponseCouponDto.of(true, true);
             }
@@ -130,7 +114,7 @@ public class CouponService {
             return ResponseCouponDto.of(true, false);
 
         } catch (Exception e) {
-            log.error("쿠폰 발급 실패 - userId: {}, couponId: {}, error: {}", 
+            log.error("쿠폰 발급 실패 - userId: {}, couponId: {}, error: {}",
                     userId, couponId, e.getMessage(), e);
             return ResponseCouponDto.builder()
                     .success(false)
@@ -138,10 +122,25 @@ public class CouponService {
         }
     }
 
-    private void createUserNotification(User user, Notification notification) {
-        UserNotification userNotification = UserNotification.of(user, notification);
-        userNotificationRepository.save(userNotification);
+    // ========== Private Methods ========== //
+
+    private static boolean isNotUserRole(User user) {
+        return user.getRole() != Role.ROLE_USER;
     }
+
+    private boolean isAlreadyHaveCoupon(Long userId) {
+        return userNotificationRepository
+                .existsByUserIdAndNotificationType(userId, NotificationType.COUPON);
+    }
+
+    private boolean isNotExistsCoupon() {
+        return couponRepository.count() == 0;
+    }
+
+    private static boolean isCurrentTimeIsBeforeCouponOpenTime(LocalTime currentTime, LocalTime couponOpenTime) {
+        return currentTime.isBefore(couponOpenTime);
+    }
+
 
     private Notification createNotification() {
         Notification notification = Notification.builder()
@@ -153,6 +152,11 @@ public class CouponService {
 
         notificationRepository.save(notification);
         return notification;
+    }
+
+    private void createUserNotification(User user, Notification notification) {
+        UserNotification userNotification = UserNotification.of(user, notification);
+        userNotificationRepository.save(userNotification);
     }
 
     private Long getCouponIdByDayOfWeek(DayOfWeek dayOfWeek) {
