@@ -41,9 +41,7 @@ public class ReportService {
     }
 
     public List<ResponseReportDto> findAllReports() {
-        List<Report> reports = reportRepository.findAll();
-
-        return reports.stream()
+        return reportRepository.findAll().stream()
                 .map(ResponseReportDto::from)
                 .toList();
     }
