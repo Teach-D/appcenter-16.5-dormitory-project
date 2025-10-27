@@ -12,9 +12,6 @@ import java.util.Optional;
 
 public interface TipLikeRepository extends JpaRepository<TipLike, Long> {
     Optional<TipLike> findByUserAndTip(User user, Tip tip);
-    Boolean existsByUserAndTip(User user, Tip tip);
-    boolean existsByUserIdAndTipId(Long userId, Long tipId);
-
     List<TipLike> findByUserId(Long userId);
 
     @Query("SELECT tl FROM TipLike tl JOIN FETCH tl.tip t WHERE tl.user.id = :userId")

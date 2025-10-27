@@ -67,18 +67,6 @@ public class TipComment extends BaseTimeEntity {
                 .build();
     }
 
-    public void setParentTipCommentNull() {
-        this.parentTipComment = null;
-    }
-
-    public void addChildTipComments(TipComment tipComment) {
-        this.childTipComments.add(tipComment);
-    }
-
-    public void updateIsDeleted() {
-        this.isDeleted = true;
-    }
-
     public void changeAsDeleted() {
         this.isDeleted = true;
     }

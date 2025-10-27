@@ -45,9 +45,9 @@ public class TipService {
 
     // ========== Public Methods ========== //
 
-    public void saveTip(Long userId, RequestTipDto requestTipDto, List<MultipartFile> images) {
+    public void saveTip(Long userId, RequestTipDto requestDto, List<MultipartFile> images) {
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-        Tip tip = createTip(requestTipDto, user);
+        Tip tip = createTip(requestDto, user);
         saveTipImages(images, tip);
     }
 
@@ -80,20 +80,21 @@ public class TipService {
     }
 
     public List<ImageLinkDto> findTipImages(Long tipId, HttpServletRequest request) {
+        checkTipExists(tipId);
+        return imageService.findImages(ImageType.TIP, tipId, request);
+    }
+
+    private void checkTipExists(Long tipId) {
         if (!tipRepository.existsById(tipId)) {
             throw new CustomException(TIP_NOT_FOUND);
         }
-
-        return imageService.findImages(ImageType.TIP, tipId, request);
     }
 
     public Integer likeTip(Long userId, Long tipId) {
         Tip tip = tipRepository.findById(tipId).orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
-        if (tip.isLikedBy(user)) {
-            throw new CustomException(ALREADY_TIP_LIKE_USER);
-        }
+        checkAlreadyLiked(tip, user);
 
         createTipLike(user, tip);
 
@@ -104,9 +105,7 @@ public class TipService {
         Tip tip = tipRepository.findById(tipId).orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
-        if (!tip.isLikedBy(user)) {
-            throw new CustomException(NOT_LIKED_TIP);
-        }
+        checkNotAlreadyLiked(tip, user);
 
         deleteTipLike(user, tip);
 
@@ -133,6 +132,8 @@ public class TipService {
         imageService.deleteImages(ImageType.TIP, tipId);
     }
 
+
+
     // ========== Private Methods ========== //
 
     private Tip createTip(RequestTipDto requestTipDto, User user) {
@@ -141,8 +142,20 @@ public class TipService {
         return tip;
     }
 
+    private static void checkAlreadyLiked(Tip tip, User user) {
+        if (tip.isLikedBy(user)) {
+            throw new CustomException(ALREADY_TIP_LIKE_USER);
+        }
+    }
+
+    private static void checkNotAlreadyLiked(Tip tip, User user) {
+        if (!tip.isLikedBy(user)) {
+            throw new CustomException(NOT_LIKED_TIP);
+        }
+    }
+
     private void saveTipImages(List<MultipartFile> images, Tip tip) {
-        if (images != null || !images.isEmpty()) {
+        if (images != null && !images.isEmpty()) {
             imageService.saveImages(ImageType.TIP, tip.getId(), images);
         }
     }
@@ -155,7 +168,7 @@ public class TipService {
     }
 
     private void addCurrentUserLikeStatusToDto(ResponseTipDetailDto tipDetailDto, CustomUserDetails currentUser, Tip tip) {
-        if (currentUser == null) {
+        if (isNotLogin(currentUser)) {
             tipDetailDto.updateIsCheckLikeCurrentUser(false);
             return;
         }
@@ -165,6 +178,10 @@ public class TipService {
         boolean isCurrentUserLiked = tip.getTipLikeList().stream().anyMatch(tipLike -> tipLike.getUser().getId().equals(currentUserId));
 
         tipDetailDto.updateIsCheckLikeCurrentUser(isCurrentUserLiked);
+    }
+
+    private static boolean isNotLogin(CustomUserDetails currentUser) {
+        return currentUser == null;
     }
 
     private void addCommentToDto(Long tipId, HttpServletRequest request, ResponseTipDetailDto tipDetailDto) {
@@ -238,7 +255,6 @@ public class TipService {
 
         tipLikeRepository.save(tipLike);
     }
-
 
     private void deleteTipLike(User user, Tip tip) {
         TipLike tipLike = tipLikeRepository.findByUserAndTip(user, tip).orElseThrow(() -> new CustomException(TIP_LIKE_NOT_FOUND));
