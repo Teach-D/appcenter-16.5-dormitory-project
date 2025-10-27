@@ -28,13 +28,13 @@ public class ReportController implements ReportApiSpecification {
     }
 
     @GetMapping("/{reportId}")
-    public ResponseReportDto findReport(@PathVariable Long reportId) {
-        return reportService.findReport(reportId);
+    public ResponseEntity<ResponseReportDto> findReport(@PathVariable Long reportId) {
+        return ResponseEntity.status(OK).body(reportService.findReport(reportId));
     }
 
     @GetMapping
-    public List<ResponseReportDto> findAllReports() {
-        return reportService.findAllReports();
+    public ResponseEntity<List<ResponseReportDto>> findAllReports() {
+        return ResponseEntity.status(OK).body(reportService.findAllReports());
     }
 
     @DeleteMapping("/{reportId}")

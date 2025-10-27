@@ -27,10 +27,10 @@ public class ReportService {
     private final ReportRepository reportRepository;
     private final UserRepository userRepository;
 
-    public void saveReport(RequestReportDto dto, Long userId) {
+    public void saveReport(RequestReportDto requestDto, Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
         Report report = Report.of(
-                dto.getCategory(), dto.getTitle(), dto.getContent(), user
+                requestDto.getCategory(), requestDto.getTitle(), requestDto.getContent(), user
         );
         reportRepository.save(report);
     }
