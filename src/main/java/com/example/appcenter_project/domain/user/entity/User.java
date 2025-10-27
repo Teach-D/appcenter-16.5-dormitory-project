@@ -220,4 +220,12 @@ public class User extends BaseTimeEntity {
     public void changeRole(Role role) {
         this.role = role;
     }
+
+    public boolean isNotHaveNotificationType(String notificationType) {
+        return !isHaveNotificationType(notificationType);
+    }
+
+    public boolean isHaveNotificationType(String notificationType) {
+        return getReceiveNotificationTypes().contains(NotificationType.from(notificationType));
+    }
 }
