@@ -8,8 +8,11 @@ import com.example.appcenter_project.enums.survey.QuestionType;
 import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.repository.survey.*;
 import com.example.appcenter_project.repository.user.UserRepository;
+import com.example.appcenter_project.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,8 +48,10 @@ public class SurveyService {
                 .creator(creator)
                 .startDate(requestDto.getStartDate())
                 .endDate(requestDto.getEndDate())
-                .isClosed(false) // 초기에는 종료되지 않은 상태
                 .build();
+        
+        // 초기 상태 설정
+        survey.updateStatus();
 
         surveyRepository.save(survey);
         log.info("[createSurvey] 설문 저장 완료 surveyId={}", survey.getId());
@@ -88,17 +93,30 @@ public class SurveyService {
 
         List<Survey> surveys = surveyRepository.findAll();
 
-        // 종료일이 지난 설문 자동 종료 처리
-        LocalDateTime now = LocalDateTime.now();
+        // 설문 상태 자동 업데이트
         for (Survey survey : surveys) {
-            if (!survey.isClosed() && now.isAfter(survey.getEndDate())) {
-                survey.close();
-            }
+            survey.updateStatus();
         }
 
-        return surveys.stream()
-                .map(ResponseSurveyDto::entityToDto)
-                .collect(Collectors.toList());
+        // SecurityContext에서 userId 가져오기
+        Long userId = null;
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof CustomUserDetails) {
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            userId = userDetails.getId();
+        }
+
+        // 각 설문에 대해 사용자 제출 여부 확인
+        List<ResponseSurveyDto> result = new ArrayList<>();
+        for (Survey survey : surveys) {
+            boolean hasSubmitted = false;
+            if (userId != null) {
+                hasSubmitted = surveyResponseRepository.existsBySurveyIdAndUserId(survey.getId(), userId);
+            }
+            result.add(ResponseSurveyDto.entityToDto(survey, hasSubmitted));
+        }
+        
+        return result;
     }
 
     // 설문 상세 조회
@@ -109,11 +127,8 @@ public class SurveyService {
         Survey survey = surveyRepository.findByIdWithQuestions(surveyId)
                 .orElseThrow(() -> new CustomException(SURVEY_NOT_FOUND));
 
-        // 조회 시점에 종료일이 지났으면 자동 종료 처리
-        LocalDateTime now = LocalDateTime.now();
-        if (!survey.isClosed() && now.isAfter(survey.getEndDate())) {
-            survey.close();
-        }
+        // 조회 시점에 상태 자동 업데이트
+        survey.updateStatus();
 
         return ResponseSurveyDetailDto.entityToDto(survey);
     }

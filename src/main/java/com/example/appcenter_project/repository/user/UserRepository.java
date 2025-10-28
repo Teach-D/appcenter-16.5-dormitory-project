@@ -29,7 +29,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findByReceiveNotificationTypesContains(NotificationType notificationType);
 
-    @Query("SELECT u FROM User u " +
+    @Query("SELECT DISTINCT u FROM User u " +
+            "LEFT JOIN FETCH u.fcmTokenList " +
             "WHERE :notificationType MEMBER OF u.receiveNotificationTypes " +
             "AND u.role NOT IN :excludedRoles")
     List<User> findByReceiveNotificationTypesContainsAndRoleNotIn(
