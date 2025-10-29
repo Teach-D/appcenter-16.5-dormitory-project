@@ -110,5 +110,9 @@ public class Survey extends BaseTimeEntity {
         this.endDate = endDate;
         updateStatus();
     }
+
+    public void updateClosedStatus() {
+        this.status = SurveyStatus.CLOSED;
+    }
 }
 
