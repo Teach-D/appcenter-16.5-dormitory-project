@@ -25,6 +25,8 @@ public class RequestSurveyDto {
     @NotNull(message = "종료 날짜는 필수입니다.")
     private LocalDateTime endDate;
 
+    private int recruitmentCount;
+
     @Valid
     private List<RequestSurveyQuestionDto> questions = new ArrayList<>();
 }

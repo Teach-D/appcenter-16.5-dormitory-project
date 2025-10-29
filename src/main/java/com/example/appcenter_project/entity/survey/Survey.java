@@ -25,10 +25,10 @@ public class Survey extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;  // 설문 ID (PK)
 
-    @Column(nullable = false)
+    @Lob
     private String title;  // 설문 제목 (예: "2025년 기숙사 만족도 조사")
 
-    @Column(columnDefinition = "TEXT")
+    @Lob
     private String description;  // 설문 설명 (예: "익명으로 진행되며 5분 소요됩니다")
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -38,6 +38,8 @@ public class Survey extends BaseTimeEntity {
     private LocalDateTime startDate;  // 설문 시작일시 (이 시간부터 응답 가능)
 
     private LocalDateTime endDate;  // 설문 종료일시 (이 시간 이후 자동 종료)
+
+    private int recruitmentCount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -55,6 +57,18 @@ public class Survey extends BaseTimeEntity {
     public void addQuestion(SurveyQuestion question) {
         this.questions.add(question);
         question.setSurvey(this);
+    }
+
+    public boolean isMaxRecruitmentCount() {
+        if (recruitmentCount < 1) {
+            return false;
+        }
+
+        if (responses.size() >= recruitmentCount) {
+            return true;
+        }
+
+        return false;
     }
 
     public void addResponse(SurveyResponse response) {

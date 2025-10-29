@@ -48,6 +48,7 @@ public class SurveyService {
                 .creator(creator)
                 .startDate(requestDto.getStartDate())
                 .endDate(requestDto.getEndDate())
+                .recruitmentCount(requestDto.getRecruitmentCount())
                 .build();
         
         // 초기 상태 설정
@@ -235,6 +236,10 @@ public class SurveyService {
         // 중복 응답 확인
         if (surveyResponseRepository.existsBySurveyIdAndUserId(requestDto.getSurveyId(), userId)) {
             throw new CustomException(ALREADY_SURVEY_RESPONSE);
+        }
+
+        if (survey.isMaxRecruitmentCount()) {
+            throw new CustomException(RECRUITMENT_COUNT_MAX);
         }
 
         // 응답 생성

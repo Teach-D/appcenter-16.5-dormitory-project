@@ -38,7 +38,7 @@ public class SurveyAnswer {
     @Builder.Default
     private List<SurveyOption> selectedOptions = new ArrayList<>();  // 객관식인 경우 선택된 옵션들 (단일선택: 1개, 다중선택: 여러개)
 
-    @Column(columnDefinition = "TEXT")
+    @Lob
     private String answerText;  // 주관식인 경우 입력한 텍스트 답변 내용
 
     public void setResponse(SurveyResponse response) {

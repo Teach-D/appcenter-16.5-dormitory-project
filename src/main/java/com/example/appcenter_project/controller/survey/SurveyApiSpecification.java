@@ -43,6 +43,7 @@ public interface SurveyApiSpecification {
                                               "description": "익명으로 진행되며 약 5분 소요됩니다.",
                                               "startDate": "2025-01-01T00:00:00",
                                               "endDate": "2025-12-31T23:59:59",
+                                              "recruitmentCount": "100",
                                               "questions": [
                                                 {
                                                   "questionText": "기숙사에 만족하시나요?",

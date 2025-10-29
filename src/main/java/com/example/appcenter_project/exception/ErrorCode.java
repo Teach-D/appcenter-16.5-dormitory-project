@@ -145,6 +145,7 @@ public enum ErrorCode {
     SURVEY_RESPONSE_NOT_FOUND(NOT_FOUND, 18007, "[Survey] 해당 설문 응답을 찾을 수 없습니다."),
     ALREADY_SURVEY_RESPONSE(CONFLICT, 18008, "[Survey] 이미 해당 설문에 응답하였습니다."),
     MULTIPLE_SELECTION_NOT_ALLOWED(BAD_REQUEST, 18009, "[Survey] 해당 질문은 단일 선택만 가능합니다."),
+    RECRUITMENT_COUNT_MAX(CONFLICT, 18009, "[Survey] 남은 공석이 없습니다"),
 
     // COUPON
     COUPON_NOT_FOUND(NOT_FOUND, 19001, "[COUPON] 쿠폰이 존재하지 않습니다.");
