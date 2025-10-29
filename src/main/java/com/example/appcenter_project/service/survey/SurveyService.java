@@ -16,6 +16,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -365,6 +369,104 @@ public class SurveyService {
                 .totalResponses(totalResponses)
                 .questionResults(questionResults)
                 .build();
+    }
+
+    // 설문 답변 CSV 추출 (관리자)
+    @Transactional(readOnly = true)
+    public byte[] exportSurveyToCsv(Long surveyId) {
+        log.info("[exportSurveyToCsv] surveyId={} CSV 추출 시작", surveyId);
+
+        Survey survey = surveyRepository.findByIdWithQuestions(surveyId)
+                .orElseThrow(() -> new CustomException(SURVEY_NOT_FOUND));
+
+        List<SurveyResponse> responses = surveyResponseRepository.findBySurveyId(surveyId);
+        
+        // 질문 목록을 순서대로 정렬
+        List<SurveyQuestion> sortedQuestions = survey.getQuestions().stream()
+                .sorted(Comparator.comparing(SurveyQuestion::getQuestionOrder))
+                .collect(Collectors.toList());
+
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             OutputStreamWriter writer = new OutputStreamWriter(baos, StandardCharsets.UTF_8)) {
+
+            // BOM 추가 (Excel에서 한글 깨짐 방지)
+            baos.write(0xEF);
+            baos.write(0xBB);
+            baos.write(0xBF);
+
+            // CSV 헤더 작성
+            StringBuilder header = new StringBuilder();
+            header.append("\"순서\",\"학번\"");
+            for (SurveyQuestion question : sortedQuestions) {
+                header.append(",\"").append(escapeCsv(question.getQuestionText())).append("\"");
+            }
+            writer.write(header.toString());
+            writer.write("\n");
+
+            // 각 응답에 대해 행 작성
+            int rowNumber = 1;
+            for (SurveyResponse response : responses) {
+                StringBuilder row = new StringBuilder();
+                row.append("\"").append(rowNumber++).append("\"");
+                row.append(",\"").append(escapeCsv(response.getUser().getStudentNumber())).append("\"");
+
+                // 각 질문에 대한 답변 찾기
+                for (SurveyQuestion question : sortedQuestions) {
+                    String answerText = getAnswerText(response, question);
+                    row.append(",\"").append(escapeCsv(answerText)).append("\"");
+                }
+
+                writer.write(row.toString());
+                writer.write("\n");
+            }
+
+            writer.flush();
+            log.info("[exportSurveyToCsv] surveyId={} CSV 추출 완료, 총 {}개 응답", surveyId, responses.size());
+            return baos.toByteArray();
+
+        } catch (IOException e) {
+            log.error("[exportSurveyToCsv] CSV 생성 중 오류 발생", e);
+            throw new RuntimeException("CSV 파일 생성에 실패했습니다.", e);
+        }
+    }
+
+    // 특정 질문에 대한 답변 텍스트 가져오기
+    private String getAnswerText(SurveyResponse response, SurveyQuestion question) {
+        SurveyAnswer answer = response.getAnswers().stream()
+                .filter(a -> a.getQuestion().getId().equals(question.getId()))
+                .findFirst()
+                .orElse(null);
+
+        if (answer == null) {
+            return "";
+        }
+
+        // 객관식인 경우
+        if (question.getQuestionType() == QuestionType.MULTIPLE_CHOICE) {
+            if (answer.getSelectedOptions().isEmpty()) {
+                return "";
+            }
+            // 선택된 옵션들을 ", "로 구분하여 연결
+            return answer.getSelectedOptions().stream()
+                    .sorted(Comparator.comparing(SurveyOption::getOptionOrder))
+                    .map(SurveyOption::getOptionText)
+                    .collect(Collectors.joining(", "));
+        }
+        // 주관식인 경우
+        else if (question.getQuestionType() == QuestionType.SHORT_ANSWER) {
+            return answer.getAnswerText() != null ? answer.getAnswerText() : "";
+        }
+
+        return "";
+    }
+
+    // CSV 특수문자 이스케이프 처리
+    private String escapeCsv(String value) {
+        if (value == null) {
+            return "";
+        }
+        // 큰따옴표를 두 개로 변환 (CSV 표준)
+        return value.replace("\"", "\"\"");
     }
 }
 

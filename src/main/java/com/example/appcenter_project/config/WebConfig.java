@@ -23,12 +23,4 @@ public class WebConfig implements WebMvcConfigurer {
                  .addResourceLocations("file:/app/files/")  // 로컬 파일 시스템 경로
                  .setCachePeriod(3600);
     }
-
-    @Bean
-    public ObjectMapper objectMapper() {
-        return Jackson2ObjectMapperBuilder.json()
-                .timeZone(TimeZone.getTimeZone("Asia/Seoul"))
-                .modules(new JavaTimeModule())
-                .build();
-    }
 }
