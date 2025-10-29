@@ -25,6 +25,7 @@ public class ResponseSurveyDetailDto {
     private LocalDateTime createdDate;
     private Integer totalResponses;
     private boolean hasSubmitted = false;  // 사용자 제출 여부
+    private int recruitmentCount;
 
     @Builder.Default
     private List<ResponseSurveyQuestionDto> questions = new ArrayList<>();
@@ -44,6 +45,7 @@ public class ResponseSurveyDetailDto {
                 .questions(survey.getQuestions().stream()
                         .map(ResponseSurveyQuestionDto::entityToDto)
                         .collect(Collectors.toList()))
+                .recruitmentCount(survey.getRecruitmentCount())
                 .build();
     }
 }
