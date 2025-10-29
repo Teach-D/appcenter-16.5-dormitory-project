@@ -46,12 +46,16 @@ public class SurveyService {
         User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
+        // 시작일시와 종료일시에서 9시간 빼기
+        LocalDateTime adjustedStartDate = requestDto.getStartDate().minusHours(9);
+        LocalDateTime adjustedEndDate = requestDto.getEndDate().minusHours(9);
+
         Survey survey = Survey.builder()
                 .title(requestDto.getTitle())
                 .description(requestDto.getDescription())
                 .creator(creator)
-                .startDate(requestDto.getStartDate())
-                .endDate(requestDto.getEndDate())
+                .startDate(adjustedStartDate)
+                .endDate(adjustedEndDate)
                 .recruitmentCount(requestDto.getRecruitmentCount())
                 .build();
         
