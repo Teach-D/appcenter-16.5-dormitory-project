@@ -24,11 +24,12 @@ public class ResponseSurveyDetailDto {
     private SurveyStatus status;
     private LocalDateTime createdDate;
     private Integer totalResponses;
+    private boolean hasSubmitted = false;  // 사용자 제출 여부
 
     @Builder.Default
     private List<ResponseSurveyQuestionDto> questions = new ArrayList<>();
 
-    public static ResponseSurveyDetailDto entityToDto(Survey survey) {
+    public static ResponseSurveyDetailDto entityToDto(Survey survey, boolean hasSubmitted) {
         return ResponseSurveyDetailDto.builder()
                 .id(survey.getId())
                 .title(survey.getTitle())
@@ -39,6 +40,7 @@ public class ResponseSurveyDetailDto {
                 .status(survey.getStatus())
                 .createdDate(survey.getCreatedDate())
                 .totalResponses(survey.getResponses().size())
+                .hasSubmitted(hasSubmitted)
                 .questions(survey.getQuestions().stream()
                         .map(ResponseSurveyQuestionDto::entityToDto)
                         .collect(Collectors.toList()))

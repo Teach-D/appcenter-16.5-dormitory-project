@@ -130,7 +130,7 @@ public class SurveyService {
 
     // 설문 상세 조회
     @Transactional(readOnly = true)
-    public ResponseSurveyDetailDto getSurveyDetail(Long surveyId) {
+    public ResponseSurveyDetailDto getSurveyDetail(Long userId, Long surveyId) {
         log.info("[getSurveyDetail] surveyId={} 조회", surveyId);
 
         Survey survey = surveyRepository.findByIdWithQuestions(surveyId)
@@ -139,7 +139,9 @@ public class SurveyService {
         // 조회 시점에 상태 자동 업데이트
         survey.updateStatus();
 
-        return ResponseSurveyDetailDto.entityToDto(survey);
+        boolean hasSubmitted = surveyResponseRepository.existsBySurveyIdAndUserId(survey.getId(), userId);
+
+        return ResponseSurveyDetailDto.entityToDto(survey, hasSubmitted);
     }
 
     // 설문 수정 (관리자)
