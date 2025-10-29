@@ -239,6 +239,7 @@ public class SurveyService {
         }
 
         if (survey.isMaxRecruitmentCount()) {
+            survey.updateClosedStatus();
             throw new CustomException(RECRUITMENT_COUNT_MAX);
         }
 
