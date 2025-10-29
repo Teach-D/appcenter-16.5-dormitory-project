@@ -47,8 +47,8 @@ public class SurveyService {
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
         // 시작일시와 종료일시에서 9시간 빼기
-        LocalDateTime adjustedStartDate = requestDto.getStartDate().minusHours(9);
-        LocalDateTime adjustedEndDate = requestDto.getEndDate().minusHours(9);
+        LocalDateTime adjustedStartDate = requestDto.getStartDate();
+        LocalDateTime adjustedEndDate = requestDto.getEndDate();
 
         Survey survey = Survey.builder()
                 .title(requestDto.getTitle())
