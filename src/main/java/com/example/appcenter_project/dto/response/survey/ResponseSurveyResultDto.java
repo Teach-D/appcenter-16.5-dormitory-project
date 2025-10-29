@@ -2,6 +2,7 @@ package com.example.appcenter_project.dto.response.survey;
 
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,6 +15,8 @@ public class ResponseSurveyResultDto {
     private Long surveyId;
     private String surveyTitle;
     private Integer totalResponses;
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
 
     @Builder.Default
     private List<QuestionResultDto> questionResults = new ArrayList<>();

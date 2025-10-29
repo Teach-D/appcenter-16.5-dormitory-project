@@ -474,6 +474,8 @@ public class SurveyService {
                 .surveyTitle(survey.getTitle())
                 .totalResponses(totalResponses)
                 .questionResults(questionResults)
+                .startDate(survey.getStartDate())
+                .endDate(survey.getEndDate())
                 .build();
     }
 
