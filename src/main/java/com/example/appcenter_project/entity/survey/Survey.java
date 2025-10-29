@@ -103,11 +103,12 @@ public class Survey extends BaseTimeEntity {
         return status == SurveyStatus.CLOSED;
     }
 
-    public void update(String title, String description, LocalDateTime startDate, LocalDateTime endDate) {
+    public void update(String title, String description, LocalDateTime startDate, LocalDateTime endDate, int recruitmentCount) {
         this.title = title;
         this.description = description;
         this.startDate = startDate;
         this.endDate = endDate;
+        this.recruitmentCount = recruitmentCount;
         updateStatus();
     }
 

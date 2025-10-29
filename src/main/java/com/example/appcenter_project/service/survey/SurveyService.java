@@ -59,7 +59,7 @@ public class SurveyService {
                 .endDate(adjustedEndDate)
                 .recruitmentCount(requestDto.getRecruitmentCount())
                 .build();
-        
+
         // 초기 상태 설정
         survey.updateStatus();
 
@@ -97,7 +97,7 @@ public class SurveyService {
     }
 
     // 모든 설문 조회
-    @Transactional(readOnly = true)
+    @Transactional
     public List<ResponseSurveyDto> getAllSurveys() {
         log.info("[getAllSurveys] 모든 설문 조회");
 
@@ -125,12 +125,12 @@ public class SurveyService {
             }
             result.add(ResponseSurveyDto.entityToDto(survey, hasSubmitted));
         }
-        
+
         return result;
     }
 
     // 설문 상세 조회
-    @Transactional(readOnly = true)
+    @Transactional
     public ResponseSurveyDetailDto getSurveyDetail(Long userId, Long surveyId) {
         log.info("[getSurveyDetail] surveyId={} 조회", surveyId);
 
@@ -159,36 +159,135 @@ public class SurveyService {
 
         // 설문 기본 정보 업데이트
         survey.update(requestDto.getTitle(), requestDto.getDescription(),
-                requestDto.getStartDate().plusHours(9), requestDto.getEndDate().plusHours(9));
+                requestDto.getStartDate().plusHours(9), requestDto.getEndDate().plusHours(9), requestDto.getRecruitmentCount());
 
-        // 기존 질문 삭제
-        survey.getQuestions().clear();
+        // 기존 질문들을 ID로 매핑
+        Map<Long, SurveyQuestion> existingQuestionsMap = survey.getQuestions().stream()
+                .collect(Collectors.toMap(SurveyQuestion::getId, q -> q));
 
-        // 새 질문 추가
+        // 요청에 포함된 질문 ID들을 추적
+        Set<Long> requestQuestionIds = new HashSet<>();
+
+        // 새로 추가할 질문들을 임시로 저장
+        List<SurveyQuestion> newQuestions = new ArrayList<>();
+
+        // 질문 처리: 업데이트 또는 생성
         for (RequestSurveyQuestionDto questionDto : requestDto.getQuestions()) {
-            SurveyQuestion question = SurveyQuestion.builder()
-                    .questionText(questionDto.getQuestionText())
-                    .questionType(questionDto.getQuestionType())
-                    .questionOrder(questionDto.getQuestionOrder())
-                    .isRequired(questionDto.isRequired())
-                    .allowMultipleSelection(questionDto.isAllowMultipleSelection())
-                    .build();
+            if (questionDto.getQuestionId() != null) {
+                // 기존 질문 업데이트
+                requestQuestionIds.add(questionDto.getQuestionId());
+                SurveyQuestion existingQuestion = existingQuestionsMap.get(questionDto.getQuestionId());
 
-            survey.addQuestion(question);
-
-            // 객관식인 경우 선택지 저장
-            if (questionDto.getQuestionType() == QuestionType.MULTIPLE_CHOICE) {
-                for (RequestSurveyOptionDto optionDto : questionDto.getOptions()) {
-                    SurveyOption option = SurveyOption.builder()
-                            .optionText(optionDto.getOptionText())
-                            .optionOrder(optionDto.getOptionOrder())
-                            .build();
-                    question.addOption(option);
+                if (existingQuestion == null) {
+                    throw new CustomException(SURVEY_QUESTION_NOT_FOUND);
                 }
+
+                log.info("[updateSurvey] 기존 질문 업데이트: questionId={}", questionDto.getQuestionId());
+
+                // 질문 내용 업데이트
+                existingQuestion.update(
+                        questionDto.getQuestionText(),
+                        questionDto.getQuestionType(),
+                        questionDto.getQuestionOrder(),
+                        questionDto.isRequired(),
+                        questionDto.isAllowMultipleSelection()
+                );
+
+                // 객관식인 경우 옵션 처리
+                if (questionDto.getQuestionType() == QuestionType.MULTIPLE_CHOICE) {
+                    updateQuestionOptions(existingQuestion, questionDto.getOptions());
+                } else {
+                    // 주관식으로 변경된 경우 모든 옵션 제거
+                    existingQuestion.getOptions().clear();
+                }
+
+            } else {
+                // 새 질문 추가
+                log.info("[updateSurvey] 새 질문 추가: {}", questionDto.getQuestionText());
+
+                SurveyQuestion newQuestion = SurveyQuestion.builder()
+                        .questionText(questionDto.getQuestionText())
+                        .questionType(questionDto.getQuestionType())
+                        .questionOrder(questionDto.getQuestionOrder())
+                        .isRequired(questionDto.isRequired())
+                        .allowMultipleSelection(questionDto.isAllowMultipleSelection())
+                        .build();
+
+                // 객관식인 경우 선택지 저장
+                if (questionDto.getQuestionType() == QuestionType.MULTIPLE_CHOICE) {
+                    for (RequestSurveyOptionDto optionDto : questionDto.getOptions()) {
+                        SurveyOption option = SurveyOption.builder()
+                                .optionText(optionDto.getOptionText())
+                                .optionOrder(optionDto.getOptionOrder())
+                                .build();
+                        newQuestion.addOption(option);
+                    }
+                }
+
+                newQuestions.add(newQuestion);
             }
         }
+
+        // 요청에 포함되지 않은 기존 질문들 삭제
+        List<SurveyQuestion> questionsToRemove = survey.getQuestions().stream()
+                .filter(q -> !requestQuestionIds.contains(q.getId()))
+                .collect(Collectors.toList());
+
+        if (!questionsToRemove.isEmpty()) {
+            log.info("[updateSurvey] 삭제할 질문 수: {}", questionsToRemove.size());
+            for (SurveyQuestion questionToRemove : questionsToRemove) {
+                log.info("[updateSurvey] 질문 삭제: questionId={}", questionToRemove.getId());
+                survey.getQuestions().remove(questionToRemove);
+            }
+        }
+
+        // 새 질문들을 설문에 추가
+        for (SurveyQuestion newQuestion : newQuestions) {
+            survey.addQuestion(newQuestion);
+            log.info("[updateSurvey] 새 질문 추가 완료: {}", newQuestion.getQuestionText());
+        }
+
         surveyRepository.save(survey); // CascadeType.ALL로 인해 질문과 옵션도 함께 저장/업데이트
-        log.info("[updateSurvey] surveyId={} 수정 완료", surveyId);
+        log.info("[updateSurvey] surveyId={} 수정 완료, 총 질문 수: {}", surveyId, survey.getQuestions().size());
+    }
+
+    // 질문의 옵션들 업데이트
+    private void updateQuestionOptions(SurveyQuestion question, List<RequestSurveyOptionDto> optionDtos) {
+        // 기존 옵션들을 ID로 매핑
+        Map<Long, SurveyOption> existingOptionsMap = question.getOptions().stream()
+                .collect(Collectors.toMap(SurveyOption::getId, o -> o));
+
+        // 요청에 포함된 옵션 ID들을 추적
+        Set<Long> requestOptionIds = new HashSet<>();
+
+        // 옵션 처리: 업데이트 또는 생성
+        for (RequestSurveyOptionDto optionDto : optionDtos) {
+            if (optionDto.getOptionId() != null) {
+                // 기존 옵션 업데이트
+                requestOptionIds.add(optionDto.getOptionId());
+                SurveyOption existingOption = existingOptionsMap.get(optionDto.getOptionId());
+
+                if (existingOption != null) {
+                    existingOption.update(optionDto.getOptionText(), optionDto.getOptionOrder());
+                }
+            } else {
+                // 새 옵션 추가
+                SurveyOption newOption = SurveyOption.builder()
+                        .optionText(optionDto.getOptionText())
+                        .optionOrder(optionDto.getOptionOrder())
+                        .build();
+                question.addOption(newOption);
+            }
+        }
+
+        // 요청에 포함되지 않은 기존 옵션들 삭제
+        List<SurveyOption> optionsToRemove = question.getOptions().stream()
+                .filter(o -> !requestOptionIds.contains(o.getId()))
+                .collect(Collectors.toList());
+
+        for (SurveyOption optionToRemove : optionsToRemove) {
+            question.getOptions().remove(optionToRemove);
+        }
     }
 
     // 설문 삭제 (관리자)
@@ -303,7 +402,7 @@ public class SurveyService {
     }
 
     // 설문 결과/통계 조회 (관리자)
-    @Transactional(readOnly = true)
+    @Transactional
     public ResponseSurveyResultDto getSurveyResults(Long surveyId) {
         log.info("[getSurveyResults] surveyId={} 결과 조회", surveyId);
 
@@ -387,7 +486,7 @@ public class SurveyService {
                 .orElseThrow(() -> new CustomException(SURVEY_NOT_FOUND));
 
         List<SurveyResponse> responses = surveyResponseRepository.findBySurveyId(surveyId);
-        
+
         // 질문 목록을 순서대로 정렬
         List<SurveyQuestion> sortedQuestions = survey.getQuestions().stream()
                 .sorted(Comparator.comparing(SurveyQuestion::getQuestionOrder))
