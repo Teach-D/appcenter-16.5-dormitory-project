@@ -474,11 +474,13 @@ public class SurveyService {
                 .surveyTitle(survey.getTitle())
                 .totalResponses(totalResponses)
                 .questionResults(questionResults)
+                .startDate(survey.getStartDate())
+                .endDate(survey.getEndDate())
                 .build();
     }
 
     // 설문 답변 CSV 추출 (관리자)
-    @Transactional(readOnly = true)
+    @Transactional
     public byte[] exportSurveyToCsv(Long surveyId) {
         log.info("[exportSurveyToCsv] surveyId={} CSV 추출 시작", surveyId);
 
@@ -505,6 +507,7 @@ public class SurveyService {
             List<String> headerList = new ArrayList<>();
             headerList.add("순서");
             headerList.add("학번");
+            headerList.add("제출시간");
             for (SurveyQuestion question : sortedQuestions) {
                 headerList.add(question.getQuestionText());
             }
@@ -517,6 +520,12 @@ public class SurveyService {
                 List<String> rowList = new ArrayList<>();
                 rowList.add(String.valueOf(rowNumber++));
                 rowList.add(response.getUser().getStudentNumber() != null ? response.getUser().getStudentNumber() : "");
+                
+                // 제출시간 추가 (SurveyResponse의 createdDate)
+                String submittedAt = response.getCreatedDate() != null 
+                    ? response.getCreatedDate().toString() 
+                    : "";
+                rowList.add(submittedAt);
 
                 // 각 질문에 대한 답변 찾기
                 for (SurveyQuestion question : sortedQuestions) {
