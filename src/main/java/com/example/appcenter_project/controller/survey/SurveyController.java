@@ -10,10 +10,16 @@ import com.example.appcenter_project.service.survey.SurveyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static org.springframework.http.HttpStatus.*;
@@ -90,6 +96,25 @@ public class SurveyController implements SurveyApiSpecification {
     public ResponseEntity<ResponseSurveyResultDto> getSurveyResults(
             @PathVariable Long surveyId) {
         return ResponseEntity.status(OK).body(surveyService.getSurveyResults(surveyId));
+    }
+
+    // 설문 답변 CSV 다운로드 (관리자)
+    @GetMapping("/{surveyId}/export/csv")
+    public ResponseEntity<byte[]> exportSurveyToCsv(
+            @PathVariable Long surveyId) {
+        byte[] csvData = surveyService.exportSurveyToCsv(surveyId);
+
+        String fileName = "설문결과_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".csv";
+        String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.valueOf("text/csv; charset=UTF-8"));
+        headers.set("Content-Disposition", "attachment; filename=\"" + encodedFileName + "\"; filename*=UTF-8''" + encodedFileName);
+        headers.setContentLength(csvData.length);
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(csvData);
     }
 }
 
