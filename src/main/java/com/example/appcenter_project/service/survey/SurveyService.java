@@ -9,6 +9,7 @@ import com.example.appcenter_project.exception.CustomException;
 import com.example.appcenter_project.repository.survey.*;
 import com.example.appcenter_project.repository.user.UserRepository;
 import com.example.appcenter_project.security.CustomUserDetails;
+import com.opencsv.CSVWriter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -46,12 +47,16 @@ public class SurveyService {
         User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
+        // 시작일시와 종료일시에서 9시간 빼기
+        LocalDateTime adjustedStartDate = requestDto.getStartDate();
+        LocalDateTime adjustedEndDate = requestDto.getEndDate();
+
         Survey survey = Survey.builder()
                 .title(requestDto.getTitle())
                 .description(requestDto.getDescription())
                 .creator(creator)
-                .startDate(requestDto.getStartDate())
-                .endDate(requestDto.getEndDate())
+                .startDate(adjustedStartDate)
+                .endDate(adjustedEndDate)
                 .recruitmentCount(requestDto.getRecruitmentCount())
                 .build();
         
@@ -126,7 +131,7 @@ public class SurveyService {
 
     // 설문 상세 조회
     @Transactional(readOnly = true)
-    public ResponseSurveyDetailDto getSurveyDetail(Long surveyId) {
+    public ResponseSurveyDetailDto getSurveyDetail(Long userId, Long surveyId) {
         log.info("[getSurveyDetail] surveyId={} 조회", surveyId);
 
         Survey survey = surveyRepository.findByIdWithQuestions(surveyId)
@@ -135,7 +140,9 @@ public class SurveyService {
         // 조회 시점에 상태 자동 업데이트
         survey.updateStatus();
 
-        return ResponseSurveyDetailDto.entityToDto(survey);
+        boolean hasSubmitted = surveyResponseRepository.existsBySurveyIdAndUserId(survey.getId(), userId);
+
+        return ResponseSurveyDetailDto.entityToDto(survey, hasSubmitted);
     }
 
     // 설문 수정 (관리자)
@@ -386,43 +393,45 @@ public class SurveyService {
                 .sorted(Comparator.comparing(SurveyQuestion::getQuestionOrder))
                 .collect(Collectors.toList());
 
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-             OutputStreamWriter writer = new OutputStreamWriter(baos, StandardCharsets.UTF_8)) {
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+             OutputStreamWriter writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
+             CSVWriter csvWriter = new CSVWriter(writer, ',', '"', '"', "\r\n")) {
 
-            // BOM 추가 (Excel에서 한글 깨짐 방지)
-            baos.write(0xEF);
-            baos.write(0xBB);
-            baos.write(0xBF);
+            // BOM 추가 (한글 Excel 호환성을 위해)
+            outputStream.write(0xEF);
+            outputStream.write(0xBB);
+            outputStream.write(0xBF);
 
             // CSV 헤더 작성
-            StringBuilder header = new StringBuilder();
-            header.append("\"순서\",\"학번\"");
+            List<String> headerList = new ArrayList<>();
+            headerList.add("순서");
+            headerList.add("학번");
             for (SurveyQuestion question : sortedQuestions) {
-                header.append(",\"").append(escapeCsv(question.getQuestionText())).append("\"");
+                headerList.add(question.getQuestionText());
             }
-            writer.write(header.toString());
-            writer.write("\n");
+            String[] header = headerList.toArray(new String[0]);
+            csvWriter.writeNext(header);
 
             // 각 응답에 대해 행 작성
             int rowNumber = 1;
             for (SurveyResponse response : responses) {
-                StringBuilder row = new StringBuilder();
-                row.append("\"").append(rowNumber++).append("\"");
-                row.append(",\"").append(escapeCsv(response.getUser().getStudentNumber())).append("\"");
+                List<String> rowList = new ArrayList<>();
+                rowList.add(String.valueOf(rowNumber++));
+                rowList.add(response.getUser().getStudentNumber() != null ? response.getUser().getStudentNumber() : "");
 
                 // 각 질문에 대한 답변 찾기
                 for (SurveyQuestion question : sortedQuestions) {
                     String answerText = getAnswerText(response, question);
-                    row.append(",\"").append(escapeCsv(answerText)).append("\"");
+                    rowList.add(answerText);
                 }
 
-                writer.write(row.toString());
-                writer.write("\n");
+                String[] row = rowList.toArray(new String[0]);
+                csvWriter.writeNext(row);
             }
 
-            writer.flush();
+            csvWriter.flush();
             log.info("[exportSurveyToCsv] surveyId={} CSV 추출 완료, 총 {}개 응답", surveyId, responses.size());
-            return baos.toByteArray();
+            return outputStream.toByteArray();
 
         } catch (IOException e) {
             log.error("[exportSurveyToCsv] CSV 생성 중 오류 발생", e);
@@ -458,15 +467,6 @@ public class SurveyService {
         }
 
         return "";
-    }
-
-    // CSV 특수문자 이스케이프 처리
-    private String escapeCsv(String value) {
-        if (value == null) {
-            return "";
-        }
-        // 큰따옴표를 두 개로 변환 (CSV 표준)
-        return value.replace("\"", "\"\"");
     }
 }
 

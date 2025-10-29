@@ -129,6 +129,7 @@ public interface SurveyApiSpecification {
             }
     )
     ResponseEntity<ResponseSurveyDetailDto> getSurveyDetail(
+            @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable
             @Parameter(description = "설문 ID", required = true, example = "1") Long surveyId);
 

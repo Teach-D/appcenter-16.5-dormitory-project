@@ -50,8 +50,9 @@ public class SurveyController implements SurveyApiSpecification {
     // 설문 상세 조회
     @GetMapping("/{surveyId}")
     public ResponseEntity<ResponseSurveyDetailDto> getSurveyDetail(
+            @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long surveyId) {
-        return ResponseEntity.status(OK).body(surveyService.getSurveyDetail(surveyId));
+        return ResponseEntity.status(OK).body(surveyService.getSurveyDetail(user.getId(), surveyId));
     }
 
     // 설문 수정 (관리자)
