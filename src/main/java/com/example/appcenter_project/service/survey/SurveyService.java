@@ -70,6 +70,7 @@ public class SurveyService {
         for (RequestSurveyQuestionDto questionDto : requestDto.getQuestions()) {
             SurveyQuestion question = SurveyQuestion.builder()
                     .questionText(questionDto.getQuestionText())
+                    .questionDescription(questionDto.getQuestionDescription())
                     .questionType(questionDto.getQuestionType())
                     .questionOrder(questionDto.getQuestionOrder())
                     .isRequired(questionDto.isRequired())
