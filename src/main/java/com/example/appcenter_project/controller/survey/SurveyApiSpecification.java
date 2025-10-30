@@ -47,6 +47,7 @@ public interface SurveyApiSpecification {
                                               "questions": [
                                                 {
                                                   "questionText": "기숙사에 만족하시나요?",
+                                                  "questionDescription": "답변 적어주세요",
                                                   "questionType": "MULTIPLE_CHOICE",
                                                   "questionOrder": 1,
                                                   "isRequired": true,
@@ -72,6 +73,7 @@ public interface SurveyApiSpecification {
                                                 },
                                                 {
                                                   "questionText": "개선이 필요한 점을 자유롭게 작성해주세요.",
+                                                  "questionDescription": "답변 적어주세요",
                                                   "questionType": "SHORT_ANSWER",
                                                   "questionOrder": 2,
                                                   "isRequired": false,
@@ -168,6 +170,7 @@ public interface SurveyApiSpecification {
                                                 {
                                                   "questionId": 1,
                                                   "questionText": "기숙사 시설에 만족하시나요? (수정됨)",
+                                                  "questionDescription": "답변 적어주세요",
                                                   "questionType": "MULTIPLE_CHOICE",
                                                   "questionOrder": 1,
                                                   "isRequired": true,
@@ -197,6 +200,7 @@ public interface SurveyApiSpecification {
                                                 {
                                                   "questionId": 2,
                                                   "questionText": "개선이 필요한 점을 자유롭게 작성해주세요.",
+                                                   "questionDescription": "답변 적어주세요",
                                                   "questionType": "SHORT_ANSWER",
                                                   "questionOrder": 2,
                                                   "isRequired": false,
@@ -205,6 +209,7 @@ public interface SurveyApiSpecification {
                                                 },
                                                 {
                                                   "questionText": "식당 음식은 어떠신가요? (새로 추가된 질문)",
+                                                   "questionDescription": "답변 적어주세요",
                                                   "questionType": "MULTIPLE_CHOICE",
                                                   "questionOrder": 3,
                                                   "isRequired": false,
