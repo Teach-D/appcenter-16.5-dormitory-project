@@ -20,6 +20,8 @@ public class RequestSurveyQuestionDto {
     @NotBlank(message = "질문 내용은 필수입니다.")
     private String questionText;
 
+    private String questionDescription;
+
     @NotNull(message = "질문 타입은 필수입니다.")
     private QuestionType questionType;
 

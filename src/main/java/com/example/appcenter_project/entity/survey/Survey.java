@@ -29,6 +29,7 @@ public class Survey extends BaseTimeEntity {
     private String title;  // 설문 제목 (예: "2025년 기숙사 만족도 조사")
 
     @Lob
+    @Column(columnDefinition = "TEXT")
     private String description;  // 설문 설명 (예: "익명으로 진행되며 5분 소요됩니다")
 
     @ManyToOne(fetch = FetchType.LAZY)

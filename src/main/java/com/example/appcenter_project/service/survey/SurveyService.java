@@ -187,6 +187,7 @@ public class SurveyService {
                 // 질문 내용 업데이트
                 existingQuestion.update(
                         questionDto.getQuestionText(),
+                        questionDto.getQuestionDescription(),
                         questionDto.getQuestionType(),
                         questionDto.getQuestionOrder(),
                         questionDto.isRequired(),
@@ -207,6 +208,7 @@ public class SurveyService {
 
                 SurveyQuestion newQuestion = SurveyQuestion.builder()
                         .questionText(questionDto.getQuestionText())
+                        .questionDescription(questionDto.getQuestionDescription())
                         .questionType(questionDto.getQuestionType())
                         .questionOrder(questionDto.getQuestionOrder())
                         .isRequired(questionDto.isRequired())

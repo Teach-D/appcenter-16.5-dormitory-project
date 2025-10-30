@@ -17,6 +17,7 @@ public class ResponseSurveyQuestionDto {
 
     private Long id;
     private String questionText;
+    private String questionDescription;
     private QuestionType questionType;
     private Integer questionOrder;
     
@@ -33,6 +34,7 @@ public class ResponseSurveyQuestionDto {
         return ResponseSurveyQuestionDto.builder()
                 .id(question.getId())
                 .questionText(question.getQuestionText())
+                .questionDescription(question.getQuestionDescription())
                 .questionType(question.getQuestionType())
                 .questionOrder(question.getQuestionOrder())
                 .isRequired(question.isRequired())
