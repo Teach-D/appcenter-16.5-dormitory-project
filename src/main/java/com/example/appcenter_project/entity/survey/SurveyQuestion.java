@@ -29,6 +29,7 @@ public class SurveyQuestion {
     @Column(nullable = false)
     private String questionText;  // 질문 내용 (예: "기숙사에 만족하시나요?")
 
+    @Lob
     private String questionDescription;
 
     @Enumerated(EnumType.STRING)
