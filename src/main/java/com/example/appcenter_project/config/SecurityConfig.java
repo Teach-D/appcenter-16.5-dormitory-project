@@ -153,7 +153,7 @@ public class SecurityConfig {
 
                         /** 설문조사 **/
                         .requestMatchers(POST, "/surveys/responses").authenticated() // 응답 로그인한 이용자 가능
-                        .requestMatchers(GET, "/surveys/**/results", "/surveys/**/export/csv").hasAnyRole("ADMIN", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_EXPEDITED_COMPLAINT_MANAGER", "DORM_SUPPORTERS")
+                        .requestMatchers(GET, "/surveys/*/results", "/surveys/*/export/csv").hasAnyRole("ADMIN", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_EXPEDITED_COMPLAINT_MANAGER", "DORM_SUPPORTERS")
                         .requestMatchers(GET, "/surveys/**").permitAll() // 설문 단순 조회 모두 가능
                         .requestMatchers("/surveys/**").hasAnyRole("ADMIN", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_EXPEDITED_COMPLAINT_MANAGER", "DORM_SUPPORTERS")
 
