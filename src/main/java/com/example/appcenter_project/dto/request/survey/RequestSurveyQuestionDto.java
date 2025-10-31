@@ -15,8 +15,12 @@ import java.util.List;
 @NoArgsConstructor
 public class RequestSurveyQuestionDto {
 
+    private Long questionId;  // 수정 시 기존 질문 ID (없으면 신규 생성)
+
     @NotBlank(message = "질문 내용은 필수입니다.")
     private String questionText;
+
+    private String questionDescription;
 
     @NotNull(message = "질문 타입은 필수입니다.")
     private QuestionType questionType;

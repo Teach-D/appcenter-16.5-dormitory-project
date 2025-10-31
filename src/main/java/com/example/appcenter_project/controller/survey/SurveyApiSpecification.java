@@ -43,9 +43,11 @@ public interface SurveyApiSpecification {
                                               "description": "익명으로 진행되며 약 5분 소요됩니다.",
                                               "startDate": "2025-01-01T00:00:00",
                                               "endDate": "2025-12-31T23:59:59",
+                                              "recruitmentCount": "100",
                                               "questions": [
                                                 {
                                                   "questionText": "기숙사에 만족하시나요?",
+                                                  "questionDescription": "답변 적어주세요",
                                                   "questionType": "MULTIPLE_CHOICE",
                                                   "questionOrder": 1,
                                                   "isRequired": true,
@@ -71,6 +73,7 @@ public interface SurveyApiSpecification {
                                                 },
                                                 {
                                                   "questionText": "개선이 필요한 점을 자유롭게 작성해주세요.",
+                                                  "questionDescription": "답변 적어주세요",
                                                   "questionType": "SHORT_ANSWER",
                                                   "questionOrder": 2,
                                                   "isRequired": false,
@@ -128,12 +131,25 @@ public interface SurveyApiSpecification {
             }
     )
     ResponseEntity<ResponseSurveyDetailDto> getSurveyDetail(
+            @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable
             @Parameter(description = "설문 ID", required = true, example = "1") Long surveyId);
 
     @Operation(
             summary = "설문 수정 (관리자)",
-            description = "관리자가 설문 ID를 통해 설문 정보를 수정합니다. 설문 생성자만 수정 가능합니다.",
+            description = """
+                    관리자가 설문 ID를 통해 설문 정보를 수정합니다. 설문 생성자만 수정 가능합니다.
+                    
+                    **질문 수정 방식:**
+                    - questionId가 있으면: 기존 질문 업데이트 (기존 답변 유지)
+                    - questionId가 없으면: 새 질문 추가
+                    - 요청에 포함되지 않은 기존 질문: 삭제
+                    
+                    **옵션 수정 방식:**
+                    - optionId가 있으면: 기존 옵션 업데이트
+                    - optionId가 없으면: 새 옵션 추가
+                    - 요청에 포함되지 않은 기존 옵션: 삭제
+                    """,
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "설문 수정 요청 DTO",
                     required = true,
@@ -142,46 +158,76 @@ public interface SurveyApiSpecification {
                             schema = @Schema(implementation = RequestSurveyDto.class),
                             examples = @ExampleObject(
                                     name = "설문 수정 예시",
-                                    summary = "기숙사 만족도 조사 수정",
+                                    summary = "기숙사 만족도 조사 수정 - 기존 질문 업데이트 + 새 질문 추가",
                                     value = """
                                             {
                                               "title": "2025년 기숙사 만족도 조사 (수정)",
                                               "description": "익명으로 진행되며 약 5분 소요됩니다.",
                                               "startDate": "2025-01-01T00:00:00",
                                               "endDate": "2025-12-31T23:59:59",
+                                              "recruitmentCount": "100",
                                               "questions": [
                                                 {
-                                                  "questionText": "기숙사에 만족하시나요?",
+                                                  "questionId": 1,
+                                                  "questionText": "기숙사 시설에 만족하시나요? (수정됨)",
+                                                  "questionDescription": "답변 적어주세요",
                                                   "questionType": "MULTIPLE_CHOICE",
                                                   "questionOrder": 1,
                                                   "isRequired": true,
                                                   "allowMultipleSelection": false,
                                                   "options": [
                                                     {
+                                                      "optionId": 1,
                                                       "optionText": "매우 만족",
                                                       "optionOrder": 1
                                                     },
                                                     {
+                                                      "optionId": 2,
                                                       "optionText": "만족",
                                                       "optionOrder": 2
                                                     },
                                                     {
+                                                      "optionId": 3,
                                                       "optionText": "보통",
                                                       "optionOrder": 3
                                                     },
                                                     {
-                                                      "optionText": "불만족",
+                                                      "optionText": "불만족 (새로 추가됨)",
                                                       "optionOrder": 4
                                                     }
                                                   ]
                                                 },
                                                 {
+                                                  "questionId": 2,
                                                   "questionText": "개선이 필요한 점을 자유롭게 작성해주세요.",
+                                                   "questionDescription": "답변 적어주세요",
                                                   "questionType": "SHORT_ANSWER",
                                                   "questionOrder": 2,
                                                   "isRequired": false,
                                                   "allowMultipleSelection": false,
                                                   "options": []
+                                                },
+                                                {
+                                                  "questionText": "식당 음식은 어떠신가요? (새로 추가된 질문)",
+                                                   "questionDescription": "답변 적어주세요",
+                                                  "questionType": "MULTIPLE_CHOICE",
+                                                  "questionOrder": 3,
+                                                  "isRequired": false,
+                                                  "allowMultipleSelection": true,
+                                                  "options": [
+                                                    {
+                                                      "optionText": "맛있다",
+                                                      "optionOrder": 1
+                                                    },
+                                                    {
+                                                      "optionText": "양이 적절하다",
+                                                      "optionOrder": 2
+                                                    },
+                                                    {
+                                                      "optionText": "메뉴가 다양하다",
+                                                      "optionOrder": 3
+                                                    }
+                                                  ]
                                                 }
                                               ]
                                             }

@@ -29,6 +29,9 @@ public class SurveyQuestion {
     @Column(nullable = false)
     private String questionText;  // 질문 내용 (예: "기숙사에 만족하시나요?")
 
+    @Lob
+    private String questionDescription;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private QuestionType questionType;  // 질문 타입 (MULTIPLE_CHOICE: 객관식, SHORT_ANSWER: 주관식)
@@ -63,8 +66,9 @@ public class SurveyQuestion {
         this.answers.add(answer);
     }
 
-    public void update(String questionText, QuestionType questionType, Integer questionOrder, boolean isRequired, boolean allowMultipleSelection) {
+    public void update(String questionText, String questionDescription, QuestionType questionType, Integer questionOrder, boolean isRequired, boolean allowMultipleSelection) {
         this.questionText = questionText;
+        this.questionDescription = questionDescription;
         this.questionType = questionType;
         this.questionOrder = questionOrder;
         this.isRequired = isRequired;

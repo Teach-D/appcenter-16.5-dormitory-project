@@ -152,10 +152,11 @@ public class SecurityConfig {
                         .requestMatchers("/coupons/**").authenticated()
 
                         /** 설문조사 **/
-                        // 설문 조회 (전체, 상세, 결과) - 누구나 가능
-                        .requestMatchers(GET, "/surveys/**").permitAll()
-                        // 설문 답변 제출, 생성, 수정, 삭제, 종료 - 테스트를 위해 모든 인증된 사용자 허용
-                        .requestMatchers("/surveys/**").authenticated()
+                        .requestMatchers(POST, "/surveys/responses").authenticated() // 응답 로그인한 이용자 가능
+                        .requestMatchers(GET, "/surveys/*/results", "/surveys/*/export/csv").hasAnyRole("ADMIN", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_EXPEDITED_COMPLAINT_MANAGER", "DORM_SUPPORTERS")
+                        .requestMatchers(GET, "/surveys/**").permitAll() // 설문 단순 조회 모두 가능
+                        .requestMatchers("/surveys/**").hasAnyRole("ADMIN", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_EXPEDITED_COMPLAINT_MANAGER", "DORM_SUPPORTERS")
+
 
                         /** 나머지 **/
                         .anyRequest().authenticated()
