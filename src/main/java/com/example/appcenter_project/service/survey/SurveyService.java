@@ -574,7 +574,14 @@ public class SurveyService {
         }
         // 주관식인 경우
         else if (question.getQuestionType() == QuestionType.SHORT_ANSWER) {
-            return answer.getAnswerText() != null ? answer.getAnswerText() : "";
+            String answerText = answer.getAnswerText() != null ? answer.getAnswerText() : "";
+
+            // 숫자로만 구성되어 있고 0으로 시작하는 경우 탭 문자 추가
+            if (!answerText.isEmpty() && answerText.matches("^0\\d+$")) {
+                return "=\"" + answerText + "\"";  // Excel 수식으로 텍스트 강제
+            }
+
+            return answerText;
         }
 
         return "";
