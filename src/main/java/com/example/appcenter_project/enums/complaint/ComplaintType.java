@@ -12,7 +12,7 @@ public enum ComplaintType {
     NOISE("소음"),
     SMOKING("흡연"),
     DRINKING("음주"),
-    ROOMMATE_CHANGE("호실 변경"),
+    ROOMMATE_CHANGE("호실변경신청"),
     COMMON_SPACE("공용공간");
 
     private final String description;
