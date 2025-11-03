@@ -46,7 +46,7 @@ public class ResponseAnnouncementDto {
             ManualAnnouncement manualAnnouncement = (ManualAnnouncement) announcement;
             String truncatedContent = manualAnnouncement.getContent();
             if (truncatedContent != null && truncatedContent.length() > 50) {
-                truncatedContent = truncatedContent.substring(0, 50);
+                truncatedContent = truncatedContent.substring(0, 70);
             }
 
             return ResponseAnnouncementDto.builder()
@@ -66,7 +66,7 @@ public class ResponseAnnouncementDto {
             CrawledAnnouncement crawledAnnouncement = (CrawledAnnouncement) announcement;
             String truncatedContent = crawledAnnouncement.getContent();
             if (truncatedContent != null && truncatedContent.length() > 50) {
-                truncatedContent = truncatedContent.substring(0, 50);
+                truncatedContent = truncatedContent.substring(0, 70);
             }
 
             return ResponseAnnouncementDto.builder()
