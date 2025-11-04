@@ -39,138 +39,124 @@ public class CouponService {
     private final UserNotificationRepository userNotificationRepository;
     private final RedisTemplate<String, String> redisTemplate;
 
+    // ========== Public Methods ========== //
+
     @Transactional
     public ResponseCouponDto findCoupon(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        if (user.getRole() != Role.ROLE_USER) {
+
+        if (isNotUserRole(user)) {
             log.info("관리자는 쿠폰을 받을 수 없습니다", userId);
-            return ResponseCouponDto.builder()
-                    .isIssued(false)
-                    .success(false)
-                    .build();
+            return ResponseCouponDto.of(false, false);
         }
 
-        log.info("쿠폰 조회 요청 - userId: {}", userId);
-
-        // 1. 가장 먼저 중복 발급 체크 (가장 빠른 반환)
-        boolean hasCouponNotification = userNotificationRepository
-                .existsByUserIdAndNotificationType(userId, NotificationType.COUPON);
-        
-        if (hasCouponNotification) {
+        if (isAlreadyHaveCoupon(userId)) {
             log.info("사용자 {}는 이미 쿠폰을 발급받았습니다.", userId);
-            return ResponseCouponDto.builder()
-                    .isIssued(true)
-                    .success(true)
-                    .build();
+            return ResponseCouponDto.of(true, true);
         }
 
-        // 2. 쿠폰 존재 여부 확인
-        if (couponRepository.count() == 0) {
-            log.warn("발급 가능한 쿠폰이 없습니다.");
-            return ResponseCouponDto.builder()
-                    .success(false)
-                    .build();
+        if (isNotExistsCoupon()) {
+            log.info("쿠폰이 존재하지 않습니다.");
+            return ResponseCouponDto.of(false, false);
         }
 
-        // 3. Redis에서 쿠폰 오픈 시간 확인
-        String couponOpenTimeStr = redisTemplate.opsForValue().get(REDIS_KEY);
-        if (couponOpenTimeStr == null) {
-            log.warn("쿠폰 오픈 시간이 설정되지 않았습니다.");
-            return ResponseCouponDto.builder()
-                    .success(false)
-                    .build();
+        String couponOpenTimeString = redisTemplate.opsForValue().get(REDIS_KEY);
+        if (couponOpenTimeString == null) {
+            log.info("쿠폰 오픈 시간이 설정되지 않았습니다.");
+            return ResponseCouponDto.of(false, false);
         }
 
-        // 4. 시간 검증 (오픈 시간 이전이면 반환)
-        LocalTime couponOpenTime = LocalTime.parse(couponOpenTimeStr, DateTimeFormatter.ofPattern("HH:mm"));
-        LocalDateTime now = LocalDateTime.now();
-        LocalTime currentTime = now.toLocalTime();
-
-        if (currentTime.isBefore(couponOpenTime)) {
-            log.info("아직 쿠폰 오픈 시간이 아닙니다. 오픈 시간: {}, 현재 시간: {}", 
+        LocalTime couponOpenTime = LocalTime.parse(couponOpenTimeString, DateTimeFormatter.ofPattern("HH:mm"));
+        LocalTime currentTime = LocalDateTime.now().toLocalTime();
+        if (isCurrentTimeIsBeforeCouponOpenTime(currentTime, couponOpenTime)) {
+            log.info("아직 쿠폰 오픈 시간이 아닙니다. 오픈 시간: {}, 현재 시간: {}",
                     couponOpenTime, currentTime);
-            return ResponseCouponDto.builder()
-                    .success(false)
-                    .build();
+            return ResponseCouponDto.of(false, false);
         }
 
-        // 5. 요일에 따른 쿠폰 ID 결정
-        LocalDate today = LocalDate.now();
-        DayOfWeek dayOfWeek = today.getDayOfWeek();
+        DayOfWeek dayOfWeek = LocalDate.now().getDayOfWeek();
         Long couponId = getCouponIdByDayOfWeek(dayOfWeek);
-
         if (couponId == null) {
             log.warn("해당 요일({})에 발급 가능한 쿠폰이 없습니다.", dayOfWeek);
-            return ResponseCouponDto.builder()
-                    .success(false)
-                    .build();
+            return ResponseCouponDto.of(false, false);
         }
 
-        // 6. 쿠폰 발급 (별도 트랜잭션)
         return issuanceCoupon(userId, couponId);
     }
 
     @Transactional
     public ResponseCouponDto issuanceCoupon(Long userId, Long couponId) {
         try {
-            // 1. 쿠폰 Lock 획득
             Coupon coupon = couponRepository.findByIdWithLock(couponId)
                     .orElse(null);
 
-            // 2. Lock 내부에서 한번 더 중복 체크 (Double Check - Race Condition 완전 방지)
-            boolean hasCouponNotification = userNotificationRepository
-                    .existsByUserIdAndNotificationType(userId, NotificationType.COUPON);
-            
-            if (hasCouponNotification) {
+            if (isAlreadyHaveCoupon(userId)) {
                 log.info("사용자 {}는 이미 쿠폰을 발급받았습니다. (Lock 내부 체크)", userId);
-                return ResponseCouponDto.builder()
-                        .isIssued(true)
-                        .success(true)
-                        .build();
+                return ResponseCouponDto.of(true, true);
             }
 
             if (coupon == null) {
                 log.info("쿠폰이 이미 소진되었습니다 - userId: {}, couponId: {}", userId, couponId);
-                return ResponseCouponDto.builder()
-                        .success(false)
-                        .build();
+                return ResponseCouponDto.of(false, false);
             }
 
-            // 3. 사용자 조회
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-            // 4. 알림 생성 및 저장
-            Notification notification = Notification.builder()
-                    .title("쿠폰에 당첨되셨습니다!")
-                    .body("에브리타임에 제목에 유니돔을 포함해서 자유게시판에 게시글을 올려주세요!")
-                    .notificationType(NotificationType.COUPON)
-                    .apiType(ApiType.COUPON)
-                    .build();
+            Notification notification = createNotification();
+            createUserNotification(user, notification);
 
-            notificationRepository.save(notification);
-
-            UserNotification userNotification = UserNotification.of(user, notification);
-            userNotificationRepository.save(userNotification);
-
-            // 5. 쿠폰 삭제 (발급 완료)
             couponRepository.delete(coupon);
 
             log.info("쿠폰 발급 성공 - userId: {}, couponId: {}", userId, coupon.getId());
-
-            return ResponseCouponDto.builder()
-                    .success(true)
-                    .build();
+            return ResponseCouponDto.of(true, false);
 
         } catch (Exception e) {
-            log.error("쿠폰 발급 실패 - userId: {}, couponId: {}, error: {}", 
+            log.error("쿠폰 발급 실패 - userId: {}, couponId: {}, error: {}",
                     userId, couponId, e.getMessage(), e);
             return ResponseCouponDto.builder()
                     .success(false)
                     .build();
         }
+    }
+
+    // ========== Private Methods ========== //
+
+    private static boolean isNotUserRole(User user) {
+        return user.getRole() != Role.ROLE_USER;
+    }
+
+    private boolean isAlreadyHaveCoupon(Long userId) {
+        return userNotificationRepository
+                .existsByUserIdAndNotificationType(userId, NotificationType.COUPON);
+    }
+
+    private boolean isNotExistsCoupon() {
+        return couponRepository.count() == 0;
+    }
+
+    private static boolean isCurrentTimeIsBeforeCouponOpenTime(LocalTime currentTime, LocalTime couponOpenTime) {
+        return currentTime.isBefore(couponOpenTime);
+    }
+
+
+    private Notification createNotification() {
+        Notification notification = Notification.builder()
+                .title("쿠폰에 당첨되셨습니다!")
+                .body("에브리타임에 제목에 유니돔을 포함해서 자유게시판에 게시글을 올려주세요!")
+                .notificationType(NotificationType.COUPON)
+                .apiType(ApiType.COUPON)
+                .build();
+
+        notificationRepository.save(notification);
+        return notification;
+    }
+
+    private void createUserNotification(User user, Notification notification) {
+        UserNotification userNotification = UserNotification.of(user, notification);
+        userNotificationRepository.save(userNotification);
     }
 
     private Long getCouponIdByDayOfWeek(DayOfWeek dayOfWeek) {
