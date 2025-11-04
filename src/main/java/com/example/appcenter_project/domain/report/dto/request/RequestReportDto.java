@@ -15,12 +15,4 @@ public class RequestReportDto {
 
     @NotBlank(message = "내용은 필수입니다.")
     private String content;
-
-    public static Report dtoToEntity(RequestReportDto requestReportDto) {
-        return Report.builder()
-                .category(requestReportDto.getCategory())
-                .title(requestReportDto.getTitle())
-                .content(requestReportDto.getContent())
-                .build();
-    }
 }

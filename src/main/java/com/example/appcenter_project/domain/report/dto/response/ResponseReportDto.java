@@ -13,7 +13,7 @@ public class ResponseReportDto {
     private String title;
     private String content;
 
-    public static ResponseReportDto entityToDto(Report report) {
+    public static ResponseReportDto from(Report report) {
         return ResponseReportDto.builder()
                 .id(report.getId())
                 .category(report.getCategory())

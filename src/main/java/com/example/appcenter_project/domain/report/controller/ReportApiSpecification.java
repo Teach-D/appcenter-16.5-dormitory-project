@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,42 +19,6 @@ import java.util.List;
 
 @Tag(name = "Report", description = "신고 관리 API")
 public interface ReportApiSpecification {
-
-    @Operation(
-            summary = "모든 신고 조회",
-            description = "등록된 모든 신고를 조회합니다."
-    )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "신고 목록 조회 성공",
-                    content = @Content(schema = @Schema(implementation = ResponseReportDto.class))
-            )
-    })
-    @GetMapping
-    List<ResponseReportDto> getReports();
-
-    @Operation(
-            summary = "특정 신고 조회",
-            description = "신고 ID를 통해 특정 신고의 상세 정보를 조회합니다."
-    )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "신고 조회 성공",
-                    content = @Content(schema = @Schema(implementation = ResponseReportDto.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "신고를 찾을 수 없음",
-                    content = @Content
-            )
-    })
-    @GetMapping("/{reportId}")
-    ResponseReportDto getReport(
-            @Parameter(description = "신고 ID", required = true, example = "1")
-            @PathVariable Long reportId
-    );
 
     @Operation(
             summary = "신고 등록",
@@ -81,12 +46,48 @@ public interface ReportApiSpecification {
             )
     })
     @PostMapping
-    void createReport(
+    ResponseEntity<Void> saveReport(
             @Parameter(hidden = true)
             @AuthenticationPrincipal CustomUserDetails user,
             @Parameter(description = "신고 등록 요청 데이터", required = true)
             @Valid @RequestBody RequestReportDto requestReportDto
     );
+
+    @Operation(
+            summary = "특정 신고 조회",
+            description = "신고 ID를 통해 특정 신고의 상세 정보를 조회합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "신고 조회 성공",
+                    content = @Content(schema = @Schema(implementation = ResponseReportDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "신고를 찾을 수 없음",
+                    content = @Content
+            )
+    })
+    @GetMapping("/{reportId}")
+    ResponseEntity<ResponseReportDto> findReport(
+            @Parameter(description = "신고 ID", required = true, example = "1")
+            @PathVariable Long reportId
+    );
+
+    @Operation(
+            summary = "모든 신고 조회",
+            description = "등록된 모든 신고를 조회합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "신고 목록 조회 성공",
+                    content = @Content(schema = @Schema(implementation = ResponseReportDto.class))
+            )
+    })
+    @GetMapping
+    ResponseEntity<List<ResponseReportDto>> findAllReports();
 
     @Operation(
             summary = "신고 삭제",
@@ -104,7 +105,7 @@ public interface ReportApiSpecification {
             )
     })
     @DeleteMapping("/{reportId}")
-    void delete(
+    ResponseEntity<Void> deleteReport(
             @Parameter(description = "삭제할 신고 ID", required = true, example = "1")
             @PathVariable Long reportId
     );

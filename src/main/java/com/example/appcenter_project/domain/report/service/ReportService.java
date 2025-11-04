@@ -16,8 +16,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.example.appcenter_project.global.exception.ErrorCode.REPORT_NOT_REGISTERED;
-import static com.example.appcenter_project.global.exception.ErrorCode.USER_NOT_FOUND;
+import static com.example.appcenter_project.global.exception.ErrorCode.*;
 
 @Slf4j
 @Service
@@ -28,29 +27,23 @@ public class ReportService {
     private final ReportRepository reportRepository;
     private final UserRepository userRepository;
 
-    public void saveReport(RequestReportDto requestReportDto, Long userId) {
+    public void saveReport(RequestReportDto requestDto, Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-        Report report = RequestReportDto.dtoToEntity(requestReportDto);
-        report.updateUser(user);
+        Report report = Report.of(
+                requestDto.getCategory(), requestDto.getTitle(), requestDto.getContent(), user
+        );
         reportRepository.save(report);
     }
 
-    public ResponseReportDto getReport(Long reportId) {
+    public ResponseReportDto findReport(Long reportId) {
         Report report = reportRepository.findById(reportId).orElseThrow(() -> new CustomException(REPORT_NOT_REGISTERED));
-        return ResponseReportDto.entityToDto(report);
+        return ResponseReportDto.from(report);
     }
 
-    public List<ResponseReportDto> getAllReports() {
-        List<Report> reports = reportRepository.findAll();
-        Collections.reverse(reports);
-        List<ResponseReportDto> responseReportDtos = new ArrayList<>();
-
-        for (Report report : reports) {
-            ResponseReportDto responseReportDto = ResponseReportDto.entityToDto(report);
-            responseReportDtos.add(responseReportDto);
-        }
-
-        return responseReportDtos;
+    public List<ResponseReportDto> findAllReports() {
+        return reportRepository.findAll().stream()
+                .map(ResponseReportDto::from)
+                .toList();
     }
 
     public void deleteReport(Long reportId) {
