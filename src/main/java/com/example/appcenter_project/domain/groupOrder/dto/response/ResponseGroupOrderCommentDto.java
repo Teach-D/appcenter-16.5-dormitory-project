@@ -24,7 +24,7 @@ public class ResponseGroupOrderCommentDto {
     @Builder.Default
     private List<ResponseGroupOrderCommentDto> childGroupOrderCommentList = new ArrayList<>();
 
-    public static ResponseGroupOrderCommentDto entityToDto(GroupOrderComment groupOrderComment) {
+    public static ResponseGroupOrderCommentDto from(GroupOrderComment groupOrderComment) {
         boolean isDeleted = groupOrderComment.isDeleted();
         return ResponseGroupOrderCommentDto.builder()
                 .parentId(groupOrderComment.getParentGroupOrderComment() == null ? null : groupOrderComment.getParentGroupOrderComment().getId())

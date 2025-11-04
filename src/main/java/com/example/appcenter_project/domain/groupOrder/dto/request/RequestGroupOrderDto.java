@@ -31,7 +31,7 @@ public class RequestGroupOrderDto {
 
     private String description;
 
-    public static GroupOrder dtoToEntity(RequestGroupOrderDto dto, User user) {
+    public static GroupOrder of(RequestGroupOrderDto dto, User user) {
         return GroupOrder.builder()
                 .title(dto.getTitle())
                 .groupOrderType(dto.getGroupOrderType())
@@ -46,6 +46,3 @@ public class RequestGroupOrderDto {
                 .build();
     }
 }
-
-
-

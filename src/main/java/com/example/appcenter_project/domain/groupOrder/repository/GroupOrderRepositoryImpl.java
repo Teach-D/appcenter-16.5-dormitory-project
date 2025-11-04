@@ -18,6 +18,7 @@ import java.util.List;
 
 import static com.example.appcenter_project.domain.groupOrder.entity.QGroupOrder.groupOrder;
 
+
 @Repository
 public class GroupOrderRepositoryImpl implements GroupOrderQuerydslRepository {
 
@@ -62,6 +63,8 @@ public class GroupOrderRepositoryImpl implements GroupOrderQuerydslRepository {
 
         } else if (sort == GroupOrderSort.PRICE) {
             orderSpecifiers.add(new OrderSpecifier(Order.ASC, groupOrder.price));
+        } else if (sort == GroupOrderSort.LATEST) {
+            orderSpecifiers.add(new OrderSpecifier(Order.DESC, groupOrder.id));
         }
 
         return orderSpecifiers.toArray(new OrderSpecifier[0]);

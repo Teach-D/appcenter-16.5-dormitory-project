@@ -53,7 +53,7 @@ public interface GroupOrderCommentApiSpecification {
                     )
             }
     )
-    public ResponseEntity<ResponseGroupOrderCommentDto> saveGroupOrderComment(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestBody RequestGroupOrderCommentDto requestGroupOrderCommentDto);
+    ResponseEntity<ResponseGroupOrderCommentDto> saveGroupOrderComment(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestBody RequestGroupOrderCommentDto requestGroupOrderCommentDto);
 
 
     @Operation(
@@ -66,6 +66,6 @@ public interface GroupOrderCommentApiSpecification {
                     @ApiResponse(responseCode = "403", description = "댓글 삭제 권한이 없습니다.")
             }
     )
-    public ResponseEntity<Void> deleteGroupOrderComment(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderCommentId);
+    ResponseEntity<Void> deleteGroupOrderComment(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long groupOrderCommentId);
 
 }

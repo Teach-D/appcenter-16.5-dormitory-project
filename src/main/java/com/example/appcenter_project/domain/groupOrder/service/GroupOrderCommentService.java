@@ -20,9 +20,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import static com.example.appcenter_project.global.exception.ErrorCode.*;
 
 @Service
@@ -37,115 +34,107 @@ public class GroupOrderCommentService {
     private final FcmMessageService fcmMessageService;
     private final NotificationRepository notificationRepository;
 
-    public ResponseGroupOrderCommentDto saveGroupOrderComment(Long userId, RequestGroupOrderCommentDto responseGroupOrderCommentDto) {
-        User user = userRepository.findById(userId)
+    // ========== Public Methods ========== //
+
+    public ResponseGroupOrderCommentDto saveGroupOrderComment(Long userId, RequestGroupOrderCommentDto requestDto) {
+        User currentUser = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-        GroupOrder groupOrder = groupOrderRepository.findById(responseGroupOrderCommentDto.getGroupOrderId())
+        GroupOrder groupOrder = groupOrderRepository.findById(requestDto.getGroupOrderId())
                 .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
 
-        String title = "[" + groupOrder.getTitle() + "]" + " 에 댓글이 달렸어요";
-
-        if (groupOrder.getUser() != user) {
-            Notification notification = Notification.builder()
-                    .boardId(groupOrder.getId())
-                    .title(title)
-                    .body(responseGroupOrderCommentDto.getReply())
-                    .notificationType(NotificationType.GROUP_ORDER)
-                    .apiType(ApiType.GROUP_ORDER)
-                    .build();
-
-            notificationRepository.save(notification);
-
-            UserNotification userNotification = UserNotification.of(groupOrder.getUser(), notification);
-            userNotificationRepository.save(userNotification);
-
-            fcmMessageService.sendNotification(groupOrder.getUser(), notification.getTitle(), notification.getBody());
-
-        }
-
-
-        GroupOrderComment groupOrderComment;
-        // 부모 댓글이 없을 때
-        if (responseGroupOrderCommentDto.getParentCommentId() == null) {
-            groupOrderComment = GroupOrderComment.builder()
-                    .reply(responseGroupOrderCommentDto.getReply())
-                    .groupOrder(groupOrder)
-                    .user(user)
-                    .build();
-
-            // 부모 댓글이 없으므로 자신이 부모 댓글이 된다.
-            groupOrderComment.setParentGroupOrderCommentNull();
-        }
-        // 부모 댓글이 있을 때
-        else {
+        GroupOrderComment comment;
+        if (isParentComment(requestDto)) {
+            comment = createParentComment(requestDto, groupOrder, currentUser);
+            sendNotificationToGroupOrderWriter(currentUser, groupOrder, requestDto.getReply());
+        } else {
             GroupOrderComment parentGroupOrderComment = groupOrderCommentRepository
-                    .findById(responseGroupOrderCommentDto.getParentCommentId()).orElseThrow(() -> new CustomException(GROUP_ORDER_COMMENT_NOT_FOUND));
-            groupOrderComment = GroupOrderComment.builder()
-                    .reply(responseGroupOrderCommentDto.getReply())
-                    .groupOrder(groupOrder)
-                    .user(user)
-                    .parentGroupOrderComment(parentGroupOrderComment)
-                    .build();
-            parentGroupOrderComment.addChildGroupOrderComments(groupOrderComment);
-
-            String commentTitle = "[" + parentGroupOrderComment.getReply() + "]" + " 에 대댓글이 달렸어요";
-
-            if (parentGroupOrderComment.getUser() != user) {
-                Notification commentNotification = Notification.builder()
-                        .boardId(groupOrder.getId())
-                        .title(commentTitle)
-                        .body(groupOrderComment.getReply())
-                        .notificationType(NotificationType.GROUP_ORDER)
-                        .apiType(ApiType.GROUP_ORDER)
-                        .build();
-
-                notificationRepository.save(commentNotification);
-
-                UserNotification commentUserNotification = UserNotification.of(parentGroupOrderComment.getUser(), commentNotification);
-                userNotificationRepository.save(commentUserNotification);
-
-                fcmMessageService.sendNotification(parentGroupOrderComment.getUser(), commentNotification.getTitle(), commentNotification.getBody());
-
-            }
-
-         }
-
-        // 양방향 매핑
-        groupOrder.getGroupOrderCommentList().add(groupOrderComment);
-
-        groupOrderCommentRepository.save(groupOrderComment);
-        return ResponseGroupOrderCommentDto.entityToDto(groupOrderComment);
-    }
-
-    public List<ResponseGroupOrderCommentDto> findGroupOrderComment(Long userId, Long groupOrderId) {
-        List<ResponseGroupOrderCommentDto> responseGroupOrderCommentDtoList = new ArrayList<>();
-        List<GroupOrderComment> groupOrderCommentList = groupOrderCommentRepository.findByGroupOrder_IdAndParentGroupOrderCommentIsNull(groupOrderId);
-        for (GroupOrderComment groupOrderComment : groupOrderCommentList) {
-            List<ResponseGroupOrderCommentDto> childResponseComments = new ArrayList<>();
-            List<GroupOrderComment> childGroupOrderComments = groupOrderComment.getChildGroupOrderComments();
-            for (GroupOrderComment childGroupOrderComment : childGroupOrderComments) {
-                ResponseGroupOrderCommentDto responseGroupOrderCommentDto = ResponseGroupOrderCommentDto.builder()
-                        .groupOrderCommentId(childGroupOrderComment.getId())
-                        .userId(childGroupOrderComment.getUser().getId())
-                        .reply(childGroupOrderComment.getReply())
-                        .build();
-                childResponseComments.add(responseGroupOrderCommentDto);
-            }
-            ResponseGroupOrderCommentDto responseGroupOrderCommentDto = ResponseGroupOrderCommentDto.builder()
-                    .groupOrderCommentId(groupOrderComment.getId())
-                    .userId(groupOrderComment.getUser().getId())
-                    .reply(groupOrderComment.getReply())
-                    .childGroupOrderCommentList(childResponseComments)
-                    .build();
-            responseGroupOrderCommentDtoList.add(responseGroupOrderCommentDto);
-
+                    .findById(requestDto.getParentCommentId()).orElseThrow(() -> new CustomException(GROUP_ORDER_COMMENT_NOT_FOUND));
+            comment = createChildComment(requestDto, groupOrder, currentUser, parentGroupOrderComment);
+            sendNotificationToParentCommentWriter(currentUser, groupOrder, requestDto.getReply(), parentGroupOrderComment);
         }
-        return responseGroupOrderCommentDtoList;
+
+        return ResponseGroupOrderCommentDto.from(comment);
     }
 
     public void deleteGroupOrderComment(Long userId, Long groupOrderCommentId) {
         GroupOrderComment groupOrderComment = groupOrderCommentRepository.findByIdAndUserId(groupOrderCommentId, userId)
                 .orElseThrow(() -> new CustomException(GROUP_ORDER_COMMENT_NOT_OWNED_BY_USER));
         groupOrderComment.updateIsDeleted();
+    }
+
+    // ========== Private Methods ========== //
+
+    private GroupOrderComment createParentComment(RequestGroupOrderCommentDto requestDto, GroupOrder groupOrder, User currentUser) {
+        GroupOrderComment comment = GroupOrderComment.builder()
+                .reply(requestDto.getReply())
+                .groupOrder(groupOrder)
+                .user(currentUser)
+                .parentGroupOrderComment(null)
+                .build();
+
+        return groupOrderCommentRepository.save(comment);
+    }
+
+    private void sendNotificationToGroupOrderWriter(User currentUser, GroupOrder groupOrder, String reply) {
+        User groupOrderWriterUser = groupOrder.getUser();
+
+        if (isDifferentUser(groupOrderWriterUser, currentUser)) {
+            String title = "[" + groupOrder.getTitle() + "] 에 댓글이 달렸어요";
+            Notification notification = createNotification(title, reply, groupOrder);
+            createUserNotification(groupOrderWriterUser, notification);
+            sendMessageTo(groupOrderWriterUser, notification);
+        }
+    }
+
+    private Notification createNotification(String title, String reply, GroupOrder groupOrder) {
+        Notification notification = Notification.of(
+                title,
+                reply,
+                NotificationType.GROUP_ORDER,
+                ApiType.GROUP_ORDER,
+                groupOrder.getId()
+        );
+
+        notificationRepository.save(notification);
+        return notification;
+    }
+
+    private void createUserNotification(User user, Notification notification) {
+        UserNotification userNotification = UserNotification.of(user, notification);
+        userNotificationRepository.save(userNotification);
+    }
+
+    private void sendMessageTo(User parentCommentWriter, Notification notification) {
+        fcmMessageService.sendNotification(parentCommentWriter, notification.getTitle(), notification.getBody());
+    }
+
+    private GroupOrderComment createChildComment(RequestGroupOrderCommentDto requestDto, GroupOrder groupOrder, User currentUser, GroupOrderComment parentGroupOrderComment) {
+        GroupOrderComment groupOrderComment = GroupOrderComment.builder()
+                .reply(requestDto.getReply())
+                .groupOrder(groupOrder)
+                .user(currentUser)
+                .parentGroupOrderComment(parentGroupOrderComment)
+                .build();
+        return groupOrderCommentRepository.save(groupOrderComment);
+    }
+
+    private void sendNotificationToParentCommentWriter(User currentUser, GroupOrder groupOrder, String reply, GroupOrderComment parentGroupOrderComment) {
+        User parentCommentWriter = parentGroupOrderComment.getUser();
+
+        if (isDifferentUser(parentCommentWriter, currentUser)) {
+            String title = "[" + parentGroupOrderComment.getReply() + "]" + " 에 대댓글이 달렸어요";
+            Notification notification = createNotification(title, reply, groupOrder);
+            createUserNotification(parentCommentWriter, notification);
+            sendMessageTo(parentCommentWriter, notification);
+        }
+    }
+
+
+    private static boolean isParentComment(RequestGroupOrderCommentDto responseGroupOrderCommentDto) {
+        return responseGroupOrderCommentDto.getParentCommentId() == null;
+    }
+
+    private static boolean isDifferentUser(User user1, User user2) {
+        return !user1.equals(user2);
     }
 }

@@ -52,6 +52,25 @@ public class ResponseGroupOrderDetailDto {
                 .build();
     }
 
+    public static ResponseGroupOrderDetailDto of(GroupOrder groupOrder, String writerImageUrl) {
+        return ResponseGroupOrderDetailDto.builder()
+                .id(groupOrder.getId())
+                .title(groupOrder.getTitle())
+                .deadline(String.valueOf(groupOrder.getDeadline()))
+                .createDate(String.valueOf(groupOrder.getCreatedDate()))
+                .groupOrderType(groupOrder.getGroupOrderType())
+                .price(groupOrder.getPrice())
+                .likeCount(groupOrder.getGroupOrderLike())
+                .viewCount(groupOrder.getGroupOrderViewCount())
+                .description(groupOrder.getDescription())
+                .link(groupOrder.getLink())
+                .openChatLink(groupOrder.getOpenChatLink())
+                .username(groupOrder.getUser().getName())
+                .authorImagePath(writerImageUrl)
+                .isRecruitmentComplete(groupOrder.isRecruitmentComplete())
+                .build();
+    }
+
     public void updateGroupOrderCommentDtoList(List<ResponseGroupOrderCommentDto> groupedList) {
         this.groupOrderCommentDtoList = groupedList;
     }

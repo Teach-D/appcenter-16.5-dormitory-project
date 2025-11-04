@@ -8,6 +8,6 @@ import java.util.Optional;
 
 public interface GroupOrderCommentRepository extends JpaRepository<GroupOrderComment, Long> {
     List<GroupOrderComment> findByGroupOrder_Id(Long groupOrderId);
-    List<GroupOrderComment> findByGroupOrder_IdAndParentGroupOrderCommentIsNull(Long groupOrderId);
+    List<GroupOrderComment> findByGroupOrderIdAndParentGroupOrderCommentIsNull(Long groupOrderId);
     Optional<GroupOrderComment> findByIdAndUserId(Long id, Long userId);
 }

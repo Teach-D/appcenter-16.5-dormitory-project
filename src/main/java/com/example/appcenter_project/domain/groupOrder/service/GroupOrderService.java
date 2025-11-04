@@ -62,7 +62,7 @@ public class GroupOrderService {
     private final FcmMessageService fcmMessageService;
     private final NotificationRepository notificationRepository;
     private final UserNotificationRepository userNotificationRepository;
-    private final GroupOrderNotificationOrderService groupOrderNotificationOrderService;
+    private final GroupOrderNotificationService groupOrderNotificationService;
 
 
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto) {
@@ -212,7 +212,7 @@ public class GroupOrderService {
 
         imageService.saveImages(ImageType.GROUP_ORDER, groupOrder.getId(), images);
 
-        groupOrderNotificationOrderService.saveAndSendGroupOrderNotification(groupOrder);
+        groupOrderNotificationService.saveAndSendGroupOrderNotification(groupOrder);
     }
 
     public List<ImageLinkDto> findGroupOrderImageUrls(Long groupOrderId, HttpServletRequest request) {
