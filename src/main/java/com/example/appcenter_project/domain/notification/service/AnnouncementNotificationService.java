@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
 import java.util.List;
 
 
@@ -29,69 +28,84 @@ public class AnnouncementNotificationService {
     private final FcmMessageService fcmMessageService;
     private final NotificationRepository notificationRepository;
 
-    public void saveAndSendDormitoryNotification(Announcement announcement) {
+    private static final List<Role> DORMITORY_ROLES = List.of(
+            Role.ROLE_DORM_MANAGER, Role.ROLE_DORM_LIFE_MANAGER, Role.ROLE_DORM_ROOMMATE_MANAGER
+    );
+
+    public void sendDormitoryNotifications(Announcement announcement) {
+        sendNotification(announcement, NotificationType.DORMITORY);
+    }
+
+    public void sendSupportersNotifications(Announcement announcement) {
+        sendNotification(announcement, NotificationType.SUPPORTERS);
+    }
+
+    public void sendUnidormNotifications(Announcement announcement) {
+        sendNotification(announcement, NotificationType.UNI_DORM);
+    }
+
+    private void sendNotification(Announcement announcement, NotificationType notificationType) {
+        Notification notification = createNotification(announcement, notificationType);
+        List<User> targetUser = findTargetUsers(notificationType);
+
+        if (targetUser.isEmpty()) {
+            return;
+        }
+
+        createUserNotifications(targetUser, notification);
+        sendMessagesTo(targetUser, notification, notificationType);
+    }
+
+    private Notification createNotification(Announcement announcement, NotificationType notificationType) {
         String title = "새로운 공지사항이 올라왔어요!";
 
-        Notification notification = Notification.builder()
-                .boardId(announcement.getId())
-                .title(title)
-                .body(announcement.getTitle())
-                .notificationType(NotificationType.DORMITORY)
-                .apiType(ApiType.ANNOUNCEMENT)
-                .build();
+        Notification notification = Notification.of(
+                title,
+                announcement.getTitle(),
+                notificationType,
+                ApiType.ANNOUNCEMENT,
+                announcement.getId()
+        );
 
-        notificationRepository.save(notification);
+        return notificationRepository.save(notification);
+    }
 
-        List<Role> dormitoryUserRoles = Arrays.asList(Role.ROLE_DORM_MANAGER, Role.ROLE_DORM_LIFE_MANAGER, Role.ROLE_DORM_ROOMMATE_MANAGER);
+    private void createUserNotifications(List<User> targetUser, Notification notification) {
+        List<UserNotification> userNotifications = targetUser.stream()
+                .map(user -> UserNotification.of(user, notification))
+                .toList();
 
-        for (User user : userRepository.findByReceiveNotificationTypesContainsAndRoleNotIn(NotificationType.DORMITORY, dormitoryUserRoles)) {
-            UserNotification userNotification = UserNotification.of(user, notification);
-            userNotificationRepository.save(userNotification);
-            fcmMessageService.sendDormitoryNotification(user, title, announcement.getTitle());
+        userNotificationRepository.saveAll(userNotifications);
+    }
+
+    private List<User> findTargetUsers(NotificationType notificationType) {
+        return userRepository.findByReceiveNotificationTypesContainsAndRoleNotIn(notificationType, DORMITORY_ROLES);
+    }
+
+    private void sendMessagesTo(List<User> targetUser, Notification notification, NotificationType notificationType) {
+        switch(notificationType) {
+            case DORMITORY: sendDormitoryMessages(targetUser, notification.getTitle(), notification.getBody());
+            case SUPPORTERS: sendSupporterMessages(targetUser, notification.getTitle(), notification.getBody());
+            case UNI_DORM: sendUnidormMessages(targetUser, notification.getTitle(), notification.getBody());
         }
     }
 
-    public void saveAndSendSupportersNotification(Announcement announcement) {
-        String title = "새로운 공지사항이 올라왔어요!";
-
-        Notification notification = Notification.builder()
-                .boardId(announcement.getId())
-                .title(title)
-                .body(announcement.getTitle())
-                .notificationType(NotificationType.SUPPORTERS)
-                .apiType(ApiType.ANNOUNCEMENT)
-                .build();
-
-        notificationRepository.save(notification);
-
-        List<Role> dormitoryUserRoles = Arrays.asList(Role.ROLE_DORM_MANAGER, Role.ROLE_DORM_LIFE_MANAGER, Role.ROLE_DORM_ROOMMATE_MANAGER);
-
-        for (User user : userRepository.findByReceiveNotificationTypesContainsAndRoleNotIn(NotificationType.SUPPORTERS, dormitoryUserRoles)) {
-            UserNotification userNotification = UserNotification.of(user, notification);
-            userNotificationRepository.save(userNotification);
-            fcmMessageService.sendSupportersNotification(user, title, announcement.getTitle());
+    private void sendDormitoryMessages(List<User> targetUser, String title, String body) {
+        for (User user : targetUser) {
+            fcmMessageService.sendDormitoryNotification(user, title, body);
         }
     }
 
-    public void saveAndSendUnidormNotification(Announcement announcement) {
-        String title = "새로운 공지사항이 올라왔어요!";
-
-        Notification notification = Notification.builder()
-                .boardId(announcement.getId())
-                .title(title)
-                .body(announcement.getTitle())
-                .notificationType(NotificationType.UNI_DORM)
-                .apiType(ApiType.ANNOUNCEMENT)
-                .build();
-
-        notificationRepository.save(notification);
-
-        List<Role> dormitoryUserRoles = Arrays.asList(Role.ROLE_DORM_MANAGER, Role.ROLE_DORM_LIFE_MANAGER, Role.ROLE_DORM_ROOMMATE_MANAGER);
-
-        for (User user : userRepository.findByReceiveNotificationTypesContainsAndRoleNotIn(NotificationType.UNI_DORM, dormitoryUserRoles)) {
-            UserNotification userNotification = UserNotification.of(user, notification);
-            userNotificationRepository.save(userNotification);
-            fcmMessageService.sendUnidormAnnouncementNotification(user, title, announcement.getTitle());
+    private void sendSupporterMessages(List<User> targetUser, String title, String body) {
+        for (User user : targetUser) {
+            fcmMessageService.sendSupporterNotification(user, title, body);
         }
     }
+
+    private void sendUnidormMessages(List<User> targetUser, String title, String body) {
+        for (User user : targetUser) {
+            fcmMessageService.sendUnidormNotification(user, title, body);
+        }
+    }
+
 }

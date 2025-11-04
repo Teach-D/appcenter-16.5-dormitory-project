@@ -1,7 +1,7 @@
 package com.example.appcenter_project.domain.notification.entity;
 
-import com.example.appcenter_project.common.BaseTimeEntity;
 import com.example.appcenter_project.domain.notification.dto.request.RequestNotificationDto;
+import com.example.appcenter_project.common.BaseTimeEntity;
 import com.example.appcenter_project.shared.enums.ApiType;
 import com.example.appcenter_project.domain.user.enums.NotificationType;
 import jakarta.persistence.*;
@@ -42,6 +42,27 @@ public class Notification extends BaseTimeEntity {
         this.notificationType = notificationType;
         this.apiType = apiType;
         this.userNotifications = userNotifications;
+    }
+
+    public static Notification from(RequestNotificationDto requestDto) {
+        return Notification.builder()
+                .boardId(requestDto.getBoardId())
+                .title(requestDto.getTitle())
+                .body(requestDto.getBody())
+                .notificationType(NotificationType.from(requestDto.getNotificationType()))
+                .apiType(ApiType.NOTIFICATION)
+                .build();
+    }
+
+    public static Notification of(String title, String body, NotificationType notificationType, ApiType apiType, Long boardId) {
+        return Notification.builder()
+                .title(title)
+                .body(body)
+                .notificationType(notificationType)
+                .apiType(apiType)
+                .boardId(boardId)
+                .build();
+
     }
 
     public void update(RequestNotificationDto requestNotificationDto) {

@@ -55,7 +55,7 @@ public interface NotificationApiSpecification {
                     @ApiResponse(responseCode = "404", description = "회원가입하지 않은 사용자입니다.")
             }
     )
-    ResponseEntity<List<ResponseNotificationDto>> findNotifications(
+    ResponseEntity<List<ResponseNotificationDto>> findNotificationsByUser(
             @AuthenticationPrincipal CustomUserDetails user);
 
     @Operation(
@@ -65,7 +65,7 @@ public interface NotificationApiSpecification {
     ResponseEntity<Void> saveNotificationByStudentNumber(@RequestBody RequestNotificationDto requestNotificationDto, String studentNumber);
 
 
-        @Operation(
+    @Operation(
             summary = "특정 알림 상세 조회",
             description = "알림 ID로 특정 알림의 상세 정보를 조회합니다.",
             responses = {

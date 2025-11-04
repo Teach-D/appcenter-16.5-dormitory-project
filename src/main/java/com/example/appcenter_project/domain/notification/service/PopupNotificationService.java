@@ -1,14 +1,13 @@
 package com.example.appcenter_project.domain.notification.service;
 
 import com.example.appcenter_project.common.image.dto.ImageLinkDto;
-import com.example.appcenter_project.common.image.enums.ImageType;
-import com.example.appcenter_project.common.image.service.ImageService;
 import com.example.appcenter_project.domain.notification.dto.request.RequestPopupNotificationDto;
 import com.example.appcenter_project.domain.notification.dto.response.ResponsePopupNotificationDto;
 import com.example.appcenter_project.domain.notification.entity.PopupNotification;
+import com.example.appcenter_project.common.image.enums.ImageType;
 import com.example.appcenter_project.global.exception.CustomException;
-import com.example.appcenter_project.common.image.repository.ImageRepository;
 import com.example.appcenter_project.domain.notification.repository.PopupNotificationRepository;
+import com.example.appcenter_project.common.image.service.ImageService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,11 +27,10 @@ import static com.example.appcenter_project.global.exception.ErrorCode.POPUP_NOT
 public class PopupNotificationService {
 
     private final PopupNotificationRepository popupNotificationRepository;
-    private final ImageRepository imageRepository;
     private final ImageService imageService;
 
-    public void savePopupNotification(RequestPopupNotificationDto requestPopupNotificationDto, List<MultipartFile> images) {
-        PopupNotification popupNotification = RequestPopupNotificationDto.dtoToEntity(requestPopupNotificationDto);
+    public void savePopupNotification(RequestPopupNotificationDto requestDto, List<MultipartFile> images) {
+        PopupNotification popupNotification = PopupNotification.from(requestDto);
         popupNotificationRepository.save(popupNotification);
 
         imageService.saveImages(ImageType.POPUP_NOTIFICATION, popupNotification.getId(), images);
@@ -44,36 +42,35 @@ public class PopupNotificationService {
                 .map(ImageLinkDto::getImageUrl)
                 .toList();
 
-        return ResponsePopupNotificationDto.entityToDto(popupNotification, imageUrls);
+        return ResponsePopupNotificationDto.of(popupNotification, imageUrls);
     }
 
     public List<ResponsePopupNotificationDto> findActivePopupNotifications(HttpServletRequest request) {
         LocalDate now = LocalDate.now();
 
-        return popupNotificationRepository.findAll().stream()
-                .filter(popupNotification -> {
-                    LocalDate startDate = popupNotification.getStartDate();
-                    LocalDate deadline = popupNotification.getDeadline();
-                    
-                    if (startDate != null && deadline != null) {
-                        // 현재 날짜가 startDate 이상이고 deadline 이하인 경우만 포함
-                        return !now.isBefore(startDate) && !now.isAfter(deadline);
-                    }
-                    
-                    return false;
-                })
+        return popupNotificationRepository.findActivePopupNotifications(now).stream()
                 .map(popupNotification ->
-                        ResponsePopupNotificationDto.entityToDto(
-                                popupNotification, 
-                                imageService.findStaticImageUrls(ImageType.POPUP_NOTIFICATION, popupNotification.getId(), request)
+                        ResponsePopupNotificationDto.of(
+                                popupNotification,
+                                findImageUrl(request, popupNotification)
                         )
                 )
                 .toList();
     }
 
-    public void updatePopupNotification(Long popupNotificationId, RequestPopupNotificationDto requestPopupNotificationDto, List<MultipartFile> images) {
+    private List<String> findImageUrl(HttpServletRequest request, PopupNotification popupNotification) {
+        return imageService.findStaticImageUrls(ImageType.POPUP_NOTIFICATION, popupNotification.getId(), request);
+    }
+
+    public List<ResponsePopupNotificationDto> findAllPopupNotifications(HttpServletRequest request) {
+        return popupNotificationRepository.findAll().stream().map(popupNotification ->
+                ResponsePopupNotificationDto.of(popupNotification, findImageUrl(request, popupNotification))).toList();
+
+    }
+
+    public void updatePopupNotification(Long popupNotificationId, RequestPopupNotificationDto requestDto, List<MultipartFile> images) {
         PopupNotification popupNotification = popupNotificationRepository.findById(popupNotificationId).orElseThrow(() -> new CustomException(POPUP_NOTIFICATION_NOT_FOUND));
-        popupNotification.update(requestPopupNotificationDto);
+        popupNotification.update(requestDto);
 
         if (images == null || images.isEmpty()) {
             return;
@@ -85,11 +82,5 @@ public class PopupNotificationService {
     public void deletePopupNotification(Long popupNotificationId) {
         popupNotificationRepository.deleteById(popupNotificationId);
         imageService.deleteImages(ImageType.POPUP_NOTIFICATION, popupNotificationId);
-    }
-
-    public List<ResponsePopupNotificationDto> findAllPopupNotifications(HttpServletRequest request) {
-        return popupNotificationRepository.findAll().stream().map(popupNotification ->
-                ResponsePopupNotificationDto.entityToDto(popupNotification, imageService.findStaticImageUrls(ImageType.POPUP_NOTIFICATION, popupNotification.getId(), request))).toList();
-
     }
 }

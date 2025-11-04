@@ -1,7 +1,7 @@
 package com.example.appcenter_project.domain.notification.entity;
 
-import com.example.appcenter_project.common.BaseTimeEntity;
 import com.example.appcenter_project.domain.notification.dto.request.RequestPopupNotificationDto;
+import com.example.appcenter_project.common.BaseTimeEntity;
 import com.example.appcenter_project.domain.user.enums.NotificationType;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -40,11 +40,21 @@ public class PopupNotification extends BaseTimeEntity {
         this.deadline = deadline;
     }
 
-    public void update(RequestPopupNotificationDto requestPopupNotificationDto) {
-        this.title = requestPopupNotificationDto.getTitle();
-        this.content = requestPopupNotificationDto.getContent();
-        this.notificationType = NotificationType.from(requestPopupNotificationDto.getNotificationType());
-        this.startDate = requestPopupNotificationDto.getStartDate();
-        this.deadline = requestPopupNotificationDto.getDeadline();
+    public void update(RequestPopupNotificationDto requestDto) {
+        this.title = requestDto.getTitle();
+        this.content = requestDto.getContent();
+        this.notificationType = NotificationType.from(requestDto.getNotificationType());
+        this.startDate = requestDto.getStartDate();
+        this.deadline = requestDto.getDeadline();
+    }
+
+    public static PopupNotification from(RequestPopupNotificationDto requestPopupNotificationDto) {
+        return PopupNotification.builder()
+                .title(requestPopupNotificationDto.getTitle())
+                .content(requestPopupNotificationDto.getContent())
+                .notificationType(NotificationType.from(requestPopupNotificationDto.getNotificationType()))
+                .startDate(requestPopupNotificationDto.getStartDate())
+                .deadline(requestPopupNotificationDto.getDeadline())
+                .build();
     }
 }
