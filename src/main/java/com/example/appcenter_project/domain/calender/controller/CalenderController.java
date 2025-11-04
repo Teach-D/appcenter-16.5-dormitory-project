@@ -30,13 +30,13 @@ public class CalenderController implements CalenderApiSpecification {
 
     @GetMapping
     @Override
-    public ResponseEntity<List<ResponseCalenderDto>> getAllCalenders() {
+    public ResponseEntity<List<ResponseCalenderDto>> findAllCalenders() {
         return ResponseEntity.status(OK).body(calenderService.findAllCalenders());
     }
 
     @GetMapping("/search")
     @Override
-    public ResponseEntity<List<ResponseCalenderDto>> getCalendersByYearAndMonth(
+    public ResponseEntity<List<ResponseCalenderDto>> findCalendersByYearAndMonth(
             @RequestParam int year,
             @RequestParam int month) {
         return ResponseEntity.status(OK).body(calenderService.findCalendersByYearAndMonth(year, month));

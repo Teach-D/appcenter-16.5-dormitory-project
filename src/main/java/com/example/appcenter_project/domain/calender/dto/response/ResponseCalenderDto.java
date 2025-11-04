@@ -27,7 +27,7 @@ public class ResponseCalenderDto {
     @Schema(description = "관련 링크", example = "https://example.com")
     private String link;
 
-    public static ResponseCalenderDto entityToDto(Calender calender) {
+    public static ResponseCalenderDto from(Calender calender) {
         return ResponseCalenderDto.builder()
                 .id(calender.getId())
                 .startDate(calender.getStartDate())

@@ -1,7 +1,7 @@
 package com.example.appcenter_project.domain.calender.entity;
 
-import com.example.appcenter_project.common.BaseTimeEntity;
 import com.example.appcenter_project.domain.calender.dto.request.RequestCalenderDto;
+import com.example.appcenter_project.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,7 +12,6 @@ import java.time.LocalDate;
 
 @Entity
 @NoArgsConstructor
-@AllArgsConstructor
 @Getter
 public class Calender extends BaseTimeEntity {
 
@@ -33,10 +32,19 @@ public class Calender extends BaseTimeEntity {
         this.link = link;
     }
 
-    public void update(RequestCalenderDto requestCalenderDto) {
-        this.startDate = requestCalenderDto.getStartDate();
-        this.endDate = requestCalenderDto.getEndDate();
-        this.title = requestCalenderDto.getTitle();
-        this.link = requestCalenderDto.getLink();
+    public void update(RequestCalenderDto dto) {
+        this.startDate = dto.getStartDate();
+        this.endDate = dto.getEndDate();
+        this.title = dto.getTitle();
+        this.link = dto.getLink();
+    }
+
+    public static Calender from(RequestCalenderDto requestDto) {
+        return Calender.builder()
+                .startDate(requestDto.getStartDate())
+                .endDate(requestDto.getEndDate())
+                .title(requestDto.getTitle())
+                .link(requestDto.getLink())
+                .build();
     }
 }

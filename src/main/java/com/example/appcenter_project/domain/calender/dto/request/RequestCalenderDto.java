@@ -1,6 +1,5 @@
 package com.example.appcenter_project.domain.calender.dto.request;
 
-import com.example.appcenter_project.domain.calender.entity.Calender;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -32,15 +31,4 @@ public class RequestCalenderDto {
     @Size(max = 500, message = "링크는 500자 이하여야 합니다.")
     private String link;
 
-    public static Calender dtoToEntity(RequestCalenderDto requestCalenderDto) {
-        log.info(String.valueOf(requestCalenderDto.getStartDate()));
-        log.info(String.valueOf(requestCalenderDto.getEndDate()));
-
-        return Calender.builder()
-                .startDate(requestCalenderDto.getStartDate())
-                .endDate(requestCalenderDto.getEndDate())
-                .title(requestCalenderDto.getTitle())
-                .link(requestCalenderDto.getLink())
-                .build();
-    }
 }
