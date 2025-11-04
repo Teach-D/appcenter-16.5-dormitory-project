@@ -15,7 +15,7 @@ public class RoommateQueryService {
 
     private final RoommateBoardLikeRepository roommateBoardLikeRepository;
 
-    public List<ResponseRoommatePostDto> findGroupOrderDtosWithImages(Long userId) {
+    public List<ResponseRoommatePostDto> findLikedByUser(Long userId) {
         return roommateBoardLikeRepository.findByUserIdWithRoommateBoardAndRoommateCheckListAndUser(userId)
                 .stream().map(roommateBoardLike -> ResponseRoommatePostDto.entityToDto(roommateBoardLike.getRoommateBoard(), roommateBoardLike.getRoommateBoard().isMatched(), null)).toList();
     }

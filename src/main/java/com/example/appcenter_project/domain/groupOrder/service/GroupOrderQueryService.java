@@ -1,14 +1,14 @@
 package com.example.appcenter_project.domain.groupOrder.service;
 
-import com.example.appcenter_project.common.image.entity.Image;
-import com.example.appcenter_project.common.image.enums.ImageType;
-import com.example.appcenter_project.common.image.service.ImageService;
 import com.example.appcenter_project.domain.groupOrder.dto.response.ResponseGroupOrderDto;
+import com.example.appcenter_project.common.image.entity.Image;
 import com.example.appcenter_project.domain.groupOrder.entity.GroupOrder;
 import com.example.appcenter_project.domain.groupOrder.entity.GroupOrderLike;
+import com.example.appcenter_project.common.image.enums.ImageType;
 import com.example.appcenter_project.domain.groupOrder.repository.GroupOrderRepository;
 import com.example.appcenter_project.common.image.repository.ImageRepository;
 import com.example.appcenter_project.domain.groupOrder.repository.GroupOrderLikeRepository;
+import com.example.appcenter_project.common.image.service.ImageService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,7 +34,7 @@ public class GroupOrderQueryService {
      * GroupOrder + Image 최적화 조회
      * N+1 문제 해결을 위한 전용 서비스
      */
-    public List<ResponseGroupOrderDto> findGroupOrderDtosWithImages(Long userId, HttpServletRequest request) {
+    public List<ResponseGroupOrderDto> findGroupOrdersByUser(Long userId, HttpServletRequest request) {
         List<GroupOrder> groupOrders = groupOrderRepository.findByUserId(userId);
 
         if (groupOrders.isEmpty()) {
@@ -55,7 +55,7 @@ public class GroupOrderQueryService {
                         imageUrl = imageService.getImageUrl(ImageType.GROUP_ORDER, image, request);
                     }
 
-                    return ResponseGroupOrderDto.entityToDto(groupOrder, imageUrl);
+                    return ResponseGroupOrderDto.of(groupOrder, imageUrl);
                 })
                 .collect(Collectors.toList());
     }
@@ -64,7 +64,7 @@ public class GroupOrderQueryService {
      * GroupOrderLike + GroupOrder + Image 최적화 조회
      * N+1 문제 해결을 위한 전용 서비스
      */
-    public List<ResponseGroupOrderDto> findGroupOrderLikeDtosWithImages(Long userId, HttpServletRequest request) {
+    public List<ResponseGroupOrderDto> findLikedByUser(Long userId, HttpServletRequest request) {
         List<GroupOrderLike> groupOrderLikes = groupOrderLikeRepository.findByUserIdWithGroupOrder(userId);
         List<GroupOrder> groupOrders = groupOrderLikes.stream().map(GroupOrderLike::getGroupOrder).toList();
 
@@ -86,7 +86,7 @@ public class GroupOrderQueryService {
                         imageUrl = imageService.getImageUrl(ImageType.GROUP_ORDER, image, request);
                     }
 
-                    return ResponseGroupOrderDto.entityToDto(groupOrder, imageUrl);
+                    return ResponseGroupOrderDto.of(groupOrder, imageUrl);
                 })
                 .collect(Collectors.toList());
     }
