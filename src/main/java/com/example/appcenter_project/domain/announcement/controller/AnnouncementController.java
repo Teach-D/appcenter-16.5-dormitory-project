@@ -4,6 +4,7 @@ import com.example.appcenter_project.common.file.dto.AttachedFileDto;
 import com.example.appcenter_project.domain.announcement.dto.request.RequestAnnouncementDto;
 import com.example.appcenter_project.domain.announcement.dto.response.ResponseAnnouncementDetailDto;
 import com.example.appcenter_project.domain.announcement.dto.response.ResponseAnnouncementDto;
+import com.example.appcenter_project.domain.announcement.service.AnnouncementFileService;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import com.example.appcenter_project.domain.announcement.service.AnnouncementService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,9 +30,9 @@ import static org.springframework.http.HttpStatus.OK;
 public class AnnouncementController implements AnnouncementApiSpecification {
 
     private final AnnouncementService announcementService;
+    private final AnnouncementFileService announcementFileService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Override
     public ResponseEntity<Void> saveAnnouncement(
             @AuthenticationPrincipal CustomUserDetails user,
             @Valid @RequestPart("requestAnnouncementDto") RequestAnnouncementDto requestAnnouncementDto,
@@ -40,25 +41,17 @@ public class AnnouncementController implements AnnouncementApiSpecification {
         return ResponseEntity.status(CREATED).build();
     }
 
-    @GetMapping
-    @Override
-    public ResponseEntity<List<ResponseAnnouncementDto>> findAllAnnouncements() {
-        return ResponseEntity.status(OK).body(announcementService.findAllAnnouncements());
-    }
-
     @GetMapping("/{announcementId}")
-    @Override
     public ResponseEntity<ResponseAnnouncementDetailDto> findAnnouncement(@PathVariable Long announcementId) {
         return ResponseEntity.status(OK).body(announcementService.findAnnouncement(announcementId));
     }
 
     @GetMapping("/{announcementId}/image")
-    @Override
     public ResponseEntity<List<AttachedFileDto>> findAnnouncementFile(
             @PathVariable Long announcementId,
             HttpServletRequest request) {
         try {
-            List<AttachedFileDto> fileDtos = announcementService.findAttachedFileByAnnouncementId(announcementId, request);
+            List<AttachedFileDto> fileDtos = announcementFileService.findAttachedFileByAnnouncementId(announcementId, request);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_TYPE, "application/json")
                     .body(fileDtos);
@@ -68,8 +61,12 @@ public class AnnouncementController implements AnnouncementApiSpecification {
         }
     }
 
+    @GetMapping
+    public ResponseEntity<List<ResponseAnnouncementDto>> findAllAnnouncements() {
+        return ResponseEntity.status(OK).body(announcementService.findAllAnnouncements());
+    }
+
     @PutMapping("/{announcementId}")
-    @Override
     public ResponseEntity<ResponseAnnouncementDto> updateAnnouncement(
             @AuthenticationPrincipal CustomUserDetails user,
             @Valid @RequestBody RequestAnnouncementDto requestAnnouncementDto,
@@ -78,7 +75,6 @@ public class AnnouncementController implements AnnouncementApiSpecification {
     }
 
     @PutMapping(value = "/{announcementId}/with-files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Override
     public ResponseEntity<ResponseAnnouncementDto> updateAnnouncementWithFiles(
             @AuthenticationPrincipal CustomUserDetails user,
             @Valid @RequestPart("requestAnnouncementDto") RequestAnnouncementDto requestAnnouncementDto,
@@ -101,7 +97,6 @@ public class AnnouncementController implements AnnouncementApiSpecification {
     }
 
     @DeleteMapping("/{announcementId}")
-    @Override
     public void deleteAnnouncement(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long announcementId) {
         announcementService.deleteAnnouncement(user.getId(), announcementId);
     }

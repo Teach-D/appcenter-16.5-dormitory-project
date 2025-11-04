@@ -2,6 +2,7 @@ package com.example.appcenter_project.domain.announcement.entity;
 
 import com.example.appcenter_project.common.file.entity.AttachedFile;
 import com.example.appcenter_project.common.file.entity.CrawledAnnouncementFile;
+import com.example.appcenter_project.domain.announcement.dto.request.RequestAnnouncementDto;
 import com.example.appcenter_project.domain.announcement.enums.AnnouncementType;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -9,6 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,6 +32,8 @@ public class CrawledAnnouncement extends Announcement {
     private LocalDate crawledDate;
 
     private String link;
+
+    private boolean isEmergency = false;
 
     @Builder
     public CrawledAnnouncement(Long id, String title, String writer, int viewCount, AnnouncementType announcementType, String number, String category, String content, List<CrawledAnnouncementFile> crawledAnnouncementFiles, LocalDate crawledDate, String link) {
@@ -59,5 +63,18 @@ public class CrawledAnnouncement extends Announcement {
 
     public void updateViewCount(int viewCount) {
         this.viewCount = viewCount;
+    }
+
+    @Override
+    public LocalDateTime getSortDate() {
+        return crawledDate.atStartOfDay();
+    }
+
+    @Override
+    public void update(RequestAnnouncementDto requestAnnouncementDto) {
+        this.title = requestAnnouncementDto.getTitle();
+        this.writer = requestAnnouncementDto.getWriter();
+        this.content = requestAnnouncementDto.getContent();
+        this.isEmergency = requestAnnouncementDto.getIsEmergency();
     }
 }

@@ -36,7 +36,7 @@ public class ResponseAnnouncementDto {
 
     private String announcementType;
 
-    public static ResponseAnnouncementDto entityToDto(Announcement announcement) {
+    public static ResponseAnnouncementDto from(Announcement announcement) {
 
         if (announcement instanceof ManualAnnouncement) {
             ManualAnnouncement manualAnnouncement = (ManualAnnouncement) announcement;

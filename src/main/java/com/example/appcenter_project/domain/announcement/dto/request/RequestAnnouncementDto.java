@@ -12,7 +12,7 @@ public class RequestAnnouncementDto {
     private String content;
     private Boolean isEmergency;
 
-    public static ManualAnnouncement dtoToEntity(RequestAnnouncementDto requestAnnouncementDto, AnnouncementType announcementType) {
+    public static ManualAnnouncement of(RequestAnnouncementDto requestAnnouncementDto, AnnouncementType announcementType) {
         return ManualAnnouncement.builder()
                 .title(requestAnnouncementDto.getTitle())
                 .writer(requestAnnouncementDto.getWriter())

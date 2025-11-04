@@ -2,12 +2,14 @@ package com.example.appcenter_project.domain.announcement.entity;
 
 import com.example.appcenter_project.common.BaseTimeEntity;
 import com.example.appcenter_project.common.file.entity.AttachedFile;
+import com.example.appcenter_project.domain.announcement.dto.request.RequestAnnouncementDto;
 import com.example.appcenter_project.domain.announcement.enums.AnnouncementType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -15,7 +17,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
-public class Announcement extends BaseTimeEntity {
+public abstract class Announcement extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,4 +36,8 @@ public class Announcement extends BaseTimeEntity {
         this.viewCount = viewCount;
         this.announcementType = announcementType;
     }
+
+    public abstract LocalDateTime getSortDate();
+
+    public abstract void update(RequestAnnouncementDto requestAnnouncementDto);
 }
