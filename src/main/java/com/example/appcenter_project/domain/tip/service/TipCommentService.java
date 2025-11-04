@@ -14,9 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import static com.example.appcenter_project.global.exception.ErrorCode.*;
 
 @Service
@@ -28,33 +25,15 @@ public class TipCommentService {
     private final UserRepository userRepository;
     private final TipRepository tipRepository;
 
+    // ========== Public Methods ========== //
+
     public ResponseTipCommentDto saveTipComment(Long userId, RequestTipCommentDto requestTipCommentDto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
         Tip tip = tipRepository.findById(requestTipCommentDto.getTipId())
                 .orElseThrow(() -> new CustomException(TIP_NOT_FOUND));
 
-        TipComment tipComment;
-
-        if (requestTipCommentDto.getParentCommentId() == null) {
-            tipComment = TipComment.builder()
-                    .reply(requestTipCommentDto.getReply())
-                    .tip(tip)
-                    .user(user)
-                    .build();
-            tipComment.setParentTipCommentNull();
-        } else {
-            TipComment parentTipComment = tipCommentRepository.findById(requestTipCommentDto.getParentCommentId())
-                    .orElseThrow(() -> new CustomException(TIP_COMMENT_NOT_FOUND));
-            tipComment = TipComment.builder()
-                    .reply(requestTipCommentDto.getReply())
-                    .tip(tip)
-                    .user(user)
-                    .parentTipComment(parentTipComment)
-                    .build();
-            parentTipComment.addChildTipComments(tipComment);
-        }
-
+        TipComment tipComment = createTimeComment(requestTipCommentDto, tip, user);
         tipCommentRepository.save(tipComment);
 
         tip.plusTipCommentCount();
@@ -62,35 +41,30 @@ public class TipCommentService {
         return ResponseTipCommentDto.entityToDto(tipComment, user);
     }
 
-    public List<ResponseTipCommentDto> findTipComment(Long userId, Long tipId) {
-        List<ResponseTipCommentDto> responseTipCommentDtoList = new ArrayList<>();
-        List<TipComment> tipCommentList = tipCommentRepository.findByTip_IdAndParentTipCommentIsNull(tipId);
-
-        for (TipComment tipComment : tipCommentList) {
-            List<ResponseTipCommentDto> childResponseComments = new ArrayList<>();
-            for (TipComment child : tipComment.getChildTipComments()) {
-                childResponseComments.add(ResponseTipCommentDto.builder()
-                        .tipCommentId(child.getId())
-                        .userId(userId)
-                        .reply(child.getReply())
-                        .build());
-            }
-            responseTipCommentDtoList.add(ResponseTipCommentDto.builder()
-                    .tipCommentId(tipComment.getId())
-                    .userId(userId)
-                    .reply(tipComment.getReply())
-                    .childTipCommentList(childResponseComments)
-                    .build());
-        }
-
-        return responseTipCommentDtoList;
-    }
-
     public void deleteTipComment(Long userId, Long tipCommentId) {
         TipComment tipComment = tipCommentRepository.findByIdAndUserId(tipCommentId, userId).orElseThrow(() -> new CustomException(TIP_COMMENT_NOT_OWNED_BY_USER));
-        Tip tip = tipComment.getTip();
 
-        tipComment.updateIsDeleted();
-        tip.minusTipCommentCount();
+        tipComment.changeAsDeleted();
+        tipComment.getTip().minusTipCommentCount();
+    }
+
+    // ========== Private Methods ========== //
+
+    private TipComment createTimeComment(RequestTipCommentDto requestTipCommentDto, Tip tip, User user) {
+        if (isParentComment(requestTipCommentDto)) {
+            return TipComment.createParentComment(requestTipCommentDto.getReply(), tip, user);
+        }
+
+        TipComment parentTipComment = findParentComment(requestTipCommentDto);
+        return TipComment.createChildComment(requestTipCommentDto.getReply(), tip, user, parentTipComment);
+    }
+
+    private static boolean isParentComment(RequestTipCommentDto requestTipCommentDto) {
+        return requestTipCommentDto.getParentCommentId() == null;
+    }
+
+    private TipComment findParentComment(RequestTipCommentDto requestTipCommentDto) {
+        return tipCommentRepository.findById(requestTipCommentDto.getParentCommentId())
+                .orElseThrow(() -> new CustomException(TIP_COMMENT_NOT_FOUND));
     }
 }

@@ -1,14 +1,14 @@
 package com.example.appcenter_project.domain.tip.service;
 
-import com.example.appcenter_project.common.image.entity.Image;
-import com.example.appcenter_project.common.image.enums.ImageType;
-import com.example.appcenter_project.common.image.service.ImageService;
 import com.example.appcenter_project.domain.tip.dto.response.ResponseTipDto;
+import com.example.appcenter_project.common.image.entity.Image;
 import com.example.appcenter_project.domain.tip.entity.TipLike;
 import com.example.appcenter_project.domain.tip.entity.Tip;
+import com.example.appcenter_project.common.image.enums.ImageType;
 import com.example.appcenter_project.common.image.repository.ImageRepository;
 import com.example.appcenter_project.domain.tip.repository.TipLikeRepository;
 import com.example.appcenter_project.domain.tip.repository.TipRepository;
+import com.example.appcenter_project.common.image.service.ImageService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,7 +34,7 @@ public class TipQueryService {
      * Tip + Image 최적화 조회
      * N+1 문제 해결을 위한 전용 서비스
      */
-    public List<ResponseTipDto> findTipDtosWithImages(Long userId, HttpServletRequest request) {
+    public List<ResponseTipDto> findTipsByUser(Long userId, HttpServletRequest request) {
         List<Tip> tips = tipRepository.findByUserId(userId);
 
         if (tips.isEmpty()) {
@@ -55,7 +55,7 @@ public class TipQueryService {
                         imageUrl = imageService.getImageUrl(ImageType.TIP, image, request);
                     }
 
-                    return ResponseTipDto.entityToDto(tip, imageUrl);
+                    return ResponseTipDto.from(tip, imageUrl);
                 })
                 .collect(Collectors.toList());
     }
@@ -64,7 +64,7 @@ public class TipQueryService {
      * TipLike + Tip + Image 최적화 조회
      * N+1 문제 해결을 위한 전용 서비스
      */
-    public List<ResponseTipDto> findTipLikeDtosWithImages(Long userId, HttpServletRequest request) {
+    public List<ResponseTipDto> findLikedByUser(Long userId, HttpServletRequest request) {
         List<TipLike> tipLikes = tipLikeRepository.findByUserIdWithTip(userId);
         List<Tip> tips = tipLikes.stream().map(TipLike::getTip).toList();
 
@@ -86,7 +86,7 @@ public class TipQueryService {
                         imageUrl = imageService.getImageUrl(ImageType.TIP, image, request);
                     }
 
-                    return ResponseTipDto.entityToDto(tip, imageUrl);
+                    return ResponseTipDto.from(tip, imageUrl);
                 })
                 .collect(Collectors.toList());
     }

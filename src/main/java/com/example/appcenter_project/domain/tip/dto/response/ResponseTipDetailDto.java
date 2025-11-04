@@ -41,6 +41,17 @@ public class ResponseTipDetailDto {
                 .build();
     }
 
+    public static ResponseTipDetailDto from(Tip tip) {
+        return ResponseTipDetailDto.builder()
+                .id(tip.getId())
+                .title(tip.getTitle())
+                .content(tip.getContent())
+                .tipLikeCount(tip.getTipLike())
+                .createDate(String.valueOf(tip.getCreatedDate()))
+                .build();
+
+    }
+
 
     public void updateTipCommentDtoList(List<ResponseTipCommentDto> topLevelComments) {
         this.tipCommentDtoList = topLevelComments;

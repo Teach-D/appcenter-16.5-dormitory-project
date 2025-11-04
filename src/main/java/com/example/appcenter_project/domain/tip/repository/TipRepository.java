@@ -8,5 +8,8 @@ import java.util.Optional;
 
 public interface TipRepository extends JpaRepository<Tip, Long> {
     Optional<Tip> findByIdAndUserId(Long id, Long userId);
+    List<Tip> findAllByOrderByIdDesc();
     List<Tip> findByUserId(Long userId);
+    List<Long> findAllTipIds();
+    boolean existsByIdAndUserId(Long tipId, Long userId);
 }

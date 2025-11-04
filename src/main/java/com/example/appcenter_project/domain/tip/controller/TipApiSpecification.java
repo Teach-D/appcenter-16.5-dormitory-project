@@ -35,7 +35,7 @@ public interface TipApiSpecification {
                     @ApiResponse(responseCode = "404", description = "회원가입하지 않은 사용자입니다.")
             }
     )
-    public ResponseEntity<Void> saveTip(
+    ResponseEntity<Void> saveTip(
             @AuthenticationPrincipal CustomUserDetails user,
             @Valid @RequestPart("requestTipDto")
             @Parameter(description = "팁 게시글 등록 정보", required = true) RequestTipDto requestTipDto,
@@ -56,7 +56,7 @@ public interface TipApiSpecification {
                     )
             }
     )
-    public ResponseEntity<List<ResponseTipDto>> findAllTips();
+    ResponseEntity<List<ResponseTipDto>> findAllTips();
 
     @Operation(
             summary = "일일 랜덤 팁 게시글 3개 조회",
@@ -77,7 +77,7 @@ public interface TipApiSpecification {
                     )
             }
     )
-    public ResponseEntity<List<ResponseTipDto>> findDailyRandomTips();
+    ResponseEntity<List<ResponseTipDto>> findDailyRandomTips();
 
     @Operation(
             summary = "특정 팁 게시글 상세 조회",
@@ -91,56 +91,12 @@ public interface TipApiSpecification {
                     @ApiResponse(responseCode = "404", description = "존재하지 않는 팁 게시글 ID입니다.", content = @Content(examples = {}))
             }
     )
-    public ResponseEntity<ResponseTipDetailDto> findTip(
+    ResponseEntity<ResponseTipDetailDto> findTip(
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable
             @Parameter(description = "팁 게시글 ID", required = true, example = "1") Long tipId,
             HttpServletRequest request
     );
-
-/*
-    @Operation(
-            summary = "특정 팁 게시글의 이미지 메타정보 조회",
-            description = "팁 게시글 ID로 해당 게시글의 이미지 메타데이터 목록을 조회합니다.",
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "팁 게시글 이미지 메타정보 조회 성공",
-                            content = @Content(
-                                    mediaType = "application/json",
-                                    array = @ArraySchema(schema = @Schema(implementation = TipImageDto.class))
-                            )
-                    ),
-                    @ApiResponse(responseCode = "404",
-                            description = """
-                            다음 중 하나일 수 있습니다:
-                            - 존재하지 않는 팁 게시글 ID입니다. (TIP_NOT_FOUND)
-                            - 존재하지 않는 이미지 파일입니다. (IMAGE_NOT_FOUND)
-                            """,
-                            content = @Content(examples = {})
-                    )
-            }
-    )
-    public ResponseEntity<List<TipImageDto>> getTipImages(
-            @PathVariable
-            @Parameter(description = "팁 게시글 ID", required = true, example = "1") Long tipId);
-
-    @Operation(
-            summary = "팁 게시글 이미지 파일 조회",
-            description = "파일명으로 실제 이미지 파일을 응답합니다.",
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "이미지 파일 조회 성공",
-                            content = @Content(mediaType = "image/*")
-                    ),
-                    @ApiResponse(responseCode = "404", description = "존재하지 않는 이미지 파일입니다.", content = @Content(examples = {}))
-            }
-    )
-    public ResponseEntity<Resource> viewImage(
-            @RequestParam
-            @Parameter(description = "이미지 파일명", required = true, example = "uuid_image.jpg") String filename);
-*/
 
     @Operation(
             summary = "팁 게시글 좋아요",
@@ -166,7 +122,7 @@ public interface TipApiSpecification {
                     )
             }
     )
-    public ResponseEntity<Integer> likePlusTip(
+    ResponseEntity<Integer> likeTip(
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable
             @Parameter(description = "팁 게시글 ID", required = true, example = "1") Long tipId);
@@ -195,7 +151,7 @@ public interface TipApiSpecification {
                     )
             }
     )
-    public ResponseEntity<Integer> unlikePlusTip(
+    ResponseEntity<Integer> unlikeTip(
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable
             @Parameter(description = "팁 게시글 ID", required = true, example = "1") Long tipId);
@@ -210,7 +166,7 @@ public interface TipApiSpecification {
                     @ApiResponse(responseCode = "404", description = "존재하지 않는 팁 게시글입니다.")
             }
     )
-    public ResponseEntity<Void> updateTip(
+    ResponseEntity<Void> updateTip(
             @AuthenticationPrincipal CustomUserDetails user,
             @Valid @RequestPart
             @Parameter(description = "수정할 팁 게시글 정보", required = true) RequestTipDto requestTipDto,
@@ -234,7 +190,7 @@ public interface TipApiSpecification {
                     )
             }
     )
-    public ResponseEntity<Void> deleteTip(
+    ResponseEntity<Void> deleteTip(
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable
             @Parameter(description = "팁 게시글 ID", required = true, example = "1") Long tipId);
@@ -257,7 +213,7 @@ public interface TipApiSpecification {
                     )
             }
     )
-    public ResponseEntity<List<ImageLinkDto>> findTipImagesByTipId(
+    ResponseEntity<List<ImageLinkDto>> findTipImages(
             @PathVariable
             @Parameter(description = "팁 게시글 ID", required = true, example = "1") Long tipId,
             HttpServletRequest request);
@@ -277,7 +233,7 @@ public interface TipApiSpecification {
                     )
             }
     )
-    public ResponseEntity<Void> deleteTipImages(
+    ResponseEntity<Void> deleteTipImages(
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable
             @Parameter(description = "팁 게시글 ID", required = true, example = "1") Long tipId);

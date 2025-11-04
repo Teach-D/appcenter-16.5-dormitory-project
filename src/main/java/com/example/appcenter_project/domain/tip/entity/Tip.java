@@ -1,7 +1,7 @@
 package com.example.appcenter_project.domain.tip.entity;
 
-import com.example.appcenter_project.common.BaseTimeEntity;
 import com.example.appcenter_project.domain.tip.dto.request.RequestTipDto;
+import com.example.appcenter_project.common.BaseTimeEntity;
 import com.example.appcenter_project.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -47,17 +47,29 @@ public class Tip extends BaseTimeEntity {
         this.tipCommentCount = 0;
     }
 
-    public Integer plusLike() {
+    public static Tip createTip(String title, String content, User user) {
+        return Tip.builder()
+                .title(title)
+                .content(content)
+                .user(user)
+                .build();
+    }
+
+    public Integer increaseLike() {
         return this.tipLike += 1;
+    }
+
+    public Integer decreaseLike() {
+        if (this.tipLike > 0) {
+            this.tipLike -= 1;
+        }
+
+        return this.tipLike;
     }
 
     public void update(RequestTipDto requestTipDto) {
         this.title = requestTipDto.getTitle();
         this.content = requestTipDto.getContent();
-    }
-
-    public Integer minusLike() {
-        return this.tipLike -= 1;
     }
 
     public void plusTipCommentCount() {
@@ -66,5 +78,10 @@ public class Tip extends BaseTimeEntity {
 
     public void minusTipCommentCount() {
         this.tipCommentCount -= 1;
+    }
+
+    public boolean isLikedBy(User user) {
+        return this.tipLikeList.stream()
+                .anyMatch(tipLike -> tipLike.getUser().equals(user));
     }
 }

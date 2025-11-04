@@ -38,7 +38,7 @@ public interface TipCommentApiSpecification {
                     )
             }
     )
-    public ResponseEntity<ResponseTipCommentDto> saveTipComment(
+    ResponseEntity<ResponseTipCommentDto> saveTipComment(
             @AuthenticationPrincipal CustomUserDetails user,
             @Valid @RequestBody
             @Parameter(description = "댓글 작성 정보", required = true) RequestTipCommentDto requestTipCommentDto);
@@ -52,7 +52,7 @@ public interface TipCommentApiSpecification {
                     @ApiResponse(responseCode = "404", description = "존재하지 않는 댓글이거나 삭제 권한이 없습니다.")
             }
     )
-    public ResponseEntity<Void> deleteTipComment(
+    ResponseEntity<Void> deleteTipComment(
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable
             @Parameter(description = "삭제할 댓글 ID", required = true, example = "1") Long tipCommentId);
