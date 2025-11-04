@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.example.appcenter_project.mapper.GroupOrderMapper">
+<mapper namespace="com.example.appcenter_project.domain.groupOrder.mapper.GroupOrderMapper">
 
-    <resultMap id="groupOrderResultMap" type="com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDto">
+    <resultMap id="groupOrderResultMap" type="com.example.appcenter_project.domain.groupOrder.dto.response.ResponseGroupOrderDto">
         <id property="boardId" column="id"/>
         <result property="title" column="title"/>
         <result property="type" column="type"/>
         <result property="price" column="price" javaType="int"/>
-        <result property="groupOrderType" column="group_order_type" javaType="com.example.appcenter_project.enums.groupOrder.GroupOrderType"/>
+        <result property="groupOrderType" column="group_order_type" javaType="com.example.appcenter_project.domain.groupOrder.enums.GroupOrderType"/>
         <result property="deadline" column="deadline" javaType="string"/>
         <result property="isRecruitmentComplete" column="recruitment_complete" javaType="boolean"/>
         <result property="createDate" column="create_date" javaType="java.time.LocalDateTime"/>
@@ -109,7 +109,7 @@
         WHERE go.user_id = #{userId}
     </select>
 
-    <resultMap id="groupOrderDetailMap" type="com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderDetailDto">
+    <resultMap id="groupOrderDetailMap" type="com.example.appcenter_project.domain.groupOrder.dto.response.ResponseGroupOrderDetailDto">
         <id property="id" column="id"/>
         <result property="title" column="title"/>
         <result property="deadline" column="deadline"/>
@@ -129,7 +129,7 @@
 
         <!-- 댓글 -->
         <collection property="groupOrderCommentDtoList"
-                    ofType="com.example.appcenter_project.dto.response.groupOrder.ResponseGroupOrderCommentDto"
+                    ofType="com.example.appcenter_project.domain.groupOrder.dto.response.ResponseGroupOrderCommentDto"
                     javaType="java.util.List">
             <id property="groupOrderCommentId" column="group_order_comment_id"/>
             <result property="userId" column="user_id"/>
