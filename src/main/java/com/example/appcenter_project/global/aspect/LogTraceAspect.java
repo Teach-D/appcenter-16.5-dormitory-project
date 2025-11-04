@@ -18,11 +18,11 @@ public class LogTraceAspect {
     private final LogTrace logTrace;
 
     /**
-     * controller용 aop
+     * controller용 aop (도메인 중심 아키텍처)
      * userId를 begin에 파라미터로 포함
      * 모든 controller의 메서드는 CustomUserDetails가 첫번째 파라미터여야 함
      */
-    @Around("execution(* com.example.appcenter_project.controller..*(..))")
+    @Around("execution(* com.example.appcenter_project.domain..controller..*(..))")
     public Object aroundController(ProceedingJoinPoint joinPoint) throws Throwable {
         String methodName = joinPoint.getSignature().getName();
         String className = joinPoint.getSignature().getDeclaringType().getSimpleName();
@@ -44,8 +44,11 @@ public class LogTraceAspect {
 
     }
 
-    // service용 aop
-    @Around("execution(* com.example.appcenter_project.service..*(..)) &&" +
+    /**
+     * service용 aop (도메인 중심 아키텍처)
+     * AsyncViewCountService의 flushViewCountDB 메서드는 제외
+     */
+    @Around("execution(* com.example.appcenter_project.domain..service..*(..)) &&" +
             "!execution(* com.example.appcenter_project.domain.groupOrder.service.AsyncViewCountService.flushViewCountDB())"
     )
     public Object aroundService(ProceedingJoinPoint joinPoint) throws Throwable {
@@ -68,8 +71,11 @@ public class LogTraceAspect {
 
     }
 
-    // repository용 aop (CustomUserDetailsService에서 호출된 경우 제외)
-    @Around("execution(* com.example.appcenter_project.repository..*(..)) && !within(com.example.appcenter_project.global.security.CustomUserDetailsService)")
+    /**
+     * repository용 aop (도메인 중심 아키텍처)
+     * CustomUserDetailsService에서 호출된 경우 제외
+     */
+    @Around("execution(* com.example.appcenter_project.domain..repository..*(..)) && !within(com.example.appcenter_project.global.security.CustomUserDetailsService)")
     public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
         String methodName = joinPoint.getSignature().getName();
         
@@ -154,6 +160,3 @@ public class LogTraceAspect {
         return customUserDetails.getId().toString();
     }
 }
-
-
-
