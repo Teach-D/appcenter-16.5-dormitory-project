@@ -1,8 +1,5 @@
 package com.example.appcenter_project.domain.groupOrder.service;
 
-import com.example.appcenter_project.common.image.entity.Image;
-import com.example.appcenter_project.common.image.enums.ImageType;
-import com.example.appcenter_project.common.image.service.ImageService;
 import com.example.appcenter_project.domain.groupOrder.dto.response.ResponseGroupOrderCommentDto;
 import com.example.appcenter_project.domain.groupOrder.dto.response.ResponseGroupOrderDetailDto;
 import com.example.appcenter_project.domain.groupOrder.dto.response.ResponseGroupOrderDto;
@@ -12,23 +9,18 @@ import com.example.appcenter_project.domain.groupOrder.repository.*;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.common.image.dto.ImageLinkDto;
 import com.example.appcenter_project.domain.groupOrder.dto.request.RequestGroupOrderDto;
+import com.example.appcenter_project.common.image.entity.Image;
 import com.example.appcenter_project.domain.groupOrder.entity.GroupOrderLike;
-import com.example.appcenter_project.domain.notification.entity.Notification;
-import com.example.appcenter_project.domain.notification.entity.UserNotification;
-import com.example.appcenter_project.shared.enums.ApiType;
+import com.example.appcenter_project.global.scheduler.MealTimeChecker;
 import com.example.appcenter_project.domain.groupOrder.enums.GroupOrderSort;
 import com.example.appcenter_project.domain.groupOrder.enums.GroupOrderType;
-import com.example.appcenter_project.domain.user.enums.NotificationType;
+import com.example.appcenter_project.common.image.enums.ImageType;
 import com.example.appcenter_project.global.exception.CustomException;
-import com.example.appcenter_project.domain.groupOrder.mapper.GroupOrderMapper;
 import com.example.appcenter_project.common.image.repository.ImageRepository;
 import com.example.appcenter_project.domain.groupOrder.repository.GroupOrderLikeRepository;
-import com.example.appcenter_project.domain.notification.repository.NotificationRepository;
-import com.example.appcenter_project.domain.notification.repository.UserNotificationRepository;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.global.security.CustomUserDetails;
-import com.example.appcenter_project.domain.fcm.service.FcmMessageService;
-import com.example.appcenter_project.global.scheduler.MealTimeChecker;
+import com.example.appcenter_project.common.image.service.ImageService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.IntStream;
 
 import static com.example.appcenter_project.global.exception.ErrorCode.*;
 
@@ -50,329 +43,47 @@ public class GroupOrderService {
     private final GroupOrderRepository groupOrderRepository;
     private final UserRepository userRepository;
     private final GroupOrderLikeRepository groupOrderLikeRepository;
-    private final GroupOrderChatRoomRepository groupOrderChatRoomRepository;
-    private final UserGroupOrderChatRoomRepository userGroupOrderChatRoomRepository;
     private final GroupOrderCommentRepository groupOrderCommentRepository;
     private final ImageRepository imageRepository;
-    private final GroupOrderMapper groupOrderMapper;
     private final GroupOrderPopularSearchKeywordRepository groupOrderPopularSearchKeywordRepository;
     private final ImageService imageService;
     private final AsyncViewCountService asyncViewCountService;
     private final MealTimeChecker mealTimeChecker;
-    private final FcmMessageService fcmMessageService;
-    private final NotificationRepository notificationRepository;
-    private final UserNotificationRepository userNotificationRepository;
     private final GroupOrderNotificationService groupOrderNotificationService;
 
+    private static final int TOP_SEARCH_KEYWORD_COUNT = 10;
 
-    public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto) {
-        // GroupOrder 저장
-        User user = userRepository.findById(userId).orElseThrow();
-        GroupOrder groupOrder = RequestGroupOrderDto.dtoToEntity(requestGroupOrderDto, user);
+    // ========== Public Methods ========== //
 
-        user.getGroupOrderList().add(groupOrder);
-
-        groupOrderRepository.save(groupOrder);
-
-        // GroupOrderChatRoom 저장
-        GroupOrderChatRoom groupOrderChatRoom = new GroupOrderChatRoom(groupOrder.getTitle());
-        UserGroupOrderChatRoom userGroupOrderChatRoom = UserGroupOrderChatRoom.builder()
-                .groupOrderChatRoom(groupOrderChatRoom)
-                .user(user)
-                .build();
-        // User - UserGroupOrderChatRoom 1대 N 매핑
-        user.getUserGroupOrderChatRoomList().add(userGroupOrderChatRoom);
-
-        // GroupOrder - GroupOrderChatRoom 1대 1 양방향 매핑
-        groupOrder.updateGroupOrderChatRoom(groupOrderChatRoom);
-        groupOrderChatRoom.updateGroupOrder(groupOrder);
-
-        groupOrderChatRoomRepository.save(groupOrderChatRoom);
-        userGroupOrderChatRoomRepository.save(userGroupOrderChatRoom);
-    }
-
-    public ResponseGroupOrderDetailDto findGroupOrderById(CustomUserDetails jwtUser, Long groupOrderId, HttpServletRequest request) {
-        if (mealTimeChecker.isMealTime()) {
-            asyncViewCountService.incrementViewCount(groupOrderId);
-        } else {
-            GroupOrder groupOrder = groupOrderRepository.findByIdWithLock(groupOrderId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
-            groupOrder.plusViewCount();
-        }
-        return getResponseGroupOrderDetailDto(jwtUser, groupOrderId, request);
-    }
-
-    private ResponseGroupOrderDetailDto getResponseGroupOrderDetailDto(CustomUserDetails jwtUser, Long groupOrderId, HttpServletRequest request) {
-        GroupOrder groupOrder = groupOrderRepository.findByIdWithLock(groupOrderId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
-
-        // 마감시간 지난 공동구매 isRecruitmentComplete true로 변경
-        LocalDateTime now = LocalDateTime.now();
-
-        if(!groupOrder.isRecruitmentComplete() && now.isAfter(groupOrder.getDeadline())) {
-            groupOrder.updateRecruitmentComplete(true);
-        }
-
-        List<ResponseGroupOrderCommentDto> flatComments = new ArrayList<>();
-
-        for (GroupOrderComment groupOrderComment : groupOrder.getGroupOrderCommentList()) {
-            flatComments.add(ResponseGroupOrderCommentDto.entityToDto(groupOrderComment));
-        }
-
-/*
-
-        ResponseGroupOrderDetailDto flatDto = groupOrderMapper.findGroupOrderById(groupOrderId);
-        if (flatDto == null) {
-            throw new CustomException(GROUP_ORDER_NOT_FOUND);
-        }
-
-        List<ResponseGroupOrderCommentDto> flatComments = flatDto.getGroupOrderCommentDtoList();
-
-*/
-
-        Map<Long, ResponseGroupOrderCommentDto> parentMap = new LinkedHashMap<>();
-        List<ResponseGroupOrderCommentDto> topLevelComments = new ArrayList<>();
-
-        for (ResponseGroupOrderCommentDto comment : flatComments) {
-            // 삭제된 댓글이 아닐 때만 이미지 경로 업데이트
-            if (Boolean.TRUE.equals(comment.getIsDeleted())) {
-                comment.updateCommentAuthorImagePath(null);
-            } else {
-                comment.updateCommentAuthorImagePath(imageService.findStaticImageUrl(ImageType.USER, comment.getUserId(), request));
-            }
-
-            // 계층 구조 구성
-            if (comment.getParentId() == null) {
-                comment.updateChildGroupOrderCommentList(new ArrayList<>());
-                parentMap.put(comment.getGroupOrderCommentId(), comment);
-                topLevelComments.add(comment);
-            } else {
-                ResponseGroupOrderCommentDto parent = parentMap.get(comment.getParentId());
-                if (parent != null) {
-                    if (parent.getChildGroupOrderCommentList() == null) {
-                        parent.updateChildGroupOrderCommentList(new ArrayList<>());
-                    }
-                    parent.getChildGroupOrderCommentList().add(comment);
-                }
-            }
-        }
-
-        ResponseGroupOrderDetailDto flatDto = ResponseGroupOrderDetailDto.entityToDto(groupOrder, topLevelComments);
-
-        // 해당 게시글의 작성자인지 검증
-        if (jwtUser != null) {
-            User currentUser = userRepository.findById(jwtUser.getId()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-            if (groupOrder.getUser().getId() == currentUser.getId()) {
-                flatDto.updateIsMyPost(true);
-            }
-        }
-
-        // 해당 글을 좋아요 눌렀는지 검증
-        if (jwtUser != null) {
-            User currentUser = userRepository.findById(jwtUser.getId()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-            if (groupOrderLikeRepository.existsByUserIdAndGroupOrderId(currentUser.getId(), groupOrderId)) {
-                flatDto.updateIsCheckLikeCurrentUser(true);
-            } else {
-                flatDto.updateIsCheckLikeCurrentUser(false);
-            }
-        }
-
-        User findUser = groupOrder.getUser();
-
-        String userImageUrl = getRepresentativeUserImageUrl(request, findUser);
-        flatDto.updateAuthorImagePath(userImageUrl);
-/*
-        // 게시글 작성자의 평점 조회
-        Float averageRating = groupOrder.getUser().getAverageRating();
-        flatDto.updateAuthorRating(averageRating);
-
-*/
-        return flatDto;
-    }
-
-    private String getRepresentativeUserImageUrl(HttpServletRequest request, User findUser) {
-        List<ImageLinkDto> imageLinkDtos = imageService.findImages(ImageType.USER, findUser.getId(), request);
-
-        if (imageLinkDtos.isEmpty()) {
-            return null;
-        }
-
-        return imageLinkDtos.get(0).getImageUrl();
-    }
-
-
-    // 이미지와 함께 공동구매 생성
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto, List<MultipartFile> images) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
-        GroupOrder groupOrder = RequestGroupOrderDto.dtoToEntity(requestGroupOrderDto, user);
-
-        user.getGroupOrderList().add(groupOrder);
-
-        groupOrderRepository.save(groupOrder);
-
+        GroupOrder groupOrder = createGroupOrder(requestGroupOrderDto, user);
         imageService.saveImages(ImageType.GROUP_ORDER, groupOrder.getId(), images);
 
-        groupOrderNotificationService.saveAndSendGroupOrderNotification(groupOrder);
+        groupOrderNotificationService.sendNotifications(groupOrder);
     }
 
-    public List<ImageLinkDto> findGroupOrderImageUrls(Long groupOrderId, HttpServletRequest request) {
-        return imageService.findImages(ImageType.GROUP_ORDER, groupOrderId, request);
-    }
-
-    public List<ResponseGroupOrderDto> findGroupOrders(CustomUserDetails jwtUser, GroupOrderSort sort, GroupOrderType type, String search, HttpServletRequest request) {
-        if (jwtUser != null && search != null) {
-                User user = userRepository.findById(jwtUser.getId())
-                        .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-                user.addSearchLog(search);
-        }
-
-        // todo 전체 조회 로직 필요
-
-
-        // 마감시간 지난 공동구매 isRecruitmentComplete true로 변경
-        List<ResponseGroupOrderDto> responseGroupOrderDtoList = new ArrayList<>();
-        LocalDateTime now = LocalDateTime.now();
-
-        for (GroupOrder groupOrder : groupOrderRepository.findGroupOrdersComplex(sort, type, search)) {
-            if(!groupOrder.isRecruitmentComplete() && now.isAfter(groupOrder.getDeadline())) {
-                groupOrder.updateRecruitmentComplete(true);
-            }
-
-            List<ImageLinkDto> images = imageService.findImages(ImageType.GROUP_ORDER, groupOrder.getId(), request);
-
-            String imagePath = null;
-            if (!images.isEmpty()) {
-                imagePath = images.get(0).getImageUrl();
-            }
-
-            responseGroupOrderDtoList.add(ResponseGroupOrderDto.entityToDto(groupOrder, imagePath));
-        }
-
-        if (sort == GroupOrderSort.LATEST) {
-            Collections.reverse(responseGroupOrderDtoList);
-        }
-
-        return responseGroupOrderDtoList;
-    }
-
-
-    public void updateGroupOrder(Long userId, Long groupOrderId, RequestGroupOrderDto requestGroupOrderDto, List<MultipartFile> images) {
-        GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_OWNED_BY_USER));
-
-/*        if (groupOrderRepository.existsByTitle(requestGroupOrderDto.getTitle())) {
-            throw new CustomException(GROUP_ORDER_TITLE_DUPLICATE);
-        }*/
-
-        if (!(requestGroupOrderDto.getOpenChatLink() == null || requestGroupOrderDto.getOpenChatLink().isEmpty())
-                && !requestGroupOrderDto.getOpenChatLink().equals(groupOrder.getOpenChatLink())) {
-
-            // 좋아요 누른 유저들에게 알림
-            Notification likeNotification = Notification.builder()
-                    .title("좋아요한 공동구매 게시글의 오픈채팅방이 만들어졌어요!")
-                    .body(groupOrder.getTitle())
-                    .notificationType(NotificationType.GROUP_ORDER)
-                    .apiType(ApiType.GROUP_ORDER)
-                    .boardId(groupOrder.getId())
-                    .build();
-
-            notificationRepository.save(likeNotification);
-
-            // 좋아요 누른 유저 ID 수집
-            Set<Long> likedUserIds = new HashSet<>();
-
-            for (GroupOrderLike groupOrderLike : groupOrder.getGroupOrderLikeList()) {
-                User user = groupOrderLike.getUser();
-                likedUserIds.add(user.getId());
-
-                UserNotification userNotification = UserNotification.of(user, likeNotification);
-                userNotificationRepository.save(userNotification);
-
-                fcmMessageService.sendNotification(user, likeNotification.getTitle(), likeNotification.getBody());
-            }
-
-            // 댓글 작성한 유저들에게 알림 (좋아요 누른 유저 제외)
-            Notification commentNotification = Notification.builder()
-                    .title("댓글을 단 공동구매 게시글의 오픈채팅방이 만들어졌어요!")
-                    .body(groupOrder.getTitle())
-                    .notificationType(NotificationType.GROUP_ORDER)
-                    .apiType(ApiType.GROUP_ORDER)
-                    .boardId(groupOrder.getId())
-                    .build();
-
-            notificationRepository.save(commentNotification);
-
-            for (GroupOrderComment groupOrderComment : groupOrder.getGroupOrderCommentList()) {
-                User user = groupOrderComment.getUser();
-
-                // 이미 좋아요로 알림을 받은 유저는 제외
-                if (!likedUserIds.contains(user.getId())) {
-                    UserNotification userNotification = UserNotification.of(user, commentNotification);
-                    userNotificationRepository.save(userNotification);
-
-                    fcmMessageService.sendNotification(user, commentNotification.getTitle(), commentNotification.getBody());
-                }
-            }
-        }
-
-        groupOrder.update(requestGroupOrderDto);
-
-        imageService.updateGroupOrderImages(ImageType.GROUP_ORDER, groupOrderId, images);
-    }
-
-    public void deleteGroupOrder(Long userId, Long groupOrderId) {
-        GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_OWNED_BY_USER));
-        imageService.deleteImages(ImageType.GROUP_ORDER, groupOrderId);
-        groupOrderRepository.delete(groupOrder);
-    }
-
-    public Integer likePlusGroupOrder(Long userId, Long groupOrderId) {
+    public void addRating(Long groupOrderId, Float ratingScore) {
         GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
                 .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-
-        // 좋아요를 누른 유저가 또 좋아요를 할려는 경우 예외처리
-        if (groupOrderLikeRepository.existsByUserAndGroupOrder(user, groupOrder)) {
-            throw new CustomException(ALREADY_GROUP_ORDER_LIKE_USER);
-        }
-
-        GroupOrderLike groupOrderLike = GroupOrderLike.builder()
-                .user(user)
-                .groupOrder(groupOrder)
-                .build();
-
-        groupOrderLikeRepository.save(groupOrderLike);
-
-        // user에 좋아요 정보 추가
-        user.addGroupOrderLike(groupOrderLike);
-
-        groupOrder.getGroupOrderLikeList().add(groupOrderLike);
-
-        return groupOrder.plusLike();
+        groupOrder.getUser().addRating(ratingScore);
     }
 
-    public Integer likeMinusGroupOrder(Long userId, Long groupOrderId) {
+    public ResponseGroupOrderDetailDto findGroupOrder(CustomUserDetails currentUser, Long groupOrderId, HttpServletRequest request) {
+        plusViewCount(groupOrderId);
+
         GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
                 .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        updateExpiredGroupOrder(groupOrder);
 
-        // 좋아요를 누르지 않은 유저가 좋아요 취소를 시도한 경우 예외처리
-        if (!groupOrderLikeRepository.existsByUserAndGroupOrder(user, groupOrder)) {
-            throw new CustomException(GROUP_ORDER_LIKE_NOT_FOUND);
-        }
+        ResponseGroupOrderDetailDto groupOrderDetailDto = createDto(request, groupOrder);
+        checkGroupOrderOwnByCurrentUser(currentUser, groupOrder, groupOrderDetailDto);
+        checkCurrentUserLiked(currentUser, groupOrder, groupOrderDetailDto);
+        addCommentToDto(groupOrder.getId(), request, groupOrderDetailDto);
 
-        GroupOrderLike groupOrderLike = groupOrderLikeRepository.findByUserAndGroupOrder(user, groupOrder)
-                .orElseThrow(() -> new CustomException(GROUP_ORDER_LIKE_NOT_FOUND));
-
-        // user에서 좋아요 정보 제거
-        user.removeGroupOrderLike(groupOrderLike);
-
-        groupOrder.getGroupOrderLikeList().remove(groupOrderLike);
-
-        groupOrderLikeRepository.delete(groupOrderLike);
-
-        return groupOrder.minusLike();
+        return groupOrderDetailDto;
     }
 
 
@@ -382,47 +93,296 @@ public class GroupOrderService {
         return user.getSearchLogs();
     }
 
-    public void addRating(CustomUserDetails user, Long groupOrderId, Float ratingScore) {
-        if (user == null) {
-            throw new CustomException(USER_NOT_FOUND);
+    public List<ResponseGroupOrderPopularSearch> findGroupOrderPopularSearch() {
+        List<GroupOrderPopularSearchKeyword> topKeywords = groupOrderPopularSearchKeywordRepository
+                .findTopKeywords(TOP_SEARCH_KEYWORD_COUNT);
+
+        return createDtoWithRank(topKeywords);
+    }
+
+    public List<ImageLinkDto> findGroupOrderImages(Long groupOrderId, HttpServletRequest request) {
+        return imageService.findImages(ImageType.GROUP_ORDER, groupOrderId, request);
+    }
+
+    public List<ResponseGroupOrderDto> findGroupOrders(CustomUserDetails currentUser, GroupOrderSort sort, GroupOrderType type, String search, HttpServletRequest request) {
+        addUserSearchLog(currentUser, search);
+
+        List<ResponseGroupOrderDto> responseGroupOrderDtoList = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
+
+        for (GroupOrder groupOrder : groupOrderRepository.findGroupOrdersComplex(sort, type, search)) {
+            updateExpiredGroupOrder(groupOrder, now);
+            String imagePath = findRepresentativeImage(request, groupOrder);
+            responseGroupOrderDtoList.add(ResponseGroupOrderDto.of(groupOrder, imagePath));
         }
 
+        return responseGroupOrderDtoList;
+    }
+
+    public Integer likeGroupOrder(Long userId, Long groupOrderId) {
         GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
                 .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
-        groupOrder.getUser().addRating(ratingScore);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+        if (groupOrder.isLikedBy(user)) {
+            throw new CustomException(ALREADY_GROUP_ORDER_LIKE_USER);
+        }
+
+        createGroupOrderLike(user, groupOrder);
+
+        return groupOrder.increaseLike();
+    }
+
+    public Integer unlikeGroupOrder(Long userId, Long groupOrderId) {
+        GroupOrder groupOrder = groupOrderRepository.findById(groupOrderId)
+                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+        if (!groupOrder.isLikedBy(user)) {
+            throw new CustomException(GROUP_ORDER_LIKE_NOT_FOUND);
+        }
+
+        deleteGroupOrderLike(user, groupOrder);
+
+        return groupOrder.decreaseLike();
     }
 
     public void completeGroupOrder(Long userId, Long groupOrderId) {
-        GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+        GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId)
+                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
         groupOrder.updateRecruitmentComplete(true);
     }
 
     public void unCompleteGroupOrder(Long userId, Long groupOrderId) {
-        GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+        GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId)
+                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
         groupOrder.updateRecruitmentComplete(false);
     }
 
-    public List<ResponseGroupOrderPopularSearch> findGroupOrderPopularSearch() {
-        int index = 1;
-        List<ResponseGroupOrderPopularSearch> responseGroupOrderPopularSearchList = new ArrayList<>();
-        List<GroupOrderPopularSearchKeyword> top10Popular = groupOrderPopularSearchKeywordRepository.findTop10ByOrderBySearchCountDesc();
-        for (GroupOrderPopularSearchKeyword groupOrderPopularSearchKeyword : top10Popular) {
-            ResponseGroupOrderPopularSearch responseGroupOrderPopularSearch = new ResponseGroupOrderPopularSearch(index, groupOrderPopularSearchKeyword.getKeyword());
-            responseGroupOrderPopularSearchList.add(responseGroupOrderPopularSearch);
-            index += 1;
+    public void updateGroupOrder(Long userId, Long groupOrderId, RequestGroupOrderDto requestDto, List<MultipartFile> images) {
+        GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId)
+                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_OWNED_BY_USER));
+
+        if (isChangeNewOpenChatLink(requestDto, groupOrder)) {
+            groupOrderNotificationService.sendOpenChatLinkNotification(groupOrder);
         }
 
-        return responseGroupOrderPopularSearchList;
+        groupOrder.update(requestDto);
+
+        imageService.updateGroupOrderImages(ImageType.GROUP_ORDER, groupOrderId, images);
+    }
+
+    public void deleteGroupOrder(Long userId, Long groupOrderId) {
+        GroupOrder groupOrder = groupOrderRepository.findByIdAndUserId(groupOrderId, userId)
+                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_OWNED_BY_USER));
+        imageService.deleteImages(ImageType.GROUP_ORDER, groupOrderId);
+        groupOrderRepository.delete(groupOrder);
     }
 
     public void deleteGroupOrderImage(Long userId, String imageName) {
-        Image image = imageRepository.findByImageName(imageName).orElseThrow(() -> new CustomException(IMAGE_NOT_FOUND));
-        GroupOrder groupOrder = groupOrderRepository.findById(image.getEntityId()).orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+        Image image = imageRepository.findByImageName(imageName)
+                .orElseThrow(() -> new CustomException(IMAGE_NOT_FOUND));
+        GroupOrder groupOrder = groupOrderRepository.findById(image.getEntityId())
+                .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
 
-        if (groupOrder.getUser().getId() != userId) {
+        if (isGroupOrderOwnByUser(userId, groupOrder)) {
             throw new CustomException(IMAGE_UPDATE_NOT_ALLOWED);
         }
 
         imageService.deleteImage(image);
+    }
+
+    // ========== Private Methods ========== //
+
+
+    private GroupOrder createGroupOrder(RequestGroupOrderDto requestGroupOrderDto, User user) {
+        GroupOrder groupOrder = RequestGroupOrderDto.of(requestGroupOrderDto, user);
+        groupOrderRepository.save(groupOrder);
+        return groupOrder;
+    }
+
+    private void plusViewCount(Long groupOrderId) {
+        if (mealTimeChecker.isMealTime()) {
+            asyncViewCountService.incrementViewCount(groupOrderId);
+        } else {
+            GroupOrder groupOrder = groupOrderRepository.findByIdWithLock(groupOrderId)
+                    .orElseThrow(() -> new CustomException(GROUP_ORDER_NOT_FOUND));
+            groupOrder.plusViewCount();
+        }
+    }
+
+    private static void updateExpiredGroupOrder(GroupOrder groupOrder) {
+        LocalDateTime now = LocalDateTime.now();
+        updateExpiredGroupOrder(groupOrder, now);
+    }
+
+    private ResponseGroupOrderDetailDto createDto(HttpServletRequest request, GroupOrder groupOrder) {
+        String writerImageUrl = findRepresentativeUserImageUrl(request, groupOrder.getUser());
+        return ResponseGroupOrderDetailDto.of(groupOrder, writerImageUrl);
+    }
+
+    private String findRepresentativeUserImageUrl(HttpServletRequest request, User findUser) {
+        List<ImageLinkDto> imageLinkDtos = imageService.findImages(ImageType.USER, findUser.getId(), request);
+
+        if (imageLinkDtos.isEmpty()) {
+            return null;
+        }
+
+        return imageLinkDtos.get(0).getImageUrl();
+    }
+
+    private void checkGroupOrderOwnByCurrentUser(CustomUserDetails currentUser, GroupOrder groupOrder, ResponseGroupOrderDetailDto dto) {
+        if (isLogin(currentUser)) {
+            User user = userRepository.findById(currentUser.getId())
+                    .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+            if (isEqualUser(groupOrder.getUser(), user)) {
+                dto.updateIsMyPost(true);
+            }
+        }
+    }
+
+    private static boolean isEqualUser(User writtenUser, User currentUser) {
+        return Objects.equals(writtenUser.getId(), currentUser.getId());
+    }
+
+    private static boolean isLogin(CustomUserDetails currentUser) {
+        return currentUser != null;
+    }
+
+    private void checkCurrentUserLiked(CustomUserDetails currentUser, GroupOrder groupOrder, ResponseGroupOrderDetailDto dto) {
+        if (isLogin(currentUser)) {
+            User user = userRepository.findById(currentUser.getId())
+                    .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+            if (isCurrentUserLiked(groupOrder, user)) {
+                dto.updateIsCheckLikeCurrentUser(true);
+                return;
+            }
+
+            dto.updateIsCheckLikeCurrentUser(false);
+        }
+    }
+
+    private boolean isCurrentUserLiked(GroupOrder groupOrder, User user) {
+        return groupOrderLikeRepository.existsByUserIdAndGroupOrderId(user.getId(), groupOrder.getId());
+    }
+
+    private void addCommentToDto(Long groupOrderId, HttpServletRequest request, ResponseGroupOrderDetailDto dto) {
+        List<ResponseGroupOrderCommentDto> commentDtos = buildCommentHierarchy(groupOrderId, request, dto);
+        dto.updateGroupOrderCommentDtoList(commentDtos);
+    }
+
+    private List<ResponseGroupOrderCommentDto> buildCommentHierarchy(Long groupOrderId, HttpServletRequest request, ResponseGroupOrderDetailDto dto) {
+        List<GroupOrderComment> parentComments = groupOrderCommentRepository
+                .findByGroupOrderIdAndParentGroupOrderCommentIsNull(groupOrderId);
+
+        if (parentComments.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return parentComments.stream()
+                .map(parentComment -> buildCommentDto(parentComment, request))
+                .toList();
+    }
+
+    private ResponseGroupOrderCommentDto buildCommentDto(GroupOrderComment parentComment, HttpServletRequest request) {
+        ResponseGroupOrderCommentDto parentDto = convertCommentToDto(parentComment, request);
+        addChildCommentToParentComment(request, parentComment, parentDto);
+        return parentDto;
+    }
+
+    private void addChildCommentToParentComment(HttpServletRequest request, GroupOrderComment parentComment, ResponseGroupOrderCommentDto parentDto) {
+        List<ResponseGroupOrderCommentDto> childDtos = parentComment.getChildGroupOrderComments().stream()
+                .map(childComment -> convertCommentToDto(childComment, request))
+                .toList();
+        parentDto.updateChildGroupOrderCommentList(childDtos);
+    }
+
+    private ResponseGroupOrderCommentDto convertCommentToDto(GroupOrderComment comment, HttpServletRequest request) {
+        ResponseGroupOrderCommentDto dto = ResponseGroupOrderCommentDto.from(comment);
+
+        if (comment.isDeleted()) {
+            setDeletedCommentInfo(dto);
+        } else {
+            setNotDeletedCommentInfo(comment, request, dto);
+        }
+
+        return dto;
+    }
+
+    private void setNotDeletedCommentInfo(GroupOrderComment comment, HttpServletRequest request, ResponseGroupOrderCommentDto dto) {
+        dto.updateReply(comment.getReply());
+        dto.updateUsername(comment.getUser().getName());
+
+        String writerImageUrl = imageService.findStaticImageUrl(ImageType.USER, comment.getUser().getId(), request);
+        dto.updateCommentAuthorImagePath(writerImageUrl);
+    }
+
+    private void setDeletedCommentInfo(ResponseGroupOrderCommentDto dto) {
+        dto.updateReply("삭제된 메시지입니다.");
+        dto.updateUsername("알 수 없는 사용자");
+        dto.updateCommentAuthorImagePath(null);
+    }
+
+    private static List<ResponseGroupOrderPopularSearch> createDtoWithRank(List<GroupOrderPopularSearchKeyword> topKeywords) {
+        return IntStream.range(0, topKeywords.size())
+                .mapToObj(i -> ResponseGroupOrderPopularSearch.of(i + 1, topKeywords.get(i).getKeyword()))
+                .toList();
+    }
+
+    private void addUserSearchLog(CustomUserDetails currentUser, String search) {
+        if (currentUser != null && search != null) {
+            User user = userRepository.findById(currentUser.getId())
+                    .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+            user.addSearchLog(search);
+        }
+    }
+
+    private static void updateExpiredGroupOrder(GroupOrder groupOrder, LocalDateTime now) {
+        if (isExpired(groupOrder, now)) {
+            groupOrder.updateRecruitmentComplete(true);
+        }
+    }
+
+    private static boolean isExpired(GroupOrder groupOrder, LocalDateTime now) {
+        return !groupOrder.isRecruitmentComplete() && now.isAfter(groupOrder.getDeadline());
+    }
+
+    private String findRepresentativeImage(HttpServletRequest request, GroupOrder groupOrder) {
+        List<ImageLinkDto> images = imageService.findImages(ImageType.GROUP_ORDER, groupOrder.getId(), request);
+
+        String imagePath = null;
+        if (!images.isEmpty()) {
+            imagePath = images.get(0).getImageUrl();
+        }
+        return imagePath;
+    }
+
+    private void createGroupOrderLike(User user, GroupOrder groupOrder) {
+        GroupOrderLike groupOrderLike = GroupOrderLike.builder()
+                .user(user)
+                .groupOrder(groupOrder)
+                .build();
+
+        groupOrderLikeRepository.save(groupOrderLike);
+    }
+
+    private void deleteGroupOrderLike(User user, GroupOrder groupOrder) {
+        GroupOrderLike groupOrderLike = groupOrderLikeRepository.findByUserAndGroupOrder(user, groupOrder)
+                .orElseThrow(() -> new CustomException(GROUP_ORDER_LIKE_NOT_FOUND));
+
+        groupOrderLikeRepository.delete(groupOrderLike);
+    }
+
+    private static boolean isChangeNewOpenChatLink(RequestGroupOrderDto requestGroupOrderDto, GroupOrder groupOrder) {
+        String newLink = requestGroupOrderDto.getLink();
+        String oldLink = groupOrder.getLink();
+
+        return newLink != null && !newLink.isEmpty() && !newLink.equals(oldLink);
+    }
+
+    private static boolean isGroupOrderOwnByUser(Long userId, GroupOrder groupOrder) {
+        return !Objects.equals(groupOrder.getUser().getId(), userId);
     }
 }
