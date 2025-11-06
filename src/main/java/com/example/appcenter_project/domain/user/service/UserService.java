@@ -54,7 +54,7 @@ public class UserService {
     // ========== Public Methods ========== //
 
     public ResponseLoginDto saveUser(SignupUser signupUser) {
-        checkINUStudent(signupUser);
+        // checkINUStudent(signupUser);
         User user = createUser(signupUser);
         return createDto(user);
     }
