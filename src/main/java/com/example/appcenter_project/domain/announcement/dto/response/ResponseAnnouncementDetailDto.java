@@ -4,6 +4,7 @@ import com.example.appcenter_project.domain.announcement.entity.Announcement;
 import com.example.appcenter_project.domain.announcement.entity.CrawledAnnouncement;
 import com.example.appcenter_project.domain.announcement.entity.ManualAnnouncement;
 import com.example.appcenter_project.domain.announcement.enums.AnnouncementType;
+import com.example.appcenter_project.domain.announcement.enums.AnnouncementCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,7 +19,8 @@ public class ResponseAnnouncementDetailDto {
     @Schema(description = "공지사항 ID", example = "1")
     private Long id;
 
-    private String category;
+    @Schema(description = "카테고리")
+    private AnnouncementCategory category;
 
     @Schema(description = "공지사항 제목", example = "기숙사 공지사항")
     private String title;
@@ -54,6 +56,7 @@ public class ResponseAnnouncementDetailDto {
 
             return ResponseAnnouncementDetailDto.builder()
                     .id(manualAnnouncement.getId())
+                    .category(manualAnnouncement.getAnnouncementCategory())
                     .title(manualAnnouncement.getTitle())
                     .writer(announcement.getWriter())
                     .content(manualAnnouncement.getContent())
@@ -71,7 +74,7 @@ public class ResponseAnnouncementDetailDto {
 
             return ResponseAnnouncementDetailDto.builder()
                     .id(crawledAnnouncement.getId())
-                    .category(crawledAnnouncement.getCategory())
+                    .category(crawledAnnouncement.getAnnouncementCategory())
                     .writer(announcement.getWriter())
                     .title(crawledAnnouncement.getTitle())
                     .content(crawledAnnouncement.getContent())

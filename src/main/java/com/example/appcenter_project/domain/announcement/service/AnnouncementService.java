@@ -5,6 +5,7 @@ import com.example.appcenter_project.domain.announcement.dto.response.ResponseAn
 import com.example.appcenter_project.domain.announcement.dto.response.ResponseAnnouncementDto;
 import com.example.appcenter_project.domain.announcement.entity.Announcement;
 import com.example.appcenter_project.domain.announcement.entity.ManualAnnouncement;
+import com.example.appcenter_project.domain.announcement.enums.AnnouncementCategory;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.announcement.enums.AnnouncementType;
 import com.example.appcenter_project.domain.user.enums.Role;
@@ -56,8 +57,8 @@ public class AnnouncementService {
         return ResponseAnnouncementDetailDto.from(announcement);
     }
 
-    public List<ResponseAnnouncementDto> findAllAnnouncements() {
-        return announcementRepository.findAll().stream()
+    public List<ResponseAnnouncementDto> findAllAnnouncements(AnnouncementType type, AnnouncementCategory category, String search) {
+        return announcementRepository.findAnnouncementComplex(type, category, search).stream()
                 .sorted(Comparator.comparing(Announcement::getSortDate).reversed())
                 .map(ResponseAnnouncementDto::from)
                 .toList();
@@ -107,7 +108,7 @@ public class AnnouncementService {
     // ========== Private Methods ========== //
 
     private Announcement createAnnouncement(RequestAnnouncementDto requestAnnouncementDto, AnnouncementType announcementType, List<MultipartFile> files) {
-        ManualAnnouncement manualAnnouncement = RequestAnnouncementDto.of(requestAnnouncementDto, announcementType);
+        ManualAnnouncement manualAnnouncement = ManualAnnouncement.of(requestAnnouncementDto, announcementType);
 
         manualAnnouncementRepository.save(manualAnnouncement);
         announcementFileService.saveUploadFile(manualAnnouncement, files);

@@ -4,6 +4,8 @@ import com.example.appcenter_project.common.file.dto.AttachedFileDto;
 import com.example.appcenter_project.domain.announcement.dto.request.RequestAnnouncementDto;
 import com.example.appcenter_project.domain.announcement.dto.response.ResponseAnnouncementDetailDto;
 import com.example.appcenter_project.domain.announcement.dto.response.ResponseAnnouncementDto;
+import com.example.appcenter_project.domain.announcement.enums.AnnouncementCategory;
+import com.example.appcenter_project.domain.announcement.enums.AnnouncementType;
 import com.example.appcenter_project.domain.announcement.service.AnnouncementFileService;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import com.example.appcenter_project.domain.announcement.service.AnnouncementService;
@@ -62,8 +64,10 @@ public class AnnouncementController implements AnnouncementApiSpecification {
     }
 
     @GetMapping
-    public ResponseEntity<List<ResponseAnnouncementDto>> findAllAnnouncements() {
-        return ResponseEntity.status(OK).body(announcementService.findAllAnnouncements());
+    public ResponseEntity<List<ResponseAnnouncementDto>> findAllAnnouncements(
+            @RequestParam(defaultValue = "생활원") String type, @RequestParam(defaultValue = "입퇴사 공지", required = false) String category, @RequestParam(required = false) String search
+    ) {
+        return ResponseEntity.status(OK).body(announcementService.findAllAnnouncements(AnnouncementType.valueOf(type), AnnouncementCategory.valueOf(category), search));
     }
 
     @PutMapping("/{announcementId}")

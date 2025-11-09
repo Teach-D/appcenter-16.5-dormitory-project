@@ -3,6 +3,8 @@ package com.example.appcenter_project.domain.announcement.dto.response;
 import com.example.appcenter_project.domain.announcement.entity.Announcement;
 import com.example.appcenter_project.domain.announcement.entity.CrawledAnnouncement;
 import com.example.appcenter_project.domain.announcement.entity.ManualAnnouncement;
+import com.example.appcenter_project.domain.announcement.enums.AnnouncementCategory;
+import com.example.appcenter_project.domain.announcement.enums.AnnouncementType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,6 +18,12 @@ public class ResponseAnnouncementDto {
 
     @Schema(description = "공지사항 ID", example = "1")
     private Long id;
+
+    @Schema(description = "카테고리")
+    private AnnouncementCategory category;
+
+    @Schema(description = "작성 타입")
+    private AnnouncementType type;
 
     @Schema(description = "공지사항 제목", example = "기숙사 공지사항")
     private String title;
@@ -34,7 +42,6 @@ public class ResponseAnnouncementDto {
 
     private int viewCount = 0;
 
-    private String announcementType;
 
     public static ResponseAnnouncementDto from(Announcement announcement) {
 
@@ -47,13 +54,14 @@ public class ResponseAnnouncementDto {
 
             return ResponseAnnouncementDto.builder()
                     .id(manualAnnouncement.getId())
+                    .category(manualAnnouncement.getAnnouncementCategory())
                     .title(manualAnnouncement.getTitle())
                     .content(truncatedContent)
                     .createdDate(manualAnnouncement.getCreatedDate())
                     .updatedDate(manualAnnouncement.getModifiedDate())
                     .isEmergency(manualAnnouncement.isEmergency())
                     .viewCount(manualAnnouncement.getViewCount())
-                    .announcementType(manualAnnouncement.getAnnouncementType().toValue())
+                    .type(manualAnnouncement.getAnnouncementType())
                     .build();
         }
 
@@ -67,13 +75,14 @@ public class ResponseAnnouncementDto {
 
             return ResponseAnnouncementDto.builder()
                     .id(crawledAnnouncement.getId())
+                    .category(crawledAnnouncement.getAnnouncementCategory())
                     .title(crawledAnnouncement.getTitle())
                     .content(truncatedContent)
                     .createdDate(crawledAnnouncement.getCreatedDate())
                     .updatedDate(null)
                     .isEmergency(false)
                     .viewCount(crawledAnnouncement.getViewCount())
-                    .announcementType(crawledAnnouncement.getAnnouncementType().toValue())
+                    .type(crawledAnnouncement.getAnnouncementType())
                     .build();
         }
         return null;
