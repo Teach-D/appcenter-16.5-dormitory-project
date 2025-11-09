@@ -72,7 +72,7 @@ public class AnnouncementCrawlScheduler {
             String date2 = map2.values().stream().findFirst().orElse("");
 
             // 내림차순 정렬 (최신 날짜가 앞으로)
-            return date2.compareTo(date1);
+            return date1.compareTo(date2);
         });
 
         List<String> links = allNotices.stream()
