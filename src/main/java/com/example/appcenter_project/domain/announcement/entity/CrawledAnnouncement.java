@@ -1,9 +1,9 @@
 package com.example.appcenter_project.domain.announcement.entity;
 
-import com.example.appcenter_project.common.file.entity.AttachedFile;
 import com.example.appcenter_project.common.file.entity.CrawledAnnouncementFile;
 import com.example.appcenter_project.domain.announcement.dto.request.RequestAnnouncementDto;
 import com.example.appcenter_project.domain.announcement.enums.AnnouncementType;
+import com.example.appcenter_project.domain.announcement.enums.AnnouncementCategory;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,11 +21,6 @@ public class CrawledAnnouncement extends Announcement {
 
     private String number;
 
-    private String category;
-
-    @Lob
-    private String content;
-
     @OneToMany(mappedBy = "crawledAnnouncement", cascade = CascadeType.REMOVE)
     private List<CrawledAnnouncementFile> crawledAnnouncementFiles = new ArrayList<>();
 
@@ -33,32 +28,16 @@ public class CrawledAnnouncement extends Announcement {
 
     private String link;
 
-    private boolean isEmergency = false;
 
     @Builder
-    public CrawledAnnouncement(Long id, String title, String writer, int viewCount, AnnouncementType announcementType, String number, String category, String content, List<CrawledAnnouncementFile> crawledAnnouncementFiles, LocalDate crawledDate, String link) {
-        super(id, title, writer, viewCount, announcementType);
+    public CrawledAnnouncement(Long id, String title, String writer, int viewCount, AnnouncementType announcementType, String number, AnnouncementCategory category, String content, List<CrawledAnnouncementFile> crawledAnnouncementFiles, LocalDate crawledDate, String link) {
+        super(id, category, announcementType, title, writer, viewCount, content);
         this.number = number;
-        this.category = category;
-        this.content = content;
+        this.announcementCategory = category;
+        super.content = content;
         this.crawledAnnouncementFiles = crawledAnnouncementFiles;
         this.crawledDate = crawledDate;
         this.link = link;
-    }
-
-    public CrawledAnnouncement(int NO, String number, String category, String content, List<CrawledAnnouncementFile> crawledAnnouncementFiles) {
-        this.number = number;
-        this.category = category;
-        this.content = content;
-        this.crawledAnnouncementFiles = crawledAnnouncementFiles;
-    }
-
-    public CrawledAnnouncement(String title, String writer, int viewCount, AnnouncementType announcementType, List<AttachedFile> attachedFiles, String number, String category, String content, List<CrawledAnnouncementFile> crawledAnnouncementFiles) {
-        super(title, writer, viewCount, announcementType, attachedFiles);
-        this.number = number;
-        this.category = category;
-        this.content = content;
-        this.crawledAnnouncementFiles = crawledAnnouncementFiles;
     }
 
     public void updateViewCount(int viewCount) {
@@ -75,6 +54,5 @@ public class CrawledAnnouncement extends Announcement {
         this.title = requestAnnouncementDto.getTitle();
         this.writer = requestAnnouncementDto.getWriter();
         this.content = requestAnnouncementDto.getContent();
-        this.isEmergency = requestAnnouncementDto.getIsEmergency();
     }
 }

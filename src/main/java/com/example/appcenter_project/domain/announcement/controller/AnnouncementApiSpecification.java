@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -28,7 +29,21 @@ public interface AnnouncementApiSpecification {
 
     @Operation(
             summary = "공지사항 생성",
-            description = "새로운 공지사항을 생성합니다. 파일 첨부가 가능합니다.",
+            description = """
+        새로운 공지사항을 생성합니다. 파일 첨부가 가능합니다.
+        
+        ### 카테고리 입력 값 (category)
+        
+        | 영문 코드 | 한글 의미 |
+        |----------|----------|
+        | LIFE_GUIDANCE | 생활지도 |
+        | FACILITY | 시설 |
+        | EVENT_LECTURE | 행사/강좌 |
+        | BTL_DORMITORY | BTL기숙사 |
+        | ETC | 기타 |
+        | MOVE_IN_OUT | 입퇴사 공지 |
+       
+        """,
             responses = {
                     @ApiResponse(responseCode = "201", description = "공지사항 생성 성공"),
                     @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
@@ -45,7 +60,38 @@ public interface AnnouncementApiSpecification {
 
     @Operation(
             summary = "모든 공지사항 조회",
-            description = "모든 공지사항 목록을 조회합니다.",
+            description = """
+        모든 공지사항 조회합니다.
+        
+        ### 카테고리 출력 값 (category)
+        
+        | 영문 코드 | 한글 의미 |
+        |----------|----------|
+        | LIFE_GUIDANCE | 생활지도 |
+        | FACILITY | 시설 |
+        | EVENT_LECTURE | 행사/강좌 |
+        | BTL_DORMITORY | BTL기숙사 |
+        | ETC | 기타 |
+        | MOVE_IN_OUT | 입퇴사 공지 |
+       
+        """,
+            parameters = {
+                @Parameter(
+                    name = "type",
+                    description = "공지사항 작성 주체(DORMITORY, UNI_DORM, SUPPORTERS)",
+                    example = "DORMITORY",
+                    schema = @Schema(type = "string", allowableValues = {"DORMITORY", "UNI_DORM", "SUPPORTERS"})
+                ),
+                @Parameter(
+                        name = "category",
+                        description = "공지사항 카테고리(ALL(전체), LIFE_GUIDANCE(생활지도), FACILITY(시설), " +
+                                "EVENT_LECTURE(행사/강좌), BTL_DORMITORY(BTL기숙사), " +
+                                "MOVE_IN_OUT(입퇴사 공지), ETC(기타))",
+                        example = "ALL",
+                        schema = @Schema(type = "string", allowableValues =
+                                {"ALL", "LIFE_GUIDANCE", "FACILITY", "EVENT_LECTURE", "BTL_DORMITORY", "MOVE_IN_OUT", "ETC"})
+                )
+            },
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -57,7 +103,9 @@ public interface AnnouncementApiSpecification {
                     )
             }
     )
-    ResponseEntity<List<ResponseAnnouncementDto>> findAllAnnouncements();
+    ResponseEntity<List<ResponseAnnouncementDto>> findAllAnnouncements(
+            @RequestParam(defaultValue = "생활원") String type, @RequestParam(defaultValue = "입퇴사 공지") String category, String search
+    );
 
     @Operation(
             summary = "특정 공지사항 조회",

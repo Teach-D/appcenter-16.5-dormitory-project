@@ -3,6 +3,7 @@ package com.example.appcenter_project.domain.announcement.entity;
 import com.example.appcenter_project.common.BaseTimeEntity;
 import com.example.appcenter_project.common.file.entity.AttachedFile;
 import com.example.appcenter_project.domain.announcement.dto.request.RequestAnnouncementDto;
+import com.example.appcenter_project.domain.announcement.enums.AnnouncementCategory;
 import com.example.appcenter_project.domain.announcement.enums.AnnouncementType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -23,14 +24,21 @@ public abstract class Announcement extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    protected String title;
-    protected String writer;
-    protected int viewCount = 0;
+    @Enumerated(EnumType.STRING)
+    protected AnnouncementCategory announcementCategory;
 
     @Enumerated(EnumType.STRING)
     private AnnouncementType announcementType;
 
-    public Announcement(String title, String writer, int viewCount, AnnouncementType announcementType, List<AttachedFile> attachedFiles) {
+    protected String title;
+    protected String writer;
+    protected int viewCount = 0;
+
+    @Lob
+    protected String content;
+
+    public Announcement(String title, String writer, int viewCount, AnnouncementType announcementType, AnnouncementCategory category) {
+        this.announcementCategory = category;
         this.title = title;
         this.writer = writer;
         this.viewCount = viewCount;
