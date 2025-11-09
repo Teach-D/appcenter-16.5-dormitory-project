@@ -271,7 +271,7 @@ public class AnnouncementCrawlScheduler {
                 crawledAnnouncementFileRepository.save(attachedFile);
             }
 
-            Notification notification = Notification.builder()
+           /* Notification notification = Notification.builder()
                     .boardId(crawledAnnouncement.getId())
                     .title("새로운 공지사항이 올라왔어요!")
                     .body(crawledAnnouncement.getTitle())
@@ -290,7 +290,7 @@ public class AnnouncementCrawlScheduler {
                 userNotificationRepository.save(userNotification);
 
                 fcmMessageService.sendNotification(receiveUser, notification.getTitle(), notification.getBody());
-            }
+            }*/
 
 
         } catch (Exception e) {
