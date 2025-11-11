@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.example.appcenter_project.mapper.TipMapper">
+<mapper namespace="com.example.appcenter_project.domain.tip.mapper.TipMapper">
 
-    <resultMap id="tipResultMap" type="com.example.appcenter_project.dto.response.tip.ResponseTipDto">
+    <resultMap id="tipResultMap" type="com.example.appcenter_project.domain.tip.dto.response.ResponseTipDto">
         <id property="boardId" column="id"/>
         <result property="title" column="title"/>
         <result property="type" column="type"/>
@@ -76,7 +76,7 @@
         WHERE t.user_id = #{userId}
     </select>
 
-    <resultMap id="tipDetailMap" type="com.example.appcenter_project.dto.response.tip.ResponseTipDetailDto">
+    <resultMap id="tipDetailMap" type="com.example.appcenter_project.domain.tip.dto.response.ResponseTipDetailDto">
         <id property="id" column="id"/>
         <result property="title" column="title"/>
         <result property="content" column="content"/>
@@ -90,7 +90,7 @@
 
         <!-- 댓글 -->
         <collection property="tipCommentDtoList"
-                    ofType="com.example.appcenter_project.dto.response.tip.ResponseTipCommentDto"
+                    ofType="com.example.appcenter_project.domain.tip.dto.response.ResponseTipCommentDto"
                     javaType="java.util.List">
             <id property="tipCommentId" column="tip_comment_id"/>
             <result property="userId" column="user_id"/>
