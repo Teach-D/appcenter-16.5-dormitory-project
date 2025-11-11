@@ -78,9 +78,9 @@ public interface AnnouncementApiSpecification {
             parameters = {
                 @Parameter(
                     name = "type",
-                    description = "공지사항 작성 주체(DORMITORY, UNI_DORM, SUPPORTERS)",
+                    description = "공지사항 작성 주체(ALL, DORMITORY, UNI_DORM, SUPPORTERS)",
                     example = "DORMITORY",
-                    schema = @Schema(type = "string", allowableValues = {"DORMITORY", "UNI_DORM", "SUPPORTERS"})
+                    schema = @Schema(type = "string", allowableValues = {"ALL", "DORMITORY", "UNI_DORM", "SUPPORTERS"})
                 ),
                 @Parameter(
                         name = "category",

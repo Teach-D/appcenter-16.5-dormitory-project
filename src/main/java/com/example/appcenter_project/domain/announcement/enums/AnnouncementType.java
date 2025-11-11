@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum AnnouncementType {
 
+    ALL("전체"),
     DORMITORY("생활원"),
     UNI_DORM("유니돔"),
     SUPPORTERS("서포터즈");
