@@ -36,7 +36,7 @@ public class AnnouncementRepositoryImpl implements AnnouncementQuerydslRepositor
     }
 
     private BooleanExpression announcementEqType(AnnouncementType type) {
-        if (type == null) return null;
+        if (type == null || type == AnnouncementType.ALL) return null;
         return announcement.announcementType.eq(type);
     }
 
