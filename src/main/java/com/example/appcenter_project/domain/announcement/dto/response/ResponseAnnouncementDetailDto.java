@@ -21,7 +21,10 @@ public class ResponseAnnouncementDetailDto {
 
     @Schema(description = "카테고리")
     private AnnouncementCategory category;
-
+    
+    @Schema(description = "작성 주체")
+    private AnnouncementType announcementType;
+    
     @Schema(description = "공지사항 제목", example = "기숙사 공지사항")
     private String title;
 
@@ -44,9 +47,7 @@ public class ResponseAnnouncementDetailDto {
     private boolean isEmergency;
 
     private String number;
-
-    private String announcementType;
-
+    
     private String link;
 
     public static ResponseAnnouncementDetailDto from(Announcement announcement) {
@@ -64,7 +65,7 @@ public class ResponseAnnouncementDetailDto {
                     .updatedDate(manualAnnouncement.getModifiedDate().toLocalDate())
                     .isEmergency(manualAnnouncement.isEmergency())
                     .viewCount(manualAnnouncement.getViewCount())
-                    .announcementType(manualAnnouncement.getAnnouncementType().toValue())
+                    .announcementType(manualAnnouncement.getAnnouncementType())
                     .build();
         }
 
@@ -83,7 +84,7 @@ public class ResponseAnnouncementDetailDto {
                     .isEmergency(false)
                     .viewCount(crawledAnnouncement.getViewCount())
                     .number(crawledAnnouncement.getNumber())
-                    .announcementType(AnnouncementType.DORMITORY.toValue())
+                    .announcementType(AnnouncementType.DORMITORY)
                     .link(crawledAnnouncement.getLink())
                     .build();
         }
