@@ -27,6 +27,7 @@ public class ManualAnnouncement extends Announcement {
     @Builder
     public ManualAnnouncement(Long id, AnnouncementCategory category, String title, String writer, int viewCount, AnnouncementType announcementType, boolean isEmergency, String content, List<ManualAnnouncementFile> manualAnnouncementFiles) {
         super(id, category, announcementType, title, writer, viewCount, content);
+        this.isEmergency = isEmergency;
         this.manualAnnouncementFiles = manualAnnouncementFiles;
     }
 
