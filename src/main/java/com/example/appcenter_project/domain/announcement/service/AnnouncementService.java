@@ -46,7 +46,7 @@ public class AnnouncementService {
         AnnouncementType announcementType = determineAnnouncementType(user.getRole());
         Announcement announcement = createAnnouncement(requestAnnouncementDto, announcementType, files);
 
-        sendNotification(announcement, announcementType);
+        // sendNotification(announcement, announcementType);
     }
 
     public ResponseAnnouncementDetailDto findAnnouncement(Long announcementId) {
