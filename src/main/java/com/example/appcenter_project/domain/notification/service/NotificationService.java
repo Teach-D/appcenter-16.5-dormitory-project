@@ -61,7 +61,10 @@ public class NotificationService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
-        return user.getUserNotifications().stream()
+        List<UserNotification> notifications = new ArrayList<>(user.getUserNotifications());
+        Collections.reverse(notifications);
+
+        return notifications.stream()
                 .map(userNotification -> {
                     userNotification.changeReadStatus(true);
                     return ResponseNotificationDto.from(userNotification);
