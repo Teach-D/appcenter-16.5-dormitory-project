@@ -1,5 +1,6 @@
 package com.example.appcenter_project.global.scheduler;
 
+// ... (기존 import 구문 유지) ...
 import com.example.appcenter_project.common.file.entity.CrawledAnnouncementFile;
 import com.example.appcenter_project.domain.announcement.entity.CrawledAnnouncement;
 import com.example.appcenter_project.domain.announcement.enums.AnnouncementCategory;
@@ -53,41 +54,72 @@ public class AnnouncementCrawlScheduler {
 
     @Scheduled(cron = "0 0 9,14,18 * * ?")
     public void crawling() {
-        List<Map<String, String>> crawlGeneralNoticesLinks = crawlWithSeleniumGeneralNotices();
-        List<Map<String, String>> crawlDormitoryMoveNoticesLinks = crawlWithSeleniumDormitoryMoveNotices();
+        WebDriver driver = null; // 드라이버 선언
 
-        // 입퇴사 공지 링크 Set 생성
-        Set<String> dormitoryMoveLinks = crawlDormitoryMoveNoticesLinks.stream()
-                .map(map -> map.keySet().stream().findFirst().orElse(""))
-                .collect(Collectors.toSet());
+        try {
+            // 1. WebDriver 생성 (단 한 번)
+            ChromeOptions options = createChromeOptions(); // 옵션 설정
+            driver = new ChromeDriver(options);
+            log.info("WebDriver 인스턴스를 성공적으로 생성했습니다.");
 
-        List<Map<String, String>> allNotices = new ArrayList<>();
-        allNotices.addAll(crawlGeneralNoticesLinks);
-        allNotices.addAll(crawlDormitoryMoveNoticesLinks);
+            // 2. 목록 크롤링 (드라이버 재활용)
+            List<Map<String, String>> crawlGeneralNoticesLinks = crawlWithSeleniumNotices(driver, GENERAL_NOTICE_BASE_URL);
+            List<Map<String, String>> crawlDormitoryMoveNoticesLinks = crawlWithSeleniumNotices(driver, DORMITORY_MOVE_BASE_URL);
 
-        // value(date) 기준으로 정렬 (최신순)
-        allNotices.sort((map1, map2) -> {
-            // 각 Map의 첫 번째 value(date) 가져오기
-            String date1 = map1.values().stream().findFirst().orElse("");
-            String date2 = map2.values().stream().findFirst().orElse("");
+            // 입퇴사 공지 링크 Set 생성
+            Set<String> dormitoryMoveLinks = crawlDormitoryMoveNoticesLinks.stream()
+                    .map(map -> map.keySet().stream().findFirst().orElse(""))
+                    .collect(Collectors.toSet());
 
-            // 내림차순 정렬 (최신 날짜가 앞으로)
-            return date1.compareTo(date2);
-        });
+            List<Map<String, String>> allNotices = new ArrayList<>();
+            allNotices.addAll(crawlGeneralNoticesLinks);
+            allNotices.addAll(crawlDormitoryMoveNoticesLinks);
 
-        List<String> links = allNotices.stream()
-                .map(map -> map.keySet().stream().findFirst().orElse("")) // key(link) 추출
-                .collect(Collectors.toList());
+            // value(date) 기준으로 정렬 (최신순)
+            allNotices.sort((map1, map2) -> {
+                String date1 = map1.values().stream().findFirst().orElse("");
+                String date2 = map2.values().stream().findFirst().orElse("");
+                return date1.compareTo(date2); // 오름차순
+            });
 
-        saveCrawlAnnouncements(links, dormitoryMoveLinks);
+            List<String> links = allNotices.stream()
+                    .map(map -> map.keySet().stream().findFirst().orElse("")) // key(link) 추출
+                    .collect(Collectors.toList());
+
+            // 3. 개별 공지사항 상세 저장 (드라이버 재활용)
+            saveCrawlAnnouncements(driver, links, dormitoryMoveLinks);
+
+        } catch (Exception e) {
+            log.error("전체 크롤링 작업 중 치명적인 오류 발생: {}", e.getMessage(), e);
+        } finally {
+            // 4. WebDriver 종료 (작업 완료 후 단 한 번)
+            if (driver != null) {
+                driver.quit();
+                log.info("WebDriver 인스턴스를 성공적으로 종료했습니다.");
+            }
+        }
+    }
+
+    private ChromeOptions createChromeOptions() {
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--headless=new");
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--disable-gpu");
+        options.addArguments("--disable-software-rasterizer");
+        options.addArguments("--disable-extensions");
+        options.addArguments("--remote-debugging-port=9222");
+        options.addArguments("--window-size=1920,1080");
+        options.addArguments("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+        return options;
     }
 
 
-
-    private void saveCrawlAnnouncements(List<String> crawlLinks, Set<String> dormitoryMoveLinks) {
+    private void saveCrawlAnnouncements(WebDriver driver, List<String> crawlLinks, Set<String> dormitoryMoveLinks) {
         for (String crawlLink : crawlLinks) {
             try {
-                saveCrawlAnnouncement(crawlLink, dormitoryMoveLinks.contains(crawlLink));
+                // 드라이버 인스턴스 전달
+                saveCrawlAnnouncement(driver, crawlLink, dormitoryMoveLinks.contains(crawlLink));
             } catch (Exception e) {
                 log.error("공지사항 저장 실패 (링크: {}): {}", crawlLink, e.getMessage());
                 // 한 건 실패해도 계속 진행
@@ -95,27 +127,22 @@ public class AnnouncementCrawlScheduler {
         }
     }
 
+    /**
+     * 💡 변경됨: WebDriver를 인수로 받으며, 드라이버 생성/종료 로직이 삭제되었습니다.
+     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void saveCrawlAnnouncement(String link, boolean isDormitoryMove) {
-        WebDriver driver = null;
+    public void saveCrawlAnnouncement(WebDriver driver, String link, boolean isDormitoryMove) {
+        // WebDriver driver = null; // ❌ 삭제됨
 
         try {
-            ChromeOptions options = new ChromeOptions();
-            options.addArguments("--headless=new");
-            options.addArguments("--no-sandbox");
-            options.addArguments("--disable-dev-shm-usage");
-            options.addArguments("--disable-gpu");
-            options.addArguments("--disable-software-rasterizer");
-            options.addArguments("--disable-extensions");
-            options.addArguments("--remote-debugging-port=9222");
-            options.addArguments("--window-size=1920,1080");
-            options.addArguments("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+            // ChromeOptions 설정 및 driver = new ChromeDriver(options); ❌ 삭제됨
 
-            driver = new ChromeDriver(options);
-            driver.get(link);
+            driver.get(link); // 재활용된 드라이버 사용
 
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
             wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".view-title")));
+
+            // ... (기존 상세 크롤링 및 저장 로직 유지) ...
 
             String title = "";
             String category = "";
@@ -163,13 +190,13 @@ public class AnnouncementCrawlScheduler {
             try {
                 WebElement numberElement = driver.findElement(By.cssSelector("dl.view-num dd"));
                 number = numberElement.getText().trim();
-                
+
                 // 빈 값이면 건너뛰기
                 if (number.isEmpty()) {
                     log.warn("빈 글번호, 건너뛰기");
                     return;
                 }
-                
+
                 // 이미 저장되어 있는 공지사항은 저장 제외
                 Optional<CrawledAnnouncement> existingAnnouncement =
                         crawledAnnouncementRepository.findByNumber(number);
@@ -292,18 +319,15 @@ public class AnnouncementCrawlScheduler {
                 fcmMessageService.sendNotification(receiveUser, notification.getTitle(), notification.getBody());
             }
 
-
         } catch (Exception e) {
             log.error("링크 크롤링 실패: {}", e.getMessage(), e);
-        } finally {
-            if (driver != null) {
-                driver.quit();
-            }
         }
+        // finally 블록에서 driver.quit(); ❌ 삭제됨 (crawling()에서 최종적으로 처리)
     }
 
     private List<Map<String, String>> extractNoticesFromPage(WebDriver driver) {
         List<Map<String, String>> notices = new ArrayList<>();
+        // ... (기존 로직 유지) ...
 
         try {
             List<WebElement> rows = driver.findElements(By.cssSelector("table.board-table tbody tr"));
@@ -349,28 +373,20 @@ public class AnnouncementCrawlScheduler {
         } catch (Exception e) {
             log.error("페이지 파싱 실패: ", e);
         }
-
         return notices;
     }
 
-    public List<Map<String, String>> crawlWithSeleniumGeneralNotices() {
+    /**
+     * 💡 변경됨: 두 크롤링 메서드를 하나로 통합하고, WebDriver와 URL을 인수로 받습니다.
+     */
+    public List<Map<String, String>> crawlWithSeleniumNotices(WebDriver driver, String baseUrl) {
         List<Map<String, String>> crawlLinks = new ArrayList<>();
-        WebDriver driver = null;
+        // WebDriver driver = null; // ❌ 삭제됨
 
         try {
-            ChromeOptions options = new ChromeOptions();
-            options.addArguments("--headless=new");
-            options.addArguments("--no-sandbox");
-            options.addArguments("--disable-dev-shm-usage");
-            options.addArguments("--disable-gpu");
-            options.addArguments("--disable-software-rasterizer");
-            options.addArguments("--disable-extensions");
-            options.addArguments("--remote-debugging-port=9222");
-            options.addArguments("--window-size=1920,1080");
-            options.addArguments("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+            // ChromeOptions 설정 및 driver = new ChromeDriver(options); ❌ 삭제됨
 
-            driver = new ChromeDriver(options);
-            driver.get(GENERAL_NOTICE_BASE_URL);
+            driver.get(baseUrl); // 재활용된 드라이버 사용
 
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
             wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("table.board-table")));
@@ -378,12 +394,14 @@ public class AnnouncementCrawlScheduler {
             int totalPages = getTotalPages(driver);
             log.info("총 페이지 수: {}", totalPages);
 
+            // 기존 로직 유지 (1~2 페이지 크롤링)
             for (int page = 1; page <= 2; page++) {
                 log.info("페이지 {} 크롤링 시작...", page);
 
                 if (page > 1) {
                     JavascriptExecutor js = (JavascriptExecutor) driver;
                     js.executeScript("page_link('" + page + "')");
+                    // Thread.sleep()은 권장되지 않지만, 페이지 로딩 문제로 임시 유지
                     Thread.sleep(1000);
                     wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("table.board-table")));
                 }
@@ -397,72 +415,17 @@ public class AnnouncementCrawlScheduler {
             log.info("전체 크롤링 완료: 총 {}개의 공지사항 수집", crawlLinks.size());
 
         } catch (Exception e) {
-            log.error("Selenium 크롤링 실패: ", e);
-        } finally {
-            if (driver != null) {
-                driver.quit();
-            }
+            log.error("Selenium 크롤링 실패 (URL: {}): ", baseUrl, e);
         }
-
-        return crawlLinks;
-    }
-
-    private List<Map<String, String>> crawlWithSeleniumDormitoryMoveNotices() {
-        List<Map<String, String>> crawlLinks = new ArrayList<>();
-        WebDriver driver = null;
-
-        try {
-            ChromeOptions options = new ChromeOptions();
-            options.addArguments("--headless=new");
-            options.addArguments("--no-sandbox");
-            options.addArguments("--disable-dev-shm-usage");
-            options.addArguments("--disable-gpu");
-            options.addArguments("--disable-software-rasterizer");
-            options.addArguments("--disable-extensions");
-            options.addArguments("--remote-debugging-port=9222");
-            options.addArguments("--window-size=1920,1080");
-            options.addArguments("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-
-            driver = new ChromeDriver(options);
-            driver.get(DORMITORY_MOVE_BASE_URL);
-
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-            wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("table.board-table")));
-
-            int totalPages = getTotalPages(driver);
-            log.info("총 페이지 수: {}", totalPages);
-
-            for (int page = 1; page <= 2; page++) {
-                log.info("페이지 {} 크롤링 시작...", page);
-
-                if (page > 1) {
-                    JavascriptExecutor js = (JavascriptExecutor) driver;
-                    js.executeScript("page_link('" + page + "')");
-                    Thread.sleep(1000);
-                    wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("table.board-table")));
-                }
-
-                List<Map<String, String>> extractCrawlLinks = extractNoticesFromPage(driver);
-                crawlLinks.addAll(extractCrawlLinks);
-
-                log.info("페이지 {} 완료: {}개의 공지사항 수집", page, extractCrawlLinks.size());
-            }
-
-            log.info("전체 크롤링 완료: 총 {}개의 공지사항 수집", crawlLinks.size());
-
-        } catch (Exception e) {
-            log.error("Selenium 크롤링 실패: ", e);
-        } finally {
-            if (driver != null) {
-                driver.quit();
-            }
-        }
+        // finally 블록에서 driver.quit(); ❌ 삭제됨 (crawling()에서 최종적으로 처리)
 
         return crawlLinks;
     }
 
 
     private int getTotalPages(WebDriver driver) {
+        // ... (기존 로직 유지) ...
+
         try {
             WebElement totPageElement = driver.findElement(By.cssSelector("._paging ._totPage"));
             String totalPagesText = totPageElement.getText().trim();
