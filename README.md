@@ -46,7 +46,7 @@
 ## ERD
 
 ---
-<img src="images/erd_1.png" alt="dd"/>
+<img src="images/erd_2.png" alt="dd"/>
 
 ## 시스템 아키텍처
 
