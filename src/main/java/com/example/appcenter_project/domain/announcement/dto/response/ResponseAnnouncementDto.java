@@ -48,7 +48,7 @@ public class ResponseAnnouncementDto {
         if (announcement instanceof ManualAnnouncement) {
             ManualAnnouncement manualAnnouncement = (ManualAnnouncement) announcement;
             String truncatedContent = manualAnnouncement.getContent();
-            if (truncatedContent != null && truncatedContent.length() > 50) {
+            if (truncatedContent != null && truncatedContent.length() > 70) {
                 truncatedContent = truncatedContent.substring(0, 70);
             }
 
@@ -69,7 +69,7 @@ public class ResponseAnnouncementDto {
         if (announcement instanceof CrawledAnnouncement) {
             CrawledAnnouncement crawledAnnouncement = (CrawledAnnouncement) announcement;
             String truncatedContent = crawledAnnouncement.getContent();
-            if (truncatedContent != null && truncatedContent.length() > 50) {
+            if (truncatedContent != null && truncatedContent.length() > 70) {
                 truncatedContent = truncatedContent.substring(0, 70);
             }
 
