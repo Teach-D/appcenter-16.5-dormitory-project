@@ -155,9 +155,10 @@ public class SecurityConfig {
                         .requestMatchers(GET, "/surveys/**").permitAll() // 설문 단순 조회 모두 가능
                         .requestMatchers("/surveys/**").hasAnyRole("ADMIN", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_EXPEDITED_COMPLAINT_MANAGER", "DORM_SUPPORTERS")
 
+                        .requestMatchers("/actuator/**").permitAll()
 
                         /** 나머지 **/
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 )
                 .sessionManagement(sessionManagement ->
                         sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

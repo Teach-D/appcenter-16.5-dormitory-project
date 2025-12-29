@@ -1,0 +1,191 @@
+groups:
+  # 애플리케이션 성능 알림
+  - name: application_performance
+    interval: 30s
+    rules:
+      # 높은 에러율 (5xx)
+      - alert: HighErrorRate
+        expr: |
+          (
+            rate(http_server_requests_seconds_count{application="dormitory-app",status=~"5.."}[5m])
+            /
+            rate(http_server_requests_seconds_count{application="dormitory-app"}[5m])
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+          component: application
+        annotations:
+          summary: "높은 5xx 에러율 감지"
+          description: "지난 5분간 에러율이 {{ $value | humanizePercentage }}입니다. (임계값: 5%)"
+
+      # 느린 응답 시간
+      - alert: SlowResponseTime
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_server_requests_seconds_bucket{application="dormitory-app"}[5m])
+          ) > 2
+        for: 3m
+        labels:
+          severity: warning
+          component: application
+        annotations:
+          summary: "API 응답 시간 지연"
+          description: "95 퍼센타일 응답시간이 {{ $value | humanizeDuration }}입니다. (임계값: 2초)"
+
+      # 애플리케이션 다운
+      - alert: ApplicationDown
+        expr: up{job="spring-boot-app"} == 0
+        for: 1m
+        labels:
+          severity: warning
+          component: application
+        annotations:
+          summary: "애플리케이션이 다운되었습니다!"
+          description: "Spring Boot 애플리케이션이 1분 이상 응답하지 않습니다."
+
+  # JVM 메모리 알림
+  - name: jvm_alerts
+    interval: 30s
+    rules:
+      # 높은 힙 메모리 사용률
+      - alert: HighHeapMemoryUsage
+        expr: |
+          (
+            jvm_memory_used_bytes{application="dormitory-app",area="heap"}
+            /
+            jvm_memory_max_bytes{application="dormitory-app",area="heap"}
+          ) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          component: jvm
+        annotations:
+          summary: "JVM 힙 메모리 부족"
+          description: "힙 메모리 사용률이 {{ $value | humanizePercentage }}입니다. (임계값: 85%)"
+          recommendation: "메모리 누수 확인 필요"
+
+      # 과도한 GC
+      - alert: HighGCPauseTime
+        expr: |
+          rate(jvm_gc_pause_seconds_sum{application="dormitory-app"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: jvm
+        annotations:
+          summary: "높은 GC Pause Time"
+          description: "GC가 전체 시간의 {{ $value | humanizePercentage }}를 차지하고 있습니다."
+          recommendation: "힙 크기 조정 또는 GC 튜닝 필요"
+
+      # 메모리 누수 의심
+      - alert: PossibleMemoryLeak
+        expr: |
+          increase(jvm_memory_used_bytes{application="dormitory-app",area="heap"}[1h]) > 100000000
+        for: 10m
+        labels:
+          severity: warning
+          component: jvm
+        annotations:
+          summary: "메모리 누수 의심"
+          description: "지난 1시간 동안 힙 메모리가 {{ $value | humanize }}B 증가했습니다."
+
+  # 데이터베이스 연결 알림
+  - name: database_alerts
+    interval: 30s
+    rules:
+      # DB 연결 풀 고갈
+      - alert: DatabaseConnectionPoolExhausted
+        expr: |
+          (
+            hikaricp_connections_active{application="dormitory-app"}
+            /
+            hikaricp_connections_max{application="dormitory-app"}
+          ) > 0.9
+        for: 2m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "데이터베이스 연결 풀 거의 고갈"
+          description: "DB 연결 풀 사용률이 {{ $value | humanizePercentage }}입니다."
+          recommendation: "연결 풀 크기 증가 또는 쿼리 최적화 필요"
+
+      # DB 연결 타임아웃 증가
+      - alert: DatabaseConnectionTimeout
+        expr: |
+          increase(hikaricp_connections_timeout_total{application="dormitory-app"}[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "DB 연결 타임아웃 발생"
+          description: "지난 5분간 {{ $value }}건의 연결 타임아웃이 발생했습니다."
+
+  # 비즈니스 메트릭 알림
+  - name: business_alerts
+    interval: 1m
+    rules:
+      # 로그인 실패율 증가
+      - alert: HighLoginFailureRate
+        expr: |
+          (
+            rate(user_login_total{status="failed"}[10m])
+            /
+            rate(user_login_total[10m])
+          ) > 0.3
+        for: 5m
+        labels:
+          severity: warning
+          component: auth
+        annotations:
+          summary: "로그인 실패율 증가"
+          description: "로그인 실패율이 {{ $value | humanizePercentage }}입니다. 브루트포스 공격 가능성"
+
+      # 비정상적으로 많은 민원
+      - alert: UnusuallyHighComplaints
+        expr: |
+          increase(complaint_created_total[1h]) > 10
+        for: 10m
+        labels:
+          severity: info
+          component: business
+        annotations:
+          summary: "민원 급증"
+          description: "시간당 {{ $value }}건의 민원이 발생하고 있습니다."
+
+      # 크롤링 실패
+      - alert: CrawlingTooSlow
+        expr: |
+          histogram_quantile(0.95,
+            rate(crawling_duration_seconds_bucket[10m])
+          ) > 30
+        for: 5m
+        labels:
+          severity: warning
+          component: crawler
+        annotations:
+          summary: "크롤링 성능 저하"
+          description: "크롤링이 {{ $value | humanizeDuration }} 소요되고 있습니다."
+
+  # 시스템 리소스 알림
+  - name: system_alerts
+    interval: 30s
+    rules:
+      # 디스크 공간 부족 (이 알림은 node-exporter-alerts.yml로 이동됨)
+      # Spring Boot는 디스크 메트릭을 기본 제공하지 않으므로 Node Exporter 사용 권장
+      # 실제 디스크 알림은 monitoring/prometheus/rules/node-exporter-alerts.yml 참고
+
+      # 스레드 수 급증
+      - alert: HighThreadCount
+        expr: |
+          jvm_threads_live{application="dormitory-app"} > 200
+        for: 5m
+        labels:
+          severity: critical
+          component: jvm
+        annotations:
+          summary: "스레드 수 급증"
+          description: "현재 {{ $value }}개의 스레드가 실행 중입니다."
+          recommendation: "스레드 누수 또는 무한 루프 확인 필요"

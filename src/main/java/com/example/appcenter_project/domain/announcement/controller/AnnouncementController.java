@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.announcement.controller;
 
 import com.example.appcenter_project.common.file.dto.AttachedFileDto;
+import com.example.appcenter_project.common.metrics.PersistentMetricsService;
 import com.example.appcenter_project.domain.announcement.dto.request.RequestAnnouncementDto;
 import com.example.appcenter_project.domain.announcement.dto.response.ResponseAnnouncementDetailDto;
 import com.example.appcenter_project.domain.announcement.dto.response.ResponseAnnouncementDto;
@@ -9,6 +10,7 @@ import com.example.appcenter_project.domain.announcement.enums.AnnouncementType;
 import com.example.appcenter_project.domain.announcement.service.AnnouncementFileService;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import com.example.appcenter_project.domain.announcement.service.AnnouncementService;
+import io.micrometer.core.annotation.Counted;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +35,7 @@ public class AnnouncementController implements AnnouncementApiSpecification {
 
     private final AnnouncementService announcementService;
     private final AnnouncementFileService announcementFileService;
+    private final PersistentMetricsService persistentMetricsService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> saveAnnouncement(
@@ -43,8 +46,10 @@ public class AnnouncementController implements AnnouncementApiSpecification {
         return ResponseEntity.status(CREATED).build();
     }
 
+    @Counted("announcement.find")
     @GetMapping("/{announcementId}")
     public ResponseEntity<ResponseAnnouncementDetailDto> findAnnouncement(@PathVariable Long announcementId) {
+        persistentMetricsService.incrementApiCall("announcement.find");
         return ResponseEntity.status(OK).body(announcementService.findAnnouncement(announcementId));
     }
 

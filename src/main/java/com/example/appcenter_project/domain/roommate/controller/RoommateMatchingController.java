@@ -6,6 +6,7 @@ import com.example.appcenter_project.domain.roommate.dto.response.ResponseReceiv
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateMatchingDto;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import com.example.appcenter_project.domain.roommate.service.RoommateMatchingService;
+import io.micrometer.core.annotation.Counted;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,6 +21,7 @@ public class RoommateMatchingController implements RoommateMatchingApiSpecificat
 
     private final RoommateMatchingService roommateMatchingService;
 
+    @Counted("roommate.request")
     @PostMapping("/request")
     public ResponseEntity<ResponseRoommateMatchingDto> requestMatching(
             @AuthenticationPrincipal CustomUserDetails userDetails,

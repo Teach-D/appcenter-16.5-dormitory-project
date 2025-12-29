@@ -1,5 +1,6 @@
 package com.example.appcenter_project.domain.survey.controller;
 
+import com.example.appcenter_project.common.metrics.PersistentMetricsService;
 import com.example.appcenter_project.domain.survey.dto.request.RequestSurveyDto;
 import com.example.appcenter_project.domain.survey.dto.request.RequestSurveyResponseDto;
 import com.example.appcenter_project.domain.survey.dto.response.ResponseSurveyDetailDto;
@@ -7,6 +8,7 @@ import com.example.appcenter_project.domain.survey.dto.response.ResponseSurveyDt
 import com.example.appcenter_project.domain.survey.dto.response.ResponseSurveyResultDto;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import com.example.appcenter_project.domain.survey.service.SurveyService;
+import io.micrometer.core.annotation.Counted;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +33,7 @@ import static org.springframework.http.HttpStatus.*;
 public class SurveyController implements SurveyApiSpecification {
 
     private final SurveyService surveyService;
+    private final PersistentMetricsService persistentMetricsService;
 
     // 설문 생성 (관리자)
     @PostMapping
@@ -42,8 +45,10 @@ public class SurveyController implements SurveyApiSpecification {
     }
 
     // 모든 설문 조회
+    @Counted("survey.find")
     @GetMapping
     public ResponseEntity<List<ResponseSurveyDto>> getAllSurveys() {
+        persistentMetricsService.incrementApiCall("survey.find");
         return ResponseEntity.status(OK).body(surveyService.getAllSurveys());
     }
 

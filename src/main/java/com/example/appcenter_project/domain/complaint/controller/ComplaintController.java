@@ -9,6 +9,7 @@ import com.example.appcenter_project.global.security.CustomUserDetails;
 import com.example.appcenter_project.domain.complaint.service.ComplaintService;
 import java.util.List;
 
+import io.micrometer.core.annotation.Counted;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -28,6 +29,7 @@ public class ComplaintController implements ComplaintApiSpecification {
     private final ComplaintService complaintService;
 
     // 민원 등록
+    @Counted("complaint.save")
     @Override
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResponseComplaintDto> createComplaint(

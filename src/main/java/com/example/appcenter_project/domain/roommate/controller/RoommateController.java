@@ -6,6 +6,7 @@ import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoomma
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateSimilarityDto;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import com.example.appcenter_project.domain.roommate.service.RoommateService;
+import io.micrometer.core.annotation.Counted;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,7 @@ public class RoommateController implements RoommateApiSpecification{
 
     private final RoommateService roommateService;
 
+    @Counted("roommate.save")
     @Override
     @PostMapping
     public ResponseEntity<ResponseRoommatePostDto> createRoommatePost(

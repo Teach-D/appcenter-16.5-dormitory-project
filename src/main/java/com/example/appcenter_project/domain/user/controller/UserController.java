@@ -9,6 +9,7 @@ import com.example.appcenter_project.domain.user.dto.response.ResponseUserRole;
 import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import com.example.appcenter_project.domain.user.service.UserService;
+import io.micrometer.core.annotation.Counted;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -35,6 +36,7 @@ public class UserController implements UserApiSpecification {
 
     private final UserService userService;
 
+    @Counted("user.save")
     @PostMapping
     public ResponseEntity<ResponseLoginDto> saveUser(@Valid @RequestBody SignupUser signupUser) {
         return ResponseEntity.status(CREATED).body(userService.saveUser(signupUser));

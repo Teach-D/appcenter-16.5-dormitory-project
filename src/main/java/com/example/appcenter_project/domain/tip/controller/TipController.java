@@ -1,11 +1,13 @@
 package com.example.appcenter_project.domain.tip.controller;
 
 import com.example.appcenter_project.common.image.dto.ImageLinkDto;
+import com.example.appcenter_project.common.metrics.PersistentMetricsService;
 import com.example.appcenter_project.domain.tip.dto.request.RequestTipDto;
 import com.example.appcenter_project.domain.tip.dto.response.ResponseTipDetailDto;
 import com.example.appcenter_project.domain.tip.dto.response.ResponseTipDto;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import com.example.appcenter_project.domain.tip.service.TipService;
+import io.micrometer.core.annotation.Counted;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ import static org.springframework.http.HttpStatus.*;
 public class TipController implements TipApiSpecification {
 
     private final TipService tipService;
+    private final PersistentMetricsService persistentMetricsService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> saveTip(
@@ -39,8 +42,10 @@ public class TipController implements TipApiSpecification {
 
     }
 
+    @Counted("tip.find")
     @GetMapping("/{tipId}")
     public ResponseEntity<ResponseTipDetailDto> findTip(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long tipId, HttpServletRequest request) {
+        persistentMetricsService.incrementApiCall("tip.find");
         return ResponseEntity.status(OK).body(tipService.findTip(user, tipId, request));
     }
 

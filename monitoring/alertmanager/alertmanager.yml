@@ -1,0 +1,94 @@
+global:
+  # 알림 재전송 간격
+  resolve_timeout: 5m
+
+# 알림 수신자 그룹화
+route:
+  # 기본 수신자
+  receiver: 'slack-alerts'
+
+  # 그룹화 설정 (같은 알림은 묶어서 전송)
+  group_by: ['alertname', 'severity', 'component']
+  group_wait: 10s        # 첫 알림 대기 시간
+  group_interval: 5m     # 그룹 알림 간격
+  repeat_interval: 3h    # 알림 재전송 간격
+
+  # 심각도별 라우팅
+  routes:
+    # Critical 알림은 즉시 전송
+    - match:
+        severity: critical
+      receiver: 'slack-critical'
+      group_wait: 0s
+      repeat_interval: 30m
+
+    # Warning 알림
+    - match:
+        severity: warning
+      receiver: 'slack-alerts'
+      group_wait: 30s
+      repeat_interval: 2h
+
+    # Info 알림
+    - match:
+        severity: info
+      receiver: 'slack-alerts'
+      group_wait: 1m
+      repeat_interval: 6h
+
+# 알림 수신자 설정
+receivers:
+  # Slack - 일반 알림 (Warning, Info)
+  - name: 'slack-alerts'
+    slack_configs:
+     - api_url: ''
+       channel: '#새-워크스페이스-전체'
+       username: 'Dormitory Monitor'
+       icon_emoji: ':bell:'
+       title: '{{ if eq .Status "firing" }}{{ else }}{{ end }} [{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}'
+       text: |
+         {{ range .Alerts }}
+         *Summary:* {{ .Annotations.summary }}
+         *Description:* {{ .Annotations.description }}
+         *Severity:* {{ .Labels.severity }}
+         *Component:* {{ .Labels.component }}
+         {{ if .Annotations.recommendation }}*Recommendation:* {{ .Annotations.recommendation }}{{ end }}
+         ---
+         {{ end }}
+       send_resolved: true
+
+  # Slack - Critical 알림 (동일 채널 사용)
+  - name: 'slack-critical'
+    slack_configs:
+     - api_url: ''
+       channel: '#새-워크스페이스-전체'
+       username: 'Dormitory Monitor [CRITICAL]'
+       icon_emoji: ':rotating_light:'
+       color: 'danger'
+       title: ' [CRITICAL] {{ .GroupLabels.alertname }} '
+       text: |
+         <!channel>
+         {{ range .Alerts }}
+         *Summary:* {{ .Annotations.summary }}
+         *Description:* {{ .Annotations.description }}
+         *Component:* {{ .Labels.component }}
+         {{ if .Annotations.recommendation }}*Recommendation:* {{ .Annotations.recommendation }}{{ end }}
+         ---
+         {{ end }}
+       send_resolved: true
+
+# 알림 억제 규칙 (불필요한 중복 알림 방지)
+inhibit_rules:
+  # ApplicationDown이 발생하면 다른 알림 억제
+  - source_match:
+      alertname: 'ApplicationDown'
+    target_match_re:
+      alertname: '.*'
+    equal: ['instance']
+
+  # Critical이 발생하면 같은 컴포넌트의 Warning 억제
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['component', 'instance']

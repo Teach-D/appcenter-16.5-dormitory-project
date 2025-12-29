@@ -1,0 +1,234 @@
+groups:
+  # 서버 CPU 알림
+  - name: node_cpu_alerts
+    interval: 30s
+    rules:
+      # 높은 CPU 사용률
+      - alert: HighCPUUsage
+        expr: |
+          (
+            100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+          ) > 80
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "서버 CPU 사용률 높음"
+          description: "{{ $labels.instance }}의 CPU 사용률이 {{ $value | humanizePercentage }}입니다. (임계값: 80%)"
+          recommendation: "프로세스 확인 (top 명령어) 및 부하 원인 파악 필요"
+
+      # 매우 높은 CPU 사용률 (Critical)
+      - alert: CriticalCPUUsage
+        expr: |
+          (
+            100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+          ) > 95
+        for: 3m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "서버 CPU 사용률 위험 수준"
+          description: "{{ $labels.instance }}의 CPU 사용률이 {{ $value | humanizePercentage }}입니다. 즉시 확인 필요!"
+          recommendation: "즉시 top/htop으로 프로세스 확인, 필요시 서비스 재시작"
+
+      # CPU Load Average 높음
+      - alert: HighLoadAverage
+        expr: |
+          node_load1 / count(node_cpu_seconds_total{mode="idle"}) by (instance) > 1.5
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "서버 Load Average 높음"
+          description: "{{ $labels.instance }}의 1분 Load Average가 {{ $value | printf \"%.2f\" }}입니다."
+          recommendation: "CPU 코어 대비 높은 부하. 프로세스 수 및 I/O 대기 확인"
+
+  # 서버 메모리 알림
+  - name: node_memory_alerts
+    interval: 30s
+    rules:
+      # 높은 메모리 사용률
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)
+            / node_memory_MemTotal_bytes
+          ) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "서버 메모리 사용률 높음"
+          description: "{{ $labels.instance }}의 메모리 사용률이 {{ $value | humanizePercentage }}입니다. (임계값: 85%)"
+          recommendation: "메모리 누수 확인 또는 메모리 증설 검토"
+
+      # 매우 높은 메모리 사용률 (Critical)
+      - alert: CriticalMemoryUsage
+        expr: |
+          (
+            (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)
+            / node_memory_MemTotal_bytes
+          ) > 0.95
+        for: 2m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "서버 메모리 부족 위험"
+          description: "{{ $labels.instance }}의 메모리 사용률이 {{ $value | humanizePercentage }}입니다. OOM Killer 발생 가능!"
+          recommendation: "즉시 불필요한 프로세스 종료 또는 서버 재시작"
+
+      # SWAP 사용 증가
+      - alert: HighSwapUsage
+        expr: |
+          (
+            (node_memory_SwapTotal_bytes - node_memory_SwapFree_bytes)
+            / node_memory_SwapTotal_bytes
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "SWAP 메모리 사용 증가"
+          description: "{{ $labels.instance }}의 SWAP 사용률이 {{ $value | humanizePercentage }}입니다."
+          recommendation: "메모리 부족 상태. 물리 메모리 증설 검토 필요"
+
+  # 서버 디스크 알림
+  - name: node_disk_alerts
+    interval: 30s
+    rules:
+      # 디스크 공간 부족 (Warning)
+      - alert: LowDiskSpace
+        expr: |
+          (
+            node_filesystem_avail_bytes{fstype=~"ext4|xfs|vfat",mountpoint!~"/boot.*"}
+            / node_filesystem_size_bytes
+          ) < 0.15
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "디스크 공간 부족"
+          description: "{{ $labels.instance }}의 {{ $labels.mountpoint }} 파티션 여유 공간이 {{ $value | humanizePercentage }}입니다. (임계값: 15%)"
+          recommendation: "불필요한 파일 삭제 또는 디스크 증설 필요"
+
+      # 디스크 공간 매우 부족 (Critical)
+      - alert: CriticalDiskSpace
+        expr: |
+          (
+            node_filesystem_avail_bytes{fstype=~"ext4|xfs|vfat",mountpoint!~"/boot.*"}
+            / node_filesystem_size_bytes
+          ) < 0.05
+        for: 2m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "디스크 공간 위험 수준"
+          description: "{{ $labels.instance }}의 {{ $labels.mountpoint }} 파티션 여유 공간이 {{ $value | humanizePercentage }}입니다. 즉시 조치 필요!"
+          recommendation: "즉시 로그 파일 삭제 또는 대용량 파일 정리"
+
+      # 디스크 inode 부족
+      - alert: LowDiskInodes
+        expr: |
+          (
+            node_filesystem_files_free{fstype=~"ext4|xfs|vfat",mountpoint!~"/boot.*"}
+            / node_filesystem_files
+          ) < 0.10
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "디스크 inode 부족"
+          description: "{{ $labels.instance }}의 {{ $labels.mountpoint }} 파티션 inode가 {{ $value | humanizePercentage }}만 남았습니다."
+          recommendation: "작은 파일이 너무 많음. 불필요한 파일 삭제 필요"
+
+      # 높은 디스크 I/O 사용률
+      - alert: HighDiskIOUsage
+        expr: |
+          rate(node_disk_io_time_seconds_total[5m]) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "디스크 I/O 사용률 높음"
+          description: "{{ $labels.instance }}의 {{ $labels.device }} 디스크 I/O 사용률이 {{ $value | humanizePercentage }}입니다."
+          recommendation: "디스크 병목 확인. SSD 업그레이드 또는 쿼리 최적화 검토"
+
+  # 서버 네트워크 알림
+  - name: node_network_alerts
+    interval: 30s
+    rules:
+      # 높은 네트워크 수신 에러율
+      - alert: HighNetworkReceiveErrors
+        expr: |
+          rate(node_network_receive_errs_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: network
+        annotations:
+          summary: "네트워크 수신 에러 증가"
+          description: "{{ $labels.instance }}의 {{ $labels.device }} 인터페이스에서 초당 {{ $value | printf \"%.2f\" }}건의 수신 에러 발생"
+          recommendation: "네트워크 케이블, 스위치, 드라이버 확인"
+
+      # 높은 네트워크 송신 에러율
+      - alert: HighNetworkTransmitErrors
+        expr: |
+          rate(node_network_transmit_errs_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: network
+        annotations:
+          summary: "네트워크 송신 에러 증가"
+          description: "{{ $labels.instance }}의 {{ $labels.device }} 인터페이스에서 초당 {{ $value | printf \"%.2f\" }}건의 송신 에러 발생"
+          recommendation: "네트워크 설정 및 대역폭 확인"
+
+  # 서버 상태 알림
+  - name: node_status_alerts
+    interval: 30s
+    rules:
+      # Node Exporter 다운
+      - alert: NodeExporterDown
+        expr: up{job="node-exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: monitoring
+        annotations:
+          summary: "Node Exporter 다운"
+          description: "{{ $labels.instance }}의 Node Exporter가 2분 이상 응답하지 않습니다."
+          recommendation: "서버 상태 확인 및 Node Exporter 재시작 필요"
+
+      # 서버 재부팅 감지
+      - alert: ServerRebooted
+        expr: node_time_seconds - node_boot_time_seconds < 600
+        for: 1m
+        labels:
+          severity: info
+          component: system
+        annotations:
+          summary: "서버 재부팅 감지"
+          description: "{{ $labels.instance }} 서버가 {{ $value | humanizeDuration }} 전에 재부팅되었습니다."
+          recommendation: "예정된 재부팅이 아니라면 원인 파악 필요"
+
+      # 시스템 시간 동기화 문제
+      - alert: ClockSkewDetected
+        expr: abs(node_timex_offset_seconds) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "시스템 시간 동기화 문제"
+          description: "{{ $labels.instance }}의 시간이 {{ $value | printf \"%.3f\" }}초 틀어져 있습니다."
+          recommendation: "NTP 서비스 확인 및 재시작 (systemctl restart chronyd)"

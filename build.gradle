@@ -78,6 +78,10 @@ dependencies {
 
 	// CSV
 	implementation 'com.opencsv:opencsv:5.9'
+
+	// Prometheus monitoring
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'io.micrometer:micrometer-registry-prometheus'
 }
 
 tasks.named('test') {

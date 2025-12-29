@@ -1,0 +1,168 @@
+groups:
+  # HTTP 요청 메트릭 Downsampling (5분 집계)
+  - name: http_requests_5m
+    interval: 5m
+    rules:
+      # 5분 평균 응답 시간
+      - record: http_request_duration_seconds:5m:avg
+        expr: avg_over_time(http_server_requests_seconds_sum[5m]) / avg_over_time(http_server_requests_seconds_count[5m])
+        labels:
+          aggregation: "5m"
+
+      # 5분 요청 처리량 (QPS)
+      - record: http_requests:5m:rate
+        expr: rate(http_server_requests_seconds_count[5m])
+        labels:
+          aggregation: "5m"
+
+      # 5분 에러율
+      - record: http_requests_error:5m:rate
+        expr: rate(http_server_requests_seconds_count{status=~"5.."}[5m])
+        labels:
+          aggregation: "5m"
+
+  # JVM 메트릭 Downsampling (5분 집계)
+  - name: jvm_metrics_5m
+    interval: 5m
+    rules:
+      # 5분 평균 힙 메모리 사용량
+      - record: jvm_memory_used_bytes:5m:avg
+        expr: avg_over_time(jvm_memory_used_bytes{area="heap"}[5m])
+        labels:
+          aggregation: "5m"
+
+      # 5분 평균 GC 시간
+      - record: jvm_gc_pause_seconds:5m:avg
+        expr: avg_over_time(jvm_gc_pause_seconds_sum[5m])
+        labels:
+          aggregation: "5m"
+
+      # 5분 평균 스레드 수
+      - record: jvm_threads_live:5m:avg
+        expr: avg_over_time(jvm_threads_live[5m])
+        labels:
+          aggregation: "5m"
+
+
+  # HTTP 요청 메트릭 Downsampling (1시간 집계)
+  - name: http_requests_1h
+    interval: 1h
+    rules:
+      # 1시간 평균 응답 시간
+      - record: http_request_duration_seconds:1h:avg
+        expr: avg_over_time(http_request_duration_seconds:5m:avg[1h])
+        labels:
+          aggregation: "1h"
+
+      # 1시간 요청 처리량
+      - record: http_requests:1h:rate
+        expr: avg_over_time(http_requests:5m:rate[1h])
+        labels:
+          aggregation: "1h"
+
+      # 1시간 에러율
+      - record: http_requests_error:1h:rate
+        expr: avg_over_time(http_requests_error:5m:rate[1h])
+        labels:
+          aggregation: "1h"
+
+  # JVM 메트릭 Downsampling (1시간 집계)
+  - name: jvm_metrics_1h
+    interval: 1h
+    rules:
+      - record: jvm_memory_used_bytes:1h:avg
+        expr: avg_over_time(jvm_memory_used_bytes:5m:avg[1h])
+        labels:
+          aggregation: "1h"
+
+      - record: jvm_gc_pause_seconds:1h:avg
+        expr: avg_over_time(jvm_gc_pause_seconds:5m:avg[1h])
+        labels:
+          aggregation: "1h"
+
+      - record: jvm_threads_live:5m:avg
+        expr: avg_over_time(jvm_threads_live_threads[5m])
+        labels:
+          aggregation: "5m"
+
+      - record: jvm_threads_live:1h:avg
+        expr: avg_over_time(jvm_threads_live:5m:avg[1h])
+        labels:
+          aggregation: "1h"
+#  # Custom API 메트릭 Downsampling (1시간 집계)
+#  - name: custom_api_metrics_1h
+#    interval: 1h
+#    rules:
+#      - record: announcement_find:1h:increase
+#        expr: sum_over_time(announcement_find:5m:increase[1h])
+#        labels:
+#          aggregation: "1h"
+#
+#      - record: complaint_save:1h:increase
+#        expr: sum_over_time(complaint_save:5m:increase[1h])
+#        labels:
+#          aggregation: "1h"
+#
+#      - record: roommate_chatting_send:1h:increase
+#        expr: sum_over_time(roommate_chatting_send:5m:increase[1h])
+#        labels:
+#          aggregation: "1h"
+#
+#      - record: survey_find:1h:increase
+#        expr: sum_over_time(survey_find:5m:increase[1h])
+#        labels:
+#          aggregation: "1h"
+#
+#      - record: tip_find:1h:increase
+#        expr: sum_over_time(tip_find:5m:increase[1h])
+#        labels:
+#          aggregation: "1h"
+#
+#      - record: user_save:1h:increase
+#        expr: sum_over_time(user_save:5m:increase[1h])
+#        labels:
+#          aggregation: "1h"
+
+  - name: custom_api_metrics_5m
+    interval: 5m
+    rules:
+      # API 호출 증가량 (5분)
+      - record: announcement_find:5m:increase
+        expr: increase(announcement_find_total[5m]) or vector(0)
+        labels:
+          aggregation: "5m"
+
+      - record: complaint_save:5m:increase
+        expr: increase(complaint_save_total[5m]) or vector(0)
+        labels:
+          aggregation: "5m"
+
+      - record: roommate_chatting_send:5m:increase
+        expr: increase(roommate_chatting_send_total[5m]) or vector(0)
+        labels:
+          aggregation: "5m"
+
+      - record: survey_find:5m:increase
+        expr: increase(survey_find_total[5m]) or vector(0)
+        labels:
+          aggregation: "5m"
+
+      - record: tip_find:5m:increase
+        expr: increase(tip_find_total[5m]) or vector(0)
+        labels:
+          aggregation: "5m"
+
+      - record: user_save:5m:increase
+        expr: increase(user_save_total[5m]) or vector(0)
+        labels:
+          aggregation: "5m"
+
+      - record: roommate_save:5m:increase
+        expr: increase(roommate_save_total[5m]) or vector(0)
+        labels:
+          aggregation: "5m"
+
+      - record: roommate_request:5m:increase
+        expr: increase(roommate_request_total[5m]) or vector(0)
+        labels:
+          aggregation: "5m"

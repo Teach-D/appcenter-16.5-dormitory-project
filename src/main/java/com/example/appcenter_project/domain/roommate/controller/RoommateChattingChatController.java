@@ -4,6 +4,7 @@ import com.example.appcenter_project.domain.roommate.dto.request.RequestRoommate
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateChatDto;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import com.example.appcenter_project.domain.roommate.service.RoommateChattingChatService;
+import io.micrometer.core.annotation.Counted;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import jakarta.validation.Valid;
@@ -24,6 +25,7 @@ public class RoommateChattingChatController implements RoommateChatApiSpecificat
     private final RoommateChattingChatService chatService;
 
     // 채팅 보내기
+    @Counted("roommate.chatting.send")
     @PostMapping
     public ResponseEntity<ResponseRoommateChatDto> sendChat(
             @AuthenticationPrincipal CustomUserDetails userDetails,
