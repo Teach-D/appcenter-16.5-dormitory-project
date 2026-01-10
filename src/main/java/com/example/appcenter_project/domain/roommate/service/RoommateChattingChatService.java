@@ -1,5 +1,9 @@
 package com.example.appcenter_project.domain.roommate.service;
 
+import com.example.appcenter_project.domain.fcm.service.FcmMessageService;
+import com.example.appcenter_project.domain.notification.dto.request.RequestNotificationDto;
+import com.example.appcenter_project.domain.notification.entity.Notification;
+import com.example.appcenter_project.domain.notification.service.NotificationService;
 import com.example.appcenter_project.domain.roommate.dto.request.RequestRoommateChatDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateChatDto;
 import com.example.appcenter_project.domain.roommate.entity.RoommateChattingChat;
@@ -31,6 +35,8 @@ public class RoommateChattingChatService {
     private final RoommateChattingRoomRepository chatRoomRepository;
     private final UserRepository userRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final NotificationService notificationService;
+    private final FcmMessageService fcmMessageService;
 
     public ResponseRoommateChatDto sendChat(Long userId, RequestRoommateChatDto request) {
         log.info("💬 [채팅 전송 시작] userId: {}, roomId: {}, content: {}",
@@ -89,7 +95,15 @@ public class RoommateChattingChatService {
             messagingTemplate.convertAndSend(readDestination, readIds);
         }
 
+        sendChatNotification(receiver, room.getId());
+
         return responseDto;
+    }
+
+    private void sendChatNotification(User receiver, Long chatRoomId) {
+        Notification chatNotification = notificationService.createChatNotification(receiver.getName(), chatRoomId);
+        notificationService.createUserNotification(receiver, chatNotification);
+        fcmMessageService.sendNotification(receiver, chatNotification.getTitle(), chatNotification.getBody());
     }
 
     public void markAsRead(Long roomId, Long userId) {

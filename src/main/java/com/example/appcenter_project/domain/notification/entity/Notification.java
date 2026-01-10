@@ -65,6 +65,16 @@ public class Notification extends BaseTimeEntity {
 
     }
 
+    public static Notification createChatNotification(String title, String body, Long chatRoomId) {
+        return Notification.builder()
+                .title(title)
+                .body(body)
+                .notificationType(NotificationType.CHAT)
+                .apiType(ApiType.CHAT)
+                .boardId(chatRoomId)
+                .build();
+    }
+
     public void update(RequestNotificationDto requestNotificationDto) {
         boardId = requestNotificationDto.getBoardId();
         title = requestNotificationDto.getTitle();
