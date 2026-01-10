@@ -101,6 +101,24 @@ public class NotificationService {
         return chatNotification;
     }
 
+    public Notification createRoommateRequestNotification(String senderName, Long matchingId) {
+        String title = "새로운 룸메이트 매칭 요청이 도착했습니다!";
+        String body = senderName + "님이 룸메이트 매칭 요청을 보냈습니다.";
+
+        Notification roommateRequestNotification = Notification.createRoommateMatchingNotification(title, body, matchingId);
+        notificationRepository.save(roommateRequestNotification);
+        return roommateRequestNotification;
+    }
+
+    public Notification createRoommateAcceptNotification(String senderName, Long matchingId) {
+        String title = "룸메이트 매칭이 완료되었습니다!";
+        String body = senderName + "님과 룸메이트가 되었습니다.";
+
+        Notification roommateAcceptNotification = Notification.createRoommateMatchingNotification(title, body, matchingId);
+        notificationRepository.save(roommateAcceptNotification);
+        return roommateAcceptNotification;
+    }
+
     // ========== Private Methods ========== //
 
     private void saveUserNotifications(Notification notification, List<User> receiveUsers) {
