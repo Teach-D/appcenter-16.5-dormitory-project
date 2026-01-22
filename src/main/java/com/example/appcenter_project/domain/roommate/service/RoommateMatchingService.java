@@ -1,5 +1,7 @@
 package com.example.appcenter_project.domain.roommate.service;
 
+import com.example.appcenter_project.domain.notification.entity.Notification;
+import com.example.appcenter_project.domain.notification.service.NotificationService;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseReceivedRoommateMatchingDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateMatchingDto;
 import com.example.appcenter_project.domain.roommate.entity.MyRoommate;
@@ -32,6 +34,7 @@ public class RoommateMatchingService {
     private final MyRoommateRepository myRoommateRepository;
     private final RoommateChattingRoomRepository roommateChattingRoomRepository;
     private final FcmMessageService fcmMessageService;
+    private final NotificationService notificationService;
 
     //매칭요청 학번
     @Transactional
@@ -64,14 +67,19 @@ public class RoommateMatchingService {
 
         roommateMatchingRepository.save(matching);
 
-        // ★ FCM 발송
-        sendFcmToReceiver(sender, receiver);
+        sendRequestNotification(receiver, matching.getId());
 
         return ResponseRoommateMatchingDto.builder()
                 .MatchingId(matching.getId())
                 .reciverId(matching.getReceiver().getId())
                 .status(matching.getStatus())
                 .build();
+    }
+
+    private void sendRequestNotification(User receiver, Long matchingId) {
+        Notification requestNotification = notificationService.createRoommateRequestNotification(receiver.getName(), matchingId);
+        notificationService.createUserNotification(receiver, requestNotification);
+        fcmMessageService.sendNotification(receiver, requestNotification.getTitle(), requestNotification.getBody());
     }
 
     // 매칭 요청 채팅방id
@@ -115,9 +123,7 @@ public class RoommateMatchingService {
 
         roommateMatchingRepository.save(matching);
 
-        // ★ FCM 발송
-        sendFcmToReceiver(sender, receiver);
-
+        sendRequestNotification(receiver, matching.getId());
 
         return ResponseRoommateMatchingDto.builder()
                 .MatchingId(matching.getId())
@@ -201,6 +207,15 @@ public class RoommateMatchingService {
 
         myRoommateRepository.save(myRoommate1);
         myRoommateRepository.save(myRoommate2);
+
+        sendAcceptNotification(receiver, matching.getId());
+    }
+
+    private void sendAcceptNotification(User receiver, Long matchingId) {
+        Notification acceptNotification = notificationService.createRoommateAcceptNotification(receiver.getName(), matchingId);
+        notificationService.createUserNotification(receiver, acceptNotification);
+        fcmMessageService.sendNotification(receiver, acceptNotification.getTitle(), acceptNotification.getBody());
+
     }
 
     // 매칭 거절

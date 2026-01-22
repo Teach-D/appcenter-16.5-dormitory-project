@@ -15,7 +15,8 @@ public enum NotificationType {
     UNI_DORM("유니돔"),
     SUPPORTERS("서포터즈"),
     COMPLAINT("민원"),
-    COUPON("쿠폰");
+    COUPON("쿠폰"),
+    CHAT("채팅");
 
     private final String description;
 
