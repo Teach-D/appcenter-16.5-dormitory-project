@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Controller
+@RestController
 @RequiredArgsConstructor
 @RequestMapping("/features")
-public class FeatureController {
+public class FeatureController implements FeatureApiSpecification {
 
     private final FeatureService featureService;
 
