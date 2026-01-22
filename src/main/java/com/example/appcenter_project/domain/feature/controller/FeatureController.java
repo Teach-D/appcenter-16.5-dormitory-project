@@ -24,8 +24,8 @@ public class FeatureController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @GetMapping
-    public ResponseEntity<ResponseFeatureDto> findFeature(@RequestParam String key) {
+    @GetMapping("/{key}")
+    public ResponseEntity<ResponseFeatureDto> findFeature(@PathVariable String key) {
         return ResponseEntity.status(HttpStatus.OK).body(featureService.findFeature(key));
     }
 
