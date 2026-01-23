@@ -9,6 +9,4 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface AnnouncementRepository extends JpaRepository<Announcement, Long>, AnnouncementQuerydslRepository {
-    List<Announcement> findAllByOrderByIdDesc(AnnouncementType type, AnnouncementCategory category, String search, Pageable pageable);
-    List<Announcement> findByIdLessThanOrderByIdDesc(AnnouncementType type, AnnouncementCategory category, String search, Long lastId, Pageable pageable);
 }

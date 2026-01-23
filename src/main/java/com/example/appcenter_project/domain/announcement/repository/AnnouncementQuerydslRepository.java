@@ -14,5 +14,5 @@ import java.util.List;
 public interface AnnouncementQuerydslRepository {
 
     List<Announcement> findAnnouncementComplex(AnnouncementType type, AnnouncementCategory category, String search);
-
+    List<Announcement> findAllWithFilters(AnnouncementType type, AnnouncementCategory category, String search, Long lastId, Pageable pageable);
 }
