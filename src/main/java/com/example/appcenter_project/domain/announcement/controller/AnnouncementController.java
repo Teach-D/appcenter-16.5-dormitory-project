@@ -70,6 +70,22 @@ public class AnnouncementController implements AnnouncementApiSpecification {
         return ResponseEntity.status(OK).body(announcementService.findAllAnnouncements(AnnouncementType.valueOf(type), AnnouncementCategory.valueOf(category), search));
     }
 
+    @GetMapping("/scroll")
+    public ResponseEntity<List<ResponseAnnouncementDto>> findAllAnnouncementsScroll(
+            @RequestParam(defaultValue = "생활원") String type,
+            @RequestParam(defaultValue = "입퇴사 공지", required = false) String category,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Long lastId,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        AnnouncementType announcementType = AnnouncementType.valueOf(type);
+        AnnouncementCategory announcementCategory = category != null ? AnnouncementCategory.valueOf(category) : null;
+
+        return ResponseEntity.status(OK).body(
+                announcementService.findAllAnnouncementsScroll(announcementType, announcementCategory, search, lastId, size)
+        );
+    }
+
     @PutMapping("/{announcementId}")
     public ResponseEntity<ResponseAnnouncementDto> updateAnnouncement(
             @AuthenticationPrincipal CustomUserDetails user,
