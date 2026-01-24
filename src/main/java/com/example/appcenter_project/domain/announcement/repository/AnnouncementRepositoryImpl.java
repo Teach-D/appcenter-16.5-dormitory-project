@@ -8,6 +8,7 @@ import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -33,6 +34,31 @@ public class AnnouncementRepositoryImpl implements AnnouncementQuerydslRepositor
                         announcementEqCategory(category),
                         announcementLikeSearch(search)
                 ).fetch();
+    }
+
+    @Override
+    public List<Announcement> findAllWithFilters(
+            AnnouncementType type,
+            AnnouncementCategory category,
+            String search,
+            Long lastId,
+            Pageable pageable) {
+
+        return queryFactory
+                .selectFrom(announcement)
+                .where(
+                        announcementEqType(type),
+                        announcementEqCategory(category),
+                        announcementLikeSearch(search),
+                        announcementIdLessThan(lastId)
+                )
+                .orderBy(announcement.id.desc())
+                .limit(pageable.getPageSize())
+                .fetch();
+    }
+
+    private BooleanExpression announcementIdLessThan(Long lastId) {
+        return lastId != null ? announcement.id.lt(lastId) : null;
     }
 
     private BooleanExpression announcementEqType(AnnouncementType type) {

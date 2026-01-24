@@ -73,17 +73,10 @@ public class AnnouncementService {
             int size) {
 
         Pageable pageable = PageRequest.of(0, size);
-        List<Announcement> announcements;
 
-        if (lastId == null) {
-            announcements = announcementRepository.findAllByOrderByIdDesc(
-                    type, category, search, pageable
-            );
-        } else {
-            announcements = announcementRepository.findByIdLessThanOrderByIdDesc(
-                    type, category, search, lastId, pageable
-            );
-        }
+        List<Announcement> announcements = announcementRepository.findAllWithFilters(
+                type, category, search, lastId, pageable
+        );
 
         if (announcements.isEmpty()) {
             return List.of();
