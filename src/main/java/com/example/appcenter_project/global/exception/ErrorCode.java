@@ -149,7 +149,11 @@ public enum ErrorCode {
     RECRUITMENT_COUNT_MAX(CONFLICT, 18009, "[Survey] 남은 공석이 없습니다"),
 
     // COUPON
-    COUPON_NOT_FOUND(NOT_FOUND, 19001, "[COUPON] 쿠폰이 존재하지 않습니다.");
+    COUPON_NOT_FOUND(NOT_FOUND, 19001, "[COUPON] 쿠폰이 존재하지 않습니다."),
+
+    // FEATURE
+    FEATURE_NOT_FOUND(NOT_FOUND, 12001, "[FEATURE] feature가 존재하지 않습니다."),
+    DUPLICATE_FEATURE_KEY(CONFLICT, 12001, "[FEATURE] 같은 key의 feature가 존재합니다.");
 
     private final HttpStatus httpStatus;
     private final Integer code;

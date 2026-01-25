@@ -76,21 +76,21 @@ public interface AnnouncementApiSpecification {
        
         """,
             parameters = {
-                @Parameter(
-                    name = "type",
-                    description = "공지사항 작성 주체(ALL, DORMITORY, UNI_DORM, SUPPORTERS)",
-                    example = "DORMITORY",
-                    schema = @Schema(type = "string", allowableValues = {"ALL", "DORMITORY", "UNI_DORM", "SUPPORTERS"})
-                ),
-                @Parameter(
-                        name = "category",
-                        description = "공지사항 카테고리(ALL(전체), LIFE_GUIDANCE(생활지도), FACILITY(시설), " +
-                                "EVENT_LECTURE(행사/강좌), BTL_DORMITORY(BTL기숙사), " +
-                                "MOVE_IN_OUT(입퇴사 공지), ETC(기타))",
-                        example = "ALL",
-                        schema = @Schema(type = "string", allowableValues =
-                                {"ALL", "LIFE_GUIDANCE", "FACILITY", "EVENT_LECTURE", "BTL_DORMITORY", "MOVE_IN_OUT", "ETC"})
-                )
+                    @Parameter(
+                            name = "type",
+                            description = "공지사항 작성 주체(ALL, DORMITORY, UNI_DORM, SUPPORTERS)",
+                            example = "DORMITORY",
+                            schema = @Schema(type = "string", allowableValues = {"ALL", "DORMITORY", "UNI_DORM", "SUPPORTERS"})
+                    ),
+                    @Parameter(
+                            name = "category",
+                            description = "공지사항 카테고리(ALL(전체), LIFE_GUIDANCE(생활지도), FACILITY(시설), " +
+                                    "EVENT_LECTURE(행사/강좌), BTL_DORMITORY(BTL기숙사), " +
+                                    "MOVE_IN_OUT(입퇴사 공지), ETC(기타))",
+                            example = "ALL",
+                            schema = @Schema(type = "string", allowableValues =
+                                    {"ALL", "LIFE_GUIDANCE", "FACILITY", "EVENT_LECTURE", "BTL_DORMITORY", "MOVE_IN_OUT", "ETC"})
+                    )
             },
             responses = {
                     @ApiResponse(
@@ -105,6 +105,83 @@ public interface AnnouncementApiSpecification {
     )
     ResponseEntity<List<ResponseAnnouncementDto>> findAllAnnouncements(
             @RequestParam(defaultValue = "생활원") String type, @RequestParam(defaultValue = "입퇴사 공지") String category, String search
+    );
+
+    @Operation(
+            summary = "모든 공지사항 조회 (무한스크롤)",
+            description = """
+    모든 공지사항을 무한스크롤 방식으로 조회합니다.
+    
+    ### 무한스크롤 사용법
+    - 첫 로딩: lastId 없이 호출
+    - 다음 페이지: 이전 응답의 마지막 게시물 ID를 lastId로 전달
+    - 빈 배열 반환 시 더 이상 데이터 없음
+    
+    ### 카테고리 출력 값 (category)
+    
+    | 영문 코드 | 한글 의미 |
+    |----------|----------|
+    | LIFE_GUIDANCE | 생활지도 |
+    | FACILITY | 시설 |
+    | EVENT_LECTURE | 행사/강좌 |
+    | BTL_DORMITORY | BTL기숙사 |
+    | ETC | 기타 |
+    | MOVE_IN_OUT | 입퇴사 공지 |
+   
+    """,
+            parameters = {
+                    @Parameter(
+                            name = "type",
+                            description = "공지사항 작성 주체(ALL, DORMITORY, UNI_DORM, SUPPORTERS)",
+                            example = "DORMITORY",
+                            schema = @Schema(type = "string", allowableValues = {"ALL", "DORMITORY", "UNI_DORM", "SUPPORTERS"})
+                    ),
+                    @Parameter(
+                            name = "category",
+                            description = "공지사항 카테고리(ALL(전체), LIFE_GUIDANCE(생활지도), FACILITY(시설), " +
+                                    "EVENT_LECTURE(행사/강좌), BTL_DORMITORY(BTL기숙사), " +
+                                    "MOVE_IN_OUT(입퇴사 공지), ETC(기타))",
+                            example = "ALL",
+                            schema = @Schema(type = "string", allowableValues =
+                                    {"ALL", "LIFE_GUIDANCE", "FACILITY", "EVENT_LECTURE", "BTL_DORMITORY", "MOVE_IN_OUT", "ETC"})
+                    ),
+                    @Parameter(
+                            name = "search",
+                            description = "검색어 (제목 기준)",
+                            example = "입사",
+                            required = false
+                    ),
+                    @Parameter(
+                            name = "lastId",
+                            description = "마지막으로 조회한 공지사항 ID (무한스크롤용 커서, 첫 로딩 시 null)",
+                            example = "50",
+                            required = false,
+                            schema = @Schema(type = "integer", format = "int64")
+                    ),
+                    @Parameter(
+                            name = "size",
+                            description = "한 번에 조회할 공지사항 개수",
+                            example = "10",
+                            schema = @Schema(type = "integer", defaultValue = "10")
+                    )
+            },
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "조회 성공",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    array = @ArraySchema(schema = @Schema(implementation = ResponseAnnouncementDto.class))
+                            )
+                    )
+            }
+    )
+    ResponseEntity<List<ResponseAnnouncementDto>> findAllAnnouncementsScroll(
+            @RequestParam(defaultValue = "생활원") String type,
+            @RequestParam(defaultValue = "입퇴사 공지") String category,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Long lastId,
+            @RequestParam(defaultValue = "10") int size
     );
 
     @Operation(

@@ -16,6 +16,8 @@ import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.domain.notification.service.AnnouncementNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -56,10 +58,31 @@ public class AnnouncementService {
 
         return ResponseAnnouncementDetailDto.from(announcement);
     }
-
     public List<ResponseAnnouncementDto> findAllAnnouncements(AnnouncementType type, AnnouncementCategory category, String search) {
         return announcementRepository.findAnnouncementComplex(type, category, search).stream()
                 .sorted(Comparator.comparing(Announcement::getSortDate).reversed())
+                .map(ResponseAnnouncementDto::from)
+                .toList();
+    }
+
+    public List<ResponseAnnouncementDto> findAllAnnouncementsScroll(
+            AnnouncementType type,
+            AnnouncementCategory category,
+            String search,
+            Long lastId,
+            int size) {
+
+        Pageable pageable = PageRequest.of(0, size);
+
+        List<Announcement> announcements = announcementRepository.findAllWithFilters(
+                type, category, search, lastId, pageable
+        );
+
+        if (announcements.isEmpty()) {
+            return List.of();
+        }
+
+        return announcements.stream()
                 .map(ResponseAnnouncementDto::from)
                 .toList();
     }
