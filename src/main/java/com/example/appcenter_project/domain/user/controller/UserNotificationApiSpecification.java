@@ -1,5 +1,6 @@
 package com.example.appcenter_project.domain.user.controller;
 
+import com.example.appcenter_project.domain.user.dto.response.ResponseUserNotificationDto;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -83,6 +84,47 @@ public interface UserNotificationApiSpecification {
                     example = "배달",
                     schema = @Schema(allowableValues = {"전체", "배달", "식자재", "생활용품", "기타"})
             ) String category);
+
+    @Operation(
+            summary = "알림 수신 설정 조회",
+            description = """
+                    현재 사용자의 알림 수신 설정을 조회합니다.
+                    
+                    ### 알림 타입
+                    - `roommateNotification`: 룸메이트 알림 수신 여부
+                    - `groupOrderNotification`: 공동구매 알림 수신 여부
+                    - `dormitoryNotification`: 생활원 알림 수신 여부
+                    - `unidormNotification`: 유니돔 알림 수신 여부
+                    - `supportersNotification`: 서포터즈 알림 수신 여부
+                    
+                    ### 응답 예시
+                    ```json
+                    {
+                      "roommateNotification": true,
+                      "groupOrderNotification": true,
+                      "dormitoryNotification": false,
+                      "unidormNotification": true,
+                      "supportersNotification": false
+                    }
+                    ```
+                    
+                    `true`인 알림 타입만 푸시 알림을 받습니다.
+                    """,
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "알림 수신 설정 조회 성공",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseUserNotificationDto.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "인증 필요"),
+                    @ApiResponse(responseCode = "404", description = "회원가입하지 않은 사용자입니다. (USER_NOT_FOUND)")
+            }
+    )
+    ResponseEntity<ResponseUserNotificationDto> findReceiveNotificationType(
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails user);
 
     @Operation(
             summary = "공동구매 키워드 알림 목록 조회",
