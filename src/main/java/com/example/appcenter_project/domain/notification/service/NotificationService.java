@@ -119,6 +119,15 @@ public class NotificationService {
         return roommateAcceptNotification;
     }
 
+    public Notification createRoommateBoardNotification(String authorName, Long boardId) {
+        String title = "새로운 룸메이트 게시글이 올라왔어요!";
+        String body = authorName + "님이 룸메이트 게시글을 작성했습니다.";
+
+        Notification roommateBoardNotification = Notification.createRoommateMatchingNotification(title, body, boardId);
+        notificationRepository.save(roommateBoardNotification);
+        return roommateBoardNotification;
+    }
+
     // ========== Private Methods ========== //
 
     private void saveUserNotifications(Notification notification, List<User> receiveUsers) {

@@ -18,6 +18,7 @@ import com.example.appcenter_project.domain.roommate.repository.RoommateBoardRep
 import com.example.appcenter_project.domain.roommate.repository.RoommateCheckListRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateMatchingRepository;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
+import com.example.appcenter_project.domain.notification.service.RoommateNotificationService;
 import com.example.appcenter_project.shared.utils.DormDayUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,7 @@ public class RoommateService {
     private final RoommateBoardLikeRepository roommateBoardLikeRepository;
     private final RoommateMatchingRepository roommateMatchingRepository;
     private final ImageService imageService;
+    private final RoommateNotificationService roommateNotificationService;
 
 
     @Transactional
@@ -81,9 +83,12 @@ public class RoommateService {
                 .roommateCheckList(savedCheckList)
                 .build();
 
-        roommateBoardRepository.save(roommateBoard);
+        RoommateBoard savedBoard = roommateBoardRepository.save(roommateBoard);
 
-        // 4. 응답
+        // 4. 알림 전송
+        roommateNotificationService.sendFilteredNotifications(savedBoard);
+
+        // 5. 응답
         return ResponseRoommatePostDto.builder()
                 .id(roommateBoard.getId())
                 .title(savedCheckList.getTitle())
