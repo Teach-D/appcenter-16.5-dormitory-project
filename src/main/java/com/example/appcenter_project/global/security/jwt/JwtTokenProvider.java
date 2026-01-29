@@ -1,9 +1,8 @@
 package com.example.appcenter_project.global.security.jwt;
 
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -14,6 +13,7 @@ import org.springframework.stereotype.Component;
 import java.security.Key;
 import java.util.Date;
 
+@Slf4j
 @Component
 public class JwtTokenProvider {
 
@@ -58,14 +58,26 @@ public class JwtTokenProvider {
     }
 
     public boolean validateToken(String token) {
-        if(token == null) {
-            throw new JwtException("Jwt AccessToken not found");
-        }
         try {
+            if (token == null) {
+                log.debug("JWT token is null");
+                return false;
+            }
+
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
             return true;
-        } catch (JwtException | IllegalArgumentException e) {
-            throw new JwtException("Invalid Jwt token");
+        } catch (ExpiredJwtException e) {
+            log.debug("JWT token is expired: {}", e.getMessage());
+            return false;
+        } catch (MalformedJwtException e) {
+            log.warn("Invalid JWT token format: {}", e.getMessage());
+            return false;
+        } catch (SecurityException e) {
+            log.warn("JWT signature validation failed: {}", e.getMessage());
+            return false;
+        } catch (Exception e) {
+            log.error("JWT token validation error: {}", e.getMessage());
+            return false;
         }
     }
 
