@@ -26,7 +26,7 @@ public class SchoolLoginRepository {
             return result;
         } catch (Exception e) {
             log.info("데이터베이스 연결 오류 메시지 : {}",e.getMessage());
-            return "N";
+            return null;
         }
     }
 }
