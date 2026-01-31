@@ -92,11 +92,10 @@ public class NotificationService {
         userNotificationRepository.save(userNotification);
     }
 
-    public Notification createChatNotification(String senderName, Long chatRoomId) {
+    public Notification createChatNotification(String senderName, Long chatRoomId, String content) {
         String title = "새로운 채팅이 도착했습니다!";
-        String body = senderName + "님이 채팅을 보냈습니다.";
 
-        Notification chatNotification = Notification.createChatNotification(title, body, chatRoomId);
+        Notification chatNotification = Notification.createChatNotification(title, content, chatRoomId);
         notificationRepository.save(chatNotification);
         return chatNotification;
     }

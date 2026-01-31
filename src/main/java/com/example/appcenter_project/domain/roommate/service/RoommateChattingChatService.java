@@ -95,13 +95,13 @@ public class RoommateChattingChatService {
             messagingTemplate.convertAndSend(readDestination, readIds);
         }
 
-        sendChatNotification(receiver, room.getId());
+        sendChatNotification(receiver, room.getId(), chat.getContent());
 
         return responseDto;
     }
 
-    private void sendChatNotification(User receiver, Long chatRoomId) {
-        Notification chatNotification = notificationService.createChatNotification(receiver.getName(), chatRoomId);
+    private void sendChatNotification(User receiver, Long chatRoomId, String content) {
+        Notification chatNotification = notificationService.createChatNotification(receiver.getName(), chatRoomId, content);
         notificationService.createUserNotification(receiver, chatNotification);
         fcmMessageService.sendNotification(receiver, chatNotification.getTitle(), chatNotification.getBody());
     }
