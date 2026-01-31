@@ -155,6 +155,8 @@ public class SecurityConfig {
                         .requestMatchers(GET, "/surveys/**").permitAll() // 설문 단순 조회 모두 가능
                         .requestMatchers("/surveys/**").hasAnyRole("ADMIN", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_EXPEDITED_COMPLAINT_MANAGER", "DORM_SUPPORTERS")
 
+                        /** API 통계 **/
+                        .requestMatchers("/api/statistics/**").hasRole("ADMIN")
 
                         /** 나머지 **/
                         .anyRequest().authenticated()
