@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.tip.controller;
 
 import com.example.appcenter_project.common.image.dto.ImageLinkDto;
+import com.example.appcenter_project.common.metrics.annotation.TrackApi;
 import com.example.appcenter_project.domain.tip.dto.request.RequestTipDto;
 import com.example.appcenter_project.domain.tip.dto.response.ResponseTipDetailDto;
 import com.example.appcenter_project.domain.tip.dto.response.ResponseTipDto;
@@ -39,11 +40,13 @@ public class TipController implements TipApiSpecification {
 
     }
 
+    @TrackApi
     @GetMapping("/{tipId}")
     public ResponseEntity<ResponseTipDetailDto> findTip(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long tipId, HttpServletRequest request) {
         return ResponseEntity.status(OK).body(tipService.findTip(user, tipId, request));
     }
 
+    @TrackApi
     @GetMapping
     public ResponseEntity<List<ResponseTipDto>> findAllTips() {
         return ResponseEntity.status(OK).body(tipService.findAllTips());

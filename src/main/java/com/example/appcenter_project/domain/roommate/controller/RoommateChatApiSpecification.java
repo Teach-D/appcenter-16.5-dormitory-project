@@ -10,9 +10,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+import static org.springframework.http.HttpStatus.OK;
 
 @Tag(name = "RoommateChat", description = "룸메이트 채팅 관련 API")
 public interface RoommateChatApiSpecification  {
@@ -67,6 +70,22 @@ public interface RoommateChatApiSpecification  {
             @Parameter(hidden = true) CustomUserDetails userDetails,
             @Parameter(description = "읽음 처리할 채팅방 ID", example = "1") @PathVariable Long roomId
     );
+
+    @Operation(
+            summary = "특정 유저의 특정 채팅방에서 안읽은 메시지 카운트",
+            description = "특정 유저의 특정 채팅방에서 안읽은 메시지 카운트"
+    )
+    public ResponseEntity<Integer> getUnReadCountByUserIdAdRoomId(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long roomId
+    );
+
+
+    @Operation(
+            summary = "특정 유저 의모든 채팅방에서 안읽은 메시지 카운트",
+            description = "특정 유저의 모든 채팅방에서 안읽은 메시지 카운트"
+    )
+    public ResponseEntity<Integer> getUnReadCountByUserId(@AuthenticationPrincipal CustomUserDetails userDetails);
 
     @Operation(
             summary = "[WebSocket] 채팅 메시지 전송",

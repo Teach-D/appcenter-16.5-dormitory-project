@@ -1,5 +1,6 @@
 package com.example.appcenter_project.domain.survey.controller;
 
+import com.example.appcenter_project.common.metrics.annotation.TrackApi;
 import com.example.appcenter_project.domain.survey.dto.request.RequestSurveyDto;
 import com.example.appcenter_project.domain.survey.dto.request.RequestSurveyResponseDto;
 import com.example.appcenter_project.domain.survey.dto.response.ResponseSurveyDetailDto;
@@ -33,6 +34,7 @@ public class SurveyController implements SurveyApiSpecification {
     private final SurveyService surveyService;
 
     // 설문 생성 (관리자)
+    @TrackApi
     @PostMapping
     public ResponseEntity<Long> createSurvey(
             @AuthenticationPrincipal CustomUserDetails user,

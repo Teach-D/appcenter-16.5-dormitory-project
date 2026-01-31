@@ -15,6 +15,7 @@ public class ResponseRoommateChatDto {
     private String content;
     private boolean read;
     private String createdDate;
+    private String userImageUrl;
 
     public static ResponseRoommateChatDto entityToDto(RoommateChattingChat chat) {
         return ResponseRoommateChatDto.builder()
@@ -24,6 +25,7 @@ public class ResponseRoommateChatDto {
                 .content(chat.getContent())
                 .read(chat.isReadByReceiver())
                 .createdDate(chat.getCreatedDate().toString())
+                .userImageUrl(chat.getMember().getImage() == null ? null : chat.getMember().getImage().getImagePath())
                 .build();
     }
 }

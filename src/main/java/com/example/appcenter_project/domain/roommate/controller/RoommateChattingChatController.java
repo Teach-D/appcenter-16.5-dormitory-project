@@ -1,5 +1,6 @@
 package com.example.appcenter_project.domain.roommate.controller;
 
+import com.example.appcenter_project.common.metrics.annotation.TrackApi;
 import com.example.appcenter_project.domain.roommate.dto.request.RequestRoommateChatDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateChatDto;
 import com.example.appcenter_project.global.security.CustomUserDetails;
@@ -15,6 +16,8 @@ import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 
 import java.util.List;
 
+import static org.springframework.http.HttpStatus.OK;
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -24,6 +27,7 @@ public class RoommateChattingChatController implements RoommateChatApiSpecificat
     private final RoommateChattingChatService chatService;
 
     // 채팅 보내기
+    @TrackApi
     @PostMapping
     public ResponseEntity<ResponseRoommateChatDto> sendChat(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -35,6 +39,7 @@ public class RoommateChattingChatController implements RoommateChatApiSpecificat
     }
 
     // 채팅 내역 조회
+    @TrackApi
     @GetMapping("/{roomId}")
     public ResponseEntity<List<ResponseRoommateChatDto>> getChatList(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -54,6 +59,21 @@ public class RoommateChattingChatController implements RoommateChatApiSpecificat
         Long userId = userDetails.getId();
         chatService.markAsRead(roomId, userId);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{roomId}/unread-count")
+    public ResponseEntity<Integer> getUnReadCountByUserIdAdRoomId(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long roomId
+    ) {
+        return ResponseEntity.status(OK)
+                .body(chatService.getUnReadCountByUserIdAdRoomId(userDetails.getId(), roomId));
+    }
+
+    @GetMapping("/unread-count")
+    public ResponseEntity<Integer> getUnReadCountByUserId(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.status(OK)
+                .body(chatService.getUnReadCountByUserId(userDetails.getId()));
     }
 
     // WebSocket 방식 채팅 보내기

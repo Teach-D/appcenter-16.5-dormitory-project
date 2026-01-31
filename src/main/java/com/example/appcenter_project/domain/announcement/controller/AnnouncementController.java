@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.announcement.controller;
 
 import com.example.appcenter_project.common.file.dto.AttachedFileDto;
+import com.example.appcenter_project.common.metrics.annotation.TrackApi;
 import com.example.appcenter_project.domain.announcement.dto.request.RequestAnnouncementDto;
 import com.example.appcenter_project.domain.announcement.dto.response.ResponseAnnouncementDetailDto;
 import com.example.appcenter_project.domain.announcement.dto.response.ResponseAnnouncementDto;
@@ -43,6 +44,7 @@ public class AnnouncementController implements AnnouncementApiSpecification {
         return ResponseEntity.status(CREATED).build();
     }
 
+    @TrackApi
     @GetMapping("/{announcementId}")
     public ResponseEntity<ResponseAnnouncementDetailDto> findAnnouncement(@PathVariable Long announcementId) {
         return ResponseEntity.status(OK).body(announcementService.findAnnouncement(announcementId));
@@ -63,6 +65,7 @@ public class AnnouncementController implements AnnouncementApiSpecification {
         }
     }
 
+    @TrackApi
     @GetMapping
     public ResponseEntity<List<ResponseAnnouncementDto>> findAllAnnouncements(
             @RequestParam(defaultValue = "생활원") String type, @RequestParam(defaultValue = "입퇴사 공지", required = false) String category, @RequestParam(required = false) String search

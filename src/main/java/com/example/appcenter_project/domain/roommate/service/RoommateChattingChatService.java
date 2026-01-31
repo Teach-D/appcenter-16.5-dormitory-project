@@ -95,13 +95,13 @@ public class RoommateChattingChatService {
             messagingTemplate.convertAndSend(readDestination, readIds);
         }
 
-        sendChatNotification(receiver, room.getId());
+        sendChatNotification(sender, room.getId(), chat.getContent());
 
         return responseDto;
     }
 
-    private void sendChatNotification(User receiver, Long chatRoomId) {
-        Notification chatNotification = notificationService.createChatNotification(receiver.getName(), chatRoomId);
+    private void sendChatNotification(User receiver, Long chatRoomId, String content) {
+        Notification chatNotification = notificationService.createChatNotification(receiver.getName(), chatRoomId, content);
         notificationService.createUserNotification(receiver, chatNotification);
         fcmMessageService.sendNotification(receiver, chatNotification.getTitle(), chatNotification.getBody());
     }
@@ -128,6 +128,30 @@ public class RoommateChattingChatService {
             log.info("📖 [실시간 읽음 처리] destination: {}, readIds: {}", destination, readIds);
             messagingTemplate.convertAndSend(destination, readIds);
         }
+    }
+
+    public Integer getUnReadCountByUserIdAdRoomId(Long userId, Long roomId) {
+        RoommateChattingRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new CustomException(ROOMMATE_CHAT_ROOM_NOT_FOUND));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+        return chatRepository.findByRoommateChattingRoomAndMemberNotAndReadByReceiverFalse(room, user).size();
+    }
+
+    public Integer getUnReadCountByUserId(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+        Integer result = 0;
+        List<RoommateChattingRoom> chattingRooms = chatRoomRepository.findAllByHostOrGuest(user, user);
+        for (RoommateChattingRoom chattingRoom : chattingRooms) {
+            Integer unReadCountByUserIdAdRoomId = getUnReadCountByUserIdAdRoomId(userId, chattingRoom.getId());
+            result +=  unReadCountByUserIdAdRoomId;
+        }
+
+        return result;
     }
 
     // 사용자가 특정 채팅방에 온라인 상태인지 확인하는 메서드
