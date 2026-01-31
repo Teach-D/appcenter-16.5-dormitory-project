@@ -25,7 +25,7 @@ public class ResponseRoommateChatDto {
                 .content(chat.getContent())
                 .read(chat.isReadByReceiver())
                 .createdDate(chat.getCreatedDate().toString())
-                .userImageUrl(chat.getMember().getImage().getImagePath())
+                .userImageUrl(chat.getMember().getImage() == null ? null : chat.getMember().getImage().getImagePath())
                 .build();
     }
 }
