@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Transactional
 @Slf4j
@@ -45,41 +46,7 @@ public class RoommateMatchingService {
         User receiver = userRepository.findByStudentNumber(receiverStudentNumber)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
 
-        // "이미 매칭된 사람" 체크 기준 개선!
-        boolean receiverAlreadyMatched =
-                roommateMatchingRepository.existsBySenderAndStatus(receiver, MatchingStatus.COMPLETED) ||
-                        roommateMatchingRepository.existsByReceiverAndStatus(receiver, MatchingStatus.COMPLETED);
-
-        if (receiverAlreadyMatched) {
-            throw new CustomException(ErrorCode.ROOMMATE_ALREADY_MATCHED);
-        }
-
-        boolean exists = roommateMatchingRepository.existsBySenderAndReceiver(sender, receiver);
-        if (exists) {
-            throw new CustomException(ErrorCode.ROOMMATE_MATCHING_ALREADY_REQUESTED);
-        }
-
-        RoommateMatching matching = RoommateMatching.builder()
-                .check(MatchingStatus.REQUEST)
-                .sender(sender)
-                .receiver(receiver)
-                .build();
-
-        roommateMatchingRepository.save(matching);
-
-        sendRequestNotification(sender, matching.getId());
-
-        return ResponseRoommateMatchingDto.builder()
-                .MatchingId(matching.getId())
-                .reciverId(matching.getReceiver().getId())
-                .status(matching.getStatus())
-                .build();
-    }
-
-    private void sendRequestNotification(User receiver, Long matchingId) {
-        Notification requestNotification = notificationService.createRoommateRequestNotification(receiver.getName(), matchingId);
-        notificationService.createUserNotification(receiver, requestNotification);
-        fcmMessageService.sendNotification(receiver, requestNotification.getTitle(), requestNotification.getBody());
+        return processMatchingRequest(sender, receiver);
     }
 
     // 매칭 요청 채팅방id
@@ -115,51 +82,11 @@ public class RoommateMatchingService {
             throw new CustomException(ErrorCode.ROOMMATE_MATCHING_ALREADY_REQUESTED);
         }
 
-        RoommateMatching matching = RoommateMatching.builder()
-                .check(MatchingStatus.REQUEST)
-                .sender(sender)
-                .receiver(receiver)
-                .build();
-
-        roommateMatchingRepository.save(matching);
-
-        sendRequestNotification(sender, matching.getId());
-
-        return ResponseRoommateMatchingDto.builder()
-                .MatchingId(matching.getId())
-                .reciverId(matching.getReceiver().getId())
-                .status(matching.getStatus())
-                .build();
-    }
-
-    // 공통 FCM 발송 메서드
-    private void sendFcmToReceiver(User sender, User receiver) {
-        // 기존 코드
-/*        for (FcmToken fcmToken : receiver.getFcmTokenList()) {
-            if (fcmToken != null) {
-                try {
-                    fcmMessageService.sendNotification(
-                            fcmToken.getToken(),
-                            "룸메이트 매칭 요청",
-                            sender.getName() + "님이 룸메이트 매칭을 요청했습니다."
-                    );
-                } catch (Exception e) {
-                    log.error("FCM 발송 실패: {}", e.getMessage());
-                }
-            } else {
-                log.warn("수신자 {}의 FCM 토큰이 없음", receiver.getId());
-            }
-        }*/
-        fcmMessageService.sendNotification(
-                receiver,
-                "룸메이트 매칭 요청",
-                sender.getName() + "님이 룸메이트 매칭을 요청했습니다."
-        );
+        return processMatchingRequest(sender, receiver);
     }
 
     // 매칭 수락
     public void acceptMatching(Long matchingId, Long userId) {
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
 
@@ -176,52 +103,28 @@ public class RoommateMatchingService {
             throw new CustomException(ErrorCode.ROOMMATE_MATCHING_ALREADY_COMPLETED);
         }
 
-        // "이미 매칭된 사람" 체크 기준 개선!
-        boolean userAlreadyMatched =
-                roommateMatchingRepository.existsBySenderAndStatus(user, MatchingStatus.COMPLETED) ||
-                        roommateMatchingRepository.existsByReceiverAndStatus(user, MatchingStatus.COMPLETED);
-
-        if (userAlreadyMatched) {
-            throw new CustomException(ErrorCode.ROOMMATE_ALREADY_MATCHED);
-        }
+        validateNotAlreadyMatched(user);
 
         matching.complete();
-
-        //myRoommate 저장 로직 추가
         User sender = matching.getSender();
         User receiver = matching.getReceiver();
+        registerMyRoommate(sender, receiver);
 
-        MyRoommate myRoommate1 = MyRoommate.builder()
-                .user(sender)
-                .roommate(receiver)
-                .build();
-
-        MyRoommate myRoommate2 = MyRoommate.builder()
-                .user(receiver)
-                .roommate(sender)
-                .build();
-
-        // 두 명의 RoommateBoard matched = true로 변경
-        sender.getRoommateBoard().changeIsMatched(true);
-        receiver.getRoommateBoard().changeIsMatched(true);
-
-        myRoommateRepository.save(myRoommate1);
-        myRoommateRepository.save(myRoommate2);
-
-        sendAcceptNotification(sender, matching.getId());
-    }
-
-    private void sendAcceptNotification(User receiver, Long matchingId) {
-        Notification acceptNotification = notificationService.createRoommateAcceptNotification(receiver.getName(), matchingId);
-        notificationService.createUserNotification(receiver, acceptNotification);
-        fcmMessageService.sendNotification(receiver, acceptNotification.getTitle(), acceptNotification.getBody());
-
+        cleanUpOldMatchingRecords(sender, receiver);
+        sendAcceptNotification(receiver, matching.getId());
     }
 
     // 매칭 거절
-    public void rejectMatching(Long matchingId) {
+    public void rejectMatching(Long matchingId, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
+
         RoommateMatching matching = roommateMatchingRepository.findById(matchingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_MATCHING_NOT_FOUND));
+
+        if (!matching.getReceiver().getId().equals(user.getId())) {
+            throw new CustomException(ErrorCode.ROOMMATE_MATCHING_NOT_FOR_USER);
+        }
 
         if (matching.getStatus() != MatchingStatus.REQUEST) {
             throw new CustomException(ErrorCode.ROOMMATE_MATCHING_ALREADY_COMPLETED);
@@ -292,5 +195,140 @@ public class RoommateMatchingService {
         log.info("=== cancelMatching END ===");
     }
 
+    // ========== Private Methods ========== //
+    private ResponseRoommateMatchingDto processMatchingRequest(User sender, User receiver) {
+        validateNotAlreadyMatched(receiver);
+        validateNotAlreadyMatched(receiver);
 
+        Optional<RoommateMatching> reverseRequest =
+                roommateMatchingRepository.findBySenderAndReceiverAndStatus(receiver, sender, MatchingStatus.REQUEST);
+
+        if (reverseRequest.isPresent()) {
+            return completeMatchingFromReverseRequest(reverseRequest.get(), sender, receiver);
+        }
+
+        boolean exists = roommateMatchingRepository
+                .existsBySenderAndReceiverAndStatus(sender, receiver, MatchingStatus.REQUEST);
+        if (exists) {
+            throw new CustomException(ErrorCode.ROOMMATE_MATCHING_ALREADY_REQUESTED);
+        }
+
+        RoommateMatching matching = RoommateMatching.builder()
+                .check(MatchingStatus.REQUEST)
+                .sender(sender)
+                .receiver(receiver)
+                .build();
+
+        roommateMatchingRepository.save(matching);
+        sendRequestNotification(receiver, matching.getId());
+
+        return ResponseRoommateMatchingDto.builder()
+                .matchingId(matching.getId())
+                .receiverId(matching.getReceiver().getId())
+                .status(matching.getStatus())
+                .build();
+    }
+
+    private void validateNotAlreadyMatched(User user) {
+        boolean alreadyMatched =
+                roommateMatchingRepository.existsBySenderAndStatus(user, MatchingStatus.COMPLETED) ||
+                        roommateMatchingRepository.existsByReceiverAndStatus(user, MatchingStatus.COMPLETED);
+
+        if (alreadyMatched) {
+            throw new CustomException(ErrorCode.ROOMMATE_ALREADY_MATCHED);
+        }
+    }
+
+    private ResponseRoommateMatchingDto completeMatchingFromReverseRequest(
+            RoommateMatching reverseRequest, User sender, User receiver) {
+
+        reverseRequest.complete();
+
+        User originalSender = reverseRequest.getSender();   // 먼저 신청한 유저
+        User originalReceiver = reverseRequest.getReceiver(); // 나중에 신청한 유저
+
+        registerMyRoommate(originalSender, originalReceiver);
+        cleanUpOldMatchingRecords(originalSender, originalReceiver);
+        sendAcceptNotification(originalSender, reverseRequest.getId());
+
+        log.info("상호 신청 감지로 매칭 완료 처리: matchingId={}, sender={}, receiver={}",
+                reverseRequest.getId(), originalSender.getId(), originalReceiver.getId());
+
+        return ResponseRoommateMatchingDto.builder()
+                .matchingId(reverseRequest.getId())
+                .receiverId(originalReceiver.getId())
+                .status(reverseRequest.getStatus())
+                .build();
+    }
+
+    private void registerMyRoommate(User sender, User receiver) {
+        MyRoommate myRoommate1 = MyRoommate.builder()
+                .user(sender)
+                .roommate(receiver)
+                .build();
+
+        MyRoommate myRoommate2 = MyRoommate.builder()
+                .user(receiver)
+                .roommate(sender)
+                .build();
+
+        sender.getRoommateBoard().changeIsMatched(true);
+        receiver.getRoommateBoard().changeIsMatched(true);
+
+        myRoommateRepository.save(myRoommate1);
+        myRoommateRepository.save(myRoommate2);
+    }
+
+    private void cleanUpOldMatchingRecords(User sender, User receiver) {
+        List<RoommateMatching> senderToReceiverOldRecords =
+                roommateMatchingRepository.findAllBySenderAndReceiverAndStatusNot(sender, receiver, MatchingStatus.COMPLETED);
+        roommateMatchingRepository.deleteAll(senderToReceiverOldRecords);
+
+        List<RoommateMatching> receiverToSenderOldRecords =
+                roommateMatchingRepository.findAllBySenderAndReceiverAndStatusNot(receiver, sender, MatchingStatus.COMPLETED);
+        roommateMatchingRepository.deleteAll(receiverToSenderOldRecords);
+
+        if (!senderToReceiverOldRecords.isEmpty() || !receiverToSenderOldRecords.isEmpty()) {
+            log.info("매칭 이전 신청 기록 정리: sender={}, receiver={}, 삭제 건수={}",
+                    sender.getId(), receiver.getId(),
+                    senderToReceiverOldRecords.size() + receiverToSenderOldRecords.size());
+        }
+    }
+
+    private void sendRequestNotification(User receiver, Long matchingId) {
+        Notification requestNotification = notificationService.createRoommateRequestNotification(receiver.getName(), matchingId);
+        notificationService.createUserNotification(receiver, requestNotification);
+        fcmMessageService.sendNotification(receiver, requestNotification.getTitle(), requestNotification.getBody());
+    }
+
+    // 공통 FCM 발송 메서드
+    private void sendFcmToReceiver(User sender, User receiver) {
+        // 기존 코드
+/*        for (FcmToken fcmToken : receiver.getFcmTokenList()) {
+            if (fcmToken != null) {
+                try {
+                    fcmMessageService.sendNotification(
+                            fcmToken.getToken(),
+                            "룸메이트 매칭 요청",
+                            sender.getName() + "님이 룸메이트 매칭을 요청했습니다."
+                    );
+                } catch (Exception e) {
+                    log.error("FCM 발송 실패: {}", e.getMessage());
+                }
+            } else {
+                log.warn("수신자 {}의 FCM 토큰이 없음", receiver.getId());
+            }
+        }*/
+        fcmMessageService.sendNotification(
+                receiver,
+                "룸메이트 매칭 요청",
+                sender.getName() + "님이 룸메이트 매칭을 요청했습니다."
+        );
+    }
+
+    private void sendAcceptNotification(User receiver, Long matchingId) {
+        Notification acceptNotification = notificationService.createRoommateAcceptNotification(receiver.getName(), matchingId);
+        notificationService.createUserNotification(receiver, acceptNotification);
+        fcmMessageService.sendNotification(receiver, acceptNotification.getTitle(), acceptNotification.getBody());
+    }
 }

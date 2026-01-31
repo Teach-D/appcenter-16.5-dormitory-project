@@ -17,5 +17,7 @@ public interface RoommateMatchingRepository extends JpaRepository<RoommateMatchi
     boolean existsByReceiverAndStatus(User receiver, MatchingStatus status);
 
     Optional<RoommateMatching> findBySenderAndReceiverAndStatus(User sender, User receiver, MatchingStatus status);
+    List<RoommateMatching> findAllBySenderAndReceiverAndStatusNot(User sender, User receiver, MatchingStatus status);
+    boolean existsBySenderAndReceiverAndStatus(User sender, User receiver, MatchingStatus status);
 
 }
