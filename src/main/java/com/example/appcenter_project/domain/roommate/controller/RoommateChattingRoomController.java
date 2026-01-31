@@ -62,6 +62,4 @@ public class RoommateChattingRoomController implements RoommateChattingRoomApiSp
         RoommateCheckList checklist = roommateChattingRoomService.getOpponentChecklist(user.getId(), chatRoomId);
         return ResponseEntity.ok(ResponseRoommateCheckListDto.from(checklist));
     }
-
-
 }

@@ -15,6 +15,8 @@ import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 
 import java.util.List;
 
+import static org.springframework.http.HttpStatus.OK;
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -54,6 +56,21 @@ public class RoommateChattingChatController implements RoommateChatApiSpecificat
         Long userId = userDetails.getId();
         chatService.markAsRead(roomId, userId);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{roomId}/unread-count")
+    public ResponseEntity<Integer> getUnReadCountByUserIdAdRoomId(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long roomId
+    ) {
+        return ResponseEntity.status(OK)
+                .body(chatService.getUnReadCountByUserIdAdRoomId(userDetails.getId(), roomId));
+    }
+
+    @GetMapping("/unread-count")
+    public ResponseEntity<Integer> getUnReadCountByUserId(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.status(OK)
+                .body(chatService.getUnReadCountByUserId(userDetails.getId()));
     }
 
     // WebSocket 방식 채팅 보내기

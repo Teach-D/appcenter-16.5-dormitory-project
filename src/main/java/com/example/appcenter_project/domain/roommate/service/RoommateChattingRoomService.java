@@ -176,9 +176,5 @@ public class RoommateChattingRoomService {
             return chatRoom.getHostChecklist(); // 상대는 host
         }
     }
-
-
-
-
 }
 
