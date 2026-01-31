@@ -9,7 +9,7 @@ import lombok.Getter;
 @Builder
 @AllArgsConstructor
 public class ResponseRoommateMatchingDto {
-    private Long MatchingId;
-    private Long reciverId;
+    private Long matchingId;
+    private Long receiverId;
     private MatchingStatus status;
 }

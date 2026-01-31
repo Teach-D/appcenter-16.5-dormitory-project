@@ -51,8 +51,11 @@ public class RoommateMatchingController implements RoommateMatchingApiSpecificat
     }
 
     @PatchMapping("/{matchingId}/reject")
-    public ResponseEntity<Void> rejectMatching(@PathVariable Long matchingId) {
-        roommateMatchingService.rejectMatching(matchingId);
+    public ResponseEntity<Void> rejectMatching(
+            @PathVariable Long matchingId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        roommateMatchingService.rejectMatching(matchingId, userDetails.getId());
         return ResponseEntity.ok().build();
     }
 
