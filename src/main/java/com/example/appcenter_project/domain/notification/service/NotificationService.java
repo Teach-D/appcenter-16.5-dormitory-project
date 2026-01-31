@@ -93,9 +93,7 @@ public class NotificationService {
     }
 
     public Notification createChatNotification(String senderName, Long chatRoomId, String content) {
-        String title = "새로운 채팅이 도착했습니다!";
-
-        Notification chatNotification = Notification.createChatNotification(title, content, chatRoomId);
+        Notification chatNotification = Notification.createChatNotification(senderName, content, chatRoomId);
         notificationRepository.save(chatNotification);
         return chatNotification;
     }

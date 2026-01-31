@@ -67,7 +67,7 @@ public class RoommateMatchingService {
 
         roommateMatchingRepository.save(matching);
 
-        sendRequestNotification(sender, matching.getId());
+        sendRequestNotification(sender, receiver, matching.getId());
 
         return ResponseRoommateMatchingDto.builder()
                 .MatchingId(matching.getId())
@@ -76,8 +76,8 @@ public class RoommateMatchingService {
                 .build();
     }
 
-    private void sendRequestNotification(User receiver, Long matchingId) {
-        Notification requestNotification = notificationService.createRoommateRequestNotification(receiver.getName(), matchingId);
+    private void sendRequestNotification(User sender, User receiver, Long matchingId) {
+        Notification requestNotification = notificationService.createRoommateRequestNotification(sender.getName(), matchingId);
         notificationService.createUserNotification(receiver, requestNotification);
         fcmMessageService.sendNotification(receiver, requestNotification.getTitle(), requestNotification.getBody());
     }
@@ -123,7 +123,7 @@ public class RoommateMatchingService {
 
         roommateMatchingRepository.save(matching);
 
-        sendRequestNotification(sender, matching.getId());
+        sendRequestNotification(sender, receiver, matching.getId());
 
         return ResponseRoommateMatchingDto.builder()
                 .MatchingId(matching.getId())
@@ -208,11 +208,11 @@ public class RoommateMatchingService {
         myRoommateRepository.save(myRoommate1);
         myRoommateRepository.save(myRoommate2);
 
-        sendAcceptNotification(sender, matching.getId());
+        sendAcceptNotification(sender, receiver, matching.getId());
     }
 
-    private void sendAcceptNotification(User receiver, Long matchingId) {
-        Notification acceptNotification = notificationService.createRoommateAcceptNotification(receiver.getName(), matchingId);
+    private void sendAcceptNotification(User sender, User receiver, Long matchingId) {
+        Notification acceptNotification = notificationService.createRoommateAcceptNotification(sender.getName(), matchingId);
         notificationService.createUserNotification(receiver, acceptNotification);
         fcmMessageService.sendNotification(receiver, acceptNotification.getTitle(), acceptNotification.getBody());
 
