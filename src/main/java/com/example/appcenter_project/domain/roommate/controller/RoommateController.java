@@ -1,5 +1,6 @@
 package com.example.appcenter_project.domain.roommate.controller;
 
+import com.example.appcenter_project.common.metrics.annotation.TrackApi;
 import com.example.appcenter_project.domain.roommate.dto.request.RequestRoommateFormDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateCheckListDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommatePostDto;
@@ -21,6 +22,7 @@ public class RoommateController implements RoommateApiSpecification{
 
     private final RoommateService roommateService;
 
+    @TrackApi
     @Override
     @PostMapping
     public ResponseEntity<ResponseRoommatePostDto> createRoommatePost(
@@ -32,6 +34,7 @@ public class RoommateController implements RoommateApiSpecification{
         return ResponseEntity.status(201).body(responseDto);
     }
 
+    @TrackApi
     @Override
     @GetMapping("/list")
     public ResponseEntity<List<ResponseRoommatePostDto>> getRoommateBoardList(
@@ -40,6 +43,7 @@ public class RoommateController implements RoommateApiSpecification{
         return ResponseEntity.ok(roommateService.getRoommateBoardList(request));
     }
 
+    @TrackApi
     @Override
     @GetMapping("/{boardId}")
     public ResponseEntity<ResponseRoommatePostDto> getRoommateBoardDetail(
@@ -49,6 +53,7 @@ public class RoommateController implements RoommateApiSpecification{
         return ResponseEntity.ok(roommateService.getRoommateBoardDetail(boardId, request));
     }
 
+    @TrackApi
     @Override
     @GetMapping("/similar")
     public ResponseEntity<List<ResponseRoommateSimilarityDto>> getSimilarRoommates(

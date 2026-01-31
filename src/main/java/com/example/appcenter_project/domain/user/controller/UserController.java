@@ -1,5 +1,6 @@
 package com.example.appcenter_project.domain.user.controller;
 
+import com.example.appcenter_project.common.metrics.annotation.TrackApi;
 import com.example.appcenter_project.domain.user.dto.request.*;
 import com.example.appcenter_project.common.image.dto.ImageLinkDto;
 import com.example.appcenter_project.domain.user.dto.response.ResponseBoardDto;
@@ -35,6 +36,7 @@ public class UserController implements UserApiSpecification {
 
     private final UserService userService;
 
+    @TrackApi
     @PostMapping
     public ResponseEntity<ResponseLoginDto> saveUser(@Valid @RequestBody SignupUser signupUser) {
         return ResponseEntity.status(CREATED).body(userService.saveUser(signupUser));

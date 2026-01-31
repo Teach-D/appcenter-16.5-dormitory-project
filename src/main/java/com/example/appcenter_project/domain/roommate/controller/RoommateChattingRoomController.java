@@ -1,5 +1,6 @@
 package com.example.appcenter_project.domain.roommate.controller;
 
+import com.example.appcenter_project.common.metrics.annotation.TrackApi;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateChatRoomDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateCheckListDto;
 import com.example.appcenter_project.domain.roommate.entity.RoommateCheckList;
@@ -23,6 +24,7 @@ public class RoommateChattingRoomController implements RoommateChattingRoomApiSp
     private final RoommateChattingRoomService roommateChattingRoomService;
 
     // 게스트가 채팅방 참여 요청
+    @TrackApi
     @Override
     @PostMapping("/board/{roommateBoardId}")
     public ResponseEntity<Long> createChatRoom(@AuthenticationPrincipal CustomUserDetails user,
@@ -41,6 +43,7 @@ public class RoommateChattingRoomController implements RoommateChattingRoomApiSp
     }
 
     // 채팅방 목록 조회
+    @TrackApi
     @Override
     @GetMapping
     public ResponseEntity<List<ResponseRoommateChatRoomDto>> getRoommateChatRoomList(

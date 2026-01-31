@@ -1,5 +1,6 @@
 package com.example.appcenter_project.domain.notification.controller;
 
+import com.example.appcenter_project.common.metrics.annotation.TrackApi;
 import com.example.appcenter_project.domain.notification.dto.request.RequestNotificationDto;
 import com.example.appcenter_project.domain.notification.dto.response.ResponseNotificationDto;
 import com.example.appcenter_project.global.security.CustomUserDetails;
@@ -32,11 +33,13 @@ public class NotificationController implements NotificationApiSpecification {
         return ResponseEntity.status(CREATED).build();
     }
 
+    @TrackApi
     @GetMapping("/{notificationId}")
     public ResponseEntity<ResponseNotificationDto> findNotification(@AuthenticationPrincipal CustomUserDetails user, @PathVariable("notificationId") Long notificationId) {
         return ResponseEntity.status(OK).body(notificationService.findNotification(user.getId(), notificationId));
     }
 
+    @TrackApi
     @GetMapping
     public ResponseEntity<List<ResponseNotificationDto>> findNotificationsByUser(@AuthenticationPrincipal CustomUserDetails user) {
         return ResponseEntity.status(OK).body(notificationService.findNotificationsByUser(user.getId()));
