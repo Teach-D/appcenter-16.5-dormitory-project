@@ -54,6 +54,7 @@ public class NotificationService {
 
     public ResponseNotificationDto findNotification(Long userId, Long notificationId) {
         UserNotification userNotification = userNotificationRepository.findByUserIdAndNotificationId(userId, notificationId).orElseThrow();
+        userNotification.changeReadStatus(true);
         return  ResponseNotificationDto.from(userNotification);
     }
 
@@ -65,10 +66,7 @@ public class NotificationService {
         Collections.reverse(notifications);
 
         return notifications.stream()
-                .map(userNotification -> {
-                    userNotification.changeReadStatus(true);
-                    return ResponseNotificationDto.from(userNotification);
-                })
+                .map(ResponseNotificationDto::from)
                 .toList();
     }
 

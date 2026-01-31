@@ -156,7 +156,10 @@ public class SecurityConfig {
                         .requestMatchers("/surveys/**").hasAnyRole("ADMIN", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_EXPEDITED_COMPLAINT_MANAGER", "DORM_SUPPORTERS")
 
                         /** API 통계 **/
-                        .requestMatchers("/api/statistics/**").hasRole("ADMIN")
+                        .requestMatchers("/statistics/**").hasRole("ADMIN")
+
+                        /** 피처 플래그 **/
+                        .requestMatchers("/features/**").permitAll()
 
                         /** 나머지 **/
                         .anyRequest().authenticated()
