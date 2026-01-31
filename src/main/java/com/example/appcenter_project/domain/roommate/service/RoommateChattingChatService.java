@@ -95,7 +95,7 @@ public class RoommateChattingChatService {
             messagingTemplate.convertAndSend(readDestination, readIds);
         }
 
-        sendChatNotification(receiver, room.getId(), chat.getContent());
+        sendChatNotification(sender, room.getId(), chat.getContent());
 
         return responseDto;
     }

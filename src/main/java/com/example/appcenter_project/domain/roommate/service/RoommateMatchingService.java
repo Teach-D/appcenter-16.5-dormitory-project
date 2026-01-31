@@ -67,7 +67,7 @@ public class RoommateMatchingService {
 
         roommateMatchingRepository.save(matching);
 
-        sendRequestNotification(receiver, matching.getId());
+        sendRequestNotification(sender, matching.getId());
 
         return ResponseRoommateMatchingDto.builder()
                 .MatchingId(matching.getId())
@@ -123,7 +123,7 @@ public class RoommateMatchingService {
 
         roommateMatchingRepository.save(matching);
 
-        sendRequestNotification(receiver, matching.getId());
+        sendRequestNotification(sender, matching.getId());
 
         return ResponseRoommateMatchingDto.builder()
                 .MatchingId(matching.getId())
@@ -208,7 +208,7 @@ public class RoommateMatchingService {
         myRoommateRepository.save(myRoommate1);
         myRoommateRepository.save(myRoommate2);
 
-        sendAcceptNotification(receiver, matching.getId());
+        sendAcceptNotification(sender, matching.getId());
     }
 
     private void sendAcceptNotification(User receiver, Long matchingId) {
