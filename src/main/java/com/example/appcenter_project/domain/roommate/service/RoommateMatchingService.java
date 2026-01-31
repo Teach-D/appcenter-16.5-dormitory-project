@@ -68,20 +68,6 @@ public class RoommateMatchingService {
             throw new CustomException(ErrorCode.ROOMMATE_FORBIDDEN_ACCESS);
         }
 
-        // receiver가 이미 매칭된 사람인지 체크
-        boolean receiverAlreadyMatched =
-                roommateMatchingRepository.existsBySenderAndStatus(receiver, MatchingStatus.COMPLETED) ||
-                        roommateMatchingRepository.existsByReceiverAndStatus(receiver, MatchingStatus.COMPLETED);
-
-        if (receiverAlreadyMatched) {
-            throw new CustomException(ErrorCode.ROOMMATE_ALREADY_MATCHED);
-        }
-
-        boolean exists = roommateMatchingRepository.existsBySenderAndReceiver(sender, receiver);
-        if (exists) {
-            throw new CustomException(ErrorCode.ROOMMATE_MATCHING_ALREADY_REQUESTED);
-        }
-
         return processMatchingRequest(sender, receiver);
     }
 
@@ -111,7 +97,7 @@ public class RoommateMatchingService {
         registerMyRoommate(sender, receiver);
 
         cleanUpOldMatchingRecords(sender, receiver);
-        sendAcceptNotification(receiver, matching.getId());
+        sendAcceptNotification(sender, matching.getId());
     }
 
     // 매칭 거절
@@ -197,7 +183,7 @@ public class RoommateMatchingService {
 
     // ========== Private Methods ========== //
     private ResponseRoommateMatchingDto processMatchingRequest(User sender, User receiver) {
-        validateNotAlreadyMatched(receiver);
+        validateNotAlreadyMatched(sender);
         validateNotAlreadyMatched(receiver);
 
         Optional<RoommateMatching> reverseRequest =
