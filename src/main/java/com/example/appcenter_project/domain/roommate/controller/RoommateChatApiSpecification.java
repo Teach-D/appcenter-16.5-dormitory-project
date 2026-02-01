@@ -37,8 +37,7 @@ public interface RoommateChatApiSpecification  {
     ResponseEntity<ResponseRoommateChatDto> sendChat(
             @Parameter(hidden = true) CustomUserDetails userDetails,
             @RequestBody @Parameter(description = "채팅 메시지 요청 DTO", required = true)
-            RequestRoommateChatDto requestRoommateChatDto,
-            HttpServletRequest request
+            RequestRoommateChatDto requestRoommateChatDto
     );
 
     @Operation(
