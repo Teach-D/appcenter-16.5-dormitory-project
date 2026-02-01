@@ -23,10 +23,8 @@ public interface NotificationApiSpecification {
     @Operation(
             summary = "알림 생성",
             description = "새로운 알림을 생성하고 대상 사용자들에게 푸시 알림을 전송합니다. " +
-                    "알림 타입에 따라 전송 대상이 달라집니다: " +
-                    "- 유니돔: 모든 사용자에게 전송 " +
-                    "- 생활원: 기숙사 거주 학생(dormType이 NONE이 아닌 학생)에게만 전송 " +
-                    "- 기타: 개별 사용자 알림",
+                    "    ROOMMATE, GROUP_ORDER, DORMITORY, UNI_DORM, SUPPORTERS \n" +
+                    "    COMPLAINT, COUPON, CHAT",
             responses = {
                     @ApiResponse(responseCode = "201", description = "알림 생성 성공"),
                     @ApiResponse(responseCode = "400", description = "입력이 잘못되었습니다."),
