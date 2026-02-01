@@ -11,5 +11,4 @@ public class RequestNotificationDto {
     private String title;
     private String body;
     private String notificationType;
-    private Long boardId;
 }
