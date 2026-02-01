@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -36,7 +37,8 @@ public interface RoommateChatApiSpecification  {
     ResponseEntity<ResponseRoommateChatDto> sendChat(
             @Parameter(hidden = true) CustomUserDetails userDetails,
             @RequestBody @Parameter(description = "채팅 메시지 요청 DTO", required = true)
-            RequestRoommateChatDto request
+            RequestRoommateChatDto requestRoommateChatDto,
+            HttpServletRequest request
     );
 
     @Operation(
@@ -54,6 +56,7 @@ public interface RoommateChatApiSpecification  {
     )
     ResponseEntity<List<ResponseRoommateChatDto>> getChatList(
             @Parameter(hidden = true) CustomUserDetails userDetails,
+            HttpServletRequest request,
             @Parameter(description = "조회할 채팅방 ID", example = "1") @PathVariable Long roomId
     );
 

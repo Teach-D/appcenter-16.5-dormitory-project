@@ -17,7 +17,7 @@ public class ResponseRoommateChatDto {
     private String createdDate;
     private String userImageUrl;
 
-    public static ResponseRoommateChatDto entityToDto(RoommateChattingChat chat) {
+    public static ResponseRoommateChatDto entityToDto(RoommateChattingChat chat, String userImageUrl) {
         return ResponseRoommateChatDto.builder()
                 .roommateChattingRoomId(chat.getRoommateChattingRoom().getId())
                 .roommateChatId(chat.getId())
@@ -25,7 +25,7 @@ public class ResponseRoommateChatDto {
                 .content(chat.getContent())
                 .read(chat.isReadByReceiver())
                 .createdDate(chat.getCreatedDate().toString())
-                .userImageUrl(chat.getMember().getImage() == null ? null : chat.getMember().getImage().getImagePath())
+                .userImageUrl(userImageUrl)
                 .build();
     }
 }

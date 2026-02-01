@@ -1,5 +1,8 @@
 package com.example.appcenter_project.domain.roommate.service;
 
+import com.example.appcenter_project.common.image.entity.Image;
+import com.example.appcenter_project.common.image.enums.ImageType;
+import com.example.appcenter_project.common.image.service.ImageService;
 import com.example.appcenter_project.domain.fcm.service.FcmMessageService;
 import com.example.appcenter_project.domain.notification.dto.request.RequestNotificationDto;
 import com.example.appcenter_project.domain.notification.entity.Notification;
@@ -14,6 +17,7 @@ import com.example.appcenter_project.domain.roommate.repository.RoommateChatting
 import com.example.appcenter_project.domain.roommate.repository.RoommateChattingRoomRepository;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.global.config.RoommateWebSocketEventListener;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -22,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static com.example.appcenter_project.global.exception.ErrorCode.*;
 
@@ -37,17 +42,18 @@ public class RoommateChattingChatService {
     private final SimpMessagingTemplate messagingTemplate;
     private final NotificationService notificationService;
     private final FcmMessageService fcmMessageService;
+    private final ImageService imageService;
 
-    public ResponseRoommateChatDto sendChat(Long userId, RequestRoommateChatDto request) {
+    public ResponseRoommateChatDto sendChat(Long userId, RequestRoommateChatDto requestRoommateChatDto, HttpServletRequest request) {
         log.info("💬 [채팅 전송 시작] userId: {}, roomId: {}, content: {}",
-                userId, request.getRoommateChattingRoomId(), request.getContent());
+                userId, requestRoommateChatDto.getRoommateChattingRoomId(), requestRoommateChatDto.getContent());
 
         // 1. 보낸 사람 조회 (예외 처리 포함)
         User sender = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
         // 2. 채팅방 조회
-        RoommateChattingRoom room = chatRoomRepository.findById(request.getRoommateChattingRoomId())
+        RoommateChattingRoom room = chatRoomRepository.findById(requestRoommateChatDto.getRoommateChattingRoomId())
                 .orElseThrow(() -> new CustomException(ROOMMATE_CHAT_ROOM_NOT_FOUND));
 
         // 3. 보낸 사람 → 수신자 확인 및 보안 검증
@@ -65,14 +71,14 @@ public class RoommateChattingChatService {
                 receiver.getId(), receiver.getStudentNumber());
 
         // 4. 수신자가 현재 WebSocket 방에 접속해 있는지 확인
-        boolean isReceiverOnline = isUserOnlineInRoom(request.getRoommateChattingRoomId(), receiver.getId());
+        boolean isReceiverOnline = isUserOnlineInRoom(requestRoommateChatDto.getRoommateChattingRoomId(), receiver.getId());
         log.info("🔍 [수신자 온라인 상태] receiverId: {}, isOnline: {}", receiver.getId(), isReceiverOnline);
 
         // 5. 채팅 메시지 엔티티 생성 (수신자가 온라인이면 자동으로 읽음 처리)
         RoommateChattingChat chat = RoommateChattingChat.builder()
                 .roommateChattingRoom(room)
                 .member(sender)
-                .content(request.getContent())
+                .content(requestRoommateChatDto.getContent())
                 .readByReceiver(isReceiverOnline) // 수신자가 온라인이면 읽음 처리
                 .build();
 
@@ -81,7 +87,9 @@ public class RoommateChattingChatService {
         log.info("💾 [채팅 DB 저장 완료] chatId: {}, read: {}", savedChat.getId(), savedChat.isReadByReceiver());
 
         // 7. 실시간 전송 (수신자 ID가 명확하지 않아 room 단위로 전송)
-        ResponseRoommateChatDto responseDto = ResponseRoommateChatDto.entityToDto(savedChat);
+        String imageUrl = imageService.findImage(ImageType.USER, savedChat.getMember().getId(), request).getImageUrl();
+
+        ResponseRoommateChatDto responseDto = ResponseRoommateChatDto.entityToDto(savedChat, imageUrl);
         String destination = "/sub/roommate/chat/" + room.getId();
 
         log.info("📡 [WebSocket 전송] destination: {}, chatId: {}", destination, savedChat.getId());
@@ -171,7 +179,7 @@ public class RoommateChattingChatService {
     }
 
     @Transactional(readOnly = true)
-    public List<ResponseRoommateChatDto> getChatList(Long userId, Long roomId) {
+    public List<ResponseRoommateChatDto> getChatList(Long userId, Long roomId, HttpServletRequest request) {
         RoommateChattingRoom room = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new CustomException(ROOMMATE_CHAT_ROOM_NOT_FOUND));
 
@@ -203,7 +211,10 @@ public class RoommateChattingChatService {
         }
 
         return chatList.stream()
-                .map(ResponseRoommateChatDto::entityToDto)
+                .map(chat -> {
+                    String imageUrl = imageService.findImage(ImageType.USER, chat.getMember().getId(), request).getImageUrl();
+                    return ResponseRoommateChatDto.entityToDto(chat, imageUrl);
+                })
                 .toList();
     }
 }
