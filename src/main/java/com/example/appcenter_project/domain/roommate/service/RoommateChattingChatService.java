@@ -44,7 +44,7 @@ public class RoommateChattingChatService {
     private final FcmMessageService fcmMessageService;
     private final ImageService imageService;
 
-    public ResponseRoommateChatDto sendChat(Long userId, RequestRoommateChatDto requestRoommateChatDto, HttpServletRequest request) {
+    public ResponseRoommateChatDto sendChat(Long userId, RequestRoommateChatDto requestRoommateChatDto) {
         log.info("💬 [채팅 전송 시작] userId: {}, roomId: {}, content: {}",
                 userId, requestRoommateChatDto.getRoommateChattingRoomId(), requestRoommateChatDto.getContent());
 
@@ -86,10 +86,8 @@ public class RoommateChattingChatService {
         RoommateChattingChat savedChat = chatRepository.save(chat);
         log.info("💾 [채팅 DB 저장 완료] chatId: {}, read: {}", savedChat.getId(), savedChat.isReadByReceiver());
 
-        // 7. 실시간 전송 (수신자 ID가 명확하지 않아 room 단위로 전송)
-        String imageUrl = imageService.findImage(ImageType.USER, savedChat.getMember().getId(), request).getImageUrl();
 
-        ResponseRoommateChatDto responseDto = ResponseRoommateChatDto.entityToDto(savedChat, imageUrl);
+        ResponseRoommateChatDto responseDto = ResponseRoommateChatDto.entityToDto(savedChat, null);
         String destination = "/sub/roommate/chat/" + room.getId();
 
         log.info("📡 [WebSocket 전송] destination: {}, chatId: {}", destination, savedChat.getId());
