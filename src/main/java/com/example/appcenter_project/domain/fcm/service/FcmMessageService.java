@@ -12,9 +12,12 @@ import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
+import java.time.LocalDate;
+import java.time.Duration;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,8 +28,11 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class FcmMessageService {
 
+    private static final String FCM_SUCCESS_KEY_PREFIX = "fcm:success:";
+
     private final FcmTokenRepository fcmTokenRepository;
     private final UserRepository userRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     // todo User user
     public String sendNotification(User user, String title, String body) {
@@ -46,6 +52,7 @@ public class FcmMessageService {
             try {
                 String response = FirebaseMessaging.getInstance().send(message);
                 log.info("Successfully sent FCM message: {}", response);
+                recordFcmSuccess();
                 return response; // 메시지 ID 반환
             } catch (Exception e) {
                 log.error("Error sending FCM message", e);
@@ -82,6 +89,7 @@ public class FcmMessageService {
             try {
                 String response = FirebaseMessaging.getInstance().send(message);
                 log.info("Successfully sent FCM message to token: {}", response);
+                recordFcmSuccess();
             } catch (Exception e) {
                 log.error("Error sending FCM message to token: {}", targetToken, e);
                 fcmTokenRepository.deleteByToken(targetToken);
@@ -113,6 +121,7 @@ public class FcmMessageService {
                     try {
                         String response = FirebaseMessaging.getInstance().send(message);
                         log.info("Successfully sent FCM message: {}", response);
+                        recordFcmSuccess();
                         return response; // 메시지 ID 반환
                     } catch (Exception e) {
                         log.error("Error sending FCM message", e);
@@ -201,6 +210,7 @@ public class FcmMessageService {
             try {
                 String response = FirebaseMessaging.getInstance().send(message);
                 log.info("      ✅ FCM 전송 성공: {}", response);
+                recordFcmSuccess();
             } catch (Exception e) {
                 log.error("      ❌ FCM 전송 실패", e);
                 fcmTokenRepository.deleteByToken(targetToken);
@@ -208,6 +218,12 @@ public class FcmMessageService {
         }
 
         log.info("      🚀 sendMessageToUser 종료 (User ID: {}, 총 {}개 토큰 처리)", user.getId(), tokenIndex);
+    }
+
+    private void recordFcmSuccess() {
+        String key = FCM_SUCCESS_KEY_PREFIX + LocalDate.now();
+        redisTemplate.opsForValue().increment(key);
+        redisTemplate.expire(key, Duration.ofHours(24));
     }
 
     public void sendSupporterNotification(User user, String title, String body) {
