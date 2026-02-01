@@ -79,6 +79,16 @@ public class Notification extends BaseTimeEntity {
                 .title(title)
                 .body(body)
                 .notificationType(NotificationType.ROOMMATE)
+                .apiType(ApiType.ROOMMATE_MATCHING)
+                .boardId(matchingId)
+                .build();
+    }
+
+    public static Notification createRoommateBoardNotification(String title, String body, Long matchingId) {
+        return Notification.builder()
+                .title(title)
+                .body(body)
+                .notificationType(NotificationType.ROOMMATE)
                 .apiType(ApiType.ROOMMATE)
                 .boardId(matchingId)
                 .build();

@@ -120,7 +120,7 @@ public class NotificationService {
         String title = "새로운 룸메이트 게시글이 올라왔어요!";
         String body = authorName + "님이 룸메이트 게시글을 작성했습니다.";
 
-        Notification roommateBoardNotification = Notification.createRoommateMatchingNotification(title, body, boardId);
+        Notification roommateBoardNotification = Notification.createRoommateBoardNotification(title, body, boardId);
         notificationRepository.save(roommateBoardNotification);
         return roommateBoardNotification;
     }
