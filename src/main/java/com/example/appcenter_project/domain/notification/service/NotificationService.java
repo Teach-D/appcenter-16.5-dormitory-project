@@ -54,6 +54,7 @@ public class NotificationService {
 
     public ResponseNotificationDto findNotification(Long userId, Long notificationId) {
         UserNotification userNotification = userNotificationRepository.findByUserIdAndNotificationId(userId, notificationId).orElseThrow();
+        userNotification.changeReadStatus(true);
         return  ResponseNotificationDto.from(userNotification);
     }
 
@@ -65,10 +66,7 @@ public class NotificationService {
         Collections.reverse(notifications);
 
         return notifications.stream()
-                .map(userNotification -> {
-                    userNotification.changeReadStatus(true);
-                    return ResponseNotificationDto.from(userNotification);
-                })
+                .map(ResponseNotificationDto::from)
                 .toList();
     }
 
@@ -109,7 +107,7 @@ public class NotificationService {
 
     public Notification createRoommateAcceptNotification(String senderName, Long matchingId) {
         String title = "룸메이트 매칭이 완료되었습니다!";
-        String body = senderName + "님과 룸메이트가 되었습니다.";
+        String body = senderName + "님과 룸메이트가 되었습니다. 포털에서 룸메이트 신청을 완료해주세요!";
 
         Notification roommateAcceptNotification = Notification.createRoommateMatchingNotification(title, body, matchingId);
         notificationRepository.save(roommateAcceptNotification);
