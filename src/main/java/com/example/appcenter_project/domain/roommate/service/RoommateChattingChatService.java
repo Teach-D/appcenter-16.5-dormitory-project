@@ -101,14 +101,14 @@ public class RoommateChattingChatService {
             messagingTemplate.convertAndSend(readDestination, readIds);
         }
 
-//        sendChatNotification(sender, receiver, room.getId(), chat.getContent());
+        sendChatNotification(sender, receiver, room.getId(), chat.getContent());
 
         return responseDto;
     }
 
     private void sendChatNotification(User sender, User receiver, Long chatRoomId, String content) {
         Notification chatNotification = notificationService.createChatNotification(sender.getName(), chatRoomId, content);
-        notificationService.createUserNotification(receiver, chatNotification);
+//        notificationService.createUserNotification(receiver, chatNotification);
         fcmMessageService.sendNotification(receiver, chatNotification.getTitle(), chatNotification.getBody());
     }
 
