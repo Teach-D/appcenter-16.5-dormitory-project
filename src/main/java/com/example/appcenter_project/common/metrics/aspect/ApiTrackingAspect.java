@@ -25,13 +25,17 @@ public class ApiTrackingAspect {
         HttpServletRequest request = getCurrentRequest();
 
         if (request != null) {
-            String apiPath = request.getRequestURI();
+            String apiPath = normalizeApiPath(request.getRequestURI());
             String httpMethod = request.getMethod();
 
             statisticsService.recordApiCall(apiPath, httpMethod);
         }
 
         return joinPoint.proceed();
+    }
+
+    private String normalizeApiPath(String path) {
+        return path.replaceAll("/\\d+", "/**");
     }
 
     private HttpServletRequest getCurrentRequest() {
