@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class FcmMessageService {
 
     private static final String FCM_SUCCESS_KEY_PREFIX = "fcm:success:";
+    private static final String FCM_FAIL_KEY_PREFIX = "fcm:fail:";
 
     private final FcmTokenRepository fcmTokenRepository;
     private final UserRepository userRepository;
@@ -57,6 +58,7 @@ public class FcmMessageService {
             } catch (Exception e) {
                 log.error("Error sending FCM message", e);
                 fcmTokenRepository.deleteByToken(targetToken);
+                recordFcmFail();
             }
         }
         // todo 임시로 null
@@ -93,6 +95,7 @@ public class FcmMessageService {
             } catch (Exception e) {
                 log.error("Error sending FCM message to token: {}", targetToken, e);
                 fcmTokenRepository.deleteByToken(targetToken);
+                recordFcmFail();
             }
         }
 
@@ -126,6 +129,7 @@ public class FcmMessageService {
                     } catch (Exception e) {
                         log.error("Error sending FCM message", e);
                         fcmTokenRepository.deleteByToken(targetToken);
+                        recordFcmFail();
                     }
                 }
             }
@@ -214,6 +218,7 @@ public class FcmMessageService {
             } catch (Exception e) {
                 log.error("      ❌ FCM 전송 실패", e);
                 fcmTokenRepository.deleteByToken(targetToken);
+                recordFcmFail();
             }
         }
 
@@ -222,6 +227,12 @@ public class FcmMessageService {
 
     private void recordFcmSuccess() {
         String key = FCM_SUCCESS_KEY_PREFIX + LocalDate.now();
+        redisTemplate.opsForValue().increment(key);
+        redisTemplate.expire(key, Duration.ofHours(24));
+    }
+
+    private void recordFcmFail() {
+        String key = FCM_FAIL_KEY_PREFIX + LocalDate.now();
         redisTemplate.opsForValue().increment(key);
         redisTemplate.expire(key, Duration.ofHours(24));
     }
