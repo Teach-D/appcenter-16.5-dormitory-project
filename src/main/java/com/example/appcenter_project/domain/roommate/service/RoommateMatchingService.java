@@ -98,6 +98,7 @@ public class RoommateMatchingService {
 
         cleanUpOldMatchingRecords(sender, receiver);
         sendAcceptNotification(sender, receiver, matching.getId());
+        sendAcceptNotification(receiver, sender, matching.getId());
     }
 
     // 매칭 거절
@@ -236,6 +237,7 @@ public class RoommateMatchingService {
         registerMyRoommate(originalSender, originalReceiver);
         cleanUpOldMatchingRecords(originalSender, originalReceiver);
         sendAcceptNotification(originalSender, originalReceiver, reverseRequest.getId());
+        sendAcceptNotification(originalReceiver, originalSender, reverseRequest.getId());
 
         log.info("상호 신청 감지로 매칭 완료 처리: matchingId={}, sender={}, receiver={}",
                 reverseRequest.getId(), originalSender.getId(), originalReceiver.getId());
