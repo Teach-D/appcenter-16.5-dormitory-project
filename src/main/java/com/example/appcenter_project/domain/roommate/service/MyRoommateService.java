@@ -50,7 +50,7 @@ public class MyRoommateService {
                 .name(roommate.getName())
                 .dormType(roommate.getDormType() != null ? roommate.getDormType().name() : null)
                 .college(roommate.getCollege() != null ? roommate.getCollege().toValue() : null)
-                .imagePath(imageService.getImageUrl(ImageType.USER, roommate.getImage(), request))
+                .imagePath(getMyRoommateImage(roommate.getId(), request).getImageUrl())
                 .build();
     }
 
@@ -60,13 +60,19 @@ public class MyRoommateService {
         MyRoommate myRoommate = myRoommateRepository.findByUserId(userId)
                 .orElseThrow(() -> new CustomException(MY_ROOMMATE_NOT_REGISTERED));
 
+        User roommateUser = myRoommate.getRoommate();
+        MyRoommate roommateMyRoommate = myRoommateRepository.findByUserId(roommateUser.getId())
+                .orElseThrow(() -> new CustomException(MY_ROOMMATE_NOT_REGISTERED));
+
+        // null이면 빈 배열로 초기화 (엔티티의 메서드 호출)
+        myRoommate.initRule();
+        roommateMyRoommate.initRule();
+
         // 본인의 룰 업데이트
         myRoommate.updateRules(rules);
 
         // 룸메이트의 룰도 동일하게 업데이트
-        User roommateUser = myRoommate.getRoommate();
-        MyRoommate roommateMyRoommate = myRoommateRepository.findByUserId(roommateUser.getId())
-                .orElseThrow(() -> new CustomException(MY_ROOMMATE_NOT_REGISTERED));
+
 
         roommateMyRoommate.updateRules(rules);
 
@@ -132,7 +138,7 @@ public class MyRoommateService {
                 .orElseThrow(() -> new CustomException(MY_ROOMMATE_NOT_REGISTERED));
         Long myRoommateId = myRoommate.getRoommate().getId();
 
-        ImageLinkDto imageLinkDto = imageService.findImage(ImageType.USER, myRoommateId, request);
+        ImageLinkDto imageLinkDto = imageService.findImage(ImageType.TIME_TABLE, myRoommateId, request);
         return imageLinkDto;
     }
 

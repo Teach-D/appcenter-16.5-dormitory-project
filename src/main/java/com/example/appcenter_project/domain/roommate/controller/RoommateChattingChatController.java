@@ -5,6 +5,7 @@ import com.example.appcenter_project.domain.roommate.dto.request.RequestRoommate
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateChatDto;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import com.example.appcenter_project.domain.roommate.service.RoommateChattingChatService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import jakarta.validation.Valid;
@@ -31,10 +32,11 @@ public class RoommateChattingChatController implements RoommateChatApiSpecificat
     @PostMapping
     public ResponseEntity<ResponseRoommateChatDto> sendChat(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody RequestRoommateChatDto request
+            @RequestBody RequestRoommateChatDto requestRoommateChatDto,
+            HttpServletRequest request
     ) {
         Long userId = userDetails.getId();
-        ResponseRoommateChatDto response = chatService.sendChat(userId, request);
+        ResponseRoommateChatDto response = chatService.sendChat(userId, requestRoommateChatDto, request);
         return ResponseEntity.ok(response);
     }
 
@@ -43,10 +45,11 @@ public class RoommateChattingChatController implements RoommateChatApiSpecificat
     @GetMapping("/{roomId}")
     public ResponseEntity<List<ResponseRoommateChatDto>> getChatList(
             @AuthenticationPrincipal CustomUserDetails userDetails,
+            HttpServletRequest request,
             @PathVariable Long roomId
     ) {
         Long userId = userDetails.getId();
-        List<ResponseRoommateChatDto> chatList = chatService.getChatList(userId, roomId);
+        List<ResponseRoommateChatDto> chatList = chatService.getChatList(userId, roomId, request);
         return ResponseEntity.ok(chatList);
     }
 
@@ -79,7 +82,8 @@ public class RoommateChattingChatController implements RoommateChatApiSpecificat
     // WebSocket 방식 채팅 보내기
     @MessageMapping("/roommate/socketchat")
     public void sendChatViaWebSocket(
-            @Valid RequestRoommateChatDto request,
+            @Valid RequestRoommateChatDto roommateChatDto,
+            HttpServletRequest request,
             SimpMessageHeaderAccessor headerAccessor
     ) {
         // 세션에서 userId 추출 (WebSocketAuthInterceptor에서 설정됨)
@@ -92,9 +96,9 @@ public class RoommateChattingChatController implements RoommateChatApiSpecificat
         String sessionId = headerAccessor.getSessionId();
 
         log.info("📤 [WebSocket 채팅 전송] userId: {}, sessionId: {}, roomId: {}, content: {}",
-                userId, sessionId, request.getRoommateChattingRoomId(), request.getContent());
+                userId, sessionId, roommateChatDto.getRoommateChattingRoomId(), roommateChatDto.getContent());
 
-        chatService.sendChat(userId, request);
+        chatService.sendChat(userId, roommateChatDto, request);
     }
 
 

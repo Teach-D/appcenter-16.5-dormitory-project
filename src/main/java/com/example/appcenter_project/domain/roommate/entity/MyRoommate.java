@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -19,7 +20,7 @@ public class MyRoommate {
     private Long id;
 
     @Convert(converter = StringListConverter.class)
-    private List<String> rule;
+    private List<String> rule = new ArrayList<>();
 
     @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "member_id", unique = true, nullable = true)
@@ -40,6 +41,10 @@ public class MyRoommate {
         this.rule.addAll(newRules);
     }
 
-
+    public void initRule() {
+        if (this.rule == null) {
+            this.rule = new ArrayList<>();
+        }
+    }
 
 }
