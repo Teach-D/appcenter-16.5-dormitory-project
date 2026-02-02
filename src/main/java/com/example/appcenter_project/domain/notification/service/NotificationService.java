@@ -78,7 +78,7 @@ public class NotificationService {
     public List<ResponseNotificationDto> findNotificationsByUserScroll(Long userId, Long lastId, int size) {
         Pageable pageable = PageRequest.of(0, size);
 
-        List<UserNotification> notifications = notificationRepository.findAllWithFilters(
+        List<UserNotification> notifications = userNotificationRepository.findAllWithFilters(
                 userId, lastId, pageable
         );
         if (notifications.isEmpty()) {

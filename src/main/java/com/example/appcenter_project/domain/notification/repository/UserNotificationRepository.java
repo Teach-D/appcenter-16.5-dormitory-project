@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
-public interface UserNotificationRepository extends JpaRepository<UserNotification, Long> {
+public interface UserNotificationRepository extends JpaRepository<UserNotification, Long>, UserNotificationQuerydslRepository {
     Optional<UserNotification> findByUserIdAndNotificationId(Long userId, Long notificationId);
     
     @Query("SELECT CASE WHEN COUNT(un) > 0 THEN true ELSE false END " +
