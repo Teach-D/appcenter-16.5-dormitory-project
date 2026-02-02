@@ -1,10 +1,8 @@
 package com.example.appcenter_project.domain.announcement.repository;
 
 import com.example.appcenter_project.domain.announcement.entity.Announcement;
-import com.example.appcenter_project.domain.announcement.entity.QAnnouncement;
 import com.example.appcenter_project.domain.announcement.enums.AnnouncementCategory;
 import com.example.appcenter_project.domain.announcement.enums.AnnouncementType;
-import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
@@ -13,7 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-import static com.example.appcenter_project.domain.announcement.entity.QAnnouncement.*;
+import static com.example.appcenter_project.domain.announcement.entity.QAnnouncement.announcement;
 
 @Repository
 public class AnnouncementRepositoryImpl implements AnnouncementQuerydslRepository {
