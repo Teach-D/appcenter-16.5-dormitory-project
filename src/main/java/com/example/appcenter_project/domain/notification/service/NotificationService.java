@@ -54,7 +54,6 @@ public class NotificationService {
 
     public ResponseNotificationDto findNotification(Long userId, Long notificationId) {
         UserNotification userNotification = userNotificationRepository.findByUserIdAndNotificationId(userId, notificationId).orElseThrow();
-        userNotification.changeReadStatus(true);
         return  ResponseNotificationDto.from(userNotification);
     }
 
@@ -65,9 +64,12 @@ public class NotificationService {
         List<UserNotification> notifications = new ArrayList<>(user.getUserNotifications());
         Collections.reverse(notifications);
 
-        return notifications.stream()
+        List<ResponseNotificationDto> result = notifications.stream()
                 .map(ResponseNotificationDto::from)
                 .toList();
+
+        notifications.forEach(notification -> notification.changeReadStatus(true));
+        return result;
     }
 
     public void updateNotification(Long notificationId, RequestNotificationDto requestDto) {
