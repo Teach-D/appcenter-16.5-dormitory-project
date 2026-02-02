@@ -45,6 +45,16 @@ public class NotificationController implements NotificationApiSpecification {
         return ResponseEntity.status(OK).body(notificationService.findNotificationsByUser(user.getId()));
     }
 
+    @TrackApi
+    @GetMapping("/scroll")
+    public ResponseEntity<List<ResponseNotificationDto>> findNotificationsByUserScroll(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestParam(required = false) Long lastId,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.status(OK).body(
+                notificationService.findNotificationsByUserScroll(user.getId(), lastId, size));
+    }
+
     @PutMapping("/{notificationId}")
     public ResponseEntity<Void> updateNotification(@PathVariable Long notificationId, @RequestBody RequestNotificationDto requestNotificationDto) {
         notificationService.updateNotification(notificationId, requestNotificationDto);

@@ -4,7 +4,7 @@ import com.example.appcenter_project.domain.notification.entity.Notification;
 import com.example.appcenter_project.domain.user.enums.NotificationType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface NotificationRepository extends JpaRepository<Notification, Long> {
+public interface NotificationRepository extends JpaRepository<Notification, Long>, UserNotificationQuerydslRepository {
     boolean existsByBoardIdAndTitle(Long boardId, String title);
     Notification findByBoardIdAndTitle(Long boardId, String title);
 }
