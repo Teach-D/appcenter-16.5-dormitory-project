@@ -4,6 +4,7 @@ import com.example.appcenter_project.domain.notification.dto.request.RequestNoti
 import com.example.appcenter_project.domain.notification.dto.response.ResponseNotificationDto;
 import com.example.appcenter_project.domain.notification.entity.Notification;
 import com.example.appcenter_project.domain.notification.entity.UserNotification;
+import com.example.appcenter_project.domain.notification.repository.UserNotificationRepositoryImpl;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.user.enums.NotificationType;
 import com.example.appcenter_project.global.exception.CustomException;
@@ -12,6 +13,8 @@ import com.example.appcenter_project.domain.notification.repository.UserNotifica
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.domain.fcm.service.FcmMessageService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,6 +73,21 @@ public class NotificationService {
 
         notifications.forEach(notification -> notification.changeReadStatus(true));
         return result;
+    }
+
+    public List<ResponseNotificationDto> findNotificationsByUserScroll(Long userId, Long lastId, int size) {
+        Pageable pageable = PageRequest.of(0, size);
+
+        List<UserNotification> notifications = userNotificationRepository.findAllWithFilters(
+                userId, lastId, pageable
+        );
+        if (notifications.isEmpty()) {
+            return List.of();
+        }
+        notifications.forEach(notification -> notification.changeReadStatus(true));
+        return notifications.stream()
+                .map(ResponseNotificationDto::from)
+                .toList();
     }
 
     public void updateNotification(Long notificationId, RequestNotificationDto requestDto) {

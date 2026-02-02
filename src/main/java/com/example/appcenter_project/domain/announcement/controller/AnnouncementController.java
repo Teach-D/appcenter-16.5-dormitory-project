@@ -73,6 +73,7 @@ public class AnnouncementController implements AnnouncementApiSpecification {
         return ResponseEntity.status(OK).body(announcementService.findAllAnnouncements(AnnouncementType.valueOf(type), AnnouncementCategory.valueOf(category), search));
     }
 
+    @TrackApi
     @GetMapping("/scroll")
     public ResponseEntity<List<ResponseAnnouncementDto>> findAllAnnouncementsScroll(
             @RequestParam(defaultValue = "생활원") String type,
