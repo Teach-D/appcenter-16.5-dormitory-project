@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -55,6 +56,51 @@ public interface NotificationApiSpecification {
     )
     ResponseEntity<List<ResponseNotificationDto>> findNotificationsByUser(
             @AuthenticationPrincipal CustomUserDetails user);
+
+    @Operation(
+            summary = "사용자 알림 목록 조회 (무한스크롤)",
+            description = """
+    현재 로그인한 사용자의 알림을 무한스크롤 방식으로 조회합니다.
+    조회 시 모든 알림이 자동으로 읽음 처리됩니다.
+    
+    ### 무한스크롤 사용법
+    - 첫 로딩: lastId 없이 호출
+    - 다음 페이지: 이전 응답의 마지막 알림 ID를 lastId로 전달
+    - 빈 배열 반환 시 더 이상 데이터 없음
+    """,
+            parameters = {
+                    @Parameter(
+                            name = "lastId",
+                            description = "마지막으로 조회한 알림 ID (무한스크롤용 커서, 첫 로딩 시 null)",
+                            example = "50",
+                            required = false,
+                            schema = @Schema(type = "integer", format = "int64")
+                    ),
+                    @Parameter(
+                            name = "size",
+                            description = "한 번에 조회할 알림 개수",
+                            example = "20",
+                            schema = @Schema(type = "integer", defaultValue = "20")
+                    )
+            },
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "알림 목록 조회 성공",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    array = @ArraySchema(schema = @Schema(implementation = ResponseNotificationDto.class))
+                            )
+                    ),
+                    @ApiResponse(responseCode = "403", description = "유효하지 않은 토큰입니다."),
+                    @ApiResponse(responseCode = "404", description = "회원가입하지 않은 사용자입니다.")
+            }
+    )
+    ResponseEntity<List<ResponseNotificationDto>> findNotificationsByUserScroll(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestParam(required = false) Long lastId,
+            @RequestParam(defaultValue = "20") int size
+    );
 
     @Operation(
             summary = "개인 알림 전송",
