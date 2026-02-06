@@ -58,6 +58,8 @@ public class User extends BaseTimeEntity {
     // 개인정보처리방침 동의 여부, 초기값 false
     private boolean isPrivacyAgreed = false;
 
+    // 신입생 구별용
+    private Boolean isFreshman;
 
     @ElementCollection
     @CollectionTable(name = "user_search_logs", joinColumns =
@@ -150,6 +152,15 @@ public class User extends BaseTimeEntity {
         return User.builder()
                 .studentNumber(studentNumber).password(password)
                 .penalty(0).image(null).role(Role.ROLE_USER).build();
+    }
+
+    public static User createFreshman(String username, String password) {
+        User user = User.builder()
+                .studentNumber(username)
+                .password(password)
+                .penalty(0).image(null).role(Role.ROLE_USER).build();
+        user.isFreshman = true;
+        return user;
     }
 
     public boolean hasUnreadNotifications() {

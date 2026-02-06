@@ -49,7 +49,7 @@ public class SecurityConfig {
 
                         /** 유저 **/
                         // 로그인
-                        .requestMatchers(POST, "/users", "/users/refreshToken").permitAll()
+                        .requestMatchers(POST, "/users", "/users/freshman","/users/refreshToken").permitAll()
                         // 관리자 모든 유저 조회
                         .requestMatchers("/users/all/admin").hasRole("ADMIN")
                         // 특정 유저 푸시 알림 전송

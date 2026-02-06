@@ -59,6 +59,11 @@ public class UserService {
         return createDto(user);
     }
 
+    public ResponseLoginDto saveFreshman(SignupUser signupUser) {
+        User user = createFreshman(signupUser);
+        return createDto(user);
+    }
+
     public String reissueAccessToken(RequestTokenDto request) {
         validateRefreshToken(request.getRefreshToken());
         String refreshToken = extractBearerToken(request);
@@ -184,6 +189,22 @@ public class UserService {
         }
 
         User user = User.createNewUser(signupUser.getStudentNumber(), passwordEncoder.encode(signupUser.getPassword()));
+        userRepository.save(user);
+
+        return user;
+    }
+
+    private User createFreshman(SignupUser signupUser) {
+        if (existsUser(signupUser)) {
+            User user = userRepository.findByStudentNumber(signupUser.getStudentNumber()).get();
+
+            if (!passwordEncoder.matches(signupUser.getPassword(), user.getPassword())) {
+                throw new CustomException(INVALID_PASSWORD);
+            }
+            return user;
+        }
+
+        User user = User.createFreshman(signupUser.getStudentNumber(), passwordEncoder.encode(signupUser.getPassword()));
         userRepository.save(user);
 
         return user;
