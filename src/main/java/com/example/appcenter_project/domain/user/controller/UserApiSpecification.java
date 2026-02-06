@@ -42,6 +42,21 @@ public interface UserApiSpecification {
             @Valid @RequestBody
             @Parameter(description = "회원가입 정보", required = true) SignupUser signupUser);
 
+    @Operation(
+            summary = "신입생 회원가입 및 로그인",
+            description = "아이디로 회원가입을 진행합니다. 이미 등록된 아이디면 비밀번호 확인 후 로그인하고, 새로운 아이디면 회원가입 후 로그인합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "201", description = "회원가입/로그인 성공",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseLoginDto.class))),
+                    @ApiResponse(responseCode = "400", description = "입력이 잘못되었습니다.", content = @Content(examples = {})),
+                    @ApiResponse(responseCode = "401", description = "비밀번호가 일치하지 않습니다. (INVALID_PASSWORD)", content = @Content(examples = {})),
+                    @ApiResponse(responseCode = "404", description = "기본 이미지를 찾을 수 없습니다. (DEFAULT_IMAGE_NOT_FOUND)", content = @Content(examples = {}))
+            }
+    )
+    ResponseEntity<ResponseLoginDto> saveFreshman(
+            @Valid @RequestBody
+            @Parameter(description = "신입생 회원가입 정보", required = true) SignupUser signupUser);
 
     @Operation(
             summary = "액세스 토큰 재발급",
