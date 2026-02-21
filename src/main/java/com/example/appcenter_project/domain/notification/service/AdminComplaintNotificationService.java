@@ -18,7 +18,6 @@ import com.example.appcenter_project.domain.fcm.service.FcmMessageService;
 import com.example.appcenter_project.shared.utils.WorkingHoursValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,7 +41,7 @@ public class AdminComplaintNotificationService {
     private final ComplaintRepository complaintRepository;
     private final FcmMessageService fcmMessageService;
     private final WorkingHoursValidator workingHoursValidator;
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final ComplaintRedisQueueService complaintRedisQueueService;
 
     /**
      * 새 민원 접수 시 관리자에게 알림 발송
@@ -195,7 +194,7 @@ public class AdminComplaintNotificationService {
                 userNotificationRepository.save(userNotification);
 
                 if (workingHoursValidator.isNotWorkingHours()) {
-                    redisTemplate.opsForValue().set("complaint_queue:user_notification:" + userNotification.getId(), userNotification.getId());
+                    complaintRedisQueueService.enqueue(userNotification.getId());
                 } else {
                     fcmMessageService.sendNotification(roommateComplaintManager, title, notification.getBody());
                 }
@@ -220,7 +219,7 @@ public class AdminComplaintNotificationService {
                 userNotificationRepository.save(userNotification);
 
                 if (workingHoursValidator.isNotWorkingHours()) {
-                    redisTemplate.opsForValue().set("complaint_queue:user_notification:" + userNotification.getId(), userNotification.getId());
+                    complaintRedisQueueService.enqueue(userNotification.getId());
                 } else {
                     fcmMessageService.sendNotification(lifeComplaintManager, title, notification.getBody());
                 }

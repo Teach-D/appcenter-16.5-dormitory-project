@@ -1,21 +1,45 @@
 <configuration>
+    <!-- 1. 실제 콘솔 출력 Appender (동기) -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - [%X{traceId}] [%X{userId}] %msg%n</pattern>
         </encoder>
     </appender>
 
+    <!-- 2. CONSOLE을 비동기로 감싸는 AsyncAppender -->
+    <appender name="ASYNC_CONSOLE" class="ch.qos.logback.classic.AsyncAppender">
+        <!-- 내부 큐 크기: 로그 이벤트를 최대 512개까지 버퍼링 -->
+        <queueSize>512</queueSize>
+        <!-- 큐가 80% 찼을 때 WARN 이하 로그를 버리는 기본 동작 방지 (0 = 항상 보존) -->
+        <discardingThreshold>0</discardingThreshold>
+        <!-- 큐가 꽉 찼을 때 메인 스레드 블로킹 방지 (로그 유실 허용) -->
+        <neverBlock>true</neverBlock>
+        <!-- MDC 컨텍스트를 비동기 스레드에 전파 -->
+        <includeCallerData>false</includeCallerData>
+        <appender-ref ref="CONSOLE"/>
+    </appender>
+
+    <!-- 3. 트레이스 전용 콘솔 Appender (동기) -->
     <appender name="TRACE_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <logger name="TRACE_LOGGER" level="INFO" additivity="false">
+    <!-- 4. TRACE_CONSOLE을 비동기로 감싸는 AsyncAppender -->
+    <appender name="ASYNC_TRACE_CONSOLE" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>256</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+        <includeCallerData>false</includeCallerData>
         <appender-ref ref="TRACE_CONSOLE"/>
+    </appender>
+
+    <logger name="TRACE_LOGGER" level="INFO" additivity="false">
+        <appender-ref ref="ASYNC_TRACE_CONSOLE"/>
     </logger>
 
     <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_CONSOLE"/>
     </root>
 </configuration>

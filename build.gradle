@@ -76,6 +76,12 @@ dependencies {
 	// aop
 	implementation 'org.springframework.boot:spring-boot-starter-aop'
 
+	// Resilience4j
+	implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
+
+	// Caffeine
+	implementation 'com.github.ben-manes.caffeine:caffeine'
+
 	// CSV
 	implementation 'com.opencsv:opencsv:5.9'
 }
