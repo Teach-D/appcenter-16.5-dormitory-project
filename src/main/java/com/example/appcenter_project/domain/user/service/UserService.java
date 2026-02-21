@@ -16,6 +16,7 @@ import com.example.appcenter_project.domain.user.enums.Role;
 import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.domain.user.repository.SchoolLoginRepository;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
+import com.example.appcenter_project.global.exception.ErrorCode;
 import com.example.appcenter_project.global.security.jwt.JwtTokenProvider;
 import com.example.appcenter_project.domain.fcm.service.FcmMessageService;
 import com.example.appcenter_project.common.image.service.ImageService;
@@ -135,6 +136,25 @@ public class UserService {
 
     public ImageLinkDto findUserTimeTableImage(Long userId, HttpServletRequest request) {
         return imageService.findImage(ImageType.TIME_TABLE, userId, request);
+    }
+
+    public ResponseLoginDto convertToPermanent(Long userId, SignupUser signupUser) {
+        checkINUStudent(signupUser);
+        checkAlreadyRegistered(signupUser);
+        User user = convertINUUser(userId, signupUser);
+
+        return createDto(user);
+    }
+
+    private User convertINUUser(Long userId, SignupUser signupUser) {
+        User user = findUserById(userId);
+        return user.convertINUUser(signupUser.getStudentNumber(), passwordEncoder.encode(signupUser.getPassword()));
+    }
+
+    private void checkAlreadyRegistered(SignupUser signupUser) {
+        if (userRepository.findByStudentNumber(signupUser.getStudentNumber()).isPresent()) {
+            throw new CustomException(ErrorCode.ALREADY_REGISTERED_USER);
+        }
     }
 
     public ResponseUserDto updateUser(Long userId, RequestUserDto request) {
@@ -279,4 +299,6 @@ public class UserService {
                 Role.ROLE_DORM_EXPEDITED_COMPLAINT_MANAGER
         );
     }
+
+
 }
