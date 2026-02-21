@@ -31,6 +31,7 @@ public enum ErrorCode {
     USER_KEYWORD_NOT_FOUND(NOT_FOUND, 2007, "[User] 해당 키워드는 이미 존재하지 않습니다."),
     USER_NOTIFICATION_NOT_FOUND(NOT_FOUND, 2008, "[UserNotification] 해당 유저 알림은 존재하지 않습니다."),
     INVALID_PASSWORD(UNAUTHORIZED, 2009, "[User] 비밀번호가 일치하지 않습니다."),
+    ALREADY_REGISTERED_USER(CONFLICT, 2010, "[User] 이미 포털 계정이 존재합니다"),
 
     // GROUP_ORDER
     GROUP_ORDER_NOT_FOUND(NOT_FOUND, 3001, "[GroupOrder] 공동구매 글을 찾을 수 없습니다."),
@@ -154,7 +155,10 @@ public enum ErrorCode {
 
     // FEATURE
     FEATURE_NOT_FOUND(NOT_FOUND, 12001, "[FEATURE] feature가 존재하지 않습니다."),
-    DUPLICATE_FEATURE_KEY(CONFLICT, 12001, "[FEATURE] 같은 key의 feature가 존재합니다.");
+    DUPLICATE_FEATURE_KEY(CONFLICT, 12001, "[FEATURE] 같은 key의 feature가 존재합니다."),
+
+    // RATE LIMIT
+    RATE_LIMIT_EXCEEDED(TOO_MANY_REQUESTS, 20001, "[RateLimit] 요청 횟수를 초과했습니다. 잠시 후 다시 시도해주세요.");
 
     private final HttpStatus httpStatus;
     private final Integer code;

@@ -19,6 +19,7 @@ import com.example.appcenter_project.domain.user.enums.DormType;
 import com.example.appcenter_project.domain.user.enums.NotificationType;
 import com.example.appcenter_project.domain.user.enums.Role;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -238,5 +239,11 @@ public class User extends BaseTimeEntity {
 
     public boolean isHaveNotificationType(String notificationType) {
         return getReceiveNotificationTypes().contains(NotificationType.from(notificationType));
+    }
+
+    public User convertINUUser(String studentNumber, String password) {
+        this.studentNumber = studentNumber;
+        this.password = password;
+        return this;
     }
 }
