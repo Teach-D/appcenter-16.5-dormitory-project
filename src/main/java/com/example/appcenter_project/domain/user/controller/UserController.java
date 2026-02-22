@@ -126,7 +126,7 @@ public class UserController implements UserApiSpecification {
         }
     }
 
-    @PutMapping
+    @PutMapping("/inu-student")
     public ResponseEntity<ResponseLoginDto> convertToPermanent(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestBody SignupUser signupUser) {
         return ResponseEntity.status(OK).body(userService.convertToPermanent(user.getId(), signupUser));
     }
