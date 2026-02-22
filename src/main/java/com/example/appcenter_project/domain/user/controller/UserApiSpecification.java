@@ -18,6 +18,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
@@ -133,6 +134,18 @@ public interface UserApiSpecification {
     ResponseEntity<ImageLinkDto> findUserImage(@AuthenticationPrincipal CustomUserDetails user, HttpServletRequest request);
 
     @Operation(
+            summary = "신입생 임시 로그인 통합",
+            description = "로그인한 유저의 아이디, 비밀번호를 입력으로 들어온 포털 계정으로 수정합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "수정 성공"),
+                    @ApiResponse(responseCode = "404", description = "학번, 비밀번호를 잘못 입력했습니다"),
+                    @ApiResponse(responseCode = "409", description = "해당 학번으로 등록된 계정이 이미 존재합니다."),
+            }
+    )
+    @PutMapping("/inu-student")
+    ResponseEntity<ResponseLoginDto> convertToPermanent(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestBody SignupUser signupUser);
+
+        @Operation(
             summary = "사용자가 작성한 게시글 조회",
             description = "현재 로그인한 사용자가 작성한 모든 게시글(팁, 공동구매)을 최신순으로 조회합니다.",
             responses = {
