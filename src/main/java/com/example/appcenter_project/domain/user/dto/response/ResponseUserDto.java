@@ -1,7 +1,6 @@
 package com.example.appcenter_project.domain.user.dto.response;
 
 import com.example.appcenter_project.domain.user.entity.User;
-import com.example.appcenter_project.domain.user.enums.Role;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -22,7 +21,7 @@ public class ResponseUserDto {
     // 개인정보처리방침 동의 여부
     private boolean isPrivacyAgreed;
     private boolean hasUnreadNotifications;
-    private Role role;
+    private String role;
 
     public static ResponseUserDto from(User user, boolean checkList, boolean hasUnreadNotifications) {
         return ResponseUserDto.builder()
@@ -37,7 +36,7 @@ public class ResponseUserDto {
                 .isTermsAgreed(user.isTermsAgreed())
                 .isPrivacyAgreed(user.isPrivacyAgreed())
                 .hasUnreadNotifications(hasUnreadNotifications)
-                .role(Role.from(user.getRole().toValue()))
+                .role(user.getRole().name())
                 .build();
     }
 
