@@ -1,0 +1,225 @@
+package com.example.appcenter_project.domain.roommate.service;
+
+import com.example.appcenter_project.common.image.service.ImageService;
+import com.example.appcenter_project.domain.roommate.entity.RoommateBoard;
+import com.example.appcenter_project.domain.roommate.entity.RoommateChattingRoom;
+import com.example.appcenter_project.domain.roommate.entity.RoommateCheckList;
+import com.example.appcenter_project.domain.roommate.repository.RoommateBoardRepository;
+import com.example.appcenter_project.domain.roommate.repository.RoommateChattingRoomRepository;
+import com.example.appcenter_project.domain.user.entity.User;
+import com.example.appcenter_project.domain.user.repository.UserRepository;
+import com.example.appcenter_project.global.exception.CustomException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+
+import java.util.Optional;
+
+import static com.example.appcenter_project.global.exception.ErrorCode.*;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+class RoommateChattingRoomServiceTest {
+
+    @Mock
+    RoommateChattingRoomRepository roommateChattingRoomRepository;
+
+    @Mock
+    RoommateBoardRepository roommateBoardRepository;
+
+    @Mock
+    UserRepository userRepository;
+
+    @Mock
+    ImageService imageService;
+
+    @InjectMocks
+    RoommateChattingRoomService roommateChattingRoomService;
+
+    private User buildMockUser(Long id) {
+        User user = mock(User.class);
+        when(user.getId()).thenReturn(id);
+        when(user.getName()).thenReturn("사용자" + id);
+        when(user.getRoommateCheckList()).thenReturn(mock(RoommateCheckList.class));
+        return user;
+    }
+
+    @Test
+    @DisplayName("채팅방 생성 - 정상 생성")
+    void createChatRoom_정상_생성() throws Exception {
+        User host = buildMockUser(1L);
+        User guest = buildMockUser(2L);
+
+        RoommateBoard roommateBoard = mock(RoommateBoard.class);
+        when(roommateBoard.getId()).thenReturn(10L);
+        when(roommateBoard.getUser()).thenReturn(host);
+        when(roommateBoardRepository.findById(10L)).thenReturn(Optional.of(roommateBoard));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(guest));
+
+        when(roommateChattingRoomRepository.existsRoommateChattingRoomByGuestAndHost(guest, host)).thenReturn(false);
+        when(roommateChattingRoomRepository.existsRoommateChattingRoomByGuestAndHost(host, guest)).thenReturn(false);
+        when(roommateChattingRoomRepository.existsByRoommateBoardAndGuest(roommateBoard, guest)).thenReturn(false);
+
+        RoommateChattingRoom savedRoom = mock(RoommateChattingRoom.class);
+        when(savedRoom.getId()).thenReturn(100L);
+        when(roommateChattingRoomRepository.save(any(RoommateChattingRoom.class))).thenReturn(savedRoom);
+
+        roommateChattingRoomService.createChatRoom(2L, 10L);
+
+        verify(roommateChattingRoomRepository).save(any(RoommateChattingRoom.class));
+    }
+
+    @Test
+    @DisplayName("채팅방 생성 - 게시글 없으면 예외")
+    void createChatRoom_게시글없으면_예외() {
+        when(roommateBoardRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> roommateChattingRoomService.createChatRoom(2L, 99L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ROOMMATE_BOARD_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("채팅방 생성 - 게스트 유저 없으면 예외")
+    void createChatRoom_게스트없으면_예외() {
+        User host = buildMockUser(1L);
+        RoommateBoard roommateBoard = mock(RoommateBoard.class);
+        when(roommateBoard.getUser()).thenReturn(host);
+        when(roommateBoardRepository.findById(10L)).thenReturn(Optional.of(roommateBoard));
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+        when(roommateChattingRoomRepository.existsRoommateChattingRoomByGuestAndHost(any(), any())).thenReturn(false);
+
+        assertThatThrownBy(() -> roommateChattingRoomService.createChatRoom(99L, 10L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", USER_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("채팅방 생성 - 자기 자신과 채팅 방지")
+    void createChatRoom_자기자신채팅_예외() {
+        User host = buildMockUser(1L);
+
+        RoommateBoard roommateBoard = mock(RoommateBoard.class);
+        when(roommateBoard.getUser()).thenReturn(host);
+        when(roommateBoardRepository.findById(10L)).thenReturn(Optional.of(roommateBoard));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(host)); // guest = host (같은 사용자)
+
+        when(roommateChattingRoomRepository.existsRoommateChattingRoomByGuestAndHost(host, host)).thenReturn(false);
+        when(roommateChattingRoomRepository.existsByRoommateBoardAndGuest(roommateBoard, host)).thenReturn(false);
+
+        assertThatThrownBy(() -> roommateChattingRoomService.createChatRoom(1L, 10L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ROOMMATE_CHAT_CANNOT_CHAT_WITH_SELF);
+    }
+
+    @Test
+    @DisplayName("채팅방 생성 - 이미 채팅방 존재하면 기존 채팅방 ID 반환")
+    void createChatRoom_이미존재시_기존방ID반환() throws Exception {
+        User host = buildMockUser(1L);
+        User guest = buildMockUser(2L);
+
+        RoommateBoard roommateBoard = mock(RoommateBoard.class);
+        when(roommateBoard.getUser()).thenReturn(host);
+        when(roommateBoardRepository.findById(10L)).thenReturn(Optional.of(roommateBoard));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(guest));
+
+        when(roommateChattingRoomRepository.existsRoommateChattingRoomByGuestAndHost(guest, host)).thenReturn(true);
+
+        RoommateChattingRoom existingRoom = mock(RoommateChattingRoom.class);
+        when(existingRoom.getId()).thenReturn(100L);
+        when(roommateChattingRoomRepository.findByGuestAndHost(guest, host)).thenReturn(Optional.of(existingRoom));
+
+        Long result = roommateChattingRoomService.createChatRoom(2L, 10L);
+
+        assertThat(result).isEqualTo(100L);
+        verify(roommateChattingRoomRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("채팅방 나가기 - 정상 나가기")
+    void leaveChatRoom_정상_나가기() {
+        User user = buildMockUser(2L);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(user));
+
+        User host = buildMockUser(1L);
+        RoommateChattingRoom chatRoom = mock(RoommateChattingRoom.class);
+        when(chatRoom.getGuest()).thenReturn(user); // user는 guest
+        when(chatRoom.getHost()).thenReturn(host);
+        when(roommateChattingRoomRepository.findById(100L)).thenReturn(Optional.of(chatRoom));
+
+        roommateChattingRoomService.leaveChatRoom(2L, 100L);
+
+        verify(roommateChattingRoomRepository).delete(chatRoom);
+    }
+
+    @Test
+    @DisplayName("채팅방 나가기 - 채팅방 없으면 예외")
+    void leaveChatRoom_채팅방없으면_예외() {
+        when(userRepository.findById(2L)).thenReturn(Optional.of(mock(User.class)));
+        when(roommateChattingRoomRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> roommateChattingRoomService.leaveChatRoom(2L, 99L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ROOMMATE_CHAT_ROOM_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("채팅방 나가기 - 채팅방 참여자가 아니면 예외")
+    void leaveChatRoom_참여자아님_예외() {
+        User user = buildMockUser(3L);
+        when(userRepository.findById(3L)).thenReturn(Optional.of(user));
+
+        User host = buildMockUser(1L);
+        User guest = buildMockUser(2L);
+        RoommateChattingRoom chatRoom = mock(RoommateChattingRoom.class);
+        when(chatRoom.getHost()).thenReturn(host);
+        when(chatRoom.getGuest()).thenReturn(guest);
+        when(roommateChattingRoomRepository.findById(100L)).thenReturn(Optional.of(chatRoom));
+
+        assertThatThrownBy(() -> roommateChattingRoomService.leaveChatRoom(3L, 100L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ROOMMATE_FORBIDDEN_ACCESS);
+    }
+
+    @Test
+    @DisplayName("상대방 체크리스트 조회 - host가 조회하면 guest 체크리스트 반환")
+    void getOpponentChecklist_host가조회시_guest체크리스트반환() {
+        User host = buildMockUser(1L);
+        User guest = buildMockUser(2L);
+        RoommateCheckList guestChecklist = mock(RoommateCheckList.class);
+
+        RoommateChattingRoom chatRoom = mock(RoommateChattingRoom.class);
+        when(chatRoom.getHost()).thenReturn(host);
+        when(chatRoom.getGuest()).thenReturn(guest);
+        when(chatRoom.getGuestChecklist()).thenReturn(guestChecklist);
+        when(roommateChattingRoomRepository.findById(100L)).thenReturn(Optional.of(chatRoom));
+
+        RoommateCheckList result = roommateChattingRoomService.getOpponentChecklist(1L, 100L);
+
+        assertThat(result).isEqualTo(guestChecklist);
+    }
+
+    @Test
+    @DisplayName("상대방 체크리스트 조회 - 참여자가 아니면 예외")
+    void getOpponentChecklist_참여자아님_예외() {
+        User host = buildMockUser(1L);
+        User guest = buildMockUser(2L);
+
+        RoommateChattingRoom chatRoom = mock(RoommateChattingRoom.class);
+        when(chatRoom.getHost()).thenReturn(host);
+        when(chatRoom.getGuest()).thenReturn(guest);
+        when(roommateChattingRoomRepository.findById(100L)).thenReturn(Optional.of(chatRoom));
+
+        assertThatThrownBy(() -> roommateChattingRoomService.getOpponentChecklist(3L, 100L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ROOMMATE_FORBIDDEN_ACCESS);
+    }
+}
