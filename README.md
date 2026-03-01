@@ -8,6 +8,7 @@
 - IOS 앱스토어 : https://apps.apple.com/kr/app/%EC%9C%A0%EB%8B%88%EB%8F%94/id6751404748
 - 안드로이드 플레이 스토어 : https://play.google.com/store/search?q=%EC%9C%A0%EB%8B%88%EB%8F%94&c=apps&hl=ko
 - 웹 주소 : https://unidorm.inuappcenter.kr/
+- 모니터링 주소 : https://github.com/Teach-D/unidorm-monitoring
 - 개발기간 : 2025.03 ~ ing
 
 
