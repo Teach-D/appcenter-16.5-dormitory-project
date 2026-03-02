@@ -8,6 +8,7 @@ import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.shared.enums.ApiType;
 import com.example.appcenter_project.domain.user.enums.NotificationType;
 import com.example.appcenter_project.domain.user.enums.Role;
+import com.example.appcenter_project.global.cache.CouponLocalCache;
 import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.global.exception.ErrorCode;
 import com.example.appcenter_project.domain.coupon.repository.CouponRepository;
@@ -38,6 +39,7 @@ public class CouponService {
     private final UserRepository userRepository;
     private final UserNotificationRepository userNotificationRepository;
     private final RedisTemplate<String, String> redisTemplate;
+    private final CouponLocalCache couponLocalCache;
 
     // ========== Public Methods ========== //
 
@@ -62,7 +64,7 @@ public class CouponService {
             return ResponseCouponDto.of(false, false);
         }
 
-        String couponOpenTimeString = redisTemplate.opsForValue().get(REDIS_KEY);
+        String couponOpenTimeString = getCouponOpenTime();
         if (couponOpenTimeString == null) {
             log.info("쿠폰 오픈 시간이 설정되지 않았습니다.");
             return ResponseCouponDto.of(false, false);
@@ -123,6 +125,17 @@ public class CouponService {
     }
 
     // ========== Private Methods ========== //
+
+    private String getCouponOpenTime() {
+        try {
+            String value = redisTemplate.opsForValue().get(REDIS_KEY);
+            if (value != null) couponLocalCache.put(REDIS_KEY, value);
+            return value;
+        } catch (Exception e) {
+            log.warn("Redis 장애 발생, 로컬 캐시로 fallback: {}", e.getMessage());
+            return couponLocalCache.get(REDIS_KEY);
+        }
+    }
 
     private static boolean isNotUserRole(User user) {
         return user.getRole() != Role.ROLE_USER;
