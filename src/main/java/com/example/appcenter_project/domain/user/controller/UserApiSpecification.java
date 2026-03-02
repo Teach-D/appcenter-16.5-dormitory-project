@@ -44,7 +44,7 @@ public interface UserApiSpecification {
 
     @Operation(
             summary = "신입생 회원가입 및 로그인",
-            description = "아이디로 회원가입을 진행합니다. 이미 등록된 아이디면 비밀번호 확인 후 로그인하고, 새로운 아이디면 회원가입 후 로그인합니다.",
+            description = "기존에 등록된 신입생 계정인 경우 로그인을 진행합니다.",
             responses = {
                     @ApiResponse(responseCode = "201", description = "회원가입/로그인 성공",
                             content = @Content(mediaType = "application/json",

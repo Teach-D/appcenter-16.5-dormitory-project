@@ -60,7 +60,8 @@ public class UserService {
     }
 
     public ResponseLoginDto saveFreshman(SignupUser signupUser) {
-        User user = createFreshman(signupUser);
+        //User user = createFreshman(signupUser);
+        User user = loginFreshman(signupUser);
         return createDto(user);
     }
 
@@ -207,6 +208,13 @@ public class UserService {
         User user = User.createFreshman(signupUser.getStudentNumber(), passwordEncoder.encode(signupUser.getPassword()));
         userRepository.save(user);
 
+        return user;
+    }
+
+    private User loginFreshman(SignupUser signupUser) {
+        User user = userRepository.findByStudentNumber(signupUser.getStudentNumber()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        if (!passwordEncoder.matches(signupUser.getPassword(), user.getPassword())) {
+            throw new CustomException(INVALID_PASSWORD);}
         return user;
     }
 
