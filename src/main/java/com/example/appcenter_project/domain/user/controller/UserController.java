@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.user.controller;
 
 import com.example.appcenter_project.common.metrics.annotation.TrackApi;
+import com.example.appcenter_project.global.ratelimit.annotation.RateLimit;
 import com.example.appcenter_project.domain.user.dto.request.*;
 import com.example.appcenter_project.common.image.dto.ImageLinkDto;
 import com.example.appcenter_project.domain.user.dto.response.ResponseBoardDto;
@@ -36,18 +37,21 @@ public class UserController implements UserApiSpecification {
 
     private final UserService userService;
 
+    @RateLimit(maxRequests = 10, windowSeconds = 60)
     @TrackApi
     @PostMapping
     public ResponseEntity<ResponseLoginDto> saveUser(@Valid @RequestBody SignupUser signupUser) {
         return ResponseEntity.status(CREATED).body(userService.saveUser(signupUser));
     }
 
+    @RateLimit(maxRequests = 10, windowSeconds = 60)
     @TrackApi
     @PostMapping("/freshman")
     public ResponseEntity<ResponseLoginDto> saveFreshman(@Valid @RequestBody SignupUser signupUser) {
         return ResponseEntity.status(CREATED).body(userService.saveFreshman(signupUser));
     }
 
+    @RateLimit(maxRequests = 10, windowSeconds = 60)
     @PostMapping("/refreshToken")
     public ResponseEntity<?> reissueAccessToken(@RequestBody RequestTokenDto request) {
         try {
