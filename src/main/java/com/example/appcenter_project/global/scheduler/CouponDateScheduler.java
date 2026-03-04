@@ -1,7 +1,9 @@
 package com.example.appcenter_project.global.scheduler;
 
+import com.example.appcenter_project.global.cache.CouponLocalCache;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -10,33 +12,40 @@ import java.time.format.DateTimeFormatter;
 import java.util.Random;
 import java.util.Set;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class CouponDateScheduler {
 
     private final Random random = new Random();
     private final RedisTemplate<String, Object> redisTemplate;
+    private final CouponLocalCache couponLocalCache;
     private static final String REDIS_KEY = "coupon_date_time";
 
 //    @Scheduled(cron = "0 0 9 * * MON-FRI")
     @Transactional
     public void setupCouponDateScheduler() {
         LocalTime randomTime = generateRandomTime();
+        String timeValue = randomTime.format(DateTimeFormatter.ofPattern("HH:mm"));
 
         System.out.println("설정된 쿠폰 발급 시간: " + randomTime);
 
-        // 기존 키 패턴으로 검색하여 모두 삭제
-        Set<String> keys = redisTemplate.keys(REDIS_KEY + "*");
-        if (keys != null && !keys.isEmpty()) {
-            redisTemplate.delete(keys);
-            System.out.println("기존 Redis 키 삭제 완료: " + keys.size() + "개");
+        couponLocalCache.put(REDIS_KEY, timeValue);
+
+        try {
+            // 기존 키 패턴으로 검색하여 모두 삭제
+            Set<String> keys = redisTemplate.keys(REDIS_KEY + "*");
+            if (keys != null && !keys.isEmpty()) {
+                redisTemplate.delete(keys);
+                System.out.println("기존 Redis 키 삭제 완료: " + keys.size() + "개");
+            }
+
+            // 새로운 랜덤 시간을 Redis에 저장
+            redisTemplate.opsForValue().set(REDIS_KEY, timeValue);
+            System.out.println("Redis에 새로운 시간 저장 완료: " + timeValue);
+        } catch (Exception e) {
+            log.warn("Redis 저장 실패, 로컬 캐시만 갱신됨: {}", e.getMessage());
         }
-
-        // 새로운 랜덤 시간을 Redis에 저장
-        String timeValue = randomTime.format(DateTimeFormatter.ofPattern("HH:mm"));
-        redisTemplate.opsForValue().set(REDIS_KEY, timeValue);
-
-        System.out.println("Redis에 새로운 시간 저장 완료: " + timeValue);
     }
 
     /**
