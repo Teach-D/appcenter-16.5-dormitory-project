@@ -45,6 +45,12 @@ public class RoommateChattingRoom extends BaseTimeEntity {
     @OneToMany(mappedBy = "roommateChattingRoom", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RoommateChattingChat> chattingChatList = new ArrayList<>();
 
+    @Column(nullable = false)
+    private boolean hostLeft = false;
+
+    @Column(nullable = false)
+    private boolean guestLeft = false;
+
     @Builder
     public RoommateChattingRoom(RoommateBoard roommateBoard, User guest, User host,
                                 RoommateCheckList guestChecklist, RoommateCheckList hostChecklist) {
@@ -53,5 +59,17 @@ public class RoommateChattingRoom extends BaseTimeEntity {
         this.host = host;
         this.guestChecklist = guestChecklist;
         this.hostChecklist = hostChecklist;
+    }
+
+    public void leaveAsHost() {
+        this.hostLeft = true;
+    }
+
+    public void leaveAsGuest() {
+        this.guestLeft = true;
+    }
+
+    public boolean isBothLeft() {
+        return this.hostLeft && this.guestLeft;
     }
 }
