@@ -10,7 +10,8 @@ import lombok.RequiredArgsConstructor;
 public enum DormBuilding {
 
     A("A동"),
-    B("B동");
+    B("B동"),
+    C("C동");
 
     private final String description;
 
