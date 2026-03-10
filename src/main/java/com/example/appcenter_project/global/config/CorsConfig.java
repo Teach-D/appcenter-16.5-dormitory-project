@@ -22,6 +22,9 @@ public class CorsConfig {
     @Value("${app.urls.frontend-main-url}")
     private String frontMainUrl;
 
+    @Value("${app.urls.ai-url}")
+    private String aiUrl;
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -34,6 +37,7 @@ public class CorsConfig {
         configuration.addAllowedOrigin(developmentUrl);
         configuration.addAllowedOrigin(frontDevUrl);
         configuration.addAllowedOrigin(frontMainUrl);
+        configuration.addAllowedOrigin(aiUrl);
 
         // 모든 헤더와 메서드 허용
         configuration.addAllowedHeader("*");
