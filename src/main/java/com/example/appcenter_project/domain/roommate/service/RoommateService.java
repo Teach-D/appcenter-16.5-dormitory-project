@@ -3,6 +3,7 @@ package com.example.appcenter_project.domain.roommate.service;
 import com.example.appcenter_project.common.image.enums.ImageType;
 import com.example.appcenter_project.common.image.service.ImageService;
 import com.example.appcenter_project.domain.roommate.dto.request.RequestRoommateFormDto;
+import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateBoardDetailDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateCheckListDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommatePostDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateSimilarityDto;
@@ -160,8 +161,7 @@ public class RoommateService {
                 .toList();
     }
 
-    //단일 조회
-    public ResponseRoommatePostDto getRoommateBoardDetail(Long boardId, jakarta.servlet.http.HttpServletRequest request){
+    public ResponseRoommateBoardDetailDto getRoommateBoardDetail(Long boardId, Long currentUserId, HttpServletRequest request) {
         RoommateBoard board = roommateBoardRepository.findById(boardId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
         boolean isMatched = isRoommateBoardOwnerMatched(boardId);
@@ -170,7 +170,10 @@ public class RoommateService {
             writerImg = imageService.findStaticImageUrl(ImageType.USER, board.getUser().getId(), request);
         } catch (Exception ignored) {}
 
-        return ResponseRoommatePostDto.entityToDto(board, isMatched, writerImg);
+        return ResponseRoommateBoardDetailDto.builder()
+                .post(ResponseRoommatePostDto.entityToDto(board, isMatched, writerImg))
+                .isOwner(currentUserId != null && board.getUser().getId().equals(currentUserId))
+                .build();
     }
 
     //유사도 조회

@@ -2,6 +2,7 @@ package com.example.appcenter_project.domain.roommate.controller;
 
 import com.example.appcenter_project.common.metrics.annotation.TrackApi;
 import com.example.appcenter_project.domain.roommate.dto.request.RequestRoommateFormDto;
+import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateBoardDetailDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateCheckListDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommatePostDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateSimilarityDto;
@@ -46,11 +47,13 @@ public class RoommateController implements RoommateApiSpecification{
     @TrackApi
     @Override
     @GetMapping("/{boardId}")
-    public ResponseEntity<ResponseRoommatePostDto> getRoommateBoardDetail(
+    public ResponseEntity<ResponseRoommateBoardDetailDto> getRoommateBoardDetail(
             @PathVariable Long boardId,
-            jakarta.servlet.http.HttpServletRequest request
-    ){
-        return ResponseEntity.ok(roommateService.getRoommateBoardDetail(boardId, request));
+            @AuthenticationPrincipal(errorOnInvalidType = false) CustomUserDetails userDetails,
+            HttpServletRequest request
+    ) {
+        Long currentUserId = userDetails != null ? userDetails.getId() : null;
+        return ResponseEntity.ok(roommateService.getRoommateBoardDetail(boardId, currentUserId, request));
     }
 
     @TrackApi
