@@ -2,7 +2,6 @@ package com.example.appcenter_project.domain.roommate.service;
 
 import com.example.appcenter_project.common.image.service.ImageService;
 import com.example.appcenter_project.domain.roommate.dto.request.RequestRoommateFormDto;
-import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateBoardDetailDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateCheckListDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommatePostDto;
 import com.example.appcenter_project.domain.roommate.entity.RoommateBoard;
@@ -168,10 +167,9 @@ class RoommateServiceTest {
         when(roommateMatchingRepository.existsByReceiverAndStatus(any(User.class), eq(MatchingStatus.COMPLETED)))
                 .thenReturn(false);
 
-        ResponseRoommateBoardDetailDto result = roommateService.getRoommateBoardDetail(1L, 1L, null);
+        ResponseRoommatePostDto result = roommateService.getRoommateBoardDetail(1L, null);
 
         assertThat(result).isNotNull();
-        assertThat(result.isOwner()).isTrue();
     }
 
     @Test
@@ -179,7 +177,7 @@ class RoommateServiceTest {
     void getRoommateBoardDetail_없으면_예외() {
         when(roommateBoardRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> roommateService.getRoommateBoardDetail(99L, 1L, null))
+        assertThatThrownBy(() -> roommateService.getRoommateBoardDetail(99L, null))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ROOMMATE_BOARD_NOT_FOUND);
     }

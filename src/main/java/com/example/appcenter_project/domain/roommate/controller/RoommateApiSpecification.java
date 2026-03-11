@@ -1,7 +1,6 @@
 package com.example.appcenter_project.domain.roommate.controller;
 
 import com.example.appcenter_project.domain.roommate.dto.request.RequestRoommateFormDto;
-import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateBoardDetailDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateCheckListDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommatePostDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateSimilarityDto;
@@ -14,7 +13,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -55,9 +53,8 @@ public interface RoommateApiSpecification {
             summary = "룸메이트 게시글 단일 조회",
             description = "특정 게시글 ID를 통해 룸메이트 게시글 상세 정보를 조회합니다. (작성자 프로필 이미지 URL 포함)"
     )
-    ResponseEntity<ResponseRoommateBoardDetailDto> getRoommateBoardDetail(
+    ResponseEntity<ResponseRoommatePostDto> getRoommateBoardDetail(
             @Parameter(description = "조회할 게시글 ID", example = "1") @PathVariable Long boardId,
-            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
             @Parameter(hidden = true) HttpServletRequest request
     );
 
