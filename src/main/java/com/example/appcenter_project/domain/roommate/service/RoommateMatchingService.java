@@ -158,8 +158,12 @@ public class RoommateMatchingService {
         User sender = matching.getSender();
         User receiver = matching.getReceiver();
 
-        sender.getRoommateBoard().changeIsMatched(false);
-        receiver.getRoommateBoard().changeIsMatched(false);
+        if (sender.getRoommateBoard() != null) {
+            sender.getRoommateBoard().changeIsMatched(false);
+        }
+        if (receiver.getRoommateBoard() != null) {
+            receiver.getRoommateBoard().changeIsMatched(false);
+        }
 
         log.info("=== cancelMatching START ===");
         log.info("matchingId: {}, userId: {}", matchingId, userId);
@@ -260,8 +264,12 @@ public class RoommateMatchingService {
                 .roommate(sender)
                 .build();
 
-        sender.getRoommateBoard().changeIsMatched(true);
-        receiver.getRoommateBoard().changeIsMatched(true);
+        if (sender.getRoommateBoard() != null) {
+            sender.getRoommateBoard().changeIsMatched(true);
+        }
+        if (receiver.getRoommateBoard() != null) {
+            receiver.getRoommateBoard().changeIsMatched(true);
+        }
 
         myRoommateRepository.save(myRoommate1);
         myRoommateRepository.save(myRoommate2);
