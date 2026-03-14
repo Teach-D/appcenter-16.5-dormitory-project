@@ -378,10 +378,10 @@ public class RoommateService {
     }
 
     @Transactional(readOnly = true)
-    public ResponseRoommateCheckListDto getMyRoommateCheckList(Long userId) {
-        RoommateCheckList checkList = roommateCheckListRepository.findByUserId(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_CHECKLIST_NOT_FOUND));
-        return ResponseRoommateCheckListDto.from(checkList);
+    public Long getMyCheckList(Long userId) {
+        RoommateBoard board = roommateBoardRepository.findByUserId(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
+        return board.getId();
     }
 
     @Transactional(readOnly = true)

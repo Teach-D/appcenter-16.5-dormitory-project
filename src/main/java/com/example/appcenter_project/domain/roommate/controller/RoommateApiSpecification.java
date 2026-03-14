@@ -102,8 +102,8 @@ public interface RoommateApiSpecification {
             @Parameter(hidden = true) CustomUserDetails userDetails
     );
 
-    @Operation(summary = "내 룸메이트 체크리스트 단일 조회")
-    ResponseEntity<ResponseRoommateCheckListDto> getMyRoommateCheckList(
+    @Operation(summary = "내 체크리스트 단일 조회")
+    ResponseEntity<Long> getMyCheckList(
             @Parameter(hidden = true) CustomUserDetails userDetails
     );
 

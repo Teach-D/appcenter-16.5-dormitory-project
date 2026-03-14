@@ -116,13 +116,11 @@ public class RoommateController implements RoommateApiSpecification{
     }
 
     @Override
-    @GetMapping("/my-checklist")
-    public ResponseEntity<ResponseRoommateCheckListDto> getMyRoommateCheckList(
+    @GetMapping("/my-checklist-id")
+    public ResponseEntity<Long> getMyCheckList(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        Long userId = userDetails.getId();
-        ResponseRoommateCheckListDto response = roommateService.getMyRoommateCheckList(userId);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(roommateService.getMyCheckList(userDetails.getId()));
     }
 
     @GetMapping("/latest10/random")
