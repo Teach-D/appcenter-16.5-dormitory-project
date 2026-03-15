@@ -31,6 +31,10 @@ public class ResponseRoommateCheckListDto {
     private String comment;
 
     public static ResponseRoommateCheckListDto from(RoommateCheckList checklist) {
+        if (checklist == null) {
+            return null;
+        }
+
         User user = checklist.getUser();
 
         return ResponseRoommateCheckListDto.builder()

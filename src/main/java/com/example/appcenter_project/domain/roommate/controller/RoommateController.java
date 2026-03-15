@@ -78,6 +78,15 @@ public class RoommateController implements RoommateApiSpecification{
     }
 
     @Override
+    @DeleteMapping
+    public ResponseEntity<Void> deleteRoommateBoard(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        roommateService.deleteRoommateBoard(userDetails.getId());
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
     @PostMapping("/{boardId}/like")
     public ResponseEntity<Integer> plusLike(
             @AuthenticationPrincipal CustomUserDetails userDetails,
