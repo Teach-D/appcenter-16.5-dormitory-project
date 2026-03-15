@@ -17,4 +17,5 @@ public class ResponseRoommateChatRoomDto {
     private Long partnerId;
     private String partnerName;
     private String partnerProfileImageUrl;
+    private boolean isOpponentLeft;
 }
