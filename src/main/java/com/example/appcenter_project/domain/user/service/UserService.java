@@ -61,8 +61,8 @@ public class UserService {
     }
 
     public ResponseLoginDto saveFreshman(SignupUser signupUser) {
-        //User user = createFreshman(signupUser);
-        User user = loginFreshman(signupUser);
+        User user = createFreshman(signupUser);
+//        User user = loginFreshman(signupUser);
         return createDto(user);
     }
 
