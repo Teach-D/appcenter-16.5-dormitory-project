@@ -21,7 +21,7 @@ public class RoommateChattingRoom extends BaseTimeEntity {
 
     // 채팅이 생성된 게시글
     @ManyToOne(fetch =  FetchType.LAZY)
-    @JoinColumn(name = "roommate_board_id", nullable = false)
+    @JoinColumn(name = "roommate_board_id", nullable = true)
     private RoommateBoard roommateBoard;
 
     // 게시글 작성자 (고정, 모든 채팅방에 동일)
@@ -35,11 +35,11 @@ public class RoommateChattingRoom extends BaseTimeEntity {
     private User host;
 
     @ManyToOne(fetch =  FetchType.LAZY)
-    @JoinColumn(name = "guest_roommate_checklist_id", nullable = false)
+    @JoinColumn(name = "guest_roommate_checklist_id", nullable = true)
     private RoommateCheckList guestChecklist;
 
     @ManyToOne(fetch =  FetchType.LAZY)
-    @JoinColumn(name = "host_roommate_checklist_id", nullable = false)
+    @JoinColumn(name = "host_roommate_checklist_id", nullable = true)
     private RoommateCheckList hostChecklist;
 
     @OneToMany(mappedBy = "roommateChattingRoom", cascade = CascadeType.ALL, orphanRemoval = true)

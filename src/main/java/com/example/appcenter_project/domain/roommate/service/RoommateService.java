@@ -16,6 +16,7 @@ import com.example.appcenter_project.global.exception.ErrorCode;
 import com.example.appcenter_project.domain.roommate.repository.RoommateBoardLikeRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateBoardRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateCheckListRepository;
+import com.example.appcenter_project.domain.roommate.repository.RoommateChattingRoomRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateMatchingRepository;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.domain.notification.service.RoommateNotificationService;
@@ -43,6 +44,7 @@ public class RoommateService {
     private final RoommateBoardRepository roommateBoardRepository;
     private final RoommateBoardLikeRepository roommateBoardLikeRepository;
     private final RoommateMatchingRepository roommateMatchingRepository;
+    private final RoommateChattingRoomRepository roommateChattingRoomRepository;
     private final ImageService imageService;
     private final RoommateNotificationService roommateNotificationService;
 
@@ -537,6 +539,36 @@ public class RoommateService {
         }).toList();
     }
 
+
+    @Transactional
+    public void deleteRoommateBoard(Long userId) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
+
+        RoommateBoard board = roommateBoardRepository.findByUserId(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
+
+        if (!board.getUser().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.ROOMMATE_DELETE_NOT_ALLOWED);
+        }
+
+        RoommateCheckList checkList = board.getRoommateCheckList();
+
+        // 연결된 채팅방의 board/checklist 참조를 null로 처리 (채팅방과 채팅 내역은 유지)
+        roommateChattingRoomRepository.detachBoard(board.getId());
+        if (checkList != null) {
+            roommateChattingRoomRepository.detachGuestChecklist(checkList.getId());
+            roommateChattingRoomRepository.detachHostChecklist(checkList.getId());
+        }
+
+        // 게시글 삭제 (좋아요는 orphanRemoval로 자동 삭제)
+        roommateBoardRepository.delete(board);
+
+        // 체크리스트 삭제
+        if (checkList != null) {
+            roommateCheckListRepository.delete(checkList);
+        }
+    }
 
     private static int toPercent(double ratio) {
         return (int) Math.round(ratio * 100.0);
