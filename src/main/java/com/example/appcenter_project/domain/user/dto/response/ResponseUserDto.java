@@ -37,7 +37,7 @@ public class ResponseUserDto {
                 .isTermsAgreed(user.isTermsAgreed())
                 .isPrivacyAgreed(user.isPrivacyAgreed())
                 .hasUnreadNotifications(hasUnreadNotifications)
-                .role(user.getRole())
+                .role(Role.from(user.getRole().toValue()))
                 .build();
     }
 
