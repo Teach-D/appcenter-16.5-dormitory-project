@@ -21,6 +21,7 @@ public class ResponseUserDto {
     // 개인정보처리방침 동의 여부
     private boolean isPrivacyAgreed;
     private boolean hasUnreadNotifications;
+    private String role;
 
     public static ResponseUserDto from(User user, boolean checkList, boolean hasUnreadNotifications) {
         return ResponseUserDto.builder()
@@ -35,6 +36,7 @@ public class ResponseUserDto {
                 .isTermsAgreed(user.isTermsAgreed())
                 .isPrivacyAgreed(user.isPrivacyAgreed())
                 .hasUnreadNotifications(hasUnreadNotifications)
+                .role(user.getRole().name())
                 .build();
     }
 

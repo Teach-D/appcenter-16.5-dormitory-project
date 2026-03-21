@@ -79,6 +79,19 @@ public interface RoommateApiSpecification {
             @Parameter(hidden = true) HttpServletRequest request
     );
 
+    @Operation(
+            summary = "룸메이트 게시글 삭제",
+            description = "본인이 작성한 룸메이트 게시글을 삭제합니다. 연결된 채팅방과 채팅 내역은 유지됩니다.",
+            responses = {
+                    @ApiResponse(responseCode = "204", description = "삭제 성공"),
+                    @ApiResponse(responseCode = "403", description = "삭제 권한이 없습니다. (ROOMMATE_DELETE_NOT_ALLOWED)"),
+                    @ApiResponse(responseCode = "404", description = "게시글을 찾을 수 없습니다. (ROOMMATE_BOARD_NOT_FOUND)")
+            }
+    )
+    ResponseEntity<Void> deleteRoommateBoard(
+            @Parameter(hidden = true) CustomUserDetails userDetails
+    );
+
     @Operation(summary = "룸메이트 게시글 좋아요")
     ResponseEntity<Integer> plusLike(
             @Parameter(hidden = true) CustomUserDetails userDetails,
@@ -102,8 +115,8 @@ public interface RoommateApiSpecification {
             @Parameter(hidden = true) CustomUserDetails userDetails
     );
 
-    @Operation(summary = "내 룸메이트 체크리스트 단일 조회")
-    ResponseEntity<ResponseRoommateCheckListDto> getMyRoommateCheckList(
+    @Operation(summary = "내 체크리스트 단일 조회")
+    ResponseEntity<Long> getMyCheckList(
             @Parameter(hidden = true) CustomUserDetails userDetails
     );
 

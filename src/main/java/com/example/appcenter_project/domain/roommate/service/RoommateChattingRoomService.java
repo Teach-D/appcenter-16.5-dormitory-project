@@ -100,8 +100,17 @@ public class RoommateChattingRoomService {
             throw new CustomException(ROOMMATE_FORBIDDEN_ACCESS);
         }
 
-        // 채팅방 삭제
-        roommateChattingRoomRepository.delete(chatRoom);
+        // 나간 사람만 플래그 처리 (상대방 채팅 내역 유지)
+        if (chatRoom.getHost().getId().equals(user.getId())) {
+            chatRoom.leaveAsHost();
+        } else {
+            chatRoom.leaveAsGuest();
+        }
+
+        // 양쪽 모두 나간 경우에만 채팅방 삭제
+        if (chatRoom.isBothLeft()) {
+            roommateChattingRoomRepository.delete(chatRoom);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -118,6 +127,11 @@ public class RoommateChattingRoomService {
         int index = 1;
 
         for (RoommateChattingRoom room : rooms) {
+            // 내가 나간 채팅방은 목록에서 제외
+            boolean iLeft = (room.getHost().getId().equals(user.getId()) && room.isHostLeft())
+                    || (room.getGuest().getId().equals(user.getId()) && room.isGuestLeft());
+            if (iLeft) continue;
+
             String opponentNickname = "익명 " + index++;
 
             Optional<RoommateChattingChat> lastChat = room.getChattingChatList().stream()
@@ -128,7 +142,9 @@ public class RoommateChattingRoomService {
 
             User host = room.getHost();
             User guest = room.getGuest();
-            User partner = host.getId().equals(user.getId()) ? guest : host;
+            boolean iAmHost = host.getId().equals(user.getId());
+            User partner = iAmHost ? guest : host;
+            boolean opponentLeft = iAmHost ? room.isGuestLeft() : room.isHostLeft();
 
             // ImageService의 정적 리소스 URL(fileName)을 사용
             String partnerProfileImageUrl = null;
@@ -148,6 +164,7 @@ public class RoommateChattingRoomService {
                     .partnerName(partner.getName())
                     .partnerId(partner.getId())
                     .partnerProfileImageUrl(partnerProfileImageUrl)
+                    .isOpponentLeft(opponentLeft)
                     .build());
         }
 
@@ -164,8 +181,13 @@ public class RoommateChattingRoomService {
         RoommateChattingRoom chatRoom = roommateChattingRoomRepository.findById(chatRoomId)
                 .orElseThrow(() -> new CustomException(ROOMMATE_CHAT_ROOM_NOT_FOUND));
 
-        // 본인이 참여 중인지 검증
-        if (!chatRoom.getHost().getId().equals(userId) && !chatRoom.getGuest().getId().equals(userId)) {
+        // 본인이 참여 중인지 검증 (나간 유저 포함)
+        boolean isHost = chatRoom.getHost().getId().equals(userId);
+        boolean isGuest = chatRoom.getGuest().getId().equals(userId);
+        if (!isHost && !isGuest) {
+            throw new CustomException(ROOMMATE_FORBIDDEN_ACCESS);
+        }
+        if ((isHost && chatRoom.isHostLeft()) || (isGuest && chatRoom.isGuestLeft())) {
             throw new CustomException(ROOMMATE_FORBIDDEN_ACCESS);
         }
 

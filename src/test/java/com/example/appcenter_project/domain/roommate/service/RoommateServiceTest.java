@@ -251,24 +251,25 @@ class RoommateServiceTest {
     }
 
     @Test
-    @DisplayName("내 룸메이트 체크리스트 조회 - 정상 반환")
-    void getMyRoommateCheckList_정상_반환() {
-        RoommateCheckList mockCheckList = buildMockCheckList();
-        when(roommateCheckListRepository.findByUserId(1L)).thenReturn(Optional.of(mockCheckList));
+    @DisplayName("내 체크리스트 조회 - 정상 반환")
+    void getMyCheckList_정상_반환() {
+        User mockUser = buildMockUser(1L);
+        RoommateBoard mockBoard = buildMockBoard(1L, mockUser);
+        when(roommateBoardRepository.findByUserId(1L)).thenReturn(Optional.of(mockBoard));
 
-        ResponseRoommateCheckListDto result = roommateService.getMyRoommateCheckList(1L);
+        Long result = roommateService.getMyCheckList(1L);
 
         assertThat(result).isNotNull();
     }
 
     @Test
-    @DisplayName("내 룸메이트 체크리스트 조회 - 없으면 예외")
-    void getMyRoommateCheckList_없으면_예외() {
-        when(roommateCheckListRepository.findByUserId(99L)).thenReturn(Optional.empty());
+    @DisplayName("내 체크리스트 조회 - 없으면 예외")
+    void getMyCheckList_없으면_예외() {
+        when(roommateBoardRepository.findByUserId(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> roommateService.getMyRoommateCheckList(99L))
+        assertThatThrownBy(() -> roommateService.getMyCheckList(99L))
                 .isInstanceOf(CustomException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ROOMMATE_CHECKLIST_NOT_FOUND);
+                .hasFieldOrPropertyWithValue("errorCode", ROOMMATE_BOARD_NOT_FOUND);
     }
 
     @Test

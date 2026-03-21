@@ -49,7 +49,7 @@ public class RoommateController implements RoommateApiSpecification{
     public ResponseEntity<ResponseRoommatePostDto> getRoommateBoardDetail(
             @PathVariable Long boardId,
             jakarta.servlet.http.HttpServletRequest request
-    ){
+    ) {
         return ResponseEntity.ok(roommateService.getRoommateBoardDetail(boardId, request));
     }
 
@@ -75,6 +75,15 @@ public class RoommateController implements RoommateApiSpecification{
         ResponseRoommatePostDto updated =
                 roommateService.updateRoommateChecklistAndBoard(requestDto, userId, request); // 변경
         return ResponseEntity.ok(updated);
+    }
+
+    @Override
+    @DeleteMapping
+    public ResponseEntity<Void> deleteRoommateBoard(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        roommateService.deleteRoommateBoard(userDetails.getId());
+        return ResponseEntity.noContent().build();
     }
 
     @Override
@@ -116,13 +125,11 @@ public class RoommateController implements RoommateApiSpecification{
     }
 
     @Override
-    @GetMapping("/my-checklist")
-    public ResponseEntity<ResponseRoommateCheckListDto> getMyRoommateCheckList(
+    @GetMapping("/my-checklist-id")
+    public ResponseEntity<Long> getMyCheckList(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        Long userId = userDetails.getId();
-        ResponseRoommateCheckListDto response = roommateService.getMyRoommateCheckList(userId);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(roommateService.getMyCheckList(userDetails.getId()));
     }
 
     @GetMapping("/latest10/random")

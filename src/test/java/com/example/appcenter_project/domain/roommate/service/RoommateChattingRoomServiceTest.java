@@ -144,7 +144,7 @@ class RoommateChattingRoomServiceTest {
     }
 
     @Test
-    @DisplayName("채팅방 나가기 - 정상 나가기")
+    @DisplayName("채팅방 나가기 - 한 명만 나가면 플래그 처리, 삭제 안 함")
     void leaveChatRoom_정상_나가기() {
         User user = buildMockUser(2L);
         when(userRepository.findById(2L)).thenReturn(Optional.of(user));
@@ -153,10 +153,31 @@ class RoommateChattingRoomServiceTest {
         RoommateChattingRoom chatRoom = mock(RoommateChattingRoom.class);
         when(chatRoom.getGuest()).thenReturn(user); // user는 guest
         when(chatRoom.getHost()).thenReturn(host);
+        when(chatRoom.isBothLeft()).thenReturn(false); // 아직 host는 안 나감
         when(roommateChattingRoomRepository.findById(100L)).thenReturn(Optional.of(chatRoom));
 
         roommateChattingRoomService.leaveChatRoom(2L, 100L);
 
+        verify(chatRoom).leaveAsGuest();
+        verify(roommateChattingRoomRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("채팅방 나가기 - 둘 다 나가면 채팅방 삭제")
+    void leaveChatRoom_둘다나가면_삭제() {
+        User user = buildMockUser(2L);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(user));
+
+        User host = buildMockUser(1L);
+        RoommateChattingRoom chatRoom = mock(RoommateChattingRoom.class);
+        when(chatRoom.getGuest()).thenReturn(user); // user는 guest
+        when(chatRoom.getHost()).thenReturn(host);
+        when(chatRoom.isBothLeft()).thenReturn(true); // host도 이미 나간 상태
+        when(roommateChattingRoomRepository.findById(100L)).thenReturn(Optional.of(chatRoom));
+
+        roommateChattingRoomService.leaveChatRoom(2L, 100L);
+
+        verify(chatRoom).leaveAsGuest();
         verify(roommateChattingRoomRepository).delete(chatRoom);
     }
 
