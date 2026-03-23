@@ -41,7 +41,6 @@ public class User extends BaseTimeEntity {
     private String studentNumber;
     private String name;
     private String password;
-    private String refreshToken;
     private Integer penalty;
 
     @Enumerated(EnumType.STRING)
@@ -211,10 +210,6 @@ public class User extends BaseTimeEntity {
 
     public void removeRoommateBoardLike(RoommateBoardLike roommateBoardLike) {
         this.roommateBoardLikeList.remove(roommateBoardLike);
-    }
-
-    public void updateRefreshToken(String refreshToken) {
-        this.refreshToken = refreshToken;
     }
 
     public void addSearchLog(String searchLog) {
