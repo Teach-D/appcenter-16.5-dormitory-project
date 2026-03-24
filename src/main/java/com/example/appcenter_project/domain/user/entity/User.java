@@ -97,7 +97,7 @@ public class User extends BaseTimeEntity {
     )
     @Column(name = "notification_type")
     // 모든 유저가 초기에는 모든 알림을 받도록
-    private List<NotificationType> receiveNotificationTypes = new ArrayList<>(List.of(ROOMMATE, GROUP_ORDER, DORMITORY, UNI_DORM, SUPPORTERS));
+    private List<NotificationType> receiveNotificationTypes = new ArrayList<>(List.of(ROOMMATE, GROUP_ORDER, DORMITORY, UNI_DORM, SUPPORTERS, COMPLAINT));
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "image_id")

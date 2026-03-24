@@ -3,6 +3,7 @@ package com.example.appcenter_project.global.scheduler;
 import com.example.appcenter_project.domain.notification.entity.Notification;
 import com.example.appcenter_project.domain.notification.entity.UserNotification;
 import com.example.appcenter_project.domain.user.entity.User;
+import com.example.appcenter_project.domain.user.enums.NotificationType;
 import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.global.exception.ErrorCode;
 import com.example.appcenter_project.domain.notification.repository.UserNotificationRepository;
@@ -57,7 +58,9 @@ public class ComplaintSendScheduler {
                 log.info("send userNotificationId: {}, receiveUserId: {}, notification: {}", 
                         userNotificationId, userId, notification.getId());
                 
-                fcmMessageService.sendNotification(receiveUser, notification.getTitle(), notification.getBody());
+                if (receiveUser.isHaveNotificationType(NotificationType.COMPLAINT.getDescription())) {
+                    fcmMessageService.sendNotification(receiveUser, notification.getTitle(), notification.getBody());
+                }
                 redisTemplate.delete("complaint_queue:user_notification:" + userNotificationId);
             }
         }
