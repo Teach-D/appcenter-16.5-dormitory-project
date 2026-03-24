@@ -70,6 +70,7 @@ public class UserNotificationService {
                 .dormitoryNotification(receiveTypes.contains(NotificationType.DORMITORY))
                 .unidormNotification(receiveTypes.contains(NotificationType.UNI_DORM))
                 .supportersNotification(receiveTypes.contains(NotificationType.SUPPORTERS))
+                .complaintNotification(receiveTypes.contains(NotificationType.COMPLAINT))
                 .build();
     }
 
