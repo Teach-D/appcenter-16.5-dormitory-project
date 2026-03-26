@@ -41,7 +41,6 @@ public class User extends BaseTimeEntity {
     private String studentNumber;
     private String name;
     private String password;
-    private String refreshToken;
     private Integer penalty;
 
     @Enumerated(EnumType.STRING)
@@ -98,7 +97,7 @@ public class User extends BaseTimeEntity {
     )
     @Column(name = "notification_type")
     // 모든 유저가 초기에는 모든 알림을 받도록
-    private List<NotificationType> receiveNotificationTypes = new ArrayList<>(List.of(ROOMMATE, GROUP_ORDER, DORMITORY, UNI_DORM, SUPPORTERS));
+    private List<NotificationType> receiveNotificationTypes = new ArrayList<>(List.of(ROOMMATE, GROUP_ORDER, DORMITORY, UNI_DORM, SUPPORTERS, COMPLAINT));
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "image_id")
@@ -211,10 +210,6 @@ public class User extends BaseTimeEntity {
 
     public void removeRoommateBoardLike(RoommateBoardLike roommateBoardLike) {
         this.roommateBoardLikeList.remove(roommateBoardLike);
-    }
-
-    public void updateRefreshToken(String refreshToken) {
-        this.refreshToken = refreshToken;
     }
 
     public void addSearchLog(String searchLog) {

@@ -24,7 +24,7 @@ public interface UserNotificationApiSpecification {
             description = "사용자의 알림 수신 설정을 추가합니다. " +
                     "알림 타입별로 수신 여부를 설정할 수 있습니다. " +
                     "설정한 타입의 알림만 푸시 알림으로 수신됩니다. " +
-                    "알림 타입: 룸메이트, 공동구매, 생활원, 유니돔, 서포터즈",
+                    "알림 타입: 룸메이트, 공동구매, 생활원, 유니돔, 서포터즈, 민원",
             responses = {
                     @ApiResponse(responseCode = "200", description = "알림 수신 설정 추가 성공"),
                     @ApiResponse(responseCode = "400", description = "잘못된 알림 타입입니다."),
@@ -41,7 +41,7 @@ public interface UserNotificationApiSpecification {
                     example = "[\"공동구매\", \"룸메이트\"]",
                     array = @ArraySchema(schema = @Schema(
                             type = "string",
-                            allowableValues = {"룸메이트", "공동구매", "생활원", "유니돔", "서포터즈"}
+                            allowableValues = {"룸메이트", "공동구매", "생활원", "유니돔", "서포터즈", "민원"}
                     ))
             ) List<String> notificationTypes);
 
@@ -96,7 +96,8 @@ public interface UserNotificationApiSpecification {
                     - `dormitoryNotification`: 생활원 알림 수신 여부
                     - `unidormNotification`: 유니돔 알림 수신 여부
                     - `supportersNotification`: 서포터즈 알림 수신 여부
-                    
+                    - `complaintNotification`: 민원 알림 수신 여부 (관리자용)
+
                     ### 응답 예시
                     ```json
                     {
@@ -104,7 +105,8 @@ public interface UserNotificationApiSpecification {
                       "groupOrderNotification": true,
                       "dormitoryNotification": false,
                       "unidormNotification": true,
-                      "supportersNotification": false
+                      "supportersNotification": false,
+                      "complaintNotification": true
                     }
                     ```
                     
@@ -231,7 +233,7 @@ public interface UserNotificationApiSpecification {
                     example = "[\"공동구매\", \"룸메이트\"]",
                     array = @ArraySchema(schema = @Schema(
                             type = "string",
-                            allowableValues = {"룸메이트", "공동구매", "생활원", "유니돔", "서포터즈"}
+                            allowableValues = {"룸메이트", "공동구매", "생활원", "유니돔", "서포터즈", "민원"}
                     ))
             ) List<String> notificationTypes);
 

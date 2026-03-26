@@ -14,6 +14,7 @@ public class ResponseUserNotificationDto {
     private boolean dormitoryNotification;
     private boolean unidormNotification;
     private boolean supportersNotification;
+    private boolean complaintNotification;
 
 
 }

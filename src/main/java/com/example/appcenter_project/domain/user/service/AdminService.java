@@ -2,8 +2,10 @@ package com.example.appcenter_project.domain.user.service;
 
 import com.example.appcenter_project.domain.user.dto.request.RequestAdminDto;
 import com.example.appcenter_project.domain.user.dto.response.ResponseLoginDto;
+import com.example.appcenter_project.domain.user.entity.RefreshToken;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.global.exception.CustomException;
+import com.example.appcenter_project.domain.user.repository.RefreshTokenRepository;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.global.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ import static com.example.appcenter_project.global.exception.ErrorCode.USER_NOT_
 public class AdminService {
 
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final JwtTokenProvider jwtTokenProvider;
 
 
@@ -35,7 +38,7 @@ public class AdminService {
 
         String accessToken = jwtTokenProvider.generateAccessToken(admin.getId(), admin.getStudentNumber(), String.valueOf(admin.getRole()));
         String refreshToken = jwtTokenProvider.generateRefreshToken(admin.getId(), admin.getStudentNumber(), String.valueOf(admin.getRole()));
-        admin.updateRefreshToken(refreshToken);
+        refreshTokenRepository.save(RefreshToken.builder().user(admin).token(refreshToken).build());
 
         return new ResponseLoginDto(accessToken, refreshToken, admin.getRole().toString());
     }

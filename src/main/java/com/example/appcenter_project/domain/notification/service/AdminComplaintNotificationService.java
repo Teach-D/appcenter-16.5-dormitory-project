@@ -194,12 +194,13 @@ public class AdminComplaintNotificationService {
                 UserNotification userNotification = UserNotification.of(roommateComplaintManager, notification);
                 userNotificationRepository.save(userNotification);
 
-                if (workingHoursValidator.isNotWorkingHours()) {
-                    redisTemplate.opsForValue().set("complaint_queue:user_notification:" + userNotification.getId(), userNotification.getId());
-                } else {
-                    fcmMessageService.sendNotification(roommateComplaintManager, title, notification.getBody());
+                if (roommateComplaintManager.isHaveNotificationType(NotificationType.COMPLAINT.getDescription())) {
+                    if (workingHoursValidator.isNotWorkingHours()) {
+                        redisTemplate.opsForValue().set("complaint_queue:user_notification:" + userNotification.getId(), userNotification.getId());
+                    } else {
+                        fcmMessageService.sendNotification(roommateComplaintManager, title, notification.getBody());
+                    }
                 }
-
             }
         } else {
             String title = "새로운 생활 민원이 작성되었습니다!";
@@ -219,10 +220,12 @@ public class AdminComplaintNotificationService {
                 UserNotification userNotification = UserNotification.of(lifeComplaintManager, notification);
                 userNotificationRepository.save(userNotification);
 
-                if (workingHoursValidator.isNotWorkingHours()) {
-                    redisTemplate.opsForValue().set("complaint_queue:user_notification:" + userNotification.getId(), userNotification.getId());
-                } else {
-                    fcmMessageService.sendNotification(lifeComplaintManager, title, notification.getBody());
+                if (lifeComplaintManager.isHaveNotificationType(NotificationType.COMPLAINT.getDescription())) {
+                    if (workingHoursValidator.isNotWorkingHours()) {
+                        redisTemplate.opsForValue().set("complaint_queue:user_notification:" + userNotification.getId(), userNotification.getId());
+                    } else {
+                        fcmMessageService.sendNotification(lifeComplaintManager, title, notification.getBody());
+                    }
                 }
             }
         }

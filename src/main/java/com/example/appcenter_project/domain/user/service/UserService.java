@@ -14,6 +14,8 @@ import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.common.image.enums.ImageType;
 import com.example.appcenter_project.domain.user.enums.Role;
 import com.example.appcenter_project.global.exception.CustomException;
+import com.example.appcenter_project.domain.user.entity.RefreshToken;
+import com.example.appcenter_project.domain.user.repository.RefreshTokenRepository;
 import com.example.appcenter_project.domain.user.repository.SchoolLoginRepository;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.global.exception.ErrorCode;
@@ -43,6 +45,7 @@ import static com.example.appcenter_project.global.exception.ErrorCode.*;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final SchoolLoginRepository schoolLoginRepository;
@@ -254,9 +257,9 @@ public class UserService {
     }
 
     private String createRefreshToken(User user) {
-        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId(), user.getStudentNumber(), String.valueOf(user.getRole()));
-        user.updateRefreshToken(refreshToken);
-        return refreshToken;
+        String token = jwtTokenProvider.generateRefreshToken(user.getId(), user.getStudentNumber(), String.valueOf(user.getRole()));
+        refreshTokenRepository.save(RefreshToken.builder().user(user).token(token).build());
+        return token;
     }
 
     private void validateRefreshToken(String token) {
@@ -274,7 +277,9 @@ public class UserService {
             throw new CustomException(INVALID_REFRESH_TOKEN);
         }
 
-        User user = userRepository.findByRefreshToken(refreshToken).orElseThrow(() -> new CustomException(REFRESH_TOKEN_USER_NOT_FOUND));
+        RefreshToken refreshTokenEntity = refreshTokenRepository.findByToken(refreshToken)
+                .orElseThrow(() -> new CustomException(REFRESH_TOKEN_USER_NOT_FOUND));
+        User user = refreshTokenEntity.getUser();
 
         return jwtTokenProvider.generateAccessToken(user.getId(), user.getStudentNumber(), String.valueOf(user.getRole()));
     }
