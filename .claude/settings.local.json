@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"C:\\\\Users\\\\wkadh\\\\OneDrive\\\\바탕 화면\\\\coding\\\\project\\\\appcenter-16.5-dormitory-project/.claude/commands\")",
+      "Bash(mkdir -p \"C:\\\\Users\\\\wkadh\\\\OneDrive\\\\바탕 화면\\\\coding\\\\project\\\\appcenter-16.5-dormitory-project/.claude/agents\")"
+    ]
+  }
+}
