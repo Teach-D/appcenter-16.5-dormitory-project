@@ -239,6 +239,7 @@ public class User extends BaseTimeEntity {
     public User convertINUUser(String studentNumber, String password) {
         this.studentNumber = studentNumber;
         this.password = password;
+        this.isFreshman = false;
         return this;
     }
 }

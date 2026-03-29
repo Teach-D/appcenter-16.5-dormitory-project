@@ -156,7 +156,10 @@ public class UserService {
     private void deleteConflictingUser(String studentNumber, Long currentUserId) {
         userRepository.findByStudentNumber(studentNumber)
                 .filter(existing -> !existing.getId().equals(currentUserId))
-                .ifPresent(userRepository::delete);
+                .ifPresent(existing -> {
+                    refreshTokenRepository.deleteByUser(existing);
+                    userRepository.delete(existing);
+                });
     }
 
     private User convertINUUser(Long userId, SignupUser signupUser) {
@@ -195,7 +198,8 @@ public class UserService {
     }
 
     public void deleteUser(Long userId) {
-        checkExistsUser(userId);
+        User user = findUserById(userId);
+        refreshTokenRepository.deleteByUser(user);
         userRepository.deleteById(userId);
     }
 
