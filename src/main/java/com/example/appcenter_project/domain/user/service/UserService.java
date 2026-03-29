@@ -65,7 +65,11 @@ public class UserService {
 
     public ResponseLoginDto saveFreshman(SignupUser signupUser) {
         User user = createFreshman(signupUser);
-//        User user = loginFreshman(signupUser);
+        return createDto(user);
+    }
+
+    public ResponseLoginDto loginFreshman(SignupUser signupUser) {
+        User user = findFreshmanForLogin(signupUser);
         return createDto(user);
     }
 
@@ -144,10 +148,15 @@ public class UserService {
 
     public ResponseLoginDto convertToPermanent(Long userId, SignupUser signupUser) {
         checkINUStudent(signupUser);
-        checkAlreadyRegistered(signupUser);
+        deleteConflictingUser(signupUser.getStudentNumber(), userId);
         User user = convertINUUser(userId, signupUser);
-
         return createDto(user);
+    }
+
+    private void deleteConflictingUser(String studentNumber, Long currentUserId) {
+        userRepository.findByStudentNumber(studentNumber)
+                .filter(existing -> !existing.getId().equals(currentUserId))
+                .ifPresent(userRepository::delete);
     }
 
     private User convertINUUser(Long userId, SignupUser signupUser) {
@@ -220,24 +229,20 @@ public class UserService {
 
     private User createFreshman(SignupUser signupUser) {
         if (existsUser(signupUser)) {
-            User user = userRepository.findByStudentNumber(signupUser.getStudentNumber()).get();
-
-            if (!passwordEncoder.matches(signupUser.getPassword(), user.getPassword())) {
-                throw new CustomException(INVALID_PASSWORD);
-            }
-            return user;
+            throw new CustomException(ALREADY_REGISTERED_USER);
         }
 
         User user = User.createFreshman(signupUser.getStudentNumber(), passwordEncoder.encode(signupUser.getPassword()));
         userRepository.save(user);
-
         return user;
     }
 
-    private User loginFreshman(SignupUser signupUser) {
-        User user = userRepository.findByStudentNumber(signupUser.getStudentNumber()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+    private User findFreshmanForLogin(SignupUser signupUser) {
+        User user = userRepository.findByStudentNumber(signupUser.getStudentNumber())
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
         if (!passwordEncoder.matches(signupUser.getPassword(), user.getPassword())) {
-            throw new CustomException(INVALID_PASSWORD);}
+            throw new CustomException(INVALID_PASSWORD);
+        }
         return user;
     }
 
