@@ -38,6 +38,7 @@ public class FcmMessageService {
 
     // todo User user
     public String sendNotification(User user, String title, String body) {
+        String lastResponse = null;
         for (FcmToken fcmToken : user.getFcmTokenList()) {
             String targetToken = fcmToken.getToken();
 
@@ -55,15 +56,14 @@ public class FcmMessageService {
                 String response = FirebaseMessaging.getInstance().send(message);
                 log.info("Successfully sent FCM message: {}", response);
                 recordFcmSuccess();
-                return response; // 메시지 ID 반환
+                lastResponse = response;
             } catch (Exception e) {
                 log.error("Error sending FCM message", e);
                 fcmTokenRepository.deleteByToken(targetToken);
                 recordFcmFail();
             }
         }
-        // todo 임시로 null
-        return null;
+        return lastResponse;
     }
 
     // 추가: 전체 사용자(회원 + 비회원)에게 전송
@@ -107,6 +107,7 @@ public class FcmMessageService {
     }
 
     public String sendNotificationDormitoryPerson(String title, String body) {
+        String lastResponse = null;
         for (User user : userRepository.findByDormTypeNot(DormType.NONE)) {
             if (user.getReceiveNotificationTypes().contains(NotificationType.DORMITORY)) {
                 for (FcmToken fcmToken : user.getFcmTokenList()) {
@@ -126,7 +127,7 @@ public class FcmMessageService {
                         String response = FirebaseMessaging.getInstance().send(message);
                         log.info("Successfully sent FCM message: {}", response);
                         recordFcmSuccess();
-                        return response; // 메시지 ID 반환
+                        lastResponse = response;
                     } catch (Exception e) {
                         log.error("Error sending FCM message", e);
                         fcmTokenRepository.deleteByToken(targetToken);
@@ -135,9 +136,7 @@ public class FcmMessageService {
                 }
             }
         }
-
-        // todo 임시로 null
-        return null;
+        return lastResponse;
     }
 
     public void sendGroupOrderNotification(User user, String title, String body) {
