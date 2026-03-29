@@ -3,6 +3,7 @@ package com.example.appcenter_project.domain.fcm.controller;
 import com.example.appcenter_project.domain.fcm.dto.request.RequestFcmMessageDto;
 import com.example.appcenter_project.domain.fcm.dto.request.RequestFcmTokenDto;
 import com.example.appcenter_project.domain.fcm.dto.response.ResponseFcmMessageDto;
+import com.example.appcenter_project.domain.fcm.dto.response.ResponseFcmStatsDto;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -29,6 +30,21 @@ public interface FcmApiSpecification {
             @RequestBody @Parameter(description = "FCM 토큰 요청 DTO", required = true)
             RequestFcmTokenDto requestDto
     );
+
+    @Operation(
+            summary = "FCM 발송 통계 조회 (ADMIN)",
+            description = "오늘 날짜 기준 FCM 알림 발송 성공/실패 건수를 조회합니다. Redis TTL 24시간 기준이므로 당일 데이터만 제공됩니다.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "통계 조회 성공",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseFcmStatsDto.class))
+                    ),
+                    @ApiResponse(responseCode = "403", description = "ADMIN 권한 없음", content = @Content())
+            }
+    )
+    ResponseEntity<ResponseFcmStatsDto> getFcmStats();
 
     @Operation(
             summary = "전체 사용자에게 FCM 알림 전송",

@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.fcm.service;
 
 import com.example.appcenter_project.domain.fcm.dto.response.ResponseFcmMessageDto;
+import com.example.appcenter_project.domain.fcm.dto.response.ResponseFcmStatsDto;
 import com.example.appcenter_project.domain.fcm.entity.FcmToken;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.user.enums.DormType;
@@ -223,6 +224,25 @@ public class FcmMessageService {
         }
 
         log.info("      🚀 sendMessageToUser 종료 (User ID: {}, 총 {}개 토큰 처리)", user.getId(), tokenIndex);
+    }
+
+    @Transactional(readOnly = true)
+    public ResponseFcmStatsDto getFcmStats() {
+        LocalDate today = LocalDate.now();
+        String successKey = FCM_SUCCESS_KEY_PREFIX + today;
+        String failKey = FCM_FAIL_KEY_PREFIX + today;
+
+        Object successVal = redisTemplate.opsForValue().get(successKey);
+        Object failVal = redisTemplate.opsForValue().get(failKey);
+
+        long successCount = successVal != null ? Long.parseLong(successVal.toString()) : 0L;
+        long failCount = failVal != null ? Long.parseLong(failVal.toString()) : 0L;
+
+        return ResponseFcmStatsDto.builder()
+                .date(today.toString())
+                .successCount(successCount)
+                .failCount(failCount)
+                .build();
     }
 
     private void recordFcmSuccess() {
