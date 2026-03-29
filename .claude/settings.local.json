@@ -2,7 +2,17 @@
   "permissions": {
     "allow": [
       "Bash(mkdir -p \"C:\\\\Users\\\\wkadh\\\\OneDrive\\\\바탕 화면\\\\coding\\\\project\\\\appcenter-16.5-dormitory-project/.claude/commands\")",
-      "Bash(mkdir -p \"C:\\\\Users\\\\wkadh\\\\OneDrive\\\\바탕 화면\\\\coding\\\\project\\\\appcenter-16.5-dormitory-project/.claude/agents\")"
+      "Bash(mkdir -p \"C:\\\\Users\\\\wkadh\\\\OneDrive\\\\바탕 화면\\\\coding\\\\project\\\\appcenter-16.5-dormitory-project/.claude/agents\")",
+      "Read(//c/Users/wkadh/OneDrive/바탕 화면/coding/project/appcenter-16.5-dormitory-project/$USERPROFILE/**)",
+      "Read(//c/Users/wkadh/AppData/Roaming/claude/**)",
+      "Bash(gh issue create*)",
+      "Bash(gh issue view*)",
+      "Bash(git branch --show-current)",
+      "Bash(git diff --name-only*)",
+      "Bash(git status*)",
+      "Bash(git add src/*)",
+      "Bash(git add .claude/*)",
+      "Bash(git commit -m *)"
     ]
   }
 }
