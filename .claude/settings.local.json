@@ -18,7 +18,18 @@
       "WebSearch",
       "WebFetch(domain:github.com)",
       "Bash(where docker:*)",
-      "Bash(docker --version)"
+      "Bash(docker --version)",
+      "Bash(docker pull:*)",
+      "Bash(docker info:*)",
+      "Bash(docker context:*)",
+      "Bash(where npx:*)",
+      "Bash(npx --version)",
+      "Bash(npx -y @modelcontextprotocol/server-github)",
+      "Bash(claude mcp:*)",
+      "Bash(gh issue:*)",
+      "Bash(for num:*)",
+      "Bash(do echo:*)",
+      "Bash(/dev/null done:*)"
     ]
   },
   "hooks": {

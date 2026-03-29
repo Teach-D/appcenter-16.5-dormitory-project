@@ -120,6 +120,86 @@ public class EntityName extends BaseTimeEntity {
 - Oracle 설정: `global/config/OracleConfig.java`
 - Oracle용 Repository는 별도 패키지로 분리하고 `@OracleRepository` qualifier 사용
 
+## GitHub PR 구조
+
+**제목**: `{type}: {한 줄 요약} #{이슈번호}` (70자 이내)
+
+**본문**:
+```
+## 개요
+{변경 목적 2~3줄}
+
+## 변경 사항
+- [엔티티] TipComment 엔티티 추가
+- [API] POST /tips/{id}/comments 댓글 작성 엔드포인트 추가
+- [설정] SecurityConfig USER 권한 추가
+
+## 테스트
+- [ ] 로컬 빌드 확인 (`./gradlew build`)
+- [ ] {기능별 확인 항목}
+
+closes #{이슈번호}
+```
+
+## GitHub 이슈 구조
+
+**제목**: `[{type}] {기능 설명}` (예: `[feat] 팁 게시판 댓글 기능`)
+
+**본문**:
+```
+## 개요
+{기능 목적 2~3줄. 왜 필요한지 포함.}
+
+## 작업 목록
+- [ ] {작업1}
+- [ ] {작업2}
+
+## API 설계
+| Method | URL | 권한 | 설명 |
+|--------|-----|------|------|
+| POST   | /endpoint | USER | 설명 |
+```
+- API 설계 없는 이슈(chore/docs/refactor)는 해당 섹션 생략
+
+## Git 컨벤션
+
+### 브랜치 네이밍
+`{닉네임}/{활동}/{설명}-{이슈번호}` (예: `teach/fix/user-update-513`)
+- 닉네임: `teach`
+- 활동: `feat` / `fix` / `refactor` / `chore` / `docs`
+- 설명: kebab-case 영문
+
+### 커밋 메시지
+```
+{type}: {제목} #{이슈번호}
+```
+
+| type | 용도 |
+|------|------|
+| `feat` | 새 기능 추가 |
+| `fix` | 버그 수정 |
+| `refactor` | 동작 변경 없는 코드 개선 |
+| `chore` | 빌드/설정/도구 변경 |
+| `docs` | 문서/Swagger 변경 |
+| `test` | 테스트 코드 |
+| `style` | 포맷팅 등 코드 변경 없는 수정 |
+
+**규칙**
+- 제목 50자 이내, 한글 허용
+- 이슈번호 필수 (`#번호`)
+- `add:` 사용 금지 → `feat:` 으로 통일
+- 본문은 선택, 쓸 경우 "왜" 변경했는지 위주로
+
+**예시**
+```
+feat: 팁 게시판 댓글 기능 추가 #552
+fix: FCM 토큰 중복 저장 오류 수정 #545
+refactor: refresh token 30일 연장 #545
+docs: 민원 알림 수신 설정 swagger 업데이트 #548
+chore: Claude Code 프로젝트 설정 추가 #551
+test: RoommateService 단위 테스트 추가 #532
+```
+
 ## CI/CD
 
 - **dev 브랜치**: `dev-deploy.yml` → 포트 8055, `inu-network`

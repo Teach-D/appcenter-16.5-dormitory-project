@@ -7,7 +7,11 @@
 
 1. `.claude/issues.md`를 읽어서 이 기능과 관련된 기존 이슈가 있는지 확인
 2. 없으면 사용자에게 다음 중 선택하도록 질문:
-   - **A) Claude가 이슈 생성**: `gh issue create --repo Teach-D/appcenter-16.5-dormitory-project --title "{기능 제목}" --body "{간략한 설명}"` 실행 후 생성된 번호를 `.claude/issues.md`에 기록
+   - **A) Claude가 이슈 생성** (GitHub MCP 사용):
+     - `create_issue` 도구로 Teach-D/appcenter-16.5-dormitory-project 에 이슈 생성
+     - 제목: `[{type}] {기능 설명}`
+     - 본문: 개요 / 구현 내용 체크리스트 / API 설계 포함
+     - 생성된 이슈 번호를 `.claude/issues.md`에 기록
    - **B) 사용자가 직접 생성**: "이슈를 직접 만들고 번호를 알려주세요. `/record-issue <번호>` 로 기록할 수 있습니다." 안내
 3. 이슈 번호가 확정되면 `.claude/issues.md`에 기록 후 다음 단계 진행
 
@@ -118,12 +122,18 @@ public class DomainController implements DomainApiSpecification {
 3. 승인하면 → `git add` 실행 (변경된 파일만 명시적으로 지정, `git add .` 금지)
 4. **커밋 메시지 3개 추천**: 아래 형식으로 번호 붙여서 제안
    ```
-   1) feat: {영문 설명} #{이슈번호}
-   2) feat: {다른 표현} #{이슈번호}
-   3) {다른 prefix}: {또 다른 표현} #{이슈번호}
+   1) {type}: {제목} #{이슈번호}
+   2) {type}: {다른 표현} #{이슈번호}
+   3) {다른 type}: {또 다른 표현} #{이슈번호}
    ```
-   - Conventional Commits 규칙 준수 (feat/fix/refactor/chore 등)
-   - 이슈 번호는 `.claude/issues.md`에서 현재 작업과 연결된 번호 사용
+
+   **type 규칙** (이 프로젝트 컨벤션):
+   - `feat` 새 기능 / `fix` 버그 수정 / `refactor` 코드 개선
+   - `chore` 설정/도구 / `docs` 문서·Swagger / `test` 테스트 / `style` 포맷팅
+   - `add:` 사용 금지 → `feat:`으로 대체
+
+   **제목 규칙**: 한글 허용, 50자 이내, 이슈번호 필수
+   이슈 번호는 `.claude/issues.md`에서 현재 작업과 연결된 번호 사용
 5. 사용자가 번호를 선택하면 → 해당 메시지로 `git commit -m` 실행
 
 ## 중요 원칙
