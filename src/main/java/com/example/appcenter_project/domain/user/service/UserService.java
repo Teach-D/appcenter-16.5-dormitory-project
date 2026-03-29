@@ -145,10 +145,15 @@ public class UserService {
 
     public ResponseLoginDto convertToPermanent(Long userId, SignupUser signupUser) {
         checkINUStudent(signupUser);
-        checkAlreadyRegistered(signupUser);
+        deleteConflictingUser(signupUser.getStudentNumber(), userId);
         User user = convertINUUser(userId, signupUser);
-
         return createDto(user);
+    }
+
+    private void deleteConflictingUser(String studentNumber, Long currentUserId) {
+        userRepository.findByStudentNumber(studentNumber)
+                .filter(existing -> !existing.getId().equals(currentUserId))
+                .ifPresent(userRepository::delete);
     }
 
     private User convertINUUser(Long userId, SignupUser signupUser) {

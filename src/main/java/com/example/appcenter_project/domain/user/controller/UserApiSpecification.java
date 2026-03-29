@@ -154,7 +154,6 @@ public interface UserApiSpecification {
             responses = {
                     @ApiResponse(responseCode = "200", description = "수정 성공"),
                     @ApiResponse(responseCode = "404", description = "학번, 비밀번호를 잘못 입력했습니다"),
-                    @ApiResponse(responseCode = "409", description = "해당 학번으로 등록된 계정이 이미 존재합니다."),
             }
     )
     @PutMapping("/inu-student")
