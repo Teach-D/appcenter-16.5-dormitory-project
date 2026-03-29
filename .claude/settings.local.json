@@ -1,0 +1,50 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"C:\\\\Users\\\\wkadh\\\\OneDrive\\\\바탕 화면\\\\coding\\\\project\\\\appcenter-16.5-dormitory-project/.claude/commands\")",
+      "Bash(mkdir -p \"C:\\\\Users\\\\wkadh\\\\OneDrive\\\\바탕 화면\\\\coding\\\\project\\\\appcenter-16.5-dormitory-project/.claude/agents\")",
+      "Read(//c/Users/wkadh/OneDrive/바탕 화면/coding/project/appcenter-16.5-dormitory-project/$USERPROFILE/**)",
+      "Read(//c/Users/wkadh/AppData/Roaming/claude/**)",
+      "Bash(gh issue create*)",
+      "Bash(gh issue view*)",
+      "Bash(git branch --show-current)",
+      "Bash(git diff --name-only*)",
+      "Bash(git status*)",
+      "Bash(git add src/*)",
+      "Bash(git add .claude/*)",
+      "Bash(git commit -m *)",
+      "Bash(./gradlew compileJava -q)",
+      "Bash(/c/Users/wkadh/AppData/Local/Python/bin/python3 -c \":*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(where docker:*)",
+      "Bash(docker --version)",
+      "Bash(docker pull:*)",
+      "Bash(docker info:*)",
+      "Bash(docker context:*)",
+      "Bash(where npx:*)",
+      "Bash(npx --version)",
+      "Bash(npx -y @modelcontextprotocol/server-github)",
+      "Bash(claude mcp:*)",
+      "Bash(gh issue:*)",
+      "Bash(for num:*)",
+      "Bash(do echo:*)",
+      "Bash(/dev/null done:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/c/Users/wkadh/AppData/Local/Python/bin/python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))\" | { read -r f; echo \"$f\" | grep -q '\\.java$' && ./gradlew compileJava -q 2>&1 | tail -15; } 2>/dev/null || true",
+            "timeout": 60,
+            "statusMessage": "Java 컴파일 체크 중..."
+          }
+        ]
+      }
+    ]
+  }
+}
