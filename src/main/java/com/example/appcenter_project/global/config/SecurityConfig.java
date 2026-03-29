@@ -143,7 +143,8 @@ public class SecurityConfig {
                         /** 사용자 알림 **/
                         .requestMatchers("/user-notifications/**").authenticated()
 
-                        /** FCM 토큰 **/
+                        /** FCM **/
+                        .requestMatchers(GET, "/fcm/stats").hasRole("ADMIN")
                         .requestMatchers("/fcm/token/**").permitAll()
 
                         /** 쿠폰 **/
