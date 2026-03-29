@@ -63,31 +63,17 @@ public class NotificationService {
     public List<ResponseNotificationDto> findNotificationsByUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-
         List<UserNotification> notifications = new ArrayList<>(user.getUserNotifications());
         Collections.reverse(notifications);
 
-        List<ResponseNotificationDto> result = notifications.stream()
-                .map(ResponseNotificationDto::from)
-                .toList();
-
-        notifications.forEach(notification -> notification.changeReadStatus(true));
-        return result;
+        return convertToDtoAndMarkAsRead(notifications);
     }
 
     public List<ResponseNotificationDto> findNotificationsByUserScroll(Long userId, Long lastId, int size) {
         Pageable pageable = PageRequest.of(0, size);
+        List<UserNotification> notifications = userNotificationRepository.findAllWithFilters(userId, lastId, pageable);
 
-        List<UserNotification> notifications = userNotificationRepository.findAllWithFilters(
-                userId, lastId, pageable
-        );
-        if (notifications.isEmpty()) {
-            return List.of();
-        }
-        notifications.forEach(notification -> notification.changeReadStatus(true));
-        return notifications.stream()
-                .map(ResponseNotificationDto::from)
-                .toList();
+        return convertToDtoAndMarkAsRead(notifications);
     }
 
     public void updateNotification(Long notificationId, RequestNotificationDto requestDto) {
@@ -157,5 +143,17 @@ public class NotificationService {
         receiveUsers.forEach(receiveUser -> {
             fcmMessageService.sendNotification(receiveUser, notification.getTitle(), notification.getBody());
         });
+    }
+
+    private List<ResponseNotificationDto> convertToDtoAndMarkAsRead(List<UserNotification> notifications) {
+        if (notifications.isEmpty()) return List.of();
+
+        List<ResponseNotificationDto> result = notifications.stream()
+                .map(ResponseNotificationDto::from)
+                .toList();
+
+        notifications.forEach(n -> n.changeReadStatus(true));
+
+        return result;
     }
 }
