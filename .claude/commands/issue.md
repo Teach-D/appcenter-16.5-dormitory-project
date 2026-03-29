@@ -96,6 +96,13 @@ git checkout -b teach/{type}/{설명}-{이슈번호} origin/teach/{type}/{설명
   - [ ] {작업3}
 ```
 
+기록 후 바로 commit & push:
+```bash
+git add .claude/issues.md
+git commit -m "chore: 이슈 #{이슈번호} 작업 시작"
+git push origin teach/{type}/{설명}-{이슈번호}
+```
+
 ### 5단계: 완료 안내
 ```
 ## 이슈 준비 완료
