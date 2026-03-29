@@ -12,7 +12,28 @@
       "Bash(git status*)",
       "Bash(git add src/*)",
       "Bash(git add .claude/*)",
-      "Bash(git commit -m *)"
+      "Bash(git commit -m *)",
+      "Bash(./gradlew compileJava -q)",
+      "Bash(/c/Users/wkadh/AppData/Local/Python/bin/python3 -c \":*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(where docker:*)",
+      "Bash(docker --version)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/c/Users/wkadh/AppData/Local/Python/bin/python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))\" | { read -r f; echo \"$f\" | grep -q '\\.java$' && ./gradlew compileJava -q 2>&1 | tail -15; } 2>/dev/null || true",
+            "timeout": 60,
+            "statusMessage": "Java 컴파일 체크 중..."
+          }
+        ]
+      }
     ]
   }
 }
