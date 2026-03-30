@@ -18,6 +18,8 @@ import com.example.appcenter_project.domain.user.enums.College;
 import com.example.appcenter_project.domain.user.enums.DormType;
 import com.example.appcenter_project.domain.user.enums.NotificationType;
 import com.example.appcenter_project.domain.user.enums.Role;
+import com.example.appcenter_project.global.exception.CustomException;
+import com.example.appcenter_project.global.exception.ErrorCode;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
@@ -247,5 +249,11 @@ public class User extends BaseTimeEntity {
 
     public boolean isFreshman() {
         return Boolean.TRUE.equals(this.isFreshman);
+    }
+
+    public void validateFreshman() {
+        if (!Boolean.TRUE.equals(this.isFreshman)) {
+            throw new CustomException(ErrorCode.USER_NOT_FRESHMAN);
+        }
     }
 }
