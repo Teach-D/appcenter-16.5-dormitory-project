@@ -32,6 +32,7 @@ public enum ErrorCode {
     USER_NOTIFICATION_NOT_FOUND(NOT_FOUND, 2008, "[UserNotification] 해당 유저 알림은 존재하지 않습니다."),
     INVALID_PASSWORD(UNAUTHORIZED, 2009, "[User] 비밀번호가 일치하지 않습니다."),
     ALREADY_REGISTERED_USER(CONFLICT, 2010, "[User] 이미 계정이 존재합니다"),
+    USER_NOT_FRESHMAN(UNAUTHORIZED, 2011, "[User] 신입생 계정이 아닙니다."),
 
     // GROUP_ORDER
     GROUP_ORDER_NOT_FOUND(NOT_FOUND, 3001, "[GroupOrder] 공동구매 글을 찾을 수 없습니다."),
