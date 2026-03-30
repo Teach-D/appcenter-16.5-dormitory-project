@@ -1,7 +1,9 @@
 package com.example.appcenter_project.support;
 
+import com.example.appcenter_project.domain.user.repository.SchoolLoginRepository;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -32,6 +34,11 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public abstract class AbstractIntegrationTest {
+
+    // Oracle 연결 없이 테스트 가능하도록 Mock 처리
+    // 포털 로그인 검증이 필요한 테스트에서 when(schoolLoginRepository.loginCheck(...)).thenReturn("Y") 사용
+    @MockitoBean
+    protected SchoolLoginRepository schoolLoginRepository;
 
     @Container
     static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
