@@ -42,12 +42,12 @@ public class UserController implements UserApiSpecification {
         return ResponseEntity.status(CREATED).body(userService.saveUser(signupUser));
     }
 
-    @PostMapping("/freshman")
+    @PostMapping("/freshman/register")
     public ResponseEntity<ResponseLoginDto> saveFreshman(@Valid @RequestBody SignupUser signupUser) {
         return ResponseEntity.status(CREATED).body(userService.saveFreshman(signupUser));
     }
 
-    @PostMapping("/freshman/login")
+    @PostMapping("/freshman")
     public ResponseEntity<ResponseLoginDto> loginFreshman(@Valid @RequestBody SignupUser signupUser) {
         return ResponseEntity.status(OK).body(userService.loginFreshman(signupUser));
     }
