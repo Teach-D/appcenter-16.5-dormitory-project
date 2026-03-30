@@ -149,15 +149,17 @@ public class User extends BaseTimeEntity {
     }
 
     public static User createNewUser(String studentNumber, String password) {
-        return User.builder()
+        User user = User.builder()
                 .studentNumber(studentNumber).password(password)
                 .penalty(0).image(null).role(Role.ROLE_USER).build();
+
+        user.isFreshman = false;
+        return user;
     }
 
     public static User createFreshman(String username, String password) {
         User user = User.builder()
-                .studentNumber(username)
-                .password(password)
+                .studentNumber(username).password(password)
                 .penalty(0).image(null).role(Role.ROLE_USER).build();
         user.isFreshman = true;
         return user;
@@ -241,5 +243,9 @@ public class User extends BaseTimeEntity {
         this.password = password;
         this.isFreshman = false;
         return this;
+    }
+
+    public boolean isFreshman() {
+        return Boolean.TRUE.equals(this.isFreshman);
     }
 }
