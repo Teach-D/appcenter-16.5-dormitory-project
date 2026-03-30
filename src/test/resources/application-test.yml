@@ -1,0 +1,39 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/test        # @DynamicPropertySource가 덮어씀
+    username: test
+    password: test
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: false
+
+  flyway:
+    enabled: false
+
+  data:
+    redis:
+      host: localhost    # @DynamicPropertySource가 덮어씀
+      port: 6379
+      password: ""
+
+# JWT 테스트용 시크릿 (충분한 길이 필요)
+jwt:
+  secret: test-jwt-secret-key-that-is-long-enough-for-hmac-sha256-algorithm-test
+
+# CORS / WebSocket / Swagger 플레이스홀더
+app:
+  urls:
+    production: http://localhost:8080
+    development: http://localhost:8080
+    frontend-dev-url: http://localhost:3000
+    frontend-main-url: http://localhost:3000
+    ai-url: http://localhost:8000
+
+devServer: http://localhost:8080
