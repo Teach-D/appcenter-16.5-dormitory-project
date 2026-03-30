@@ -251,6 +251,7 @@ public class UserService {
     private User findFreshmanForLogin(SignupUser signupUser) {
         User user = userRepository.findByStudentNumber(signupUser.getStudentNumber())
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        user.validateFreshman();
         if (!passwordEncoder.matches(signupUser.getPassword(), user.getPassword())) {
             throw new CustomException(INVALID_PASSWORD);
         }
