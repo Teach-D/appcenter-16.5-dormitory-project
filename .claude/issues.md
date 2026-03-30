@@ -17,13 +17,13 @@
 - **제목**: [test] Testcontainers 통합 테스트 환경 구축 및 CI 빌드 최적화
 - **브랜치**: teach/test/testcontainers-integration-test-561
 - **작업 목록**:
-  - [ ] `build.gradle`에 Testcontainers 의존성 추가 (MySQL, Redis 모듈)
-  - [ ] `src/test/resources/application-test.yml` 생성 — Oracle 비활성화, Testcontainers 연동 설정
-  - [ ] `AbstractIntegrationTest` 베이스 클래스 생성 — MySQL + Redis 컨테이너 static 선언 및 `@DynamicPropertySource`로 동적 URL 주입
-  - [ ] Oracle 관련 Bean(`SchoolLoginRepository`, `OracleConfig`) `@MockBean` 처리하는 테스트 설정 추가
+  - [x] `build.gradle`에 Testcontainers 의존성 추가 (MySQL, Redis 모듈)
+  - [x] `src/test/resources/application-test.yml` 생성 — Oracle 비활성화, Testcontainers 연동 설정
+  - [x] `AbstractIntegrationTest` 베이스 클래스 생성 — MySQL + Redis 컨테이너 static 선언 및 `@DynamicPropertySource`로 동적 URL 주입
+  - [x] Oracle 관련 Bean(`SchoolLoginRepository`, `OracleConfig`) `@MockBean` 처리하는 테스트 설정 추가
   - [ ] 기존 유닛 테스트 `@ParameterizedTest` 개선 — 채팅 권한 분기, FCM 발송 조건 등 경계값 케이스 추가
-  - [ ] CI workflow(`dev-deploy.yml`, `main-deploy.yml`)에 Gradle 의존성/래퍼 캐시 추가
-  - [ ] CI `clean build` → `build` 변경 (캐시 활용)
+  - [x] CI workflow(`dev-deploy.yml`, `main-deploy.yml`)에 Gradle 의존성/래퍼 캐시 추가
+  - [x] CI `clean build` → `build` 변경 (캐시 활용)
 
 ## 완료된 이슈
 
