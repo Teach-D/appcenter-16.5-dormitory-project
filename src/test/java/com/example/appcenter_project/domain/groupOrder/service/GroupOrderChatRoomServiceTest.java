@@ -11,9 +11,13 @@ import com.example.appcenter_project.domain.groupOrder.repository.UserGroupOrder
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.global.exception.CustomException;
+import com.example.appcenter_project.global.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -23,10 +27,12 @@ import org.mockito.quality.Strictness;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static com.example.appcenter_project.global.exception.ErrorCode.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -65,29 +71,41 @@ class GroupOrderChatRoomServiceTest {
         assertThat(mockUser.getUserGroupOrderChatRoomList()).hasSize(1);
     }
 
-    @Test
-    @DisplayName("채팅방 참여 - 공동구매 없으면 예외")
-    void joinChatRoom_공동구매_없으면_예외() {
-        when(groupOrderRepository.findById(99L)).thenReturn(Optional.empty());
+    // ===== @ParameterizedTest: joinChatRoom 예외 케이스 =====
 
-        assertThatThrownBy(() -> groupOrderChatRoomService.joinChatRoom(1L, 99L))
-                .isInstanceOf(CustomException.class)
-                .hasFieldOrPropertyWithValue("errorCode", GROUP_ORDER_NOT_FOUND);
+    static Stream<Arguments> joinChatRoomExceptionProvider() {
+        return Stream.of(
+            arguments("공동구매 없음",  99L, 1L,  false, true,  GROUP_ORDER_NOT_FOUND),
+            arguments("유저 없음",      1L,  99L, true,  false, USER_NOT_FOUND)
+        );
     }
 
-    @Test
-    @DisplayName("채팅방 참여 - 유저 없으면 예외")
-    void joinChatRoom_유저_없으면_예외() {
+    @ParameterizedTest(name = "{0} → {5}")
+    @MethodSource("joinChatRoomExceptionProvider")
+    @DisplayName("채팅방 참여 - 예외 케이스")
+    void joinChatRoom_예외_케이스(String scenario,
+                                  Long userId, Long groupOrderId,
+                                  boolean groupOrderExists, boolean userExists,
+                                  ErrorCode expectedError) {
         GroupOrderChatRoom mockChatRoom = mock(GroupOrderChatRoom.class);
         GroupOrder mockGroupOrder = mock(GroupOrder.class);
         when(mockGroupOrder.getGroupOrderChatRoom()).thenReturn(mockChatRoom);
 
-        when(groupOrderRepository.findById(1L)).thenReturn(Optional.of(mockGroupOrder));
-        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+        if (groupOrderExists) {
+            when(groupOrderRepository.findById(groupOrderId)).thenReturn(Optional.of(mockGroupOrder));
+        } else {
+            when(groupOrderRepository.findById(groupOrderId)).thenReturn(Optional.empty());
+        }
 
-        assertThatThrownBy(() -> groupOrderChatRoomService.joinChatRoom(99L, 1L))
+        if (userExists) {
+            when(userRepository.findById(userId)).thenReturn(Optional.of(mock(User.class)));
+        } else {
+            when(userRepository.findById(userId)).thenReturn(Optional.empty());
+        }
+
+        assertThatThrownBy(() -> groupOrderChatRoomService.joinChatRoom(userId, groupOrderId))
                 .isInstanceOf(CustomException.class)
-                .hasFieldOrPropertyWithValue("errorCode", USER_NOT_FOUND);
+                .hasFieldOrPropertyWithValue("errorCode", expectedError);
     }
 
     // ===== leaveChatRoom =====
