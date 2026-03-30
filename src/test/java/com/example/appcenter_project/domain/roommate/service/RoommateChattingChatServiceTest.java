@@ -14,11 +14,16 @@ import com.example.appcenter_project.domain.roommate.repository.RoommateChatting
 import com.example.appcenter_project.domain.roommate.repository.RoommateChattingRoomRepository;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
+import com.example.appcenter_project.global.config.RoommateWebSocketEventListener;
 import com.example.appcenter_project.global.exception.CustomException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -27,11 +32,14 @@ import org.mockito.quality.Strictness;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static com.example.appcenter_project.global.exception.ErrorCode.*;
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -62,6 +70,11 @@ class RoommateChattingChatServiceTest {
 
     @InjectMocks
     RoommateChattingChatService roommateChattingChatService;
+
+    @AfterEach
+    void clearOnlineMap() {
+        RoommateWebSocketEventListener.roommateChatRoomInUserMap.clear();
+    }
 
     private User buildMockUser(Long id) {
         User user = mock(User.class);
@@ -196,6 +209,108 @@ class RoommateChattingChatServiceTest {
                 roommateChattingChatService.getChatList(3L, 100L, mock(HttpServletRequest.class)))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ROOMMATE_CHAT_ROOM_FORBIDDEN);
+    }
+
+    // ===== @ParameterizedTest: FCM 발송 조건 =====
+
+    @ParameterizedTest(name = "수신자 온라인={0} → FCM 발송={1}")
+    @CsvSource({
+        "false, true",   // 수신자 오프라인 → FCM 발송해야 함
+        "true,  false"   // 수신자 온라인   → FCM 미발송
+    })
+    @DisplayName("채팅 전송 - 수신자 온라인 여부에 따른 FCM 발송 조건")
+    void sendChat_FCM_발송_조건(boolean receiverOnline, boolean expectFcmSent) {
+        User guest = buildMockUser(2L);
+        User host  = buildMockUser(1L);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(guest));
+
+        RoommateChattingRoom room = mock(RoommateChattingRoom.class);
+        when(room.getId()).thenReturn(100L);
+        when(room.getGuest()).thenReturn(guest);
+        when(room.getHost()).thenReturn(host);
+        when(chatRoomRepository.findById(100L)).thenReturn(Optional.of(room));
+
+        RoommateChattingChat savedChat = mock(RoommateChattingChat.class);
+        when(savedChat.getId()).thenReturn(1L);
+        when(savedChat.getMember()).thenReturn(guest);
+        when(savedChat.getContent()).thenReturn("테스트");
+        when(savedChat.isReadByReceiver()).thenReturn(receiverOnline);
+        when(savedChat.getCreatedDate()).thenReturn(LocalDateTime.now());
+        when(savedChat.getRoommateChattingRoom()).thenReturn(room);
+        when(chatRepository.save(any(RoommateChattingChat.class))).thenReturn(savedChat);
+
+        if (receiverOnline) {
+            RoommateWebSocketEventListener.roommateChatRoomInUserMap
+                    .computeIfAbsent("100", k -> new ArrayList<>())
+                    .add("1");
+        }
+
+        Notification mockNotification = mock(Notification.class);
+        when(mockNotification.getTitle()).thenReturn("채팅 알림");
+        when(mockNotification.getBody()).thenReturn("테스트");
+        when(notificationService.createChatNotification(anyString(), anyLong(), anyString()))
+                .thenReturn(mockNotification);
+
+        RequestRoommateChatDto dto = mock(RequestRoommateChatDto.class);
+        when(dto.getRoommateChattingRoomId()).thenReturn(100L);
+        when(dto.getContent()).thenReturn("테스트");
+
+        roommateChattingChatService.sendChat(2L, dto);
+
+        if (expectFcmSent) {
+            verify(fcmMessageService).sendNotification(eq(host), anyString(), anyString());
+        } else {
+            verify(fcmMessageService, never()).sendNotification(any(), any(), any());
+        }
+    }
+
+    // ===== @ParameterizedTest: 발신자 역할(host/guest) 양방향 =====
+
+    static Stream<org.junit.jupiter.params.provider.Arguments> senderRoleProvider() {
+        return Stream.of(
+            arguments("guest가 host에게", 2L, 1L),
+            arguments("host가 guest에게", 1L, 2L)
+        );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("senderRoleProvider")
+    @DisplayName("채팅 전송 - host/guest 양방향 정상 전송")
+    void sendChat_발신자_역할별_정상_전송(String scenario, Long senderId, Long receiverId) {
+        User sender   = buildMockUser(senderId);
+        User receiver = buildMockUser(receiverId);
+        when(userRepository.findById(senderId)).thenReturn(Optional.of(sender));
+
+        RoommateChattingRoom room = mock(RoommateChattingRoom.class);
+        when(room.getId()).thenReturn(100L);
+        // senderId == 2L 이면 sender가 guest
+        when(room.getGuest()).thenReturn(senderId == 2L ? sender : receiver);
+        when(room.getHost()).thenReturn(senderId == 1L ? sender : receiver);
+        when(chatRoomRepository.findById(100L)).thenReturn(Optional.of(room));
+
+        RoommateChattingChat savedChat = mock(RoommateChattingChat.class);
+        when(savedChat.getId()).thenReturn(1L);
+        when(savedChat.getMember()).thenReturn(sender);
+        when(savedChat.getContent()).thenReturn("안녕");
+        when(savedChat.isReadByReceiver()).thenReturn(false);
+        when(savedChat.getCreatedDate()).thenReturn(LocalDateTime.now());
+        when(savedChat.getRoommateChattingRoom()).thenReturn(room);
+        when(chatRepository.save(any(RoommateChattingChat.class))).thenReturn(savedChat);
+
+        Notification mockNotification = mock(Notification.class);
+        when(mockNotification.getTitle()).thenReturn("채팅 알림");
+        when(mockNotification.getBody()).thenReturn("안녕");
+        when(notificationService.createChatNotification(anyString(), anyLong(), anyString()))
+                .thenReturn(mockNotification);
+
+        RequestRoommateChatDto dto = mock(RequestRoommateChatDto.class);
+        when(dto.getRoommateChattingRoomId()).thenReturn(100L);
+        when(dto.getContent()).thenReturn("안녕");
+
+        ResponseRoommateChatDto result = roommateChattingChatService.sendChat(senderId, dto);
+
+        assertThat(result).isNotNull();
+        verify(chatRepository).save(any(RoommateChattingChat.class));
     }
 
     @Test
