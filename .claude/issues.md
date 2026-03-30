@@ -11,22 +11,9 @@
 | 2026-03-29 | [#557](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/557) | FCM 알림 다중 기기 지원 및 비동기 처리 개선 | teach/refactor/fcm-notification-improvement-557 | 다중 기기 전송, 실패 토큰 정리, @Async 처리 |
 | 2026-03-30 | [#561](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/561) | Testcontainers 통합 테스트 환경 구축 및 CI 빌드 최적화 | teach/test/testcontainers-integration-test-561 | Oracle MockBean, MySQL/Redis 컨테이너, Gradle 캐시 |
 
-## 현재 작업 이슈
-
-- **번호**: #561
-- **제목**: [test] Testcontainers 통합 테스트 환경 구축 및 CI 빌드 최적화
-- **브랜치**: teach/test/testcontainers-integration-test-561
-- **작업 목록**:
-  - [x] `build.gradle`에 Testcontainers 의존성 추가 (MySQL, Redis 모듈)
-  - [x] `src/test/resources/application-test.yml` 생성 — Oracle 비활성화, Testcontainers 연동 설정
-  - [x] `AbstractIntegrationTest` 베이스 클래스 생성 — MySQL + Redis 컨테이너 static 선언 및 `@DynamicPropertySource`로 동적 URL 주입
-  - [x] Oracle 관련 Bean(`SchoolLoginRepository`, `OracleConfig`) `@MockBean` 처리하는 테스트 설정 추가
-  - [ ] 기존 유닛 테스트 `@ParameterizedTest` 개선 — 채팅 권한 분기, FCM 발송 조건 등 경계값 케이스 추가
-  - [x] CI workflow(`dev-deploy.yml`, `main-deploy.yml`)에 Gradle 의존성/래퍼 캐시 추가
-  - [x] CI `clean build` → `build` 변경 (캐시 활용)
-
 ## 완료된 이슈
 
 - [x] #553 [feat] FCM 알림 통계 조회 API → PR #554 merged
 - [x] #555 [fix] 룸메이트 채팅방 입장 중 알림 차단 → PR #556 merged
 - [x] #557 [refactor] FCM 알림 다중 기기 지원 및 비동기 처리 개선 → PR #558 merged
+- [x] #561 [test] Testcontainers 통합 테스트 환경 구축 및 CI 빌드 최적화 → PR #562 merged
