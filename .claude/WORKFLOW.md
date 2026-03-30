@@ -82,6 +82,16 @@ test: TipCommentService 단위 테스트 추가 #552
 - `add:` 사용 금지 → `feat:` 으로 통일
 - 이슈번호 필수, 제목 50자 이내
 
+### 머지 커밋 메시지 (`/close` squash merge 시)
+```
+Merge: {type}: {제목} #{이슈번호}
+
+Merge: feat: 팁 게시판 댓글 기능 추가 #552
+Merge: fix: FCM 토큰 중복 저장 오류 수정 #545
+Merge: test: Testcontainers 통합 테스트 환경 구축 #561
+```
+- `merge_pull_request` 호출 시 `commit_title`에 반드시 `Merge:` 접두사 포함
+
 ### 이슈
 ```
 제목: [feat] 팁 게시판 댓글 기능
