@@ -147,18 +147,25 @@ public class UserService {
     }
 
     public ResponseLoginDto convertToPermanent(Long userId, SignupUser signupUser) {
+        User user = findUserById(userId);
+        user.validateFreshman();
         checkINUStudent(signupUser);
-        deleteConflictingUser(signupUser.getStudentNumber(), userId);
-        User user = convertINUUser(userId, signupUser);
-        return createDto(user);
+        refreshTokenRepository.deleteByUser(user);
+        deleteConflictingUser(userId, signupUser.getStudentNumber());
+        User updatedUser = convertINUUser(userId, signupUser);
+
+        return createDto(updatedUser);
     }
 
-    private void deleteConflictingUser(String studentNumber, Long currentUserId) {
+    private void deleteConflictingUser(Long userId, String studentNumber) {
         userRepository.findByStudentNumber(studentNumber)
-                .filter(existing -> !existing.getId().equals(currentUserId))
                 .ifPresent(existing -> {
+                    if (existing.getId().equals(userId)) {
+                        return;
+                    }
                     refreshTokenRepository.deleteByUser(existing);
                     userRepository.delete(existing);
+                    userRepository.flush();
                 });
     }
 
@@ -244,6 +251,7 @@ public class UserService {
     private User findFreshmanForLogin(SignupUser signupUser) {
         User user = userRepository.findByStudentNumber(signupUser.getStudentNumber())
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        user.validateFreshman();
         if (!passwordEncoder.matches(signupUser.getPassword(), user.getPassword())) {
             throw new CustomException(INVALID_PASSWORD);
         }

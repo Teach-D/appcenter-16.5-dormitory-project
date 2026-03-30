@@ -18,6 +18,8 @@ import com.example.appcenter_project.domain.user.enums.College;
 import com.example.appcenter_project.domain.user.enums.DormType;
 import com.example.appcenter_project.domain.user.enums.NotificationType;
 import com.example.appcenter_project.domain.user.enums.Role;
+import com.example.appcenter_project.global.exception.CustomException;
+import com.example.appcenter_project.global.exception.ErrorCode;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
@@ -149,15 +151,17 @@ public class User extends BaseTimeEntity {
     }
 
     public static User createNewUser(String studentNumber, String password) {
-        return User.builder()
+        User user = User.builder()
                 .studentNumber(studentNumber).password(password)
                 .penalty(0).image(null).role(Role.ROLE_USER).build();
+
+        user.isFreshman = false;
+        return user;
     }
 
     public static User createFreshman(String username, String password) {
         User user = User.builder()
-                .studentNumber(username)
-                .password(password)
+                .studentNumber(username).password(password)
                 .penalty(0).image(null).role(Role.ROLE_USER).build();
         user.isFreshman = true;
         return user;
@@ -241,5 +245,15 @@ public class User extends BaseTimeEntity {
         this.password = password;
         this.isFreshman = false;
         return this;
+    }
+
+    public boolean isFreshman() {
+        return Boolean.TRUE.equals(this.isFreshman);
+    }
+
+    public void validateFreshman() {
+        if (!Boolean.TRUE.equals(this.isFreshman)) {
+            throw new CustomException(ErrorCode.USER_NOT_FRESHMAN);
+        }
     }
 }
