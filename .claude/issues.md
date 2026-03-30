@@ -17,12 +17,12 @@
 - **제목**: [refactor] 공동구매 조회수 증가 Redisson 분산 락 적용
 - **브랜치**: teach/refactor/redisson-distributed-lock-563
 - **작업 목록**:
-  - [ ] build.gradle에 redisson-spring-boot-starter 의존성 추가 (주석 해제)
-  - [ ] RedissonConfig 설정 클래스 생성 (Redis 연결 설정)
-  - [ ] 기존 공동구매 조회수 증가 로직 파악
-  - [ ] GroupOrderService 조회수 증가에 RLock.tryLock(waitTime=5s, leaseTime=3s) 적용
-  - [ ] 락 획득 실패 시 커스텀 예외 처리 추가
-  - [ ] 분산 락 동시성 단위 테스트 작성
+  - [x] build.gradle에 redisson-spring-boot-starter 의존성 추가 (주석 해제)
+  - [x] RedissonConfig 설정 클래스 생성 (Redis 연결 설정)
+  - [x] 기존 공동구매 조회수 증가 로직 파악
+  - [x] GroupOrderService 조회수 증가에 RLock.tryLock(waitTime=5s, leaseTime=3s) 적용
+  - [x] 락 획득 실패 시 커스텀 예외 처리 추가
+  - [x] 분산 락 동시성 단위 테스트 작성
 
 ## 완료된 이슈
 
