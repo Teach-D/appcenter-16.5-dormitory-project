@@ -38,6 +38,9 @@ out/
 ### VS Code ###
 .vscode/
 
+### Claude Code ###
+.claude/settings.local.json
+
 ### yml ###
 application.yml
 serviceAccountKey.json

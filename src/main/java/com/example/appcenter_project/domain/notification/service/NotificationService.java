@@ -1,6 +1,8 @@
 package com.example.appcenter_project.domain.notification.service;
 
 import com.example.appcenter_project.domain.notification.dto.request.RequestNotificationDto;
+import com.example.appcenter_project.domain.notification.dto.request.RequestSendDirectNotificationDto;
+import com.example.appcenter_project.shared.enums.ApiType;
 import com.example.appcenter_project.domain.notification.dto.response.ResponseNotificationDto;
 import com.example.appcenter_project.domain.notification.entity.Notification;
 import com.example.appcenter_project.domain.notification.entity.UserNotification;
@@ -44,15 +46,24 @@ public class NotificationService {
         sendFcmMessages(notification, receiveUsers);
     }
 
-    public void saveNotificationByStudentNumber(RequestNotificationDto requestDto, String studentNumber) {
-        String title = "유니돔으로부터 알림이 도착했습니다!";
+    public void sendDirectNotification(RequestSendDirectNotificationDto requestDto) {
+        User user = userRepository.findByStudentNumber(requestDto.getStudentNumber())
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
-        User user = userRepository.findByStudentNumber(studentNumber).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        NotificationType notificationType = requestDto.getNotificationType() != null
+                ? NotificationType.from(requestDto.getNotificationType())
+                : NotificationType.UNI_DORM;
 
-        Notification notification = createNotification(requestDto);
+        Notification notification = Notification.of(
+                requestDto.getTitle(),
+                requestDto.getContent(),
+                notificationType,
+                ApiType.NOTIFICATION,
+                null
+        );
+        notificationRepository.save(notification);
         createUserNotification(user, notification);
-
-        fcmMessageService.sendNotification(user, title, notification.getTitle());
+        fcmMessageService.sendNotification(user, requestDto.getTitle(), requestDto.getContent());
     }
 
     public ResponseNotificationDto findNotification(Long userId, Long notificationId) {
@@ -63,31 +74,17 @@ public class NotificationService {
     public List<ResponseNotificationDto> findNotificationsByUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-
         List<UserNotification> notifications = new ArrayList<>(user.getUserNotifications());
         Collections.reverse(notifications);
 
-        List<ResponseNotificationDto> result = notifications.stream()
-                .map(ResponseNotificationDto::from)
-                .toList();
-
-        notifications.forEach(notification -> notification.changeReadStatus(true));
-        return result;
+        return convertToDtoAndMarkAsRead(notifications);
     }
 
     public List<ResponseNotificationDto> findNotificationsByUserScroll(Long userId, Long lastId, int size) {
         Pageable pageable = PageRequest.of(0, size);
+        List<UserNotification> notifications = userNotificationRepository.findAllWithFilters(userId, lastId, pageable);
 
-        List<UserNotification> notifications = userNotificationRepository.findAllWithFilters(
-                userId, lastId, pageable
-        );
-        if (notifications.isEmpty()) {
-            return List.of();
-        }
-        notifications.forEach(notification -> notification.changeReadStatus(true));
-        return notifications.stream()
-                .map(ResponseNotificationDto::from)
-                .toList();
+        return convertToDtoAndMarkAsRead(notifications);
     }
 
     public void updateNotification(Long notificationId, RequestNotificationDto requestDto) {
@@ -157,5 +154,17 @@ public class NotificationService {
         receiveUsers.forEach(receiveUser -> {
             fcmMessageService.sendNotification(receiveUser, notification.getTitle(), notification.getBody());
         });
+    }
+
+    private List<ResponseNotificationDto> convertToDtoAndMarkAsRead(List<UserNotification> notifications) {
+        if (notifications.isEmpty()) return List.of();
+
+        List<ResponseNotificationDto> result = notifications.stream()
+                .map(ResponseNotificationDto::from)
+                .toList();
+
+        notifications.forEach(n -> n.changeReadStatus(true));
+
+        return result;
     }
 }

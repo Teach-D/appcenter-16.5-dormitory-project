@@ -2,6 +2,7 @@ package com.example.appcenter_project.domain.notification.controller;
 
 import com.example.appcenter_project.common.metrics.annotation.TrackApi;
 import com.example.appcenter_project.domain.notification.dto.request.RequestNotificationDto;
+import com.example.appcenter_project.domain.notification.dto.request.RequestSendDirectNotificationDto;
 import com.example.appcenter_project.domain.notification.dto.response.ResponseNotificationDto;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import com.example.appcenter_project.domain.notification.service.NotificationService;
@@ -27,9 +28,10 @@ public class NotificationController implements NotificationApiSpecification {
         return ResponseEntity.status(CREATED).build();
     }
 
-    @PostMapping("/student-number/{studentNumber}")
-    public ResponseEntity<Void> saveNotificationByStudentNumber(@RequestBody RequestNotificationDto requestNotificationDto, String studentNumber) {
-        notificationService.saveNotificationByStudentNumber(requestNotificationDto, studentNumber);
+    @TrackApi
+    @PostMapping("/admin/direct")
+    public ResponseEntity<Void> sendDirectNotification(@RequestBody RequestSendDirectNotificationDto requestDto) {
+        notificationService.sendDirectNotification(requestDto);
         return ResponseEntity.status(CREATED).build();
     }
 

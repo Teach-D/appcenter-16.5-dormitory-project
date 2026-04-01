@@ -1,8 +1,10 @@
 package com.example.appcenter_project.domain.fcm.controller;
 
+import com.example.appcenter_project.common.metrics.annotation.TrackApi;
 import com.example.appcenter_project.domain.fcm.dto.request.RequestFcmMessageDto;
 import com.example.appcenter_project.domain.fcm.dto.request.RequestFcmTokenDto;
 import com.example.appcenter_project.domain.fcm.dto.response.ResponseFcmMessageDto;
+import com.example.appcenter_project.domain.fcm.dto.response.ResponseFcmStatsDto;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import com.example.appcenter_project.domain.fcm.service.FcmMessageService;
 import com.example.appcenter_project.domain.fcm.service.FcmTokenService;
@@ -26,6 +28,12 @@ public class FcmController implements FcmApiSpecification{
     ) {
         fcmTokenService.saveToken(userDetails, requestDto.getFcmToken());
         return ResponseEntity.ok().build();
+    }
+
+    @TrackApi
+    @GetMapping("/stats")
+    public ResponseEntity<ResponseFcmStatsDto> getFcmStats() {
+        return ResponseEntity.ok(fcmMessageService.getFcmStats());
     }
 
     // 전체 사용자에게 알림 전송 (user_id가 NULL인 토큰도 포함)

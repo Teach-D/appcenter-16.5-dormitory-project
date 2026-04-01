@@ -49,13 +49,15 @@ public class SecurityConfig {
 
                         /** 유저 **/
                         // 로그인
-                        .requestMatchers(POST, "/users", "/users/freshman","/users/refreshToken").permitAll()
+                        .requestMatchers(POST, "/users", "/users/freshman", "/users/freshman/register", "/users/refreshToken").permitAll()
                         // 관리자 모든 유저 조회
                         .requestMatchers("/users/all/admin").hasRole("ADMIN")
                         // 특정 유저 푸시 알림 전송
                         .requestMatchers( "/users/push-notification").hasRole("ADMIN")
-                        // 사용자 권한 수정 및 조회
-                        .requestMatchers("/users/role")
+                        // 사용자 권한 변경 (ADMIN 전용)
+                        .requestMatchers(PATCH, "/users/role").hasRole("ADMIN")
+                        // 사용자 권한 조회
+                        .requestMatchers(GET, "/users/role")
                             .hasAnyRole("DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_EXPEDITED_COMPLAINT_MANAGER","ADMIN")
                         // 사용자 정보 조회 및 수정
                         .requestMatchers("/users", "/users/image", "/users/time-table-image").authenticated()
@@ -128,6 +130,8 @@ public class SecurityConfig {
                             .hasAnyRole("DORM_SUPPORTERS", "ADMIN", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_EXPEDITED_COMPLAINT_MANAGER")
 
                         /** 알림 **/
+                        // 특정 유저 1:1 직접 알림 전송(ADMIN 전용)
+                        .requestMatchers(POST, "/notifications/admin/direct").hasRole("ADMIN")
                         // 알림 조회(로그인한 사용자)
                         .requestMatchers(GET, "/notifications/**").permitAll()
                         // 알림 등록, 수정, 삭제(관리자)
@@ -143,7 +147,8 @@ public class SecurityConfig {
                         /** 사용자 알림 **/
                         .requestMatchers("/user-notifications/**").authenticated()
 
-                        /** FCM 토큰 **/
+                        /** FCM **/
+                        .requestMatchers(GET, "/fcm/stats").hasRole("ADMIN")
                         .requestMatchers("/fcm/token/**").permitAll()
 
                         /** 쿠폰 **/

@@ -65,7 +65,11 @@ public class UserService {
 
     public ResponseLoginDto saveFreshman(SignupUser signupUser) {
         User user = createFreshman(signupUser);
-//        User user = loginFreshman(signupUser);
+        return createDto(user);
+    }
+
+    public ResponseLoginDto loginFreshman(SignupUser signupUser) {
+        User user = findFreshmanForLogin(signupUser);
         return createDto(user);
     }
 
@@ -85,10 +89,8 @@ public class UserService {
 
     public void changeUserRole(RequestUserRoleDto request) {
         Role role = Role.from(request.getRole());
-        if (isNotAdminRole(role)) {
-            User user = userRepository.findByStudentNumber(request.getStudentNumber()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-            user.changeRole(role);
-        }
+        User user = userRepository.findByStudentNumber(request.getStudentNumber()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        user.changeRole(role);
     }
 
     public ResponseUserDto findUser(Long userId) {
@@ -143,11 +145,26 @@ public class UserService {
     }
 
     public ResponseLoginDto convertToPermanent(Long userId, SignupUser signupUser) {
+        User user = findUserById(userId);
+        user.validateFreshman();
         checkINUStudent(signupUser);
-        checkAlreadyRegistered(signupUser);
-        User user = convertINUUser(userId, signupUser);
+        refreshTokenRepository.deleteByUser(user);
+        deleteConflictingUser(userId, signupUser.getStudentNumber());
+        User updatedUser = convertINUUser(userId, signupUser);
 
-        return createDto(user);
+        return createDto(updatedUser);
+    }
+
+    private void deleteConflictingUser(Long userId, String studentNumber) {
+        userRepository.findByStudentNumber(studentNumber)
+                .ifPresent(existing -> {
+                    if (existing.getId().equals(userId)) {
+                        return;
+                    }
+                    refreshTokenRepository.deleteByUser(existing);
+                    userRepository.delete(existing);
+                    userRepository.flush();
+                });
     }
 
     private User convertINUUser(Long userId, SignupUser signupUser) {
@@ -186,7 +203,8 @@ public class UserService {
     }
 
     public void deleteUser(Long userId) {
-        checkExistsUser(userId);
+        User user = findUserById(userId);
+        refreshTokenRepository.deleteByUser(user);
         userRepository.deleteById(userId);
     }
 
@@ -220,24 +238,21 @@ public class UserService {
 
     private User createFreshman(SignupUser signupUser) {
         if (existsUser(signupUser)) {
-            User user = userRepository.findByStudentNumber(signupUser.getStudentNumber()).get();
-
-            if (!passwordEncoder.matches(signupUser.getPassword(), user.getPassword())) {
-                throw new CustomException(INVALID_PASSWORD);
-            }
-            return user;
+            throw new CustomException(ALREADY_REGISTERED_USER);
         }
 
         User user = User.createFreshman(signupUser.getStudentNumber(), passwordEncoder.encode(signupUser.getPassword()));
         userRepository.save(user);
-
         return user;
     }
 
-    private User loginFreshman(SignupUser signupUser) {
-        User user = userRepository.findByStudentNumber(signupUser.getStudentNumber()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+    private User findFreshmanForLogin(SignupUser signupUser) {
+        User user = userRepository.findByStudentNumber(signupUser.getStudentNumber())
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        user.validateFreshman();
         if (!passwordEncoder.matches(signupUser.getPassword(), user.getPassword())) {
-            throw new CustomException(INVALID_PASSWORD);}
+            throw new CustomException(INVALID_PASSWORD);
+        }
         return user;
     }
 

@@ -44,20 +44,35 @@ public interface UserApiSpecification {
             @Parameter(description = "회원가입 정보", required = true) SignupUser signupUser);
 
     @Operation(
-            summary = "신입생 회원가입 및 로그인",
-            description = "기존에 등록된 신입생 계정인 경우 로그인을 진행합니다.",
+            summary = "신입생 회원가입",
+            description = "새로운 아이디로 신입생 임시 계정을 생성합니다.",
             responses = {
-                    @ApiResponse(responseCode = "201", description = "회원가입/로그인 성공",
+                    @ApiResponse(responseCode = "201", description = "회원가입 성공",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ResponseLoginDto.class))),
                     @ApiResponse(responseCode = "400", description = "입력이 잘못되었습니다.", content = @Content(examples = {})),
-                    @ApiResponse(responseCode = "401", description = "비밀번호가 일치하지 않습니다. (INVALID_PASSWORD)", content = @Content(examples = {})),
-                    @ApiResponse(responseCode = "404", description = "기본 이미지를 찾을 수 없습니다. (DEFAULT_IMAGE_NOT_FOUND)", content = @Content(examples = {}))
+                    @ApiResponse(responseCode = "409", description = "이미 등록된 아이디입니다.", content = @Content(examples = {}))
             }
     )
     ResponseEntity<ResponseLoginDto> saveFreshman(
             @Valid @RequestBody
             @Parameter(description = "신입생 회원가입 정보", required = true) SignupUser signupUser);
+
+    @Operation(
+            summary = "신입생 로그인",
+            description = "등록된 신입생 임시 계정으로 로그인합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "로그인 성공",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseLoginDto.class))),
+                    @ApiResponse(responseCode = "400", description = "입력이 잘못되었습니다.", content = @Content(examples = {})),
+                    @ApiResponse(responseCode = "401", description = "비밀번호가 일치하지 않습니다. (INVALID_PASSWORD)", content = @Content(examples = {})),
+                    @ApiResponse(responseCode = "404", description = "등록되지 않은 아이디입니다. (USER_NOT_FOUND)", content = @Content(examples = {}))
+            }
+    )
+    ResponseEntity<ResponseLoginDto> loginFreshman(
+            @Valid @RequestBody
+            @Parameter(description = "신입생 로그인 정보", required = true) SignupUser signupUser);
 
     @Operation(
             summary = "액세스 토큰 재발급",
@@ -87,9 +102,27 @@ public interface UserApiSpecification {
     ResponseEntity<Void> sendPushNotification(@RequestBody RequestUserPushNotification requestUserPushNotification);
 
     @Operation(
-            summary = "사용자 권한 변경",
-            description = "생활원 직원, 관리자만 특정 사용자의 권한을 생활원 직원으로 변경할 수 있음" +
-                    "(role : 기숙사 담당자, 기숙사 생활민원 담당자, 기숙사 룸메이트민원 담당자)"
+            summary = "사용자 권한 변경 (ADMIN)",
+            description = """
+                    ADMIN이 특정 유저의 Role을 변경합니다.
+                    학번(studentNumber)으로 대상 유저를 특정하고, 변경할 role을 입력합니다.
+
+                    ### role 유효 값
+                    | Value | Description |
+                    |---|---|
+                    | ROLE_ADMIN | 관리자 |
+                    | ROLE_USER | 일반 사용자 |
+                    | ROLE_DORM_MANAGER | 기숙사 담당자 |
+                    | ROLE_DORM_LIFE_MANAGER | 기숙사 생활민원 담당자 |
+                    | ROLE_DORM_ROOMMATE_MANAGER | 기숙사 룸메이트민원 담당자 |
+                    | ROLE_DORM_EXPEDITED_COMPLAINT_MANAGER | 기숙사 신속민원 담당자 |
+                    | ROLE_DORM_SUPPORTERS | 기숙사 서포터즈 |
+                    """,
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "권한 변경 성공"),
+                    @ApiResponse(responseCode = "403", description = "ADMIN 권한이 필요합니다."),
+                    @ApiResponse(responseCode = "404", description = "회원가입하지 않은 사용자입니다.")
+            }
     )
     ResponseEntity<Void> changeUserRole(@RequestBody RequestUserRoleDto requestUserRoleDto);
 
@@ -139,7 +172,6 @@ public interface UserApiSpecification {
             responses = {
                     @ApiResponse(responseCode = "200", description = "수정 성공"),
                     @ApiResponse(responseCode = "404", description = "학번, 비밀번호를 잘못 입력했습니다"),
-                    @ApiResponse(responseCode = "409", description = "해당 학번으로 등록된 계정이 이미 존재합니다."),
             }
     )
     @PutMapping("/inu-student")

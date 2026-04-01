@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.fcm.service;
 
 import com.example.appcenter_project.domain.fcm.dto.response.ResponseFcmMessageDto;
+import com.example.appcenter_project.domain.fcm.dto.response.ResponseFcmStatsDto;
 import com.example.appcenter_project.domain.fcm.entity.FcmToken;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.user.enums.DormType;
@@ -18,6 +19,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,7 +38,8 @@ public class FcmMessageService {
     private final RedisTemplate<String, Object> redisTemplate;
 
     // todo User user
-    public String sendNotification(User user, String title, String body) {
+    @Async("fcmExecutor")
+    public void sendNotification(User user, String title, String body) {
         for (FcmToken fcmToken : user.getFcmTokenList()) {
             String targetToken = fcmToken.getToken();
 
@@ -54,15 +57,12 @@ public class FcmMessageService {
                 String response = FirebaseMessaging.getInstance().send(message);
                 log.info("Successfully sent FCM message: {}", response);
                 recordFcmSuccess();
-                return response; // 메시지 ID 반환
             } catch (Exception e) {
                 log.error("Error sending FCM message", e);
                 fcmTokenRepository.deleteByToken(targetToken);
                 recordFcmFail();
             }
         }
-        // todo 임시로 null
-        return null;
     }
 
     // 추가: 전체 사용자(회원 + 비회원)에게 전송
@@ -105,7 +105,8 @@ public class FcmMessageService {
                 .build();
     }
 
-    public String sendNotificationDormitoryPerson(String title, String body) {
+    @Async("fcmExecutor")
+    public void sendNotificationDormitoryPerson(String title, String body) {
         for (User user : userRepository.findByDormTypeNot(DormType.NONE)) {
             if (user.getReceiveNotificationTypes().contains(NotificationType.DORMITORY)) {
                 for (FcmToken fcmToken : user.getFcmTokenList()) {
@@ -125,7 +126,6 @@ public class FcmMessageService {
                         String response = FirebaseMessaging.getInstance().send(message);
                         log.info("Successfully sent FCM message: {}", response);
                         recordFcmSuccess();
-                        return response; // 메시지 ID 반환
                     } catch (Exception e) {
                         log.error("Error sending FCM message", e);
                         fcmTokenRepository.deleteByToken(targetToken);
@@ -134,11 +134,9 @@ public class FcmMessageService {
                 }
             }
         }
-
-        // todo 임시로 null
-        return null;
     }
 
+    @Async("fcmExecutor")
     public void sendGroupOrderNotification(User user, String title, String body) {
         if (!user.getReceiveNotificationTypes().contains(NotificationType.GROUP_ORDER)) {
             return;
@@ -147,6 +145,7 @@ public class FcmMessageService {
         sendMessageToUser(user, title, body);
     }
 
+    @Async("fcmExecutor")
     public void sendDormitoryNotification(User user, String title, String body) {
         if (!user.getReceiveNotificationTypes().contains(NotificationType.DORMITORY)) {
             return;
@@ -156,6 +155,7 @@ public class FcmMessageService {
 
     }
 
+    @Async("fcmExecutor")
     public void sendUnidormNotification(User user, String title, String body) {
         if (!user.getReceiveNotificationTypes().contains(NotificationType.UNI_DORM)) {
             return;
@@ -225,6 +225,25 @@ public class FcmMessageService {
         log.info("      🚀 sendMessageToUser 종료 (User ID: {}, 총 {}개 토큰 처리)", user.getId(), tokenIndex);
     }
 
+    @Transactional(readOnly = true)
+    public ResponseFcmStatsDto getFcmStats() {
+        LocalDate today = LocalDate.now();
+        String successKey = FCM_SUCCESS_KEY_PREFIX + today;
+        String failKey = FCM_FAIL_KEY_PREFIX + today;
+
+        Object successVal = redisTemplate.opsForValue().get(successKey);
+        Object failVal = redisTemplate.opsForValue().get(failKey);
+
+        long successCount = successVal != null ? Long.parseLong(successVal.toString()) : 0L;
+        long failCount = failVal != null ? Long.parseLong(failVal.toString()) : 0L;
+
+        return ResponseFcmStatsDto.builder()
+                .date(today.toString())
+                .successCount(successCount)
+                .failCount(failCount)
+                .build();
+    }
+
     private void recordFcmSuccess() {
         String key = FCM_SUCCESS_KEY_PREFIX + LocalDate.now();
         redisTemplate.opsForValue().increment(key);
@@ -237,6 +256,7 @@ public class FcmMessageService {
         redisTemplate.expire(key, Duration.ofHours(24));
     }
 
+    @Async("fcmExecutor")
     public void sendSupporterNotification(User user, String title, String body) {
         if (!user.getReceiveNotificationTypes().contains(NotificationType.SUPPORTERS)) {
             return;
@@ -245,6 +265,7 @@ public class FcmMessageService {
         sendMessageToUser(user, title, body);
     }
 
+    @Async("fcmExecutor")
     public void sendUnidormAnnouncementNotification(User user, String title, String body) {
         if (!user.getReceiveNotificationTypes().contains(NotificationType.UNI_DORM)) {
             return;

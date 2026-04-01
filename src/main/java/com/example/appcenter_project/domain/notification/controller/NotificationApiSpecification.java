@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.notification.controller;
 
 import com.example.appcenter_project.domain.notification.dto.request.RequestNotificationDto;
+import com.example.appcenter_project.domain.notification.dto.request.RequestSendDirectNotificationDto;
 import com.example.appcenter_project.domain.notification.dto.response.ResponseNotificationDto;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,9 +24,21 @@ public interface NotificationApiSpecification {
 
     @Operation(
             summary = "알림 생성",
-            description = "새로운 알림을 생성하고 대상 사용자들에게 푸시 알림을 전송합니다. " +
-                    "    ROOMMATE, GROUP_ORDER, DORMITORY, UNI_DORM, SUPPORTERS \n" +
-                    "    COMPLAINT, COUPON, CHAT",
+            description = """
+                    새로운 알림을 생성하고 대상 사용자들에게 푸시 알림을 전송합니다.
+
+                    ### notificationType 유효 값
+                    | 영문 (권장) | 한글 |
+                    |---|---|
+                    | ROOMMATE | 룸메이트 |
+                    | GROUP_ORDER | 공동구매 |
+                    | DORMITORY | 생활원 |
+                    | UNI_DORM | 유니돔 |
+                    | SUPPORTERS | 서포터즈 |
+                    | COMPLAINT | 민원 |
+                    | COUPON | 쿠폰 |
+                    | CHAT | 채팅 |
+                    """,
             responses = {
                     @ApiResponse(responseCode = "201", description = "알림 생성 성공"),
                     @ApiResponse(responseCode = "400", description = "입력이 잘못되었습니다."),
@@ -34,7 +47,7 @@ public interface NotificationApiSpecification {
     )
     ResponseEntity<Void> saveNotification(
             @RequestBody
-            @Parameter(description = "알림 생성 정보 (title, body, notificationType, boardId)", required = true)
+            @Parameter(description = "알림 생성 정보 (title, body, notificationType)", required = true)
             RequestNotificationDto requestNotificationDto);
 
     @Operation(
@@ -103,10 +116,33 @@ public interface NotificationApiSpecification {
     );
 
     @Operation(
-            summary = "개인 알림 전송",
-            description = "학번을 통해서 개인 알림이 전송됩니다.(푸시 알림 포함)"
+            summary = "관리자 1:1 직접 알림 전송 (ADMIN)",
+            description = """
+                    ADMIN이 특정 유저 한 명에게 직접 알림을 전송합니다.
+                    학번(studentNumber)으로 대상 유저를 특정하며, DB 저장 + FCM 푸시 알림이 동시에 진행됩니다.
+
+                    ### notificationType 유효 값 (미입력 시 UNI_DORM 기본값)
+                    | Value | Description |
+                    |---|---|
+                    | ROOMMATE | 룸메이트 |
+                    | GROUP_ORDER | 공동구매 |
+                    | DORMITORY | 생활원 |
+                    | UNI_DORM | 유니돔 |
+                    | SUPPORTERS | 서포터즈 |
+                    | COMPLAINT | 민원 |
+                    | COUPON | 쿠폰 |
+                    | CHAT | 채팅 |
+                    """,
+            responses = {
+                    @ApiResponse(responseCode = "201", description = "알림 전송 성공"),
+                    @ApiResponse(responseCode = "403", description = "ADMIN 권한이 필요합니다."),
+                    @ApiResponse(responseCode = "404", description = "회원가입하지 않은 사용자입니다.")
+            }
     )
-    ResponseEntity<Void> saveNotificationByStudentNumber(@RequestBody RequestNotificationDto requestNotificationDto, String studentNumber);
+    ResponseEntity<Void> sendDirectNotification(
+            @RequestBody
+            @Parameter(description = "전송 정보 (studentNumber, title, content, notificationType)", required = true)
+            RequestSendDirectNotificationDto requestDto);
 
 
     @Operation(

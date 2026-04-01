@@ -42,10 +42,14 @@ public class UserController implements UserApiSpecification {
         return ResponseEntity.status(CREATED).body(userService.saveUser(signupUser));
     }
 
-    @TrackApi
-    @PostMapping("/freshman")
+    @PostMapping("/freshman/register")
     public ResponseEntity<ResponseLoginDto> saveFreshman(@Valid @RequestBody SignupUser signupUser) {
         return ResponseEntity.status(CREATED).body(userService.saveFreshman(signupUser));
+    }
+
+    @PostMapping("/freshman")
+    public ResponseEntity<ResponseLoginDto> loginFreshman(@Valid @RequestBody SignupUser signupUser) {
+        return ResponseEntity.status(OK).body(userService.loginFreshman(signupUser));
     }
 
     @PostMapping("/refreshToken")
@@ -64,10 +68,10 @@ public class UserController implements UserApiSpecification {
         return ResponseEntity.status(CREATED).build();
     }
 
-    @PostMapping("/role")
+    @PatchMapping("/role")
     public ResponseEntity<Void> changeUserRole(@RequestBody RequestUserRoleDto request) {
         userService.changeUserRole(request);
-        return ResponseEntity.status(CREATED).build();
+        return ResponseEntity.status(OK).build();
     }
 
     @GetMapping
