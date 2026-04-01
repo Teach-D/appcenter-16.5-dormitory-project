@@ -11,6 +11,17 @@
 | 2026-03-29 | [#557](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/557) | FCM 알림 다중 기기 지원 및 비동기 처리 개선 | teach/refactor/fcm-notification-improvement-557 | 다중 기기 전송, 실패 토큰 정리, @Async 처리 |
 | 2026-03-30 | [#561](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/561) | Testcontainers 통합 테스트 환경 구축 및 CI 빌드 최적화 | teach/test/testcontainers-integration-test-561 | Oracle MockBean, MySQL/Redis 컨테이너, Gradle 캐시 |
 
+## 현재 작업 이슈
+
+- **번호**: #570
+- **제목**: [refactor] 개인 알림 전송 API 통합 및 notificationType Swagger 문서화
+- **브랜치**: teach/refactor/notification-api-merge-570
+- **작업 목록**:
+  - [ ] saveNotificationByStudentNumber API 제거 (컨트롤러, 서비스, ApiSpecification)
+  - [ ] RequestSendDirectNotificationDto에 notificationType 필드 추가 (미입력 시 UNI_DORM 기본값)
+  - [ ] sendDirectNotification 서비스 로직에서 notificationType 반영
+  - [ ] sendDirectNotification Swagger 문서에 notificationType 유효 값 영문으로 문서화
+
 ## 완료된 이슈
 
 - [x] #553 [feat] FCM 알림 통계 조회 API → PR #554 merged
