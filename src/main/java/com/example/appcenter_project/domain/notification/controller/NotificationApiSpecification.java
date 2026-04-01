@@ -24,9 +24,21 @@ public interface NotificationApiSpecification {
 
     @Operation(
             summary = "알림 생성",
-            description = "새로운 알림을 생성하고 대상 사용자들에게 푸시 알림을 전송합니다. " +
-                    "    ROOMMATE, GROUP_ORDER, DORMITORY, UNI_DORM, SUPPORTERS \n" +
-                    "    COMPLAINT, COUPON, CHAT",
+            description = """
+                    새로운 알림을 생성하고 대상 사용자들에게 푸시 알림을 전송합니다.
+
+                    ### notificationType 유효 값
+                    | 영문 (권장) | 한글 |
+                    |---|---|
+                    | ROOMMATE | 룸메이트 |
+                    | GROUP_ORDER | 공동구매 |
+                    | DORMITORY | 생활원 |
+                    | UNI_DORM | 유니돔 |
+                    | SUPPORTERS | 서포터즈 |
+                    | COMPLAINT | 민원 |
+                    | COUPON | 쿠폰 |
+                    | CHAT | 채팅 |
+                    """,
             responses = {
                     @ApiResponse(responseCode = "201", description = "알림 생성 성공"),
                     @ApiResponse(responseCode = "400", description = "입력이 잘못되었습니다."),
@@ -35,7 +47,7 @@ public interface NotificationApiSpecification {
     )
     ResponseEntity<Void> saveNotification(
             @RequestBody
-            @Parameter(description = "알림 생성 정보 (title, body, notificationType, boardId)", required = true)
+            @Parameter(description = "알림 생성 정보 (title, body, notificationType)", required = true)
             RequestNotificationDto requestNotificationDto);
 
     @Operation(
