@@ -102,9 +102,27 @@ public interface UserApiSpecification {
     ResponseEntity<Void> sendPushNotification(@RequestBody RequestUserPushNotification requestUserPushNotification);
 
     @Operation(
-            summary = "사용자 권한 변경",
-            description = "생활원 직원, 관리자만 특정 사용자의 권한을 생활원 직원으로 변경할 수 있음" +
-                    "(role : 기숙사 담당자, 기숙사 생활민원 담당자, 기숙사 룸메이트민원 담당자)"
+            summary = "사용자 권한 변경 (ADMIN)",
+            description = """
+                    ADMIN이 특정 유저의 Role을 변경합니다.
+                    학번(studentNumber)으로 대상 유저를 특정하고, 변경할 role을 입력합니다.
+
+                    ### role 유효 값
+                    | Value | Description |
+                    |---|---|
+                    | ROLE_ADMIN | 관리자 |
+                    | ROLE_USER | 일반 사용자 |
+                    | ROLE_DORM_MANAGER | 기숙사 담당자 |
+                    | ROLE_DORM_LIFE_MANAGER | 기숙사 생활민원 담당자 |
+                    | ROLE_DORM_ROOMMATE_MANAGER | 기숙사 룸메이트민원 담당자 |
+                    | ROLE_DORM_EXPEDITED_COMPLAINT_MANAGER | 기숙사 신속민원 담당자 |
+                    | ROLE_DORM_SUPPORTERS | 기숙사 서포터즈 |
+                    """,
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "권한 변경 성공"),
+                    @ApiResponse(responseCode = "403", description = "ADMIN 권한이 필요합니다."),
+                    @ApiResponse(responseCode = "404", description = "회원가입하지 않은 사용자입니다.")
+            }
     )
     ResponseEntity<Void> changeUserRole(@RequestBody RequestUserRoleDto requestUserRoleDto);
 

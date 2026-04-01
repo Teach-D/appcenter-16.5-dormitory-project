@@ -68,10 +68,10 @@ public class UserController implements UserApiSpecification {
         return ResponseEntity.status(CREATED).build();
     }
 
-    @PostMapping("/role")
+    @PatchMapping("/role")
     public ResponseEntity<Void> changeUserRole(@RequestBody RequestUserRoleDto request) {
         userService.changeUserRole(request);
-        return ResponseEntity.status(CREATED).build();
+        return ResponseEntity.status(OK).build();
     }
 
     @GetMapping
