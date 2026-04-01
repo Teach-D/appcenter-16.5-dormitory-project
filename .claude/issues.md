@@ -11,20 +11,6 @@
 | 2026-03-29 | [#557](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/557) | FCM 알림 다중 기기 지원 및 비동기 처리 개선 | teach/refactor/fcm-notification-improvement-557 | 다중 기기 전송, 실패 토큰 정리, @Async 처리 |
 | 2026-03-30 | [#561](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/561) | Testcontainers 통합 테스트 환경 구축 및 CI 빌드 최적화 | teach/test/testcontainers-integration-test-561 | Oracle MockBean, MySQL/Redis 컨테이너, Gradle 캐시 |
 
-## 현재 작업 이슈
-
-- **번호**: #566
-- **제목**: [feat] 특정 유저 1:1 알림 전송 기능 (ADMIN)
-- **브랜치**: teach/feat/direct-notification-566
-- **작업 목록**:
-  - [ ] `RequestSendDirectNotificationDto` 생성 (studentNumber, title, content)
-  - [ ] `UserRepository` 학번으로 유저 조회 메서드 확인/추가
-  - [ ] `NotificationService`에 `sendDirectNotification` 메서드 추가 (DB 저장)
-  - [ ] 기존 FCM 서비스로 해당 유저에게 푸시 알림 전송 연동
-  - [ ] `NotificationController`에 `POST /notifications/admin/direct` 엔드포인트 추가 (ADMIN)
-  - [ ] `SecurityConfig` 권한 설정
-  - [ ] `NotificationApiSpecification` Swagger 문서 업데이트
-
 ## 완료된 이슈
 
 - [x] #553 [feat] FCM 알림 통계 조회 API → PR #554 merged
@@ -32,3 +18,4 @@
 - [x] #557 [refactor] FCM 알림 다중 기기 지원 및 비동기 처리 개선 → PR #558 merged
 - [x] #561 [test] Testcontainers 통합 테스트 환경 구축 및 CI 빌드 최적화 → PR #562 merged
 - [x] #563 [refactor] 공동구매 조회수 증가 Redisson 분산 락 적용 → PR #565 merged
+- [x] #566 [feat] 특정 유저 1:1 알림 전송 기능 (ADMIN) → PR #567 merged
