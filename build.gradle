@@ -71,7 +71,7 @@ dependencies {
 
 	// caffeine (Redis fallback 로컬 캐시)
 	implementation 'com.github.ben-manes.caffeine:caffeine'
-//	implementation 'org.redisson:redisson-spring-boot-starter:3.24.3'
+	implementation 'org.redisson:redisson-spring-boot-starter:3.24.3'
 	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate6'
 	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
