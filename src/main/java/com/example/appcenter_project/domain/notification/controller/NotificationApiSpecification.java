@@ -117,8 +117,22 @@ public interface NotificationApiSpecification {
 
     @Operation(
             summary = "관리자 1:1 직접 알림 전송 (ADMIN)",
-            description = "ADMIN이 특정 유저 한 명에게 직접 알림을 전송합니다. " +
-                    "학번(studentNumber)으로 대상 유저를 특정하며, DB 저장 + FCM 푸시 알림이 동시에 진행됩니다.",
+            description = """
+                    ADMIN이 특정 유저 한 명에게 직접 알림을 전송합니다.
+                    학번(studentNumber)으로 대상 유저를 특정하며, DB 저장 + FCM 푸시 알림이 동시에 진행됩니다.
+
+                    ### notificationType 유효 값 (미입력 시 UNI_DORM 기본값)
+                    | Value | Description |
+                    |---|---|
+                    | ROOMMATE | 룸메이트 |
+                    | GROUP_ORDER | 공동구매 |
+                    | DORMITORY | 생활원 |
+                    | UNI_DORM | 유니돔 |
+                    | SUPPORTERS | 서포터즈 |
+                    | COMPLAINT | 민원 |
+                    | COUPON | 쿠폰 |
+                    | CHAT | 채팅 |
+                    """,
             responses = {
                     @ApiResponse(responseCode = "201", description = "알림 전송 성공"),
                     @ApiResponse(responseCode = "403", description = "ADMIN 권한이 필요합니다."),
@@ -127,14 +141,8 @@ public interface NotificationApiSpecification {
     )
     ResponseEntity<Void> sendDirectNotification(
             @RequestBody
-            @Parameter(description = "전송 정보 (studentNumber, title, content)", required = true)
+            @Parameter(description = "전송 정보 (studentNumber, title, content, notificationType)", required = true)
             RequestSendDirectNotificationDto requestDto);
-
-    @Operation(
-            summary = "개인 알림 전송",
-            description = "학번을 통해서 개인 알림이 전송됩니다.(푸시 알림 포함)"
-    )
-    ResponseEntity<Void> saveNotificationByStudentNumber(@RequestBody RequestNotificationDto requestNotificationDto, String studentNumber);
 
 
     @Operation(

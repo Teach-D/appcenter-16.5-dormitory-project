@@ -35,12 +35,6 @@ public class NotificationController implements NotificationApiSpecification {
         return ResponseEntity.status(CREATED).build();
     }
 
-    @PostMapping("/student-number/{studentNumber}")
-    public ResponseEntity<Void> saveNotificationByStudentNumber(@RequestBody RequestNotificationDto requestNotificationDto, String studentNumber) {
-        notificationService.saveNotificationByStudentNumber(requestNotificationDto, studentNumber);
-        return ResponseEntity.status(CREATED).build();
-    }
-
     @TrackApi
     @GetMapping("/{notificationId}")
     public ResponseEntity<ResponseNotificationDto> findNotification(@AuthenticationPrincipal CustomUserDetails user, @PathVariable("notificationId") Long notificationId) {

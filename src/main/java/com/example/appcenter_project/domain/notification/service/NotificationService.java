@@ -50,27 +50,20 @@ public class NotificationService {
         User user = userRepository.findByStudentNumber(requestDto.getStudentNumber())
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
+        NotificationType notificationType = requestDto.getNotificationType() != null
+                ? NotificationType.from(requestDto.getNotificationType())
+                : NotificationType.UNI_DORM;
+
         Notification notification = Notification.of(
                 requestDto.getTitle(),
                 requestDto.getContent(),
-                NotificationType.UNI_DORM,
+                notificationType,
                 ApiType.NOTIFICATION,
                 null
         );
         notificationRepository.save(notification);
         createUserNotification(user, notification);
         fcmMessageService.sendNotification(user, requestDto.getTitle(), requestDto.getContent());
-    }
-
-    public void saveNotificationByStudentNumber(RequestNotificationDto requestDto, String studentNumber) {
-        String title = "유니돔으로부터 알림이 도착했습니다!";
-
-        User user = userRepository.findByStudentNumber(studentNumber).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-
-        Notification notification = createNotification(requestDto);
-        createUserNotification(user, notification);
-
-        fcmMessageService.sendNotification(user, title, notification.getTitle());
     }
 
     public ResponseNotificationDto findNotification(Long userId, Long notificationId) {
