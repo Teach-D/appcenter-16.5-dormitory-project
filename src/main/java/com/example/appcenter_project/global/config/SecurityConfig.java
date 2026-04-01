@@ -54,8 +54,10 @@ public class SecurityConfig {
                         .requestMatchers("/users/all/admin").hasRole("ADMIN")
                         // 특정 유저 푸시 알림 전송
                         .requestMatchers( "/users/push-notification").hasRole("ADMIN")
-                        // 사용자 권한 수정 및 조회
-                        .requestMatchers("/users/role")
+                        // 사용자 권한 변경 (ADMIN 전용)
+                        .requestMatchers(PATCH, "/users/role").hasRole("ADMIN")
+                        // 사용자 권한 조회
+                        .requestMatchers(GET, "/users/role")
                             .hasAnyRole("DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_EXPEDITED_COMPLAINT_MANAGER","ADMIN")
                         // 사용자 정보 조회 및 수정
                         .requestMatchers("/users", "/users/image", "/users/time-table-image").authenticated()

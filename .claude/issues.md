@@ -21,3 +21,4 @@
 - [x] #566 [feat] 특정 유저 1:1 알림 전송 기능 (ADMIN) → PR #567 merged
 - [x] #568 [docs] 알림 API Swagger notificationType 유효 값 명시 → PR #569 merged
 - [x] #570 [refactor] 개인 알림 전송 API 통합 및 notificationType Swagger 문서화 → PR #571 merged
+- [x] #572 [feat] ADMIN 특정 유저 Role 변경 기능 → PR #573 merged

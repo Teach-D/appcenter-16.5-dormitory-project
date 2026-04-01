@@ -89,10 +89,8 @@ public class UserService {
 
     public void changeUserRole(RequestUserRoleDto request) {
         Role role = Role.from(request.getRole());
-        if (isNotAdminRole(role)) {
-            User user = userRepository.findByStudentNumber(request.getStudentNumber()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-            user.changeRole(role);
-        }
+        User user = userRepository.findByStudentNumber(request.getStudentNumber()).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        user.changeRole(role);
     }
 
     public ResponseUserDto findUser(Long userId) {
