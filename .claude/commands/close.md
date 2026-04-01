@@ -23,7 +23,6 @@ PR을 생성하기 전에 `/work`로 나머지 작업을 완료하거나,
 
 ### 2단계: 미푸시 커밋 확인
 ```bash
-git status
 git log origin/dev..HEAD --oneline
 ```
 미푸시 커밋이 있으면 자동으로 push:
@@ -65,7 +64,20 @@ closes #{이슈번호}
 - title: 위에서 작성한 제목
 - body: 위에서 작성한 본문
 
-### 5단계: 머지 여부 확인
+PR 번호 확인 후 다음 단계로.
+
+### 5단계: issues.md 완료 처리 (피처 브랜치에서)
+PR 번호를 알았으므로, **현재 피처 브랜치**에서 `.claude/issues.md` 업데이트:
+- `## 현재 작업 이슈` 섹션 제거
+- `## 완료된 이슈`에 항목 추가: `- [x] #{이슈번호} {제목} → PR #{PR번호} merged`
+
+```bash
+git add .claude/issues.md
+git commit -m "chore: 이슈 #{이슈번호} 완료 처리"
+git push origin {현재 브랜치}
+```
+
+### 6단계: 머지 여부 확인
 ```
 PR #{번호}가 생성되었습니다.
 바로 dev에 squash merge 할까요?
@@ -73,20 +85,16 @@ PR #{번호}가 생성되었습니다.
 
 승인 시 `merge_pull_request` 도구로 squash merge 진행.
 
-### 6단계: 완료 처리
-머지 후:
+### 7단계: dev 동기화
+머지 후 로컬 dev 업데이트 (issues.md가 이미 완료 상태로 포함됨):
 ```bash
 git checkout dev
 git pull origin dev
 ```
 
-`.claude/issues.md`에서 해당 이슈를 완료 처리:
-```markdown
-## 완료된 이슈
-- [x] #{번호} {제목} → PR #{PR번호} merged
-```
+추가 커밋 불필요.
 
-### 7단계: 최종 완료 안내
+### 8단계: 최종 완료 안내
 ```
 ## 완료
 
