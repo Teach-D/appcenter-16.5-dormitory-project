@@ -11,15 +11,6 @@
 | 2026-03-29 | [#557](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/557) | FCM 알림 다중 기기 지원 및 비동기 처리 개선 | teach/refactor/fcm-notification-improvement-557 | 다중 기기 전송, 실패 토큰 정리, @Async 처리 |
 | 2026-03-30 | [#561](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/561) | Testcontainers 통합 테스트 환경 구축 및 CI 빌드 최적화 | teach/test/testcontainers-integration-test-561 | Oracle MockBean, MySQL/Redis 컨테이너, Gradle 캐시 |
 
-## 현재 작업 이슈
-
-- **번호**: #568
-- **제목**: [docs] 알림 API Swagger notificationType 유효 값 명시
-- **브랜치**: teach/docs/notification-type-swagger-568
-- **작업 목록**:
-  - [ ] `NotificationApiSpecification`의 알림 생성(`saveNotification`) API에 `notificationType` 유효 값 명시
-  - [ ] `RequestNotificationDto`에 `@Schema` 어노테이션으로 유효 값 추가
-
 ## 완료된 이슈
 
 - [x] #553 [feat] FCM 알림 통계 조회 API → PR #554 merged
@@ -28,3 +19,4 @@
 - [x] #561 [test] Testcontainers 통합 테스트 환경 구축 및 CI 빌드 최적화 → PR #562 merged
 - [x] #563 [refactor] 공동구매 조회수 증가 Redisson 분산 락 적용 → PR #565 merged
 - [x] #566 [feat] 특정 유저 1:1 알림 전송 기능 (ADMIN) → PR #567 merged
+- [x] #568 [docs] 알림 API Swagger notificationType 유효 값 명시 → PR #569 merged
