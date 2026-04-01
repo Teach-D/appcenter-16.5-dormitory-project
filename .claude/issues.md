@@ -10,6 +10,7 @@
 | 2026-03-29 | [#555](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/555) | 룸메이트 채팅방 입장 중 알림 차단 | teach/fix/roommate-chat-notification-555 | 채팅방 입장 중 알림 DB+FCM 생략 |
 | 2026-03-29 | [#557](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/557) | FCM 알림 다중 기기 지원 및 비동기 처리 개선 | teach/refactor/fcm-notification-improvement-557 | 다중 기기 전송, 실패 토큰 정리, @Async 처리 |
 | 2026-03-30 | [#561](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/561) | Testcontainers 통합 테스트 환경 구축 및 CI 빌드 최적화 | teach/test/testcontainers-integration-test-561 | Oracle MockBean, MySQL/Redis 컨테이너, Gradle 캐시 |
+| 2026-04-01 | [#575](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/575) | 쿠폰 선착순 발급 Redisson 분산 락 최적화 | teach/feat/coupon-distributed-lock-575 | @DistributedLock AOP, Watchdog, 지수 백오프, 동시성 테스트 |
 
 ## 완료된 이슈
 
