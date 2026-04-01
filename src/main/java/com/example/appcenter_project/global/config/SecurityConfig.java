@@ -128,6 +128,8 @@ public class SecurityConfig {
                             .hasAnyRole("DORM_SUPPORTERS", "ADMIN", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_EXPEDITED_COMPLAINT_MANAGER")
 
                         /** 알림 **/
+                        // 특정 유저 1:1 직접 알림 전송(ADMIN 전용)
+                        .requestMatchers(POST, "/notifications/admin/direct").hasRole("ADMIN")
                         // 알림 조회(로그인한 사용자)
                         .requestMatchers(GET, "/notifications/**").permitAll()
                         // 알림 등록, 수정, 삭제(관리자)

@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.notification.controller;
 
 import com.example.appcenter_project.domain.notification.dto.request.RequestNotificationDto;
+import com.example.appcenter_project.domain.notification.dto.request.RequestSendDirectNotificationDto;
 import com.example.appcenter_project.domain.notification.dto.response.ResponseNotificationDto;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -101,6 +102,21 @@ public interface NotificationApiSpecification {
             @RequestParam(required = false) Long lastId,
             @RequestParam(defaultValue = "20") int size
     );
+
+    @Operation(
+            summary = "관리자 1:1 직접 알림 전송 (ADMIN)",
+            description = "ADMIN이 특정 유저 한 명에게 직접 알림을 전송합니다. " +
+                    "학번(studentNumber)으로 대상 유저를 특정하며, DB 저장 + FCM 푸시 알림이 동시에 진행됩니다.",
+            responses = {
+                    @ApiResponse(responseCode = "201", description = "알림 전송 성공"),
+                    @ApiResponse(responseCode = "403", description = "ADMIN 권한이 필요합니다."),
+                    @ApiResponse(responseCode = "404", description = "회원가입하지 않은 사용자입니다.")
+            }
+    )
+    ResponseEntity<Void> sendDirectNotification(
+            @RequestBody
+            @Parameter(description = "전송 정보 (studentNumber, title, content)", required = true)
+            RequestSendDirectNotificationDto requestDto);
 
     @Operation(
             summary = "개인 알림 전송",

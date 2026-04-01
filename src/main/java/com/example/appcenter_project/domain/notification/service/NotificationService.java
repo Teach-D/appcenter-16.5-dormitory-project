@@ -1,6 +1,8 @@
 package com.example.appcenter_project.domain.notification.service;
 
 import com.example.appcenter_project.domain.notification.dto.request.RequestNotificationDto;
+import com.example.appcenter_project.domain.notification.dto.request.RequestSendDirectNotificationDto;
+import com.example.appcenter_project.shared.enums.ApiType;
 import com.example.appcenter_project.domain.notification.dto.response.ResponseNotificationDto;
 import com.example.appcenter_project.domain.notification.entity.Notification;
 import com.example.appcenter_project.domain.notification.entity.UserNotification;
@@ -42,6 +44,22 @@ public class NotificationService {
 
         saveUserNotifications(notification, receiveUsers);
         sendFcmMessages(notification, receiveUsers);
+    }
+
+    public void sendDirectNotification(RequestSendDirectNotificationDto requestDto) {
+        User user = userRepository.findByStudentNumber(requestDto.getStudentNumber())
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+        Notification notification = Notification.of(
+                requestDto.getTitle(),
+                requestDto.getContent(),
+                NotificationType.UNI_DORM,
+                ApiType.NOTIFICATION,
+                null
+        );
+        notificationRepository.save(notification);
+        createUserNotification(user, notification);
+        fcmMessageService.sendNotification(user, requestDto.getTitle(), requestDto.getContent());
     }
 
     public void saveNotificationByStudentNumber(RequestNotificationDto requestDto, String studentNumber) {
