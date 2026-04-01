@@ -20,3 +20,4 @@
 - [x] #563 [refactor] 공동구매 조회수 증가 Redisson 분산 락 적용 → PR #565 merged
 - [x] #566 [feat] 특정 유저 1:1 알림 전송 기능 (ADMIN) → PR #567 merged
 - [x] #568 [docs] 알림 API Swagger notificationType 유효 값 명시 → PR #569 merged
+- [x] #570 [refactor] 개인 알림 전송 API 통합 및 notificationType Swagger 문서화 → PR #571 merged
