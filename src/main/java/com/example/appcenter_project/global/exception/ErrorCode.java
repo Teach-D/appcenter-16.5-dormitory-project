@@ -163,7 +163,8 @@ public enum ErrorCode {
     RATE_LIMIT_EXCEEDED(TOO_MANY_REQUESTS, 20001, "[RateLimit] 요청 횟수를 초과했습니다. 잠시 후 다시 시도해주세요."),
 
     // DISTRIBUTED LOCK
-    GROUP_ORDER_VIEW_COUNT_LOCK_FAILED(SERVICE_UNAVAILABLE, 21001, "[GroupOrder] 조회수 업데이트 락 획득에 실패했습니다. 잠시 후 재시도됩니다.");
+    GROUP_ORDER_VIEW_COUNT_LOCK_FAILED(SERVICE_UNAVAILABLE, 21001, "[GroupOrder] 조회수 업데이트 락 획득에 실패했습니다. 잠시 후 재시도됩니다."),
+    LOCK_ACQUISITION_FAILED(SERVICE_UNAVAILABLE, 21002, "[DistributedLock] 락 획득에 실패했습니다. 잠시 후 다시 시도해주세요.");
 
     private final HttpStatus httpStatus;
     private final Integer code;
