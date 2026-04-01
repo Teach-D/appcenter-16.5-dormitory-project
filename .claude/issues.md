@@ -13,16 +13,17 @@
 
 ## 현재 작업 이슈
 
-- **번호**: #563
-- **제목**: [refactor] 공동구매 조회수 증가 Redisson 분산 락 적용
-- **브랜치**: teach/refactor/redisson-distributed-lock-563
+- **번호**: #566
+- **제목**: [feat] 특정 유저 1:1 알림 전송 기능 (ADMIN)
+- **브랜치**: teach/feat/direct-notification-566
 - **작업 목록**:
-  - [x] build.gradle에 redisson-spring-boot-starter 의존성 추가 (주석 해제)
-  - [x] RedissonConfig 설정 클래스 생성 (Redis 연결 설정)
-  - [x] 기존 공동구매 조회수 증가 로직 파악
-  - [x] GroupOrderService 조회수 증가에 RLock.tryLock(waitTime=5s, leaseTime=3s) 적용
-  - [x] 락 획득 실패 시 커스텀 예외 처리 추가
-  - [x] 분산 락 동시성 단위 테스트 작성
+  - [ ] `RequestSendDirectNotificationDto` 생성 (studentNumber, title, content)
+  - [ ] `UserRepository` 학번으로 유저 조회 메서드 확인/추가
+  - [ ] `NotificationService`에 `sendDirectNotification` 메서드 추가 (DB 저장)
+  - [ ] 기존 FCM 서비스로 해당 유저에게 푸시 알림 전송 연동
+  - [ ] `NotificationController`에 `POST /notifications/admin/direct` 엔드포인트 추가 (ADMIN)
+  - [ ] `SecurityConfig` 권한 설정
+  - [ ] `NotificationApiSpecification` Swagger 문서 업데이트
 
 ## 완료된 이슈
 
@@ -30,3 +31,4 @@
 - [x] #555 [fix] 룸메이트 채팅방 입장 중 알림 차단 → PR #556 merged
 - [x] #557 [refactor] FCM 알림 다중 기기 지원 및 비동기 처리 개선 → PR #558 merged
 - [x] #561 [test] Testcontainers 통합 테스트 환경 구축 및 CI 빌드 최적화 → PR #562 merged
+- [x] #563 [refactor] 공동구매 조회수 증가 Redisson 분산 락 적용 → PR #565 merged
