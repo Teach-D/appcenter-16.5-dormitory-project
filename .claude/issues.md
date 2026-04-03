@@ -25,3 +25,4 @@
 - [x] #570 [refactor] 개인 알림 전송 API 통합 및 notificationType Swagger 문서화 → PR #571 merged
 - [x] #572 [feat] ADMIN 특정 유저 Role 변경 기능 → PR #573 merged
 - [x] #577 [fix] Refresh Token Rotation 적용으로 다중 기기 토큰 갱신 보안 강화 → PR #578 merged
+- [x] #579 [fix] FcmMessageService @Async 메서드 LazyInitializationException 수정 → PR #580 merged
