@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -75,12 +74,12 @@ public interface UserApiSpecification {
             @Parameter(description = "신입생 로그인 정보", required = true) SignupUser signupUser);
 
     @Operation(
-            summary = "액세스 토큰 재발급",
-            description = "유효한 리프레시 토큰을 사용하여 새로운 액세스 토큰을 발급받습니다.",
+            summary = "액세스 토큰 재발급 (Refresh Token Rotation)",
+            description = "유효한 리프레시 토큰을 사용하여 새로운 액세스 토큰과 리프레시 토큰을 함께 발급받습니다. 기존 리프레시 토큰은 즉시 무효화되므로, 응답으로 받은 새 리프레시 토큰을 저장해야 합니다.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "토큰 재발급 성공",
                             content = @Content(mediaType = "application/json",
-                                    examples = @ExampleObject(value = "{\"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"}"))),
+                                    schema = @Schema(implementation = ResponseLoginDto.class))),
                     @ApiResponse(responseCode = "401",
                             description = "유효하지 않은 Refresh Token입니다. (INVALID_REFRESH_TOKEN)",
                             content = @Content(examples = {})),
@@ -90,7 +89,7 @@ public interface UserApiSpecification {
                     )
             }
     )
-    ResponseEntity<?> reissueAccessToken(
+    ResponseEntity<ResponseLoginDto> reissueAccessToken(
             @RequestBody
             @Parameter RequestTokenDto requestTokenDto
     );

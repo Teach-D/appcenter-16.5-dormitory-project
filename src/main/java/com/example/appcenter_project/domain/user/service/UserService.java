@@ -73,7 +73,7 @@ public class UserService {
         return createDto(user);
     }
 
-    public String reissueAccessToken(RequestTokenDto request) {
+    public ResponseLoginDto reissueAccessToken(RequestTokenDto request) {
         validateRefreshToken(request.getRefreshToken());
         String refreshToken = extractBearerToken(request);
         return reissueAccessTokenByRefreshToken(refreshToken);
@@ -279,7 +279,7 @@ public class UserService {
 
     private void validateRefreshToken(String token) {
         if (token == null || !token.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("Refresh Token이 유효하지 않습니다.");
+            throw new CustomException(INVALID_REFRESH_TOKEN);
         }
     }
 
@@ -287,7 +287,7 @@ public class UserService {
         return request.getRefreshToken().substring(7);
     }
 
-    private String reissueAccessTokenByRefreshToken(String refreshToken) {
+    private ResponseLoginDto reissueAccessTokenByRefreshToken(String refreshToken) {
         if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
             throw new CustomException(INVALID_REFRESH_TOKEN);
         }
@@ -296,7 +296,12 @@ public class UserService {
                 .orElseThrow(() -> new CustomException(REFRESH_TOKEN_USER_NOT_FOUND));
         User user = refreshTokenEntity.getUser();
 
-        return jwtTokenProvider.generateAccessToken(user.getId(), user.getStudentNumber(), String.valueOf(user.getRole()));
+        refreshTokenRepository.delete(refreshTokenEntity);
+
+        String newAccessToken = jwtTokenProvider.generateAccessToken(user.getId(), user.getStudentNumber(), String.valueOf(user.getRole()));
+        String newRefreshToken = createRefreshToken(user);
+
+        return new ResponseLoginDto(newAccessToken, newRefreshToken, user.getRole().toString());
     }
 
     private void sendMessageToUsers(List<User> userIds, String title, String body) {

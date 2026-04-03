@@ -7,7 +7,6 @@ import com.example.appcenter_project.domain.user.dto.response.ResponseBoardDto;
 import com.example.appcenter_project.domain.user.dto.response.ResponseLoginDto;
 import com.example.appcenter_project.domain.user.dto.response.ResponseUserDto;
 import com.example.appcenter_project.domain.user.dto.response.ResponseUserRole;
-import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import com.example.appcenter_project.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -24,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Map;
 
 import static org.springframework.http.HttpStatus.*;
 
@@ -53,13 +51,8 @@ public class UserController implements UserApiSpecification {
     }
 
     @PostMapping("/refreshToken")
-    public ResponseEntity<?> reissueAccessToken(@RequestBody RequestTokenDto request) {
-        try {
-            String newAccessToken = userService.reissueAccessToken(request);
-            return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
-        } catch (IllegalArgumentException | CustomException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-        }
+    public ResponseEntity<ResponseLoginDto> reissueAccessToken(@RequestBody RequestTokenDto request) {
+        return ResponseEntity.ok(userService.reissueAccessToken(request));
     }
 
     @PostMapping("/push-notification")
