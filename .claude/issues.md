@@ -11,6 +11,7 @@
 | 2026-03-29 | [#557](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/557) | FCM 알림 다중 기기 지원 및 비동기 처리 개선 | teach/refactor/fcm-notification-improvement-557 | 다중 기기 전송, 실패 토큰 정리, @Async 처리 |
 | 2026-03-30 | [#561](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/561) | Testcontainers 통합 테스트 환경 구축 및 CI 빌드 최적화 | teach/test/testcontainers-integration-test-561 | Oracle MockBean, MySQL/Redis 컨테이너, Gradle 캐시 |
 | 2026-04-03 | [#577](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/577) | Refresh Token Rotation 적용 | teach/fix/refresh-token-rotation-577 | 재발급 시 기존 RefreshToken 삭제 후 새 토큰 함께 발급 |
+| 2026-04-03 | [#579](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/579) | FcmMessageService @Async LazyInitializationException 수정 | teach/fix/fcm-lazy-init-579 | @Async 메서드에서 Lazy 컬렉션 직접 접근 제거 |
 
 ## 완료된 이슈
 
