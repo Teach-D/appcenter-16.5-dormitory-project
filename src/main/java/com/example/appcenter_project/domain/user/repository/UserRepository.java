@@ -37,6 +37,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
             @Param("excludedRoles") List<Role> excludedRoles
     );
 
+    @Query("SELECT DISTINCT u FROM User u " +
+            "LEFT JOIN FETCH u.fcmTokenList " +
+            "WHERE u.dormType != :dormType " +
+            "AND :notificationType MEMBER OF u.receiveNotificationTypes")
+    List<User> findDormitoryUsersWithFcmTokens(
+            @Param("dormType") DormType dormType,
+            @Param("notificationType") NotificationType notificationType
+    );
+
     @Query("SELECT u FROM User u " +
             "WHERE u.dormType != :dormType " +
             "AND :notificationType MEMBER OF u.receiveNotificationTypes " +
