@@ -37,10 +37,11 @@ public class FcmMessageService {
     private final UserRepository userRepository;
     private final RedisTemplate<String, Object> redisTemplate;
 
-    // todo User user
     @Async("fcmExecutor")
     public void sendNotification(User user, String title, String body) {
-        for (FcmToken fcmToken : user.getFcmTokenList()) {
+        User freshUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        for (FcmToken fcmToken : fcmTokenRepository.findAllByUser(freshUser)) {
             String targetToken = fcmToken.getToken();
 
             Notification notification = Notification.builder()
@@ -107,30 +108,29 @@ public class FcmMessageService {
 
     @Async("fcmExecutor")
     public void sendNotificationDormitoryPerson(String title, String body) {
-        for (User user : userRepository.findByDormTypeNot(DormType.NONE)) {
-            if (user.getReceiveNotificationTypes().contains(NotificationType.DORMITORY)) {
-                for (FcmToken fcmToken : user.getFcmTokenList()) {
-                    String targetToken = fcmToken.getToken();
+        List<User> dormitoryUsers = userRepository.findDormitoryUsersWithFcmTokens(DormType.NONE, NotificationType.DORMITORY);
+        for (User user : dormitoryUsers) {
+            for (FcmToken fcmToken : user.getFcmTokenList()) {
+                String targetToken = fcmToken.getToken();
 
-                    Notification notification = Notification.builder()
-                            .setTitle(title)
-                            .setBody(body)
-                            .build();
+                Notification notification = Notification.builder()
+                        .setTitle(title)
+                        .setBody(body)
+                        .build();
 
-                    Message message = Message.builder()
-                            .setToken(targetToken)
-                            .setNotification(notification)
-                            .build();
+                Message message = Message.builder()
+                        .setToken(targetToken)
+                        .setNotification(notification)
+                        .build();
 
-                    try {
-                        String response = FirebaseMessaging.getInstance().send(message);
-                        log.info("Successfully sent FCM message: {}", response);
-                        recordFcmSuccess();
-                    } catch (Exception e) {
-                        log.error("Error sending FCM message", e);
-                        fcmTokenRepository.deleteByToken(targetToken);
-                        recordFcmFail();
-                    }
+                try {
+                    String response = FirebaseMessaging.getInstance().send(message);
+                    log.info("Successfully sent FCM message: {}", response);
+                    recordFcmSuccess();
+                } catch (Exception e) {
+                    log.error("Error sending FCM message", e);
+                    fcmTokenRepository.deleteByToken(targetToken);
+                    recordFcmFail();
                 }
             }
         }
@@ -138,30 +138,35 @@ public class FcmMessageService {
 
     @Async("fcmExecutor")
     public void sendGroupOrderNotification(User user, String title, String body) {
-        if (!user.getReceiveNotificationTypes().contains(NotificationType.GROUP_ORDER)) {
+        User freshUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        if (!freshUser.getReceiveNotificationTypes().contains(NotificationType.GROUP_ORDER)) {
             return;
         }
 
-        sendMessageToUser(user, title, body);
+        sendMessageToUser(freshUser, title, body);
     }
 
     @Async("fcmExecutor")
     public void sendDormitoryNotification(User user, String title, String body) {
-        if (!user.getReceiveNotificationTypes().contains(NotificationType.DORMITORY)) {
+        User freshUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        if (!freshUser.getReceiveNotificationTypes().contains(NotificationType.DORMITORY)) {
             return;
         }
 
-        sendMessageToUser(user, title, body);
-
+        sendMessageToUser(freshUser, title, body);
     }
 
     @Async("fcmExecutor")
     public void sendUnidormNotification(User user, String title, String body) {
-        if (!user.getReceiveNotificationTypes().contains(NotificationType.UNI_DORM)) {
+        User freshUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        if (!freshUser.getReceiveNotificationTypes().contains(NotificationType.UNI_DORM)) {
             return;
         }
 
-        sendMessageToUser(user, title, body);
+        sendMessageToUser(freshUser, title, body);
     }
 
 /*    private void sendMessageToUser(User user, String title, String body) {
@@ -191,14 +196,15 @@ public class FcmMessageService {
 
     private void sendMessageToUser(User user, String title, String body) {
         log.info("      🚀 sendMessageToUser 시작 (User ID: {})", user.getId());
-        log.info("      📱 FCM Token 리스트 크기: {}", user.getFcmTokenList().size());
+        List<FcmToken> fcmTokens = fcmTokenRepository.findAllByUser(user);
+        log.info("      📱 FCM Token 리스트 크기: {}", fcmTokens.size());
 
         int tokenIndex = 0;
-        for (FcmToken fcmToken : user.getFcmTokenList()) {
+        for (FcmToken fcmToken : fcmTokens) {
             tokenIndex++;
             String targetToken = fcmToken.getToken();
 
-            log.info("      ━━━ Token [{}/{}] ━━━", tokenIndex, user.getFcmTokenList().size());
+            log.info("      ━━━ Token [{}/{}] ━━━", tokenIndex, fcmTokens.size());
             log.info("      Token: {}...", targetToken.substring(0, Math.min(30, targetToken.length())));
 
             Notification notification = Notification.builder()
@@ -258,19 +264,23 @@ public class FcmMessageService {
 
     @Async("fcmExecutor")
     public void sendSupporterNotification(User user, String title, String body) {
-        if (!user.getReceiveNotificationTypes().contains(NotificationType.SUPPORTERS)) {
+        User freshUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        if (!freshUser.getReceiveNotificationTypes().contains(NotificationType.SUPPORTERS)) {
             return;
         }
 
-        sendMessageToUser(user, title, body);
+        sendMessageToUser(freshUser, title, body);
     }
 
     @Async("fcmExecutor")
     public void sendUnidormAnnouncementNotification(User user, String title, String body) {
-        if (!user.getReceiveNotificationTypes().contains(NotificationType.UNI_DORM)) {
+        User freshUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        if (!freshUser.getReceiveNotificationTypes().contains(NotificationType.UNI_DORM)) {
             return;
         }
 
-        sendMessageToUser(user, title, body);
+        sendMessageToUser(freshUser, title, body);
     }
 }
