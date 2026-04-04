@@ -152,6 +152,7 @@ public class SecurityConfig {
                         .requestMatchers("/fcm/token/**").permitAll()
 
                         /** 쿠폰 **/
+                        .requestMatchers(POST, "/coupons/admin/stock").hasRole("ADMIN")
                         .requestMatchers("/coupons/**").authenticated()
 
                         /** 설문조사 **/
