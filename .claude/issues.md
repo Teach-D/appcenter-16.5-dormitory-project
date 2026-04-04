@@ -13,6 +13,7 @@
 | 2026-04-03 | [#577](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/577) | Refresh Token Rotation 적용 | teach/fix/refresh-token-rotation-577 | 재발급 시 기존 RefreshToken 삭제 후 새 토큰 함께 발급 |
 | 2026-04-03 | [#579](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/579) | FcmMessageService @Async LazyInitializationException 수정 | teach/fix/fcm-lazy-init-579 | @Async 메서드에서 Lazy 컬렉션 직접 접근 제거 |
 | 2026-04-04 | [#582](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/582) | @Async 비동기 스레드 MDC traceId 전파 (TaskDecorator) | teach/chore/mdc-task-decorator-582 | MdcTaskDecorator로 fcmExecutor·asyncExecutor MDC 전파 |
+| 2026-04-04 | [#585](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/585) | 쿠폰 잔여 수 Redis 캐시로 DB 조회 차단 (다중 방어 2계층) | teach/feat/coupon-redis-stock-cache-585 | Redis 잔여 수 캐시로 소진 후 불필요한 DB COUNT 쿼리 차단 |
 
 ## 완료된 이슈
 

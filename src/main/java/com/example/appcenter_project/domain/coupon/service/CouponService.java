@@ -33,6 +33,7 @@ import java.time.format.DateTimeFormatter;
 public class CouponService {
 
     private static final String REDIS_KEY = "coupon_date_time";
+    private static final String REDIS_STOCK_KEY = "coupon_stock";
 
     private final CouponRepository couponRepository;
     private final NotificationRepository notificationRepository;
@@ -57,6 +58,11 @@ public class CouponService {
         if (isAlreadyHaveCoupon(userId)) {
             log.info("사용자 {}는 이미 쿠폰을 발급받았습니다.", userId);
             return ResponseCouponDto.of(true, true);
+        }
+
+        if (isStockDepletedByCache()) {
+            log.info("쿠폰 소진 (Redis 캐시 hit) - DB 조회 차단 - userId: {}", userId);
+            return ResponseCouponDto.of(false, false);
         }
 
         if (isNotExistsCoupon()) {
@@ -111,6 +117,7 @@ public class CouponService {
             createUserNotification(user, notification);
 
             couponRepository.delete(coupon);
+            decrementStockCache();
 
             log.info("쿠폰 발급 성공 - userId: {}, couponId: {}", userId, coupon.getId());
             return ResponseCouponDto.of(true, false);
@@ -124,7 +131,31 @@ public class CouponService {
         }
     }
 
+    public void setStock(int count) {
+        redisTemplate.opsForValue().set(REDIS_STOCK_KEY, String.valueOf(count));
+        log.info("쿠폰 잔여 수 Redis 초기화 - count: {}", count);
+    }
+
     // ========== Private Methods ========== //
+
+    private boolean isStockDepletedByCache() {
+        try {
+            String stockStr = redisTemplate.opsForValue().get(REDIS_STOCK_KEY);
+            if (stockStr == null) return false; // 캐시 미설정 → DB 조회로 폴백
+            return Long.parseLong(stockStr) <= 0;
+        } catch (Exception e) {
+            log.warn("Redis 잔여 수 확인 실패, DB 조회로 fallback: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private void decrementStockCache() {
+        try {
+            redisTemplate.opsForValue().decrement(REDIS_STOCK_KEY);
+        } catch (Exception e) {
+            log.warn("Redis 쿠폰 잔여 수 DECR 실패: {}", e.getMessage());
+        }
+    }
 
     private String getCouponOpenTime() {
         try {
