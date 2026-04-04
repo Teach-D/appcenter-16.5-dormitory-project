@@ -152,6 +152,10 @@ public interface GroupOrderApiSpecification {
                     schema = @Schema(allowableValues = {"전체", "배달", "식자재", "생활용품", "기타"})) String type,
             @RequestParam(required = false)
             @Parameter(description = "검색어 (선택사항, 제목 기준 검색)", example = "치킨") String search,
+            @RequestParam(defaultValue = "0")
+            @Parameter(description = "페이지 번호 (0부터 시작)", example = "0") int page,
+            @RequestParam(defaultValue = "20")
+            @Parameter(description = "페이지 크기", example = "20") int size,
             HttpServletRequest request);
 
     @Operation(

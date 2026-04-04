@@ -28,6 +28,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.springframework.data.domain.PageRequest;
+
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -105,10 +107,10 @@ public class GroupOrderService {
         return imageService.findImages(ImageType.GROUP_ORDER, groupOrderId, request);
     }
 
-    public List<ResponseGroupOrderDto> findGroupOrders(CustomUserDetails currentUser, GroupOrderSort sort, GroupOrderType type, String search, HttpServletRequest request) {
+    public List<ResponseGroupOrderDto> findGroupOrders(CustomUserDetails currentUser, GroupOrderSort sort, GroupOrderType type, String search, int page, int size, HttpServletRequest request) {
         addUserSearchLog(currentUser, search);
 
-        List<GroupOrder> groupOrders = groupOrderRepository.findGroupOrdersComplex(sort, type, search);
+        List<GroupOrder> groupOrders = groupOrderRepository.findGroupOrdersComplex(sort, type, search, PageRequest.of(page, size));
         if (groupOrders.isEmpty()) {
             return Collections.emptyList();
         }

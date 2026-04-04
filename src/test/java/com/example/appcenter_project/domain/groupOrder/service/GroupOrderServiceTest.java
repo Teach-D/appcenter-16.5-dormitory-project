@@ -81,13 +81,13 @@ class GroupOrderServiceTest {
         when(g2.getDeadline()).thenReturn(LocalDateTime.now().plusDays(1));
         when(g3.getDeadline()).thenReturn(LocalDateTime.now().plusDays(1));
 
-        when(groupOrderRepository.findGroupOrdersComplex(any(), any(), any()))
+        when(groupOrderRepository.findGroupOrdersComplex(any(), any(), any(), any()))
                 .thenReturn(List.of(g1, g2, g3));
         when(imageRepository.findGroupOrderImagesByEntityIds(anyList()))
                 .thenReturn(Collections.emptyList());
 
         List<ResponseGroupOrderDto> result = groupOrderService.findGroupOrders(
-                null, GroupOrderSort.LATEST, GroupOrderType.ALL, null, httpServletRequest);
+                null, GroupOrderSort.LATEST, GroupOrderType.ALL, null, 0, 20, httpServletRequest);
 
         assertThat(result).hasSize(3);
         // 핵심: 이미지 조회가 게시글 수(3)번이 아닌 1번만 호출되어야 함
@@ -110,7 +110,7 @@ class GroupOrderServiceTest {
         Image image1 = mock(Image.class);
         when(image1.getEntityId()).thenReturn(1L);
 
-        when(groupOrderRepository.findGroupOrdersComplex(any(), any(), any()))
+        when(groupOrderRepository.findGroupOrdersComplex(any(), any(), any(), any()))
                 .thenReturn(List.of(g1, g2));
         when(imageRepository.findGroupOrderImagesByEntityIds(List.of(1L, 2L)))
                 .thenReturn(List.of(image1));
@@ -118,7 +118,7 @@ class GroupOrderServiceTest {
                 .thenReturn("http://example.com/image1.jpg");
 
         List<ResponseGroupOrderDto> result = groupOrderService.findGroupOrders(
-                null, GroupOrderSort.LATEST, GroupOrderType.ALL, null, httpServletRequest);
+                null, GroupOrderSort.LATEST, GroupOrderType.ALL, null, 0, 20, httpServletRequest);
 
         assertThat(result).hasSize(2);
         verify(imageService, times(1)).getImageUrl(eq(ImageType.GROUP_ORDER), eq(image1), any());
@@ -129,11 +129,11 @@ class GroupOrderServiceTest {
     @Test
     @DisplayName("목록 조회 - 게시글 없으면 빈 리스트 반환")
     void findGroupOrders_빈_목록_반환() {
-        when(groupOrderRepository.findGroupOrdersComplex(any(), any(), any()))
+        when(groupOrderRepository.findGroupOrdersComplex(any(), any(), any(), any()))
                 .thenReturn(Collections.emptyList());
 
         List<ResponseGroupOrderDto> result = groupOrderService.findGroupOrders(
-                null, GroupOrderSort.LATEST, GroupOrderType.ALL, null, httpServletRequest);
+                null, GroupOrderSort.LATEST, GroupOrderType.ALL, null, 0, 20, httpServletRequest);
 
         assertThat(result).isEmpty();
         verify(imageRepository, never()).findGroupOrderImagesByEntityIds(any());
