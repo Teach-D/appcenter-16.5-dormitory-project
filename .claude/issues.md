@@ -13,8 +13,6 @@
 | 2026-04-03 | [#577](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/577) | Refresh Token Rotation 적용 | teach/fix/refresh-token-rotation-577 | 재발급 시 기존 RefreshToken 삭제 후 새 토큰 함께 발급 |
 | 2026-04-03 | [#579](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/579) | FcmMessageService @Async LazyInitializationException 수정 | teach/fix/fcm-lazy-init-579 | @Async 메서드에서 Lazy 컬렉션 직접 접근 제거 |
 | 2026-04-04 | [#582](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/582) | @Async 비동기 스레드 MDC traceId 전파 (TaskDecorator) | teach/chore/mdc-task-decorator-582 | MdcTaskDecorator로 fcmExecutor·asyncExecutor MDC 전파 |
-| 2026-04-04 | [#584](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/584) | 쿠폰 엔드포인트 Redis Rate Limiting 적용 및 부하 테스트 검증 | teach/feat/coupon-rate-limit-584 | @RateLimit AOP + nGrinder Before/After 측정 |
-
 ## 완료된 이슈
 
 - [x] #553 [feat] FCM 알림 통계 조회 API → PR #554 merged
@@ -29,3 +27,5 @@
 - [x] #577 [fix] Refresh Token Rotation 적용으로 다중 기기 토큰 갱신 보안 강화 → PR #578 merged
 - [x] #579 [fix] FcmMessageService @Async 메서드 LazyInitializationException 수정 → PR #580 merged
 - [x] #582 [chore] @Async 비동기 스레드 MDC traceId 전파 (TaskDecorator) → PR #583 merged
+- [x] #584 [feat] 쿠폰 엔드포인트 Redis Rate Limiting 적용 → PR #588 merged
+- [x] #585 [feat] 쿠폰 잔여 수 Redis 캐시로 DB 조회 차단 (다중 방어 2계층) → PR #588 merged
