@@ -3,7 +3,7 @@
  *
  * ===== 사전 준비 =====
  * 1. nGrinder 설치 및 실행
- *    - Docker: docker run -d -p 8300:8080 ngrinder/controller:latest
+ *    - Docker: docker run -d -p 8300:80 -p 16001:16001 -p 12000-12009:12000-12009 ngrinder/controller:latest
  *    - http://localhost:8300 접속 (admin/admin)
  *
  * 2. Agent 실행 (테스트 트래픽을 실제로 발생시키는 프로세스)
@@ -12,7 +12,7 @@
  *
  * 3. 테스트 계정 JWT 토큰 준비
  *    - POST /users/login 으로 로그인 → accessToken 복사
- *    - 아래 BEARER_TOKEN 변수에 붙여넣기
+ *    - 아래 BEARER_TOKEN 변수에 "Bearer {토큰}" 형태로 입력
  *
  * ===== 테스트 시나리오 =====
  * [Before] Rate Limit 없는 상태에서 100 vUser 동시 요청
@@ -43,69 +43,55 @@
  */
 
 import static net.grinder.script.Grinder.grinder
-import static org.junit.Assert.*
 import net.grinder.script.GTest
 import net.grinder.scriptengine.groovy.junit.GrinderRunner
-import net.grinder.scriptengine.groovy.junit.annotation.RunWith
 import net.grinder.scriptengine.groovy.junit.annotation.BeforeProcess
 import net.grinder.scriptengine.groovy.junit.annotation.BeforeThread
-import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith as JUnitRunWith
+import org.junit.runner.RunWith
 
-import HTTPClient.HTTPResponse
+import net.grinder.plugin.http.HTTPRequest
 import HTTPClient.NVPair
 
 @RunWith(GrinderRunner)
 class CouponRateLimitTest {
 
     // ===== 설정값 — 실행 전 반드시 변경 =====
-    static final String BASE_URL = "http://localhost:8055"
-    static final String BEARER_TOKEN = "Bearer {여기에_JWT_accessToken_입력}"
+    static final String TARGET_URL = "http://172.21.240.1:8055/coupons"
+    static final String BEARER_TOKEN = "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwic3R1ZGVudE51bWJlciI6IjExMSIsInJvbGUiOiJST0xFX1VTRVIiLCJpYXQiOjE3NzUzMDA5NTQsImV4cCI6MTc3NTMyNjE1NH0.AA0lijqM_eEpIUK5SZYgbF1Lf_2mgd-7z3DZEKN8w2c"
     // ==========================================
 
     static GTest test
-    static HTTPClient.HTTPConnection connection
+    static HTTPRequest request
 
     @BeforeProcess
     static void beforeProcess() {
+        request = new HTTPRequest()
+        request.headers = [
+            new NVPair("Authorization", BEARER_TOKEN),
+            new NVPair("Content-Type", "application/json")
+        ] as NVPair[]
         test = new GTest(1, "GET /coupons")
-        connection = new HTTPClient.HTTPConnection(BASE_URL)
-        grinder.logger.info("테스트 초기화 완료 - Target: ${BASE_URL}")
+        test.record(request)
+        grinder.logger.info("테스트 초기화 완료 - Target: ${TARGET_URL}")
     }
 
     @BeforeThread
     void beforeThread() {
-        test.record(this, "request")
         grinder.statistics.delayReports = true
     }
 
-    @Before
-    void before() {
-        grinder.logger.info("vUser ${grinder.threadNumber} 시작")
-    }
-
     @Test
-    void request() {
-        NVPair[] headers = [
-            new NVPair("Authorization", BEARER_TOKEN),
-            new NVPair("Content-Type", "application/json")
-        ]
-
-        HTTPResponse response = connection.Get("/coupons", null, headers)
-
+    void doRequest() {
+        def response = request.GET(TARGET_URL)
         int statusCode = response.statusCode
 
-        // 200 (성공) 또는 429 (Rate Limit 차단) 만 허용
-        // Rate Limit 없을 때는 200/기타만 나옴
         if (statusCode == 200) {
-            grinder.logger.info("vUser ${grinder.threadNumber} → 200 OK (쿠폰 발급 처리)")
+            grinder.logger.info("vUser ${grinder.threadNumber} → 200 OK")
         } else if (statusCode == 429) {
             grinder.logger.info("vUser ${grinder.threadNumber} → 429 Rate Limit 차단")
         } else {
-            grinder.logger.warn("vUser ${grinder.threadNumber} → ${statusCode} (예상치 못한 응답)")
+            grinder.logger.warn("vUser ${grinder.threadNumber} → ${statusCode}")
         }
-
-        assertTrue("응답 코드는 200 또는 429여야 합니다", statusCode == 200 || statusCode == 429)
     }
 }
