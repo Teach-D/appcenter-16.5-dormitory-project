@@ -12,6 +12,7 @@
 | 2026-03-30 | [#561](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/561) | Testcontainers 통합 테스트 환경 구축 및 CI 빌드 최적화 | teach/test/testcontainers-integration-test-561 | Oracle MockBean, MySQL/Redis 컨테이너, Gradle 캐시 |
 | 2026-04-03 | [#577](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/577) | Refresh Token Rotation 적용 | teach/fix/refresh-token-rotation-577 | 재발급 시 기존 RefreshToken 삭제 후 새 토큰 함께 발급 |
 | 2026-04-03 | [#579](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/579) | FcmMessageService @Async LazyInitializationException 수정 | teach/fix/fcm-lazy-init-579 | @Async 메서드에서 Lazy 컬렉션 직접 접근 제거 |
+| 2026-04-04 | [#582](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/582) | @Async 비동기 스레드 MDC traceId 전파 (TaskDecorator) | teach/chore/mdc-task-decorator-582 | MdcTaskDecorator로 fcmExecutor·asyncExecutor MDC 전파 |
 
 ## 완료된 이슈
 
@@ -26,3 +27,4 @@
 - [x] #572 [feat] ADMIN 특정 유저 Role 변경 기능 → PR #573 merged
 - [x] #577 [fix] Refresh Token Rotation 적용으로 다중 기기 토큰 갱신 보안 강화 → PR #578 merged
 - [x] #579 [fix] FcmMessageService @Async 메서드 LazyInitializationException 수정 → PR #580 merged
+- [x] #582 [chore] @Async 비동기 스레드 MDC traceId 전파 (TaskDecorator) → PR #583 merged
