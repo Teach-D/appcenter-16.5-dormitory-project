@@ -1,14 +1,19 @@
 package com.example.appcenter_project.domain.groupOrder.service;
 
+import com.example.appcenter_project.common.image.entity.Image;
+import com.example.appcenter_project.common.image.enums.ImageType;
 import com.example.appcenter_project.common.image.repository.ImageRepository;
 import com.example.appcenter_project.common.image.service.ImageService;
 import com.example.appcenter_project.domain.groupOrder.dto.request.RequestGroupOrderDto;
 import com.example.appcenter_project.domain.groupOrder.dto.response.ResponseGroupOrderDetailDto;
+import com.example.appcenter_project.domain.groupOrder.dto.response.ResponseGroupOrderDto;
 import com.example.appcenter_project.domain.groupOrder.dto.response.ResponseGroupOrderPopularSearch;
 import com.example.appcenter_project.domain.groupOrder.entity.GroupOrder;
 import com.example.appcenter_project.domain.groupOrder.entity.GroupOrderComment;
 import com.example.appcenter_project.domain.groupOrder.entity.GroupOrderLike;
 import com.example.appcenter_project.domain.groupOrder.entity.GroupOrderPopularSearchKeyword;
+import com.example.appcenter_project.domain.groupOrder.enums.GroupOrderSort;
+import com.example.appcenter_project.domain.groupOrder.enums.GroupOrderType;
 import com.example.appcenter_project.domain.groupOrder.repository.*;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
@@ -26,6 +31,7 @@ import org.mockito.quality.Strictness;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,7 +39,9 @@ import static com.example.appcenter_project.global.exception.ErrorCode.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -54,6 +62,125 @@ class GroupOrderServiceTest {
 
     @InjectMocks
     private GroupOrderService groupOrderService;
+
+    // ===== findGroupOrders - N+1 해소 검증 =====
+
+    @Test
+    @DisplayName("목록 조회 - 이미지 batch IN 쿼리 1회만 호출 (N+1 해소)")
+    void findGroupOrders_이미지_batch_조회_1회() {
+        GroupOrder g1 = mock(GroupOrder.class);
+        GroupOrder g2 = mock(GroupOrder.class);
+        GroupOrder g3 = mock(GroupOrder.class);
+        when(g1.getId()).thenReturn(1L);
+        when(g2.getId()).thenReturn(2L);
+        when(g3.getId()).thenReturn(3L);
+        when(g1.isRecruitmentComplete()).thenReturn(false);
+        when(g2.isRecruitmentComplete()).thenReturn(false);
+        when(g3.isRecruitmentComplete()).thenReturn(false);
+        when(g1.getDeadline()).thenReturn(LocalDateTime.now().plusDays(1));
+        when(g2.getDeadline()).thenReturn(LocalDateTime.now().plusDays(1));
+        when(g3.getDeadline()).thenReturn(LocalDateTime.now().plusDays(1));
+
+        when(groupOrderRepository.findGroupOrdersComplex(any(), any(), any()))
+                .thenReturn(List.of(g1, g2, g3));
+        when(imageRepository.findGroupOrderImagesByEntityIds(anyList()))
+                .thenReturn(Collections.emptyList());
+
+        List<ResponseGroupOrderDto> result = groupOrderService.findGroupOrders(
+                null, GroupOrderSort.LATEST, GroupOrderType.ALL, null, httpServletRequest);
+
+        assertThat(result).hasSize(3);
+        // 핵심: 이미지 조회가 게시글 수(3)번이 아닌 1번만 호출되어야 함
+        verify(imageRepository, times(1)).findGroupOrderImagesByEntityIds(anyList());
+        verify(imageService, never()).findImages(any(), anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("목록 조회 - 이미지 Map으로 게시글별 올바르게 매핑")
+    void findGroupOrders_이미지_Map_매핑_정확() {
+        GroupOrder g1 = mock(GroupOrder.class);
+        GroupOrder g2 = mock(GroupOrder.class);
+        when(g1.getId()).thenReturn(1L);
+        when(g2.getId()).thenReturn(2L);
+        when(g1.isRecruitmentComplete()).thenReturn(false);
+        when(g2.isRecruitmentComplete()).thenReturn(false);
+        when(g1.getDeadline()).thenReturn(LocalDateTime.now().plusDays(1));
+        when(g2.getDeadline()).thenReturn(LocalDateTime.now().plusDays(1));
+
+        Image image1 = mock(Image.class);
+        when(image1.getEntityId()).thenReturn(1L);
+
+        when(groupOrderRepository.findGroupOrdersComplex(any(), any(), any()))
+                .thenReturn(List.of(g1, g2));
+        when(imageRepository.findGroupOrderImagesByEntityIds(List.of(1L, 2L)))
+                .thenReturn(List.of(image1));
+        when(imageService.getImageUrl(eq(ImageType.GROUP_ORDER), eq(image1), any()))
+                .thenReturn("http://example.com/image1.jpg");
+
+        List<ResponseGroupOrderDto> result = groupOrderService.findGroupOrders(
+                null, GroupOrderSort.LATEST, GroupOrderType.ALL, null, httpServletRequest);
+
+        assertThat(result).hasSize(2);
+        verify(imageService, times(1)).getImageUrl(eq(ImageType.GROUP_ORDER), eq(image1), any());
+        // g2는 이미지 없으므로 getImageUrl 호출 안 됨 — 총 1회
+        verify(imageService, times(1)).getImageUrl(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("목록 조회 - 게시글 없으면 빈 리스트 반환")
+    void findGroupOrders_빈_목록_반환() {
+        when(groupOrderRepository.findGroupOrdersComplex(any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+
+        List<ResponseGroupOrderDto> result = groupOrderService.findGroupOrders(
+                null, GroupOrderSort.LATEST, GroupOrderType.ALL, null, httpServletRequest);
+
+        assertThat(result).isEmpty();
+        verify(imageRepository, never()).findGroupOrderImagesByEntityIds(any());
+    }
+
+    @Test
+    @DisplayName("상세 조회 - 댓글 작성자 이미지 batch 조회 1회 (N+1 해소)")
+    void findGroupOrder_댓글_작성자_이미지_batch_조회_1회() {
+        User author1 = mock(User.class);
+        User author2 = mock(User.class);
+        when(author1.getId()).thenReturn(10L);
+        when(author2.getId()).thenReturn(20L);
+        when(author1.getName()).thenReturn("유저1");
+        when(author2.getName()).thenReturn("유저2");
+
+        GroupOrderComment comment1 = mock(GroupOrderComment.class);
+        GroupOrderComment comment2 = mock(GroupOrderComment.class);
+        when(comment1.isDeleted()).thenReturn(false);
+        when(comment2.isDeleted()).thenReturn(false);
+        when(comment1.getUser()).thenReturn(author1);
+        when(comment2.getUser()).thenReturn(author2);
+        when(comment1.getParentGroupOrderComment()).thenReturn(null);
+        when(comment2.getParentGroupOrderComment()).thenReturn(null);
+
+        User writer = mock(User.class);
+        when(writer.getId()).thenReturn(1L);
+        when(writer.getName()).thenReturn("작성자");
+
+        GroupOrder groupOrder = mock(GroupOrder.class);
+        when(groupOrder.getId()).thenReturn(1L);
+        when(groupOrder.getUser()).thenReturn(writer);
+        when(groupOrder.isRecruitmentComplete()).thenReturn(false);
+        when(groupOrder.getDeadline()).thenReturn(LocalDateTime.now().plusDays(1));
+
+        when(mealTimeChecker.isMealTime()).thenReturn(true);
+        when(groupOrderRepository.findById(1L)).thenReturn(Optional.of(groupOrder));
+        when(groupOrderCommentRepository.findByGroupOrder_Id(1L))
+                .thenReturn(List.of(comment1, comment2));
+        when(imageRepository.findByImageTypeAndEntityIdIn(eq(ImageType.USER), anyList()))
+                .thenReturn(Collections.emptyList());
+
+        groupOrderService.findGroupOrder(null, 1L, httpServletRequest);
+
+        // 핵심: 댓글 작성자 이미지 조회가 댓글 수(2)번이 아닌 1번만 호출되어야 함
+        verify(imageRepository, times(1)).findByImageTypeAndEntityIdIn(eq(ImageType.USER), anyList());
+        verify(imageService, never()).findStaticImageUrl(any(), anyLong(), any());
+    }
 
     // ===== saveGroupOrder =====
 
@@ -126,7 +253,7 @@ class GroupOrderServiceTest {
 
         when(mealTimeChecker.isMealTime()).thenReturn(true);
         when(groupOrderRepository.findById(1L)).thenReturn(Optional.of(mockGroupOrder));
-        when(groupOrderCommentRepository.findByGroupOrderIdAndParentGroupOrderCommentIsNull(1L))
+        when(groupOrderCommentRepository.findByGroupOrder_Id(1L))
                 .thenReturn(new ArrayList<>());
 
         ResponseGroupOrderDetailDto result = groupOrderService.findGroupOrder(null, 1L, httpServletRequest);
@@ -150,7 +277,7 @@ class GroupOrderServiceTest {
         when(mealTimeChecker.isMealTime()).thenReturn(false);
         when(groupOrderRepository.findByIdWithLock(1L)).thenReturn(Optional.of(mockGroupOrder));
         when(groupOrderRepository.findById(1L)).thenReturn(Optional.of(mockGroupOrder));
-        when(groupOrderCommentRepository.findByGroupOrderIdAndParentGroupOrderCommentIsNull(1L))
+        when(groupOrderCommentRepository.findByGroupOrder_Id(1L))
                 .thenReturn(new ArrayList<>());
 
         groupOrderService.findGroupOrder(null, 1L, httpServletRequest);
