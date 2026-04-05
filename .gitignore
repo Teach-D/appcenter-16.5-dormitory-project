@@ -45,3 +45,9 @@ out/
 application.yml
 serviceAccountKey.json
 images
+
+### QueryDSL generated sources ###
+src/main/generated/
+
+### nGrinder local libs ###
+lib/
