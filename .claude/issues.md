@@ -13,7 +13,6 @@
 | 2026-04-03 | [#577](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/577) | Refresh Token Rotation 적용 | teach/fix/refresh-token-rotation-577 | 재발급 시 기존 RefreshToken 삭제 후 새 토큰 함께 발급 |
 | 2026-04-03 | [#579](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/579) | FcmMessageService @Async LazyInitializationException 수정 | teach/fix/fcm-lazy-init-579 | @Async 메서드에서 Lazy 컬렉션 직접 접근 제거 |
 | 2026-04-04 | [#582](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/582) | @Async 비동기 스레드 MDC traceId 전파 (TaskDecorator) | teach/chore/mdc-task-decorator-582 | MdcTaskDecorator로 fcmExecutor·asyncExecutor MDC 전파 |
-| 2026-04-05 | [#590](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/590) | GroupOrder 목록 조회 N+1 해소 (batch fetch + Map 조립) | teach/refactor/group-order-n-plus-one-590 | findGroupOrders() 이미지 N+1 → IN 쿼리 batch fetch |
 
 ## 완료된 이슈
 
@@ -31,3 +30,4 @@
 - [x] #582 [chore] @Async 비동기 스레드 MDC traceId 전파 (TaskDecorator) → PR #583 merged
 - [x] #584 [feat] 쿠폰 엔드포인트 Redis Rate Limiting 적용 → PR #588 merged
 - [x] #585 [feat] 쿠폰 잔여 수 Redis 캐시로 DB 조회 차단 (다중 방어 2계층) → PR #588 merged
+- [x] #590 [refactor] GroupOrder 목록 조회 N+1 해소 및 페이징 추가 → PR #591 merged
