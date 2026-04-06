@@ -68,27 +68,37 @@ public class FcmMessageService {
         }
     }
 
-    // 전체 사용자(회원 + 비회원)에게 전송 — 토큰 1개 = fcmExecutor 스레드 1개 (병렬)
+    // 전체 사용자(회원 + 비회원)에게 전송 — 500개 단위 청크 × sendEachForMulticast (청크당 HTTP 1회)
     @Transactional(readOnly = true)
     public ResponseFcmMessageDto sendNotificationToAllUsers(String title, String body) {
-        List<FcmToken> allTokens = fcmTokenRepository.findAll();
+        List<String> tokens = fcmTokenRepository.findAll().stream()
+                .map(FcmToken::getToken)
+                .toList();
 
-        if (allTokens.isEmpty()) {
+        if (tokens.isEmpty()) {
             log.warn("No FCM tokens found. 전체 사용자에게 보낼 토큰이 없습니다.");
             throw new CustomException(ErrorCode.FCM_TOKEN_NOT_FOUND);
         }
 
-        List<CompletableFuture<Void>> futures = allTokens.stream()
-                .map(fcmToken -> fcmAsyncSender.sendOne(fcmToken.getToken(), title, body))
+        List<CompletableFuture<Void>> futures = partition(tokens, 500).stream()
+                .map(chunk -> fcmAsyncSender.sendBatch(chunk, title, body))
                 .toList();
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
-        log.info("전체 FCM 전송 완료: {}개 토큰", allTokens.size());
+        log.info("전체 FCM 전송 완료: {}개 토큰, {}개 배치", tokens.size(), (tokens.size() + 499) / 500);
         return ResponseFcmMessageDto.builder()
                 .messageId("ALL_USERS")
                 .status("SUCCESS")
                 .build();
+    }
+
+    private static <T> List<List<T>> partition(List<T> list, int size) {
+        java.util.List<java.util.List<T>> result = new java.util.ArrayList<>();
+        for (int i = 0; i < list.size(); i += size) {
+            result.add(list.subList(i, Math.min(i + size, list.size())));
+        }
+        return result;
     }
 
     @Async("fcmExecutor")
