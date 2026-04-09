@@ -15,6 +15,23 @@
 | 2026-04-04 | [#582](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/582) | @Async 비동기 스레드 MDC traceId 전파 (TaskDecorator) | teach/chore/mdc-task-decorator-582 | MdcTaskDecorator로 fcmExecutor·asyncExecutor MDC 전파 |
 | 2026-04-05 | [#590](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/590) | GroupOrder 목록 조회 N+1 해소 (batch fetch + Map 조립) | teach/refactor/group-order-n-plus-one-590 | findGroupOrders() 이미지 N+1 → IN 쿼리 batch fetch |
 | 2026-04-06 | [#592](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/592) | FCM 전체 알림 전송 병렬화 및 성능 개선 | teach/refactor/fcm-parallel-notify-592 | per-token @Async, CompletableFuture 병렬, fcmExecutor 최적화, sendEachForMulticast 배치 API |
+| 2026-04-09 | [#594](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/594) | FCM 알림 Outbox Pattern + DLQ 적용으로 안정성 개선 | teach/refactor/fcm-outbox-dlq-594 | Outbox 적재, 지수 백오프 재시도, DEAD_PERMANENT/DEAD_EXHAUSTED DLQ, ADMIN 조회/재시도 API |
+
+## 현재 작업 이슈
+
+- **번호**: #594
+- **제목**: [refactor] FCM 알림 Outbox Pattern + DLQ 적용으로 안정성 개선
+- **브랜치**: teach/refactor/fcm-outbox-dlq-594
+- **작업 목록**:
+  - [ ] `OutboxStatus` enum 생성 (PENDING / PROCESSING / SENT / FAILED / DEAD_PERMANENT / DEAD_EXHAUSTED)
+  - [ ] `FcmOutbox` 엔티티 생성 (retryCount, maxRetry, nextRetryAt, lastErrorCode 포함)
+  - [ ] `FcmOutboxRepository` 생성 및 Flyway 마이그레이션 작성
+  - [ ] `FcmMessageService` 리팩터링: FCM 직접 전송 → Outbox 적재로 교체
+  - [ ] `FcmOutboxProcessor` 구현: @Scheduled로 PENDING 행 픽업 → 전송 → 상태 갱신
+  - [ ] 재시도 로직 구현: 지수 백오프(5분→15분→60분), maxRetry 초과 시 DEAD_EXHAUSTED
+  - [ ] 영구 오류(UNREGISTERED/INVALID_ARGUMENT) 처리: DEAD_PERMANENT + FcmToken 자동 삭제
+  - [ ] DLQ 조회 API (ADMIN): DEAD_PERMANENT / DEAD_EXHAUSTED 목록 조회
+  - [ ] DLQ 재시도 API (ADMIN): DEAD_EXHAUSTED → PENDING 재시도
 
 ## 완료된 이슈
 
