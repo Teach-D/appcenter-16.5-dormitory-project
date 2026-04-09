@@ -18,24 +18,9 @@
 | 2026-04-09 | [#594](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/594) | FCM 알림 Outbox Pattern + DLQ 적용으로 안정성 개선 | teach/refactor/fcm-outbox-dlq-594 | Outbox 적재, 지수 백오프 재시도, DEAD_PERMANENT/DEAD_EXHAUSTED DLQ, ADMIN 조회/재시도 API |
 | 2026-04-09 | [#596](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/596) | FCM Outbox/DLQ 성능 및 안정성 개선 | teach/refactor/fcm-outbox-improvement-596 | 인덱스, Bulk Insert, Chunk 처리, PROCESSING 복구, 순서 보장, 삭제 배치 (단계별 측정 포함) |
 
-## 현재 작업 이슈
-
-- **번호**: #594
-- **제목**: [refactor] FCM 알림 Outbox Pattern + DLQ 적용으로 안정성 개선
-- **브랜치**: teach/refactor/fcm-outbox-dlq-594
-- **작업 목록**:
-  - [x] `OutboxStatus` enum 생성 (PENDING / PROCESSING / SENT / FAILED / DEAD_PERMANENT / DEAD_EXHAUSTED)
-  - [x] `FcmOutbox` 엔티티 생성 (retryCount, maxRetry, nextRetryAt, lastErrorCode 포함)
-  - [x] `FcmOutboxRepository` 생성
-  - [x] `FcmMessageService` 리팩터링: FCM 직접 전송 → Outbox 적재로 교체
-  - [x] `FcmOutboxProcessor` 구현: @Scheduled로 PENDING 행 픽업 → 전송 → 상태 갱신
-  - [x] 재시도 로직 구현: 지수 백오프(5분→10분→20분), maxRetry 초과 시 DEAD_EXHAUSTED
-  - [x] 영구 오류(UNREGISTERED/INVALID_ARGUMENT) 처리: DEAD_PERMANENT + FcmToken 자동 삭제
-  - [x] DLQ 조회 API (ADMIN): DEAD_PERMANENT / DEAD_EXHAUSTED 목록 조회
-  - [x] DLQ 재시도 API (ADMIN): DEAD_EXHAUSTED → PENDING 재시도
-
 ## 완료된 이슈
 
+- [x] #594 [refactor] FCM 알림 Outbox Pattern + DLQ 적용으로 안정성 개선 → PR #597 merged
 - [x] #592 [refactor] FCM 전체 알림 전송 병렬화 및 성능 개선 → PR #595 merged
 
 - [x] #553 [feat] FCM 알림 통계 조회 API → PR #554 merged
