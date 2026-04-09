@@ -16,6 +16,7 @@ import com.google.firebase.messaging.Notification;
 import java.time.LocalDate;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -36,6 +37,7 @@ public class FcmMessageService {
     private final FcmTokenRepository fcmTokenRepository;
     private final UserRepository userRepository;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final FcmAsyncSender fcmAsyncSender;
 
     @Async("fcmExecutor")
     public void sendNotification(User user, String title, String body) {
@@ -66,44 +68,37 @@ public class FcmMessageService {
         }
     }
 
-    // 추가: 전체 사용자(회원 + 비회원)에게 전송
-    @Transactional
+    // 전체 사용자(회원 + 비회원)에게 전송 — 500개 단위 청크 × sendEachForMulticast (청크당 HTTP 1회)
+    @Transactional(readOnly = true)
     public ResponseFcmMessageDto sendNotificationToAllUsers(String title, String body) {
-        List<FcmToken> allTokens = fcmTokenRepository.findAll();
+        List<String> tokens = fcmTokenRepository.findAll().stream()
+                .map(FcmToken::getToken)
+                .toList();
 
-        if (allTokens.isEmpty()) {
+        if (tokens.isEmpty()) {
             log.warn("No FCM tokens found. 전체 사용자에게 보낼 토큰이 없습니다.");
             throw new CustomException(ErrorCode.FCM_TOKEN_NOT_FOUND);
         }
 
-        for (FcmToken fcmToken : allTokens) {
-            String targetToken = fcmToken.getToken();
+        List<CompletableFuture<Void>> futures = partition(tokens, 500).stream()
+                .map(chunk -> fcmAsyncSender.sendBatch(chunk, title, body))
+                .toList();
 
-            Notification notification = Notification.builder()
-                    .setTitle(title)
-                    .setBody(body)
-                    .build();
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
-            Message message = Message.builder()
-                    .setToken(targetToken)
-                    .setNotification(notification)
-                    .build();
-
-            try {
-                String response = FirebaseMessaging.getInstance().send(message);
-                log.info("Successfully sent FCM message to token: {}", response);
-                recordFcmSuccess();
-            } catch (Exception e) {
-                log.error("Error sending FCM message to token: {}", targetToken, e);
-                fcmTokenRepository.deleteByToken(targetToken);
-                recordFcmFail();
-            }
-        }
-
+        log.info("전체 FCM 전송 완료: {}개 토큰, {}개 배치", tokens.size(), (tokens.size() + 499) / 500);
         return ResponseFcmMessageDto.builder()
                 .messageId("ALL_USERS")
                 .status("SUCCESS")
                 .build();
+    }
+
+    private static <T> List<List<T>> partition(List<T> list, int size) {
+        java.util.List<java.util.List<T>> result = new java.util.ArrayList<>();
+        for (int i = 0; i < list.size(); i += size) {
+            result.add(list.subList(i, Math.min(i + size, list.size())));
+        }
+        return result;
     }
 
     @Async("fcmExecutor")
