@@ -23,8 +23,8 @@
 - **제목**: [refactor] FCM 알림 Outbox Pattern + DLQ 적용으로 안정성 개선
 - **브랜치**: teach/refactor/fcm-outbox-dlq-594
 - **작업 목록**:
-  - [ ] `OutboxStatus` enum 생성 (PENDING / PROCESSING / SENT / FAILED / DEAD_PERMANENT / DEAD_EXHAUSTED)
-  - [ ] `FcmOutbox` 엔티티 생성 (retryCount, maxRetry, nextRetryAt, lastErrorCode 포함)
+  - [x] `OutboxStatus` enum 생성 (PENDING / PROCESSING / SENT / FAILED / DEAD_PERMANENT / DEAD_EXHAUSTED)
+  - [x] `FcmOutbox` 엔티티 생성 (retryCount, maxRetry, nextRetryAt, lastErrorCode 포함)
   - [ ] `FcmOutboxRepository` 생성
   - [ ] `FcmMessageService` 리팩터링: FCM 직접 전송 → Outbox 적재로 교체
   - [ ] `FcmOutboxProcessor` 구현: @Scheduled로 PENDING 행 픽업 → 전송 → 상태 갱신
