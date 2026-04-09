@@ -25,7 +25,7 @@
 - **작업 목록**:
   - [ ] `OutboxStatus` enum 생성 (PENDING / PROCESSING / SENT / FAILED / DEAD_PERMANENT / DEAD_EXHAUSTED)
   - [ ] `FcmOutbox` 엔티티 생성 (retryCount, maxRetry, nextRetryAt, lastErrorCode 포함)
-  - [ ] `FcmOutboxRepository` 생성 및 Flyway 마이그레이션 작성
+  - [ ] `FcmOutboxRepository` 생성
   - [ ] `FcmMessageService` 리팩터링: FCM 직접 전송 → Outbox 적재로 교체
   - [ ] `FcmOutboxProcessor` 구현: @Scheduled로 PENDING 행 픽업 → 전송 → 상태 갱신
   - [ ] 재시도 로직 구현: 지수 백오프(5분→15분→60분), maxRetry 초과 시 DEAD_EXHAUSTED
