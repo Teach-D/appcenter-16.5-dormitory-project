@@ -13,5 +13,7 @@ public interface FcmOutboxRepository extends JpaRepository<FcmOutbox, Long> {
 
     List<FcmOutbox> findByStatusAndNextRetryAtBefore(OutboxStatus status, LocalDateTime now);
 
+    List<FcmOutbox> findByStatusInAndNextRetryAtBefore(List<OutboxStatus> statuses, LocalDateTime now);
+
     Page<FcmOutbox> findByStatusIn(List<OutboxStatus> statuses, Pageable pageable);
 }
