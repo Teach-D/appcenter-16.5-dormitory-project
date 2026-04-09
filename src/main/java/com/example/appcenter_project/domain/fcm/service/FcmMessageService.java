@@ -80,13 +80,13 @@ public class FcmMessageService {
             throw new CustomException(ErrorCode.FCM_TOKEN_NOT_FOUND);
         }
 
-        List<CompletableFuture<Void>> futures = partition(tokens, 500).stream()
+        List<CompletableFuture<Void>> futures = partition(tokens, 30).stream()
                 .map(chunk -> fcmAsyncSender.sendBatch(chunk, title, body))
                 .toList();
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
-        log.info("전체 FCM 전송 완료: {}개 토큰, {}개 배치", tokens.size(), (tokens.size() + 499) / 500);
+        log.info("전체 FCM 전송 완료: {}개 토큰, {}개 배치", tokens.size(), (tokens.size() + 29) / 30);
         return ResponseFcmMessageDto.builder()
                 .messageId("ALL_USERS")
                 .status("SUCCESS")
