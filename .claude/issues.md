@@ -14,9 +14,11 @@
 | 2026-04-03 | [#579](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/579) | FcmMessageService @Async LazyInitializationException 수정 | teach/fix/fcm-lazy-init-579 | @Async 메서드에서 Lazy 컬렉션 직접 접근 제거 |
 | 2026-04-04 | [#582](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/582) | @Async 비동기 스레드 MDC traceId 전파 (TaskDecorator) | teach/chore/mdc-task-decorator-582 | MdcTaskDecorator로 fcmExecutor·asyncExecutor MDC 전파 |
 | 2026-04-05 | [#590](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/590) | GroupOrder 목록 조회 N+1 해소 (batch fetch + Map 조립) | teach/refactor/group-order-n-plus-one-590 | findGroupOrders() 이미지 N+1 → IN 쿼리 batch fetch |
-| 2026-04-06 | [#592](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/592) | FCM 전체 알림 전송 병렬화 및 성능 개선 | teach/refactor/fcm-parallel-notify-592 | per-token @Async, CompletableFuture 병렬, fcmExecutor 최적화 |
+| 2026-04-06 | [#592](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/592) | FCM 전체 알림 전송 병렬화 및 성능 개선 | teach/refactor/fcm-parallel-notify-592 | per-token @Async, CompletableFuture 병렬, fcmExecutor 최적화, sendEachForMulticast 배치 API |
 
 ## 완료된 이슈
+
+- [x] #592 [refactor] FCM 전체 알림 전송 병렬화 및 성능 개선 → PR #593 merged
 
 - [x] #553 [feat] FCM 알림 통계 조회 API → PR #554 merged
 - [x] #555 [fix] 룸메이트 채팅방 입장 중 알림 차단 → PR #556 merged
