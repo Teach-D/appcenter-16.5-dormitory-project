@@ -64,18 +64,25 @@ public class FcmAsyncSender {
             log.info("FCM 배치 전송: 성공={}, 실패={}", batchResponse.getSuccessCount(), batchResponse.getFailureCount());
 
             List<SendResponse> responses = batchResponse.getResponses();
+            List<String> failedTokens = new java.util.ArrayList<>();
+            int successCount = 0;
+
             for (int i = 0; i < responses.size(); i++) {
                 if (responses.get(i).isSuccessful()) {
-                    recordSuccess();
+                    successCount++;
                 } else {
                     String failedToken = tokens.get(i);
                     log.warn("FCM 전송 실패 (token: {}...): {}",
                             failedToken.substring(0, Math.min(20, failedToken.length())),
                             responses.get(i).getException().getMessage());
-                    fcmTokenRepository.deleteByToken(failedToken);
-                    recordFail();
+                    failedTokens.add(failedToken);
                 }
             }
+
+            if (!failedTokens.isEmpty()) {
+                fcmTokenRepository.deleteAllByTokenIn(failedTokens);
+            }
+            recordBatch(successCount, failedTokens.size());
         } catch (FirebaseMessagingException e) {
             log.error("FCM 배치 전송 오류: {}", e.getMessage());
             recordFail();
@@ -111,6 +118,20 @@ public class FcmAsyncSender {
         }
 
         return CompletableFuture.completedFuture(null);
+    }
+
+    private void recordBatch(int successCount, int failCount) {
+        String today = LocalDate.now().toString();
+        if (successCount > 0) {
+            String key = FCM_SUCCESS_KEY_PREFIX + today;
+            redisTemplate.opsForValue().increment(key, successCount);
+            redisTemplate.expire(key, Duration.ofHours(24));
+        }
+        if (failCount > 0) {
+            String key = FCM_FAIL_KEY_PREFIX + today;
+            redisTemplate.opsForValue().increment(key, failCount);
+            redisTemplate.expire(key, Duration.ofHours(24));
+        }
     }
 
     private void recordSuccess() {
