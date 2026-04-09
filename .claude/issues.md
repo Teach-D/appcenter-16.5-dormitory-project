@@ -16,24 +16,26 @@
 | 2026-04-05 | [#590](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/590) | GroupOrder 목록 조회 N+1 해소 (batch fetch + Map 조립) | teach/refactor/group-order-n-plus-one-590 | findGroupOrders() 이미지 N+1 → IN 쿼리 batch fetch |
 | 2026-04-06 | [#592](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/592) | FCM 전체 알림 전송 병렬화 및 성능 개선 | teach/refactor/fcm-parallel-notify-592 | per-token @Async, CompletableFuture 병렬, fcmExecutor 최적화, sendEachForMulticast 배치 API |
 | 2026-04-09 | [#594](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/594) | FCM 알림 Outbox Pattern + DLQ 적용으로 안정성 개선 | teach/refactor/fcm-outbox-dlq-594 | Outbox 적재, 지수 백오프 재시도, DEAD_PERMANENT/DEAD_EXHAUSTED DLQ, ADMIN 조회/재시도 API |
+| 2026-04-09 | [#596](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/596) | FCM Outbox/DLQ 성능 및 안정성 개선 | teach/refactor/fcm-outbox-improvement-596 | 인덱스, Bulk Insert, Chunk 처리, PROCESSING 복구, 순서 보장, 삭제 배치 |
 
 ## 현재 작업 이슈
 
-- **번호**: #592
-- **제목**: [refactor] FCM 전체 알림 전송 병렬화 및 성능 개선
-- **브랜치**: teach/refactor/fcm-parallel-notify-592
+- **번호**: #596
+- **제목**: [refactor] FCM Outbox/DLQ 성능 및 안정성 개선 (인덱스, Bulk Insert, Chunk, 장애복구)
+- **브랜치**: teach/refactor/fcm-outbox-improvement-596
 - **작업 목록**:
-  - [x] `FcmAsyncSender` 컴포넌트 분리
-  - [x] `sendNotificationToAllUsers()` 병렬 전환
-  - [x] `fcmExecutor` 스레드 풀 최적화
-  - [x] `sendEachForMulticast()` 배치 API 적용
-  - [x] `FcmTokenRepository`: `deleteAllByTokenIn(List<String> tokens)` 메서드 추가
-  - [x] `FcmAsyncSender.sendBatch()`: 실패 토큰 수집 후 `deleteAllByTokenIn()`으로 일괄 삭제
-  - [x] `FcmAsyncSender.sendBatch()`: 성공/실패 카운트 누적 후 `INCRBY`로 Redis 일괄 업데이트
+  - [ ] p6spy 설정으로 SQL 실행시간 로깅 활성화
+  - [ ] Hibernate `jdbc.batch_size` 설정으로 Bulk Insert 적용
+  - [ ] `fcm_outbox` `(status, next_retry_at)` 복합 인덱스 Flyway 적용
+  - [ ] `FcmOutboxProcessor` Chunk 처리 (Pageable 500개씩)
+  - [ ] PROCESSING stuck 복구: 5분 초과 레코드 → PENDING 자동 복구
+  - [ ] 픽업 쿼리 `ORDER BY id ASC` 추가
+  - [ ] SENT / DEAD_PERMANENT 7일 경과 레코드 정기 삭제 배치
 
 ## 완료된 이슈
 
-- [x] #592 [refactor] FCM 전체 알림 전송 병렬화 및 성능 개선 → PR #593 merged (추가 작업 진행 중)
+- [x] #594 [refactor] FCM 알림 Outbox Pattern + DLQ 적용으로 안정성 개선 → PR #597 merged
+- [x] #592 [refactor] FCM 전체 알림 전송 병렬화 및 성능 개선 → PR #595 merged
 
 - [x] #553 [feat] FCM 알림 통계 조회 API → PR #554 merged
 - [x] #555 [fix] 룸메이트 채팅방 입장 중 알림 차단 → PR #556 merged
