@@ -16,7 +16,7 @@
 | 2026-04-05 | [#590](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/590) | GroupOrder 목록 조회 N+1 해소 (batch fetch + Map 조립) | teach/refactor/group-order-n-plus-one-590 | findGroupOrders() 이미지 N+1 → IN 쿼리 batch fetch |
 | 2026-04-06 | [#592](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/592) | FCM 전체 알림 전송 병렬화 및 성능 개선 | teach/refactor/fcm-parallel-notify-592 | per-token @Async, CompletableFuture 병렬, fcmExecutor 최적화, sendEachForMulticast 배치 API |
 | 2026-04-09 | [#594](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/594) | FCM 알림 Outbox Pattern + DLQ 적용으로 안정성 개선 | teach/refactor/fcm-outbox-dlq-594 | Outbox 적재, 지수 백오프 재시도, DEAD_PERMANENT/DEAD_EXHAUSTED DLQ, ADMIN 조회/재시도 API |
-| 2026-04-09 | [#596](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/596) | FCM Outbox/DLQ 성능 및 안정성 개선 | teach/refactor/fcm-outbox-improvement-596 | 인덱스, Bulk Insert, Chunk 처리, PROCESSING 복구, 순서 보장, 삭제 배치 (단계별 측정 포함) |
+| 2026-04-09 | [#596](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/596) | FCM Outbox/DLQ 성능 및 안정성 개선 | teach/refactor/fcm-outbox-improvement-596 | SKIP LOCKED, 배치 전환, Bulk Update, TTL, Dedup, Graceful Shutdown, Slack 알림 등 14개 작업 |
 
 ## 완료된 이슈
 
