@@ -9,6 +9,7 @@ import java.util.Optional;
 
 public interface FcmTokenRepository extends JpaRepository<FcmToken,Long> {
     void deleteByToken(String targetToken);
+    void deleteAllByTokenIn(List<String> tokens);
     boolean existsByToken(String token);
     Optional<FcmToken> findByUser(User user);
     List<FcmToken> findAllByUser(User user);
