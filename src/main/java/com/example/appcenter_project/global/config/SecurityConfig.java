@@ -149,6 +149,8 @@ public class SecurityConfig {
 
                         /** FCM **/
                         .requestMatchers(GET, "/fcm/stats").hasRole("ADMIN")
+                        .requestMatchers(GET, "/fcm/dlq").hasRole("ADMIN")
+                        .requestMatchers(POST, "/fcm/dlq/*/retry").hasRole("ADMIN")
                         .requestMatchers("/fcm/token/**").permitAll()
 
                         /** 쿠폰 **/

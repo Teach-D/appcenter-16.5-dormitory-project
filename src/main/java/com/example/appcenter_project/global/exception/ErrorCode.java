@@ -139,6 +139,8 @@ public enum ErrorCode {
     // FCM
     FCM_TOKEN_NOT_FOUND(NOT_FOUND, 17001, "[FCM] 전체 사용자에게 보낼 FCM 토큰이 존재하지 않습니다."),
     FCM_SEND_FAILED(INTERNAL_SERVER_ERROR, 17002, "[FCM] FCM 메시지 전송 중 오류가 발생했습니다."),
+    FCM_OUTBOX_NOT_FOUND(NOT_FOUND, 17003, "[FCM] 해당 Outbox 레코드를 찾을 수 없습니다."),
+    FCM_OUTBOX_NOT_RETRYABLE(BAD_REQUEST, 17004, "[FCM] DEAD_EXHAUSTED 상태인 Outbox 레코드만 재시도할 수 있습니다."),
 
     // SURVEY
     SURVEY_NOT_FOUND(NOT_FOUND, 18001, "[Survey] 해당 설문을 찾을 수 없습니다."),
