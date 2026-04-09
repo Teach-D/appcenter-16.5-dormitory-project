@@ -31,8 +31,8 @@
   - [x] `FcmOutboxProcessor` 구현: @Scheduled로 PENDING 행 픽업 → 전송 → 상태 갱신
   - [x] 재시도 로직 구현: 지수 백오프(5분→10분→20분), maxRetry 초과 시 DEAD_EXHAUSTED
   - [x] 영구 오류(UNREGISTERED/INVALID_ARGUMENT) 처리: DEAD_PERMANENT + FcmToken 자동 삭제
-  - [ ] DLQ 조회 API (ADMIN): DEAD_PERMANENT / DEAD_EXHAUSTED 목록 조회
-  - [ ] DLQ 재시도 API (ADMIN): DEAD_EXHAUSTED → PENDING 재시도
+  - [x] DLQ 조회 API (ADMIN): DEAD_PERMANENT / DEAD_EXHAUSTED 목록 조회
+  - [x] DLQ 재시도 API (ADMIN): DEAD_EXHAUSTED → PENDING 재시도
 
 ## 완료된 이슈
 

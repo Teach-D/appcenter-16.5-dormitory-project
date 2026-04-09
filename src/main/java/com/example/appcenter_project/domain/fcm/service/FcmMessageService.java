@@ -1,9 +1,11 @@
 package com.example.appcenter_project.domain.fcm.service;
 
+import com.example.appcenter_project.domain.fcm.dto.response.ResponseFcmDlqDto;
 import com.example.appcenter_project.domain.fcm.dto.response.ResponseFcmMessageDto;
 import com.example.appcenter_project.domain.fcm.dto.response.ResponseFcmStatsDto;
 import com.example.appcenter_project.domain.fcm.entity.FcmOutbox;
 import com.example.appcenter_project.domain.fcm.entity.FcmToken;
+import com.example.appcenter_project.domain.fcm.enums.OutboxStatus;
 import com.example.appcenter_project.domain.fcm.repository.FcmOutboxRepository;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.user.enums.DormType;
@@ -16,6 +18,8 @@ import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -140,6 +144,22 @@ public class FcmMessageService {
                 .successCount(successCount)
                 .failCount(failCount)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ResponseFcmDlqDto> getDlqList(Pageable pageable) {
+        return fcmOutboxRepository.findByStatusIn(
+                List.of(OutboxStatus.DEAD_PERMANENT, OutboxStatus.DEAD_EXHAUSTED), pageable
+        ).map(ResponseFcmDlqDto::from);
+    }
+
+    public void retryDlq(Long outboxId) {
+        FcmOutbox outbox = fcmOutboxRepository.findById(outboxId)
+                .orElseThrow(() -> new CustomException(ErrorCode.FCM_OUTBOX_NOT_FOUND));
+        if (outbox.getStatus() != OutboxStatus.DEAD_EXHAUSTED) {
+            throw new CustomException(ErrorCode.FCM_OUTBOX_NOT_RETRYABLE);
+        }
+        outbox.resetToPending();
     }
 
     private void enqueueOutbox(User user, String title, String body) {
