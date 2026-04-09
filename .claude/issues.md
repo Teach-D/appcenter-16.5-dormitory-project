@@ -35,7 +35,7 @@
 
 ## 완료된 이슈
 
-- [x] #592 [refactor] FCM 전체 알림 전송 병렬화 및 성능 개선 → PR #593 merged
+- [x] #592 [refactor] FCM 전체 알림 전송 병렬화 및 성능 개선 → PR #595 merged
 
 - [x] #553 [feat] FCM 알림 통계 조회 API → PR #554 merged
 - [x] #555 [fix] 룸메이트 채팅방 입장 중 알림 차단 → PR #556 merged
