@@ -65,13 +65,15 @@
 
 SecurityConfig 권한 설정 및 Flyway 마이그레이션 파일 필요 시 생성.
 
-### 5단계: git add → commit → push
+### 5단계: 이슈 체크리스트 업데이트 (GitHub MCP) + git add → commit → push
 구현 완료 후 자동으로 진행:
 
-1. 변경 파일 확인 및 출력
-2. "git add 할까요?" 확인
-3. 승인 시 변경된 파일 명시적으로 add (`git add .` 금지)
-4. 커밋 메시지 3개 제안:
+1. `get_issue`로 현재 본문 조회 후, 완료된 작업 항목을 `- [x]`로 변경하여 `update_issue`로 업데이트.
+2. `.claude/issues.md`도 동일하게 `- [x]`로 업데이트.
+3. 변경 파일 확인 및 출력 (구현 파일 + .claude/issues.md 포함)
+4. "git add 할까요?" 확인
+5. 승인 시 구현 파일과 `.claude/issues.md`를 함께 명시적으로 add (`git add .` 금지)
+6. 커밋 메시지 3개 제안 — **이슈번호는 반드시 메시지 맨 뒤에**:
    ```
    1) {type}: {제목} #{이슈번호}
    2) {type}: {다른 표현} #{이슈번호}
@@ -83,17 +85,12 @@ SecurityConfig 권한 설정 및 Flyway 마이그레이션 파일 필요 시 생
    - `chore` 설정/도구 / `docs` 문서·Swagger / `test` 테스트 / `style` 포맷팅
    - `add:` 사용 금지 → `feat:`으로 대체
    - 한글 허용, 제목 50자 이내, 이슈번호 필수
-5. 선택하면 commit 후 push:
+7. 선택하면 commit 후 push:
    ```bash
    git push origin {현재 브랜치}
    ```
 
-### 6단계: 이슈 체크리스트 업데이트 (GitHub MCP)
-`get_issue`로 현재 본문 조회 후, 완료된 작업 항목을 `- [x]`로 변경하여 `update_issue`로 업데이트.
-
-`.claude/issues.md`도 동일하게 업데이트.
-
-### 7단계: 구현 요약 설명
+### 6단계: 구현 요약 설명
 커밋 완료 후, 이번 작업에서 무엇을 어떻게 했는지 설명한다:
 
 ```
@@ -110,7 +107,7 @@ SecurityConfig 권한 설정 및 Flyway 마이그레이션 파일 필요 시 생
 {가장 중요한 변경 부분을 코드 스니펫으로 보여줌 (너무 길면 핵심만)}
 ```
 
-### 8단계: 다음 작업 안내
+### 7단계: 다음 작업 안내
 ```
 진행 상황: {완료 수}/{전체 수}
 - [x] {완료된 작업}
