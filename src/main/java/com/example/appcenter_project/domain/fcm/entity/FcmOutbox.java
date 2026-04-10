@@ -46,6 +46,10 @@ public class FcmOutbox extends BaseTimeEntity {
     @Column(length = 100)
     private String lastErrorCode;
 
+    private LocalDateTime expiredAt;
+
+    private static final int TTL_HOURS = 24;
+
     public static FcmOutbox create(String token, String title, String body) {
         FcmOutbox outbox = new FcmOutbox();
         outbox.token = token;
@@ -55,6 +59,7 @@ public class FcmOutbox extends BaseTimeEntity {
         outbox.retryCount = 0;
         outbox.maxRetry = 3;
         outbox.nextRetryAt = LocalDateTime.now();
+        outbox.expiredAt = LocalDateTime.now().plusHours(TTL_HOURS);
         return outbox;
     }
 
@@ -87,6 +92,10 @@ public class FcmOutbox extends BaseTimeEntity {
         this.status = OutboxStatus.PENDING;
         this.retryCount = 0;
         this.nextRetryAt = LocalDateTime.now();
+    }
+
+    public void markExpired() {
+        this.status = OutboxStatus.EXPIRED;
     }
 
     public boolean isExhausted() {

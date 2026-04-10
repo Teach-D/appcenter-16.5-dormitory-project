@@ -18,8 +18,12 @@ public interface FcmOutboxRepository extends JpaRepository<FcmOutbox, Long> {
 
     List<FcmOutbox> findByStatusInAndNextRetryAtBefore(List<OutboxStatus> statuses, LocalDateTime now);
 
-    @Query("SELECT o FROM FcmOutbox o WHERE o.status IN :statuses AND o.nextRetryAt < :now ORDER BY o.id ASC")
+    @Query("SELECT o FROM FcmOutbox o WHERE o.status IN :statuses AND o.nextRetryAt < :now AND (o.expiredAt IS NULL OR o.expiredAt > :now) ORDER BY o.id ASC")
     List<FcmOutbox> findChunk(@Param("statuses") List<OutboxStatus> statuses, @Param("now") LocalDateTime now, Pageable pageable);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE FcmOutbox o SET o.status = com.example.appcenter_project.domain.fcm.enums.OutboxStatus.EXPIRED WHERE o.status IN :statuses AND o.expiredAt IS NOT NULL AND o.expiredAt <= :now")
+    int bulkMarkExpired(@Param("statuses") List<OutboxStatus> statuses, @Param("now") LocalDateTime now);
 
     Page<FcmOutbox> findByStatusIn(List<OutboxStatus> statuses, Pageable pageable);
 

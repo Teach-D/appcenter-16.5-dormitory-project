@@ -47,6 +47,13 @@ public class FcmOutboxProcessor {
     @Scheduled(fixedDelay = 30_000)
     @Transactional
     public void process() {
+        int expired = fcmOutboxRepository.bulkMarkExpired(
+                List.of(OutboxStatus.PENDING, OutboxStatus.FAILED), LocalDateTime.now()
+        );
+        if (expired > 0) {
+            log.info("FCM 만료 알림 폐기: {}건", expired);
+        }
+
         Pageable pageable = PageRequest.of(0, DB_CHUNK_SIZE);
         int totalSuccess = 0;
         int totalFail = 0;
