@@ -13,8 +13,10 @@ import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.global.exception.ErrorCode;
 import com.example.appcenter_project.domain.roommate.repository.MyRoommateRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateMatchingRepository;
+import com.example.appcenter_project.global.analytics.MixpanelService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +32,7 @@ public class MyRoommateService {
     private final MyRoommateRepository myRoommateRepository;
     private final ImageService imageService;
     private final RoommateMatchingRepository roommateMatchingRepository;
+    private final MixpanelService mixpanelService;
 
     @Transactional(readOnly = true)
     public ResponseMyRoommateInfoDto getMyRoommateInfo(Long userId, HttpServletRequest request){
@@ -78,6 +81,7 @@ public class MyRoommateService {
 
         // 로그로 동기화 확인
         System.out.println("Rule synchronized - User " + userId + " and Roommate " + roommateUser.getId() + " both have rules: " + rules);
+        trackRoomRulesEdit(myRoommate.getUser().getStudentNumber(), "add", rules.size());
     }
 
     //룸메이트 규칙 삭제 (양방향 동기화)
@@ -98,6 +102,7 @@ public class MyRoommateService {
 
         // 로그로 동기화 확인
         System.out.println("Rules deleted and synchronized - User " + userId + " and Roommate " + roommateUser.getId() + " both have rules cleared");
+        trackRoomRulesEdit(myRoommate.getUser().getStudentNumber(), "delete", 0);
     }
 
     @Transactional(readOnly = true)
@@ -130,6 +135,7 @@ public class MyRoommateService {
 
         // 로그로 동기화 확인
         System.out.println("Rule updated and synchronized - User " + userId + " and Roommate " + roommateUser.getId() + " both have rules: " + rules);
+        trackRoomRulesEdit(myRoommate.getUser().getStudentNumber(), "edit", rules.size());
     }
 
     @Transactional
@@ -144,5 +150,12 @@ public class MyRoommateService {
 
     public ImageLinkDto getMyRoommateImage(Long userId, HttpServletRequest request) {
         return imageService.findImage(ImageType.USER, userId, request);
+    }
+
+    private void trackRoomRulesEdit(String studentNumber, String action, int rulesCount) {
+        JSONObject props = new JSONObject();
+        props.put("action", action);
+        props.put("rules_count", rulesCount);
+        mixpanelService.track(studentNumber, "room_rules_edit", props);
     }
 }

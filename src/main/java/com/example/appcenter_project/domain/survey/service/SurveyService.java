@@ -8,9 +8,11 @@ import com.example.appcenter_project.domain.survey.entiity.*;
 import com.example.appcenter_project.domain.survey.repository.*;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.survey.enums.QuestionType;
+import com.example.appcenter_project.global.analytics.MixpanelService;
 import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.global.security.CustomUserDetails;
+import org.json.JSONObject;
 import com.opencsv.CSVWriter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +43,7 @@ public class SurveyService {
     private final SurveyResponseRepository surveyResponseRepository;
     private final SurveyAnswerRepository surveyAnswerRepository;
     private final UserRepository userRepository;
+    private final MixpanelService mixpanelService;
 
     // 설문 생성 (관리자)
     public Long createSurvey(Long userId, RequestSurveyDto requestDto) {
@@ -403,6 +406,12 @@ public class SurveyService {
 
         survey.addResponse(response);
         log.info("[submitSurveyResponse] userId={}의 surveyId={} 응답 제출 완료", userId, requestDto.getSurveyId());
+
+        JSONObject props = new JSONObject();
+        props.put("form_id", survey.getId());
+        props.put("form_title", survey.getTitle());
+        mixpanelService.track(user.getStudentNumber(), "form_submit", props);
+
         return response.getId();
     }
 

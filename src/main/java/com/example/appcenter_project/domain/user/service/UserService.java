@@ -205,6 +205,8 @@ public class UserService {
 
     public void updateUserTimeTableImage(Long userId, MultipartFile image) {
         imageService.updateImage(ImageType.TIME_TABLE, userId, image);
+        String studentNumber = findUserById(userId).getStudentNumber();
+        mixpanelService.track(studentNumber, "schedule_update", new org.json.JSONObject());
     }
 
     public void deleteUser(Long userId) {
