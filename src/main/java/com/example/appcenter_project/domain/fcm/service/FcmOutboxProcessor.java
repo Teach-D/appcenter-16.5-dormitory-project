@@ -10,6 +10,7 @@ import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.MulticastMessage;
 import com.google.firebase.messaging.Notification;
 import com.google.firebase.messaging.SendResponse;
+import jakarta.annotation.PreDestroy;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,6 +27,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Component
 @Slf4j
@@ -37,18 +39,37 @@ public class FcmOutboxProcessor {
     private static final String FCM_SUCCESS_KEY_PREFIX = "fcm:success:";
     private static final String FCM_FAIL_KEY_PREFIX = "fcm:fail:";
     private static final List<String> PERMANENT_ERROR_CODES = List.of("UNREGISTERED", "INVALID_ARGUMENT");
+    private static final int STUCK_THRESHOLD_MINUTES = 5;
 
     private final FcmOutboxRepository fcmOutboxRepository;
     private final FcmTokenRepository fcmTokenRepository;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final TransactionTemplate transactionTemplate;
 
     private record RetryKey(int retryCount, String errorCode) {}
+
+    @PreDestroy
+    public void shutdown() {
+        transactionTemplate.executeWithoutResult(status -> {
+            int recovered = fcmOutboxRepository.recoverAllProcessing(LocalDateTime.now());
+            if (recovered > 0) {
+                log.info("Graceful Shutdown: PROCESSING → PENDING 복구 {}건", recovered);
+            }
+        });
+    }
 
     @Scheduled(fixedDelay = 30_000)
     @Transactional
     public void process() {
+        LocalDateTime now = LocalDateTime.now();
+
+        int stuck = fcmOutboxRepository.recoverStuckProcessing(now, now.minusMinutes(STUCK_THRESHOLD_MINUTES));
+        if (stuck > 0) {
+            log.warn("FCM stuck PROCESSING 복구: {}건 ({}분 초과)", stuck, STUCK_THRESHOLD_MINUTES);
+        }
+
         int expired = fcmOutboxRepository.bulkMarkExpired(
-                List.of(OutboxStatus.PENDING, OutboxStatus.FAILED), LocalDateTime.now()
+                List.of(OutboxStatus.PENDING, OutboxStatus.FAILED), now
         );
         if (expired > 0) {
             log.info("FCM 만료 알림 폐기: {}건", expired);
@@ -61,12 +82,12 @@ public class FcmOutboxProcessor {
 
         while (true) {
             List<FcmOutbox> chunk = fcmOutboxRepository.findChunk(
-                    List.of(OutboxStatus.PENDING, OutboxStatus.FAILED), LocalDateTime.now(), pageable
+                    List.of(OutboxStatus.PENDING, OutboxStatus.FAILED), now, pageable
             );
             if (chunk.isEmpty()) break;
 
             List<Long> chunkIds = chunk.stream().map(FcmOutbox::getId).toList();
-            fcmOutboxRepository.bulkMarkProcessing(chunkIds);
+            fcmOutboxRepository.bulkMarkProcessing(chunkIds, LocalDateTime.now());
 
             List<Long> sentIds = new ArrayList<>();
             Map<String, List<Long>> deadPermMap = new HashMap<>();

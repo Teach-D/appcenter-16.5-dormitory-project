@@ -31,9 +31,17 @@ public interface FcmOutboxRepository extends JpaRepository<FcmOutbox, Long> {
     @Query("UPDATE FcmOutbox o SET o.status = :status WHERE o.id IN :ids")
     void bulkUpdateStatus(@Param("ids") List<Long> ids, @Param("status") OutboxStatus status);
 
-    default void bulkMarkProcessing(List<Long> ids) {
-        bulkUpdateStatus(ids, OutboxStatus.PROCESSING);
-    }
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE FcmOutbox o SET o.status = com.example.appcenter_project.domain.fcm.enums.OutboxStatus.PROCESSING, o.modifiedDate = :now WHERE o.id IN :ids")
+    void bulkMarkProcessing(@Param("ids") List<Long> ids, @Param("now") LocalDateTime now);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE FcmOutbox o SET o.status = com.example.appcenter_project.domain.fcm.enums.OutboxStatus.PENDING, o.nextRetryAt = :now WHERE o.status = com.example.appcenter_project.domain.fcm.enums.OutboxStatus.PROCESSING AND o.modifiedDate < :stuckThreshold")
+    int recoverStuckProcessing(@Param("now") LocalDateTime now, @Param("stuckThreshold") LocalDateTime stuckThreshold);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE FcmOutbox o SET o.status = com.example.appcenter_project.domain.fcm.enums.OutboxStatus.PENDING, o.nextRetryAt = :now WHERE o.status = com.example.appcenter_project.domain.fcm.enums.OutboxStatus.PROCESSING")
+    int recoverAllProcessing(@Param("now") LocalDateTime now);
 
     @Modifying(clearAutomatically = true)
     @Query("UPDATE FcmOutbox o SET o.status = :status, o.lastErrorCode = :errorCode WHERE o.id IN :ids")
