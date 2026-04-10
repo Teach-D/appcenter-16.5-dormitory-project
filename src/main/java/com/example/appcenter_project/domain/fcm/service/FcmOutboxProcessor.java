@@ -50,7 +50,7 @@ public class FcmOutboxProcessor {
         List<String> permanentFailTokens = new ArrayList<>();
 
         while (true) {
-            List<FcmOutbox> chunk = fcmOutboxRepository.findByStatusInAndNextRetryAtBefore(
+            List<FcmOutbox> chunk = fcmOutboxRepository.findChunk(
                     List.of(OutboxStatus.PENDING, OutboxStatus.FAILED), LocalDateTime.now(), pageable
             );
 
