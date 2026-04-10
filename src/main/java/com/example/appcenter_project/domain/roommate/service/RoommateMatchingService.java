@@ -16,8 +16,10 @@ import com.example.appcenter_project.domain.roommate.repository.RoommateChatting
 import com.example.appcenter_project.domain.roommate.repository.RoommateMatchingRepository;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.domain.fcm.service.FcmMessageService;
+import com.example.appcenter_project.global.analytics.MixpanelService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +38,7 @@ public class RoommateMatchingService {
     private final RoommateChattingRoomRepository roommateChattingRoomRepository;
     private final FcmMessageService fcmMessageService;
     private final NotificationService notificationService;
+    private final MixpanelService mixpanelService;
 
     //매칭요청 학번
     @Transactional
@@ -99,6 +102,8 @@ public class RoommateMatchingService {
         cleanUpOldMatchingRecords(sender, receiver);
         sendAcceptNotification(sender, receiver, matching.getId());
         sendAcceptNotification(receiver, sender, matching.getId());
+
+        trackMatchingAccept(receiver.getStudentNumber(), sender.getStudentNumber());
     }
 
     // 매칭 거절
@@ -118,6 +123,7 @@ public class RoommateMatchingService {
         }
 
         matching.fail();
+        trackMatchingReject(user.getStudentNumber(), matching.getSender().getStudentNumber());
     }
 
     // 매칭조회
@@ -212,6 +218,7 @@ public class RoommateMatchingService {
 
         roommateMatchingRepository.save(matching);
         sendRequestNotification(sender, receiver, matching.getId());
+        trackMatchingRequestSend(sender.getStudentNumber(), receiver.getStudentNumber());
 
         return ResponseRoommateMatchingDto.builder()
                 .matchingId(matching.getId())
@@ -320,6 +327,24 @@ public class RoommateMatchingService {
                 "룸메이트 매칭 요청",
                 sender.getName() + "님이 룸메이트 매칭을 요청했습니다."
         );
+    }
+
+    private void trackMatchingRequestSend(String senderStudentNumber, String receiverStudentNumber) {
+        JSONObject props = new JSONObject();
+        props.put("target_user_id", receiverStudentNumber);
+        mixpanelService.track(senderStudentNumber, "matching_request_send", props);
+    }
+
+    private void trackMatchingAccept(String acceptorStudentNumber, String requesterStudentNumber) {
+        JSONObject props = new JSONObject();
+        props.put("requester_id", requesterStudentNumber);
+        mixpanelService.track(acceptorStudentNumber, "matching_accept", props);
+    }
+
+    private void trackMatchingReject(String rejectorStudentNumber, String requesterStudentNumber) {
+        JSONObject props = new JSONObject();
+        props.put("requester_id", requesterStudentNumber);
+        mixpanelService.track(rejectorStudentNumber, "matching_reject", props);
     }
 
     private void sendAcceptNotification(User sender, User receiver, Long matchingId) {
