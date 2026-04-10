@@ -25,7 +25,9 @@ import com.example.appcenter_project.common.image.repository.ImageRepository;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.domain.notification.service.AdminComplaintNotificationService;
 import com.example.appcenter_project.domain.complaint.dto.response.ResponseComplaintCsvDto;
+import com.example.appcenter_project.global.analytics.MixpanelService;
 import com.example.appcenter_project.shared.utils.CsvUtils;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -60,6 +62,7 @@ public class ComplaintService {
     private final AdminComplaintNotificationService adminComplaintNotificationService;
     private final ImageService imageService;
     private final CsvUtils csvUtils;
+    private final MixpanelService mixpanelService;
 
     // 민원 등록
     public ResponseComplaintDto createComplaint(Long userId, RequestComplaintDto dto, List<MultipartFile> images) {
@@ -103,6 +106,8 @@ public class ComplaintService {
         if (images != null && !images.isEmpty()) {
             imageService.saveImages(ImageType.COMPLAINT, complaint.getId(), images);
         }
+
+        trackComplaintSubmit(user.getStudentNumber(), saved, images);
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -449,6 +454,13 @@ public class ComplaintService {
                 .collect(Collectors.toList());
         
         return csvUtils.generateComplaintCsv(csvData);
+    }
+
+    private void trackComplaintSubmit(String studentNumber, Complaint complaint, List<MultipartFile> images) {
+        JSONObject props = new JSONObject();
+        props.put("complaint_category", complaint.getType().toValue());
+        props.put("has_photo", images != null && !images.isEmpty());
+        mixpanelService.track(studentNumber, "complaint_submit", props);
     }
 
     // Complaint 엔티티를 CSV DTO로 변환
