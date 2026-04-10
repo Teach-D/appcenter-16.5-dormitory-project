@@ -50,4 +50,7 @@ public interface FcmOutboxRepository extends JpaRepository<FcmOutbox, Long> {
     @Modifying(clearAutomatically = true)
     @Query("UPDATE FcmOutbox o SET o.status = com.example.appcenter_project.domain.fcm.enums.OutboxStatus.FAILED, o.retryCount = o.retryCount + 1, o.lastErrorCode = :errorCode, o.nextRetryAt = :nextRetryAt WHERE o.id IN :ids")
     void bulkMarkFailed(@Param("ids") List<Long> ids, @Param("errorCode") String errorCode, @Param("nextRetryAt") LocalDateTime nextRetryAt);
+
+    @Query("SELECT COUNT(o) FROM FcmOutbox o WHERE o.status IN :statuses")
+    long countByStatusIn(@Param("statuses") List<OutboxStatus> statuses);
 }

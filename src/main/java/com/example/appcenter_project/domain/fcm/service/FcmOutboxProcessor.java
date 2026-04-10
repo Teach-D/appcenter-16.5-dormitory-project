@@ -11,6 +11,10 @@ import com.google.firebase.messaging.MulticastMessage;
 import com.google.firebase.messaging.Notification;
 import com.google.firebase.messaging.SendResponse;
 import jakarta.annotation.PreDestroy;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -21,6 +25,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -38,8 +43,13 @@ public class FcmOutboxProcessor {
     private static final int FCM_BATCH_SIZE = 30;
     private static final String FCM_SUCCESS_KEY_PREFIX = "fcm:success:";
     private static final String FCM_FAIL_KEY_PREFIX = "fcm:fail:";
+    private static final String FCM_DLQ_ALERT_KEY = "fcm:dlq:alert";
     private static final List<String> PERMANENT_ERROR_CODES = List.of("UNREGISTERED", "INVALID_ARGUMENT");
     private static final int STUCK_THRESHOLD_MINUTES = 5;
+    private static final int DLQ_ALERT_THRESHOLD = 100;
+
+    @Value("${slack.webhook-url:}")
+    private String slackWebhookUrl;
 
     private final FcmOutboxRepository fcmOutboxRepository;
     private final FcmTokenRepository fcmTokenRepository;
@@ -130,6 +140,40 @@ public class FcmOutboxProcessor {
         if (totalSuccess > 0 || totalFail > 0) {
             recordStats(totalSuccess, totalFail);
             log.info("FcmOutboxProcessor 처리 완료: 성공={}, 실패={}", totalSuccess, totalFail);
+        }
+
+        checkDlqAlert();
+    }
+
+    private void checkDlqAlert() {
+        long dlqCount = fcmOutboxRepository.countByStatusIn(
+                List.of(OutboxStatus.DEAD_PERMANENT, OutboxStatus.DEAD_EXHAUSTED)
+        );
+        if (dlqCount > DLQ_ALERT_THRESHOLD && !slackWebhookUrl.isBlank()) {
+            Boolean isNew = redisTemplate.opsForValue().setIfAbsent(FCM_DLQ_ALERT_KEY, "1", Duration.ofHours(1));
+            if (Boolean.TRUE.equals(isNew)) {
+                sendSlackAlert(dlqCount);
+            }
+        }
+    }
+
+    private void sendSlackAlert(long dlqCount) {
+        String payload = String.format(
+                "{\"text\": \"[FCM DLQ 경고] 처리 실패 알림이 %d건을 초과했습니다. 즉시 확인이 필요합니다.\"}",
+                dlqCount
+        );
+        try {
+            HttpClient.newHttpClient().send(
+                    HttpRequest.newBuilder()
+                            .uri(URI.create(slackWebhookUrl))
+                            .header("Content-Type", "application/json")
+                            .POST(HttpRequest.BodyPublishers.ofString(payload))
+                            .build(),
+                    HttpResponse.BodyHandlers.ofString()
+            );
+            log.warn("FCM DLQ 경고 Slack 알림 전송: {}건", dlqCount);
+        } catch (Exception e) {
+            log.error("Slack 알림 전송 실패: {}", e.getMessage());
         }
     }
 
