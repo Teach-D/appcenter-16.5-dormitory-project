@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -29,7 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class FcmOutboxProcessor {
 
-    private static final int BATCH_SIZE = 30;
+    private static final int DB_CHUNK_SIZE = 500;
+    private static final int FCM_BATCH_SIZE = 30;
     private static final String FCM_SUCCESS_KEY_PREFIX = "fcm:success:";
     private static final String FCM_FAIL_KEY_PREFIX = "fcm:fail:";
     private static final List<String> PERMANENT_ERROR_CODES = List.of("UNREGISTERED", "INVALID_ARGUMENT");
@@ -41,33 +44,33 @@ public class FcmOutboxProcessor {
     @Scheduled(fixedDelay = 30_000)
     @Transactional
     public void process() {
-        LocalDateTime now = LocalDateTime.now();
-        List<FcmOutbox> candidates = fcmOutboxRepository.findByStatusInAndNextRetryAtBefore(
-                List.of(OutboxStatus.PENDING, OutboxStatus.FAILED), now
-        );
-
-        if (candidates.isEmpty()) {
-            return;
-        }
-
-        candidates.forEach(FcmOutbox::markProcessing);
-
+        Pageable pageable = PageRequest.of(0, DB_CHUNK_SIZE);
         int totalSuccess = 0;
         int totalFail = 0;
         List<String> permanentFailTokens = new ArrayList<>();
 
-        Map<String, List<FcmOutbox>> groups = candidates.stream()
-                .collect(Collectors.groupingBy(o -> o.getTitle() + "\0" + o.getBody()));
+        while (true) {
+            List<FcmOutbox> chunk = fcmOutboxRepository.findByStatusInAndNextRetryAtBefore(
+                    List.of(OutboxStatus.PENDING, OutboxStatus.FAILED), LocalDateTime.now(), pageable
+            );
 
-        for (List<FcmOutbox> group : groups.values()) {
-            String title = group.get(0).getTitle();
-            String body = group.get(0).getBody();
+            if (chunk.isEmpty()) break;
 
-            for (int i = 0; i < group.size(); i += BATCH_SIZE) {
-                List<FcmOutbox> chunk = group.subList(i, Math.min(i + BATCH_SIZE, group.size()));
-                int[] result = sendChunk(chunk, title, body, permanentFailTokens);
-                totalSuccess += result[0];
-                totalFail += result[1];
+            chunk.forEach(FcmOutbox::markProcessing);
+
+            Map<String, List<FcmOutbox>> groups = chunk.stream()
+                    .collect(Collectors.groupingBy(o -> o.getTitle() + "\0" + o.getBody()));
+
+            for (List<FcmOutbox> group : groups.values()) {
+                String title = group.get(0).getTitle();
+                String body = group.get(0).getBody();
+
+                for (int i = 0; i < group.size(); i += FCM_BATCH_SIZE) {
+                    List<FcmOutbox> batch = group.subList(i, Math.min(i + FCM_BATCH_SIZE, group.size()));
+                    int[] result = sendBatch(batch, title, body, permanentFailTokens);
+                    totalSuccess += result[0];
+                    totalFail += result[1];
+                }
             }
         }
 
@@ -82,17 +85,15 @@ public class FcmOutboxProcessor {
         }
     }
 
-    private int[] sendChunk(List<FcmOutbox> chunk, String title, String body, List<String> permanentFailTokens) {
-        List<String> tokens = chunk.stream().map(FcmOutbox::getToken).toList();
-
-        Notification notification = Notification.builder()
-                .setTitle(title)
-                .setBody(body)
-                .build();
+    private int[] sendBatch(List<FcmOutbox> batch, String title, String body, List<String> permanentFailTokens) {
+        List<String> tokens = batch.stream().map(FcmOutbox::getToken).toList();
 
         MulticastMessage message = MulticastMessage.builder()
                 .addAllTokens(tokens)
-                .setNotification(notification)
+                .setNotification(Notification.builder()
+                        .setTitle(title)
+                        .setBody(body)
+                        .build())
                 .build();
 
         try {
@@ -103,7 +104,7 @@ public class FcmOutboxProcessor {
 
             for (int i = 0; i < responses.size(); i++) {
                 SendResponse response = responses.get(i);
-                FcmOutbox outbox = chunk.get(i);
+                FcmOutbox outbox = batch.get(i);
 
                 if (response.isSuccessful()) {
                     outbox.markSent();
@@ -133,13 +134,13 @@ public class FcmOutboxProcessor {
                 }
             }
 
-            log.info("FCM 배치 전송: 성공={}, 실패={} ({}건 중)", successCount, failCount, chunk.size());
+            log.info("FCM 배치 전송: 성공={}, 실패={} ({}건 중)", successCount, failCount, batch.size());
             return new int[]{successCount, failCount};
 
         } catch (FirebaseMessagingException e) {
             log.error("FCM 배치 전송 오류: {}", e.getMessage());
-            chunk.forEach(outbox -> outbox.markFailed("BATCH_ERROR", LocalDateTime.now().plusMinutes(5)));
-            return new int[]{0, chunk.size()};
+            batch.forEach(outbox -> outbox.markFailed("BATCH_ERROR", LocalDateTime.now().plusMinutes(5)));
+            return new int[]{0, batch.size()};
         }
     }
 
