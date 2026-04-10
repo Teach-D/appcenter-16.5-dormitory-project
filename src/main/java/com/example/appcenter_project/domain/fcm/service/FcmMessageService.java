@@ -14,8 +14,13 @@ import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.global.exception.ErrorCode;
 import com.example.appcenter_project.domain.user.repository.FcmTokenRepository;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HexFormat;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +40,8 @@ public class FcmMessageService {
 
     private static final String FCM_SUCCESS_KEY_PREFIX = "fcm:success:";
     private static final String FCM_FAIL_KEY_PREFIX = "fcm:fail:";
+    private static final String FCM_DEDUP_KEY_PREFIX = "fcm:dedup:";
+    private static final Duration DEDUP_TTL = Duration.ofMinutes(5);
 
     private final FcmTokenRepository fcmTokenRepository;
     private final UserRepository userRepository;
@@ -49,14 +56,19 @@ public class FcmMessageService {
     }
 
     public ResponseFcmMessageDto sendNotificationToAllUsers(String title, String body) {
+        String dedupKey = FCM_DEDUP_KEY_PREFIX + sha256(title + "\0" + body);
+        Boolean isNew = redisTemplate.opsForValue().setIfAbsent(dedupKey, "1", DEDUP_TTL);
+        if (!Boolean.TRUE.equals(isNew)) {
+            log.warn("FCM 전체 발송 중복 요청 차단 (title={})", title);
+            return ResponseFcmMessageDto.builder()
+                    .messageId("ALL_USERS")
+                    .status("DUPLICATE")
+                    .build();
+        }
+
         List<String> tokens = fcmTokenRepository.findAll().stream()
                 .map(FcmToken::getToken)
                 .toList();
-
-        if (tokens.isEmpty()) {
-            log.warn("No FCM tokens found. 전체 사용자에게 보낼 토큰이 없습니다.");
-            throw new CustomException(ErrorCode.FCM_TOKEN_NOT_FOUND);
-        }
 
         List<FcmOutbox> outboxes = tokens.stream()
                 .map(token -> FcmOutbox.create(token, title, body))
@@ -68,6 +80,16 @@ public class FcmMessageService {
                 .messageId("ALL_USERS")
                 .status("QUEUED")
                 .build();
+    }
+
+    private String sha256(String input) {
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256")
+                    .digest(input.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 not available", e);
+        }
     }
 
     @Async("fcmExecutor")
