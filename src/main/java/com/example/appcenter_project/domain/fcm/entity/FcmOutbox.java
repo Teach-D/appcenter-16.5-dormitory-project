@@ -12,7 +12,9 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "fcm_outbox")
+@Table(name = "fcm_outbox", indexes = {
+        @Index(name = "idx_fcm_outbox_status_next_retry", columnList = "status, next_retry_at")
+})
 public class FcmOutbox extends BaseTimeEntity {
 
     @Id
