@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -41,6 +42,8 @@ public class FcmOutboxProcessor {
     private final FcmTokenRepository fcmTokenRepository;
     private final RedisTemplate<String, Object> redisTemplate;
 
+    private record RetryKey(int retryCount, String errorCode) {}
+
     @Scheduled(fixedDelay = 30_000)
     @Transactional
     public void process() {
@@ -53,10 +56,15 @@ public class FcmOutboxProcessor {
             List<FcmOutbox> chunk = fcmOutboxRepository.findChunk(
                     List.of(OutboxStatus.PENDING, OutboxStatus.FAILED), LocalDateTime.now(), pageable
             );
-
             if (chunk.isEmpty()) break;
 
-            chunk.forEach(FcmOutbox::markProcessing);
+            List<Long> chunkIds = chunk.stream().map(FcmOutbox::getId).toList();
+            fcmOutboxRepository.bulkMarkProcessing(chunkIds);
+
+            List<Long> sentIds = new ArrayList<>();
+            Map<String, List<Long>> deadPermMap = new HashMap<>();
+            Map<String, List<Long>> exhaustedMap = new HashMap<>();
+            Map<RetryKey, List<Long>> failedMap = new HashMap<>();
 
             Map<String, List<FcmOutbox>> groups = chunk.stream()
                     .collect(Collectors.groupingBy(o -> o.getTitle() + "\0" + o.getBody()));
@@ -67,11 +75,23 @@ public class FcmOutboxProcessor {
 
                 for (int i = 0; i < group.size(); i += FCM_BATCH_SIZE) {
                     List<FcmOutbox> batch = group.subList(i, Math.min(i + FCM_BATCH_SIZE, group.size()));
-                    int[] result = sendBatch(batch, title, body, permanentFailTokens);
-                    totalSuccess += result[0];
-                    totalFail += result[1];
+                    int[] counts = collectBatch(batch, title, body, sentIds, deadPermMap, exhaustedMap, failedMap, permanentFailTokens);
+                    totalSuccess += counts[0];
+                    totalFail += counts[1];
                 }
             }
+
+            if (!sentIds.isEmpty()) {
+                fcmOutboxRepository.bulkUpdateStatus(sentIds, OutboxStatus.SENT);
+            }
+            deadPermMap.forEach((errorCode, ids) ->
+                    fcmOutboxRepository.bulkUpdateStatusWithError(ids, OutboxStatus.DEAD_PERMANENT, errorCode));
+            exhaustedMap.forEach((errorCode, ids) ->
+                    fcmOutboxRepository.bulkUpdateStatusWithError(ids, OutboxStatus.DEAD_EXHAUSTED, errorCode));
+            failedMap.forEach((key, ids) -> {
+                long backoffMinutes = 5L * (1L << key.retryCount());
+                fcmOutboxRepository.bulkMarkFailed(ids, key.errorCode(), LocalDateTime.now().plusMinutes(backoffMinutes));
+            });
         }
 
         if (!permanentFailTokens.isEmpty()) {
@@ -85,7 +105,10 @@ public class FcmOutboxProcessor {
         }
     }
 
-    private int[] sendBatch(List<FcmOutbox> batch, String title, String body, List<String> permanentFailTokens) {
+    private int[] collectBatch(List<FcmOutbox> batch, String title, String body,
+            List<Long> sentIds, Map<String, List<Long>> deadPermMap,
+            Map<String, List<Long>> exhaustedMap, Map<RetryKey, List<Long>> failedMap,
+            List<String> permanentFailTokens) {
         List<String> tokens = batch.stream().map(FcmOutbox::getToken).toList();
 
         MulticastMessage message = MulticastMessage.builder()
@@ -107,7 +130,7 @@ public class FcmOutboxProcessor {
                 FcmOutbox outbox = batch.get(i);
 
                 if (response.isSuccessful()) {
-                    outbox.markSent();
+                    sentIds.add(outbox.getId());
                     successCount++;
                 } else {
                     FirebaseMessagingException e = response.getException();
@@ -116,18 +139,20 @@ public class FcmOutboxProcessor {
                             : "UNKNOWN";
 
                     if (PERMANENT_ERROR_CODES.contains(errorCode)) {
-                        outbox.markDeadPermanent(errorCode);
+                        deadPermMap.computeIfAbsent(errorCode, k -> new ArrayList<>()).add(outbox.getId());
                         permanentFailTokens.add(outbox.getToken());
                         log.warn("FCM 영구 오류 (id={}): {}", outbox.getId(), errorCode);
                     } else {
-                        long backoffMinutes = 5L * (1L << outbox.getRetryCount());
-                        outbox.markFailed(errorCode, LocalDateTime.now().plusMinutes(backoffMinutes));
-                        if (outbox.isExhausted()) {
-                            outbox.markDeadExhausted(errorCode);
+                        boolean exhausted = outbox.getRetryCount() + 1 >= outbox.getMaxRetry();
+                        if (exhausted) {
+                            exhaustedMap.computeIfAbsent(errorCode, k -> new ArrayList<>()).add(outbox.getId());
                             log.warn("FCM 최대 재시도 초과 (id={}): {}", outbox.getId(), errorCode);
                         } else {
+                            RetryKey key = new RetryKey(outbox.getRetryCount(), errorCode);
+                            failedMap.computeIfAbsent(key, k -> new ArrayList<>()).add(outbox.getId());
+                            long backoffMinutes = 5L * (1L << outbox.getRetryCount());
                             log.warn("FCM 전송 실패, {}분 후 재시도 (id={}, retry={}/{}): {}",
-                                    backoffMinutes, outbox.getId(), outbox.getRetryCount(), outbox.getMaxRetry(), errorCode);
+                                    backoffMinutes, outbox.getId(), outbox.getRetryCount() + 1, outbox.getMaxRetry(), errorCode);
                         }
                     }
                     failCount++;
@@ -139,7 +164,14 @@ public class FcmOutboxProcessor {
 
         } catch (FirebaseMessagingException e) {
             log.error("FCM 배치 전송 오류: {}", e.getMessage());
-            batch.forEach(outbox -> outbox.markFailed("BATCH_ERROR", LocalDateTime.now().plusMinutes(5)));
+            for (FcmOutbox outbox : batch) {
+                boolean exhausted = outbox.getRetryCount() + 1 >= outbox.getMaxRetry();
+                if (exhausted) {
+                    exhaustedMap.computeIfAbsent("BATCH_ERROR", k -> new ArrayList<>()).add(outbox.getId());
+                } else {
+                    failedMap.computeIfAbsent(new RetryKey(outbox.getRetryCount(), "BATCH_ERROR"), k -> new ArrayList<>()).add(outbox.getId());
+                }
+            }
             return new int[]{0, batch.size()};
         }
     }
