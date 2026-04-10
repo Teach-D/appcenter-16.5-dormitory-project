@@ -43,6 +43,18 @@ public class MixpanelService {
     }
 
     @Async("mixpanelExecutor")
+    public void setProfileOnce(String distinctId, JSONObject properties) {
+        try {
+            JSONObject message = messageBuilder.setOnce(distinctId, properties);
+            ClientDelivery delivery = new ClientDelivery();
+            delivery.addMessage(message);
+            mixpanelAPI.deliver(delivery);
+        } catch (Exception e) {
+            log.warn("Mixpanel setProfileOnce 실패: userId={}, error={}", distinctId, e.getMessage());
+        }
+    }
+
+    @Async("mixpanelExecutor")
     public void incrementProfile(String distinctId, Map<String, Long> properties) {
         try {
             JSONObject message = messageBuilder.increment(distinctId, properties);

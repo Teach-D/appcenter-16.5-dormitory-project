@@ -64,11 +64,13 @@ public class UserService {
         checkINUStudent(signupUser);
         User user = createUser(signupUser);
         trackLoginComplete(user.getStudentNumber(), "portal");
+        syncUserProfileOnCreate(user);
         return createDto(user);
     }
 
     public ResponseLoginDto saveFreshman(SignupUser signupUser) {
         User user = createFreshman(signupUser);
+        syncUserProfileOnCreate(user);
         return createDto(user);
     }
 
@@ -186,6 +188,7 @@ public class UserService {
     public ResponseUserDto updateUser(Long userId, RequestUserDto request) {
         User user = findUserById(userId);
         user.update(request);
+        syncUserProfileOnUpdate(user);
 
         boolean hasUnreadNotifications = user.hasUnreadNotifications();
         boolean hasRoommateCheckList = user.hasRoommateCheckList();
@@ -339,6 +342,25 @@ public class UserService {
                 Role.ROLE_DORM_MANAGER,
                 Role.ROLE_DORM_EXPEDITED_COMPLAINT_MANAGER
         );
+    }
+
+    private void syncUserProfileOnCreate(User user) {
+        JSONObject once = new JSONObject();
+        once.put("$created", user.getCreatedDate() != null ? user.getCreatedDate().toString() : java.time.LocalDateTime.now().toString());
+        mixpanelService.setProfileOnce(user.getStudentNumber(), once);
+    }
+
+    private void syncUserProfileOnUpdate(User user) {
+        JSONObject props = new JSONObject();
+        if (user.getDormType() != null) {
+            props.put("dormitory", user.getDormType().name());
+        }
+        if (user.getCollege() != null) {
+            props.put("department", user.getCollege().toValue());
+        }
+        if (!props.isEmpty()) {
+            mixpanelService.setProfile(user.getStudentNumber(), props);
+        }
     }
 
     private void trackLoginComplete(String studentNumber, String loginMethod) {
