@@ -16,7 +16,8 @@ import java.time.LocalDateTime;
 public class FcmOutbox extends BaseTimeEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "fcm_outbox_seq")
+    @SequenceGenerator(name = "fcm_outbox_seq", sequenceName = "fcm_outbox_seq", allocationSize = 50)
     private Long id;
 
     @Column(nullable = false, length = 512)
