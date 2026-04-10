@@ -24,7 +24,9 @@ import com.example.appcenter_project.domain.fcm.service.FcmMessageService;
 import com.example.appcenter_project.common.image.service.ImageService;
 import com.example.appcenter_project.domain.roommate.service.RoommateQueryService;
 import com.example.appcenter_project.domain.tip.service.TipQueryService;
+import com.example.appcenter_project.global.analytics.MixpanelService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.json.JSONObject;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -54,12 +56,14 @@ public class UserService {
     private final RoommateQueryService roommateQueryService;
     private final ImageService imageService;
     private final FcmMessageService fcmMessageService;
+    private final MixpanelService mixpanelService;
 
     // ========== Public Methods ========== //
 
     public ResponseLoginDto saveUser(SignupUser signupUser) {
         checkINUStudent(signupUser);
         User user = createUser(signupUser);
+        trackLoginComplete(user.getStudentNumber(), "portal");
         return createDto(user);
     }
 
@@ -70,6 +74,7 @@ public class UserService {
 
     public ResponseLoginDto loginFreshman(SignupUser signupUser) {
         User user = findFreshmanForLogin(signupUser);
+        trackLoginComplete(user.getStudentNumber(), "freshman");
         return createDto(user);
     }
 
@@ -251,6 +256,7 @@ public class UserService {
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
         user.validateFreshman();
         if (!passwordEncoder.matches(signupUser.getPassword(), user.getPassword())) {
+            trackLoginFail(signupUser.getStudentNumber(), "invalid_password");
             throw new CustomException(INVALID_PASSWORD);
         }
         return user;
@@ -331,6 +337,18 @@ public class UserService {
                 Role.ROLE_DORM_MANAGER,
                 Role.ROLE_DORM_EXPEDITED_COMPLAINT_MANAGER
         );
+    }
+
+    private void trackLoginComplete(String studentNumber, String loginMethod) {
+        JSONObject props = new JSONObject();
+        props.put("login_method", loginMethod);
+        mixpanelService.track(studentNumber, "login_complete", props);
+    }
+
+    private void trackLoginFail(String studentNumber, String errorType) {
+        JSONObject props = new JSONObject();
+        props.put("error_type", errorType);
+        mixpanelService.track(studentNumber, "login_fail", props);
     }
 
 
