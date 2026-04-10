@@ -28,6 +28,7 @@ import com.example.appcenter_project.domain.complaint.dto.response.ResponseCompl
 import com.example.appcenter_project.global.analytics.MixpanelService;
 import com.example.appcenter_project.shared.utils.CsvUtils;
 import org.json.JSONObject;
+import java.util.Map;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -461,6 +462,7 @@ public class ComplaintService {
         props.put("complaint_category", complaint.getType().toValue());
         props.put("has_photo", images != null && !images.isEmpty());
         mixpanelService.track(studentNumber, "complaint_submit", props);
+        mixpanelService.incrementProfile(studentNumber, Map.of("total_complaints", 1L));
     }
 
     // Complaint 엔티티를 CSV DTO로 변환
