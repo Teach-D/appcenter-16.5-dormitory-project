@@ -53,4 +53,8 @@ public interface FcmOutboxRepository extends JpaRepository<FcmOutbox, Long> {
 
     @Query("SELECT COUNT(o) FROM FcmOutbox o WHERE o.status IN :statuses")
     long countByStatusIn(@Param("statuses") List<OutboxStatus> statuses);
+
+    @Modifying
+    @Query("DELETE FROM FcmOutbox o WHERE o.status IN :statuses AND o.modifiedDate < :threshold")
+    int deleteOldOutboxes(@Param("statuses") List<OutboxStatus> statuses, @Param("threshold") LocalDateTime threshold);
 }

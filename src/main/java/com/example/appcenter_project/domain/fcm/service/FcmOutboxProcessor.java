@@ -56,7 +56,22 @@ public class FcmOutboxProcessor {
     private final RedisTemplate<String, Object> redisTemplate;
     private final TransactionTemplate transactionTemplate;
 
+    private static final int CLEANUP_RETENTION_DAYS = 7;
+
     private record RetryKey(int retryCount, String errorCode) {}
+
+    @Scheduled(cron = "0 0 3 * * *")
+    @Transactional
+    public void cleanup() {
+        LocalDateTime threshold = LocalDateTime.now().minusDays(CLEANUP_RETENTION_DAYS);
+        int deleted = fcmOutboxRepository.deleteOldOutboxes(
+                List.of(OutboxStatus.SENT, OutboxStatus.DEAD_PERMANENT, OutboxStatus.DEAD_EXHAUSTED, OutboxStatus.EXPIRED),
+                threshold
+        );
+        if (deleted > 0) {
+            log.info("FCM Outbox 정리 완료: {}건 삭제 ({}일 경과)", deleted, CLEANUP_RETENTION_DAYS);
+        }
+    }
 
     @PreDestroy
     public void shutdown() {
