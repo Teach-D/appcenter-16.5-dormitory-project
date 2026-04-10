@@ -89,6 +89,9 @@ dependencies {
 
 	// CSV
 	implementation 'com.opencsv:opencsv:5.9'
+
+	// Mixpanel (서버 사이드 이벤트 트래킹)
+	implementation 'com.mixpanel:mixpanel-java:1.5.2'
 }
 
 tasks.named('test') {
