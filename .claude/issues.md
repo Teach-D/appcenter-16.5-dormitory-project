@@ -17,6 +17,7 @@
 | 2026-04-06 | [#592](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/592) | FCM 전체 알림 전송 병렬화 및 성능 개선 | teach/refactor/fcm-parallel-notify-592 | per-token @Async, CompletableFuture 병렬, fcmExecutor 최적화, sendEachForMulticast 배치 API |
 | 2026-04-09 | [#594](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/594) | FCM 알림 Outbox Pattern + DLQ 적용으로 안정성 개선 | teach/refactor/fcm-outbox-dlq-594 | Outbox 적재, 지수 백오프 재시도, DEAD_PERMANENT/DEAD_EXHAUSTED DLQ, ADMIN 조회/재시도 API |
 | 2026-04-09 | [#596](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/596) | FCM Outbox/DLQ 성능 및 안정성 개선 | teach/refactor/fcm-outbox-improvement-596 | 인덱스, Bulk Insert, Chunk 처리, PROCESSING 복구, 순서 보장, 삭제 배치 (단계별 측정 포함) |
+| 2026-04-13 | [#600](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/600) | FCM DLQ 알림 기준을 절대 건수에서 에러율로 변경 | teach/refactor/fcm-dlq-error-rate-600 | DEAD/전체 에러율 5% 초과 + 최소 100건 기준, Redis 당일 DEAD 카운터 추가 |
 
 ## 완료된 이슈
 
