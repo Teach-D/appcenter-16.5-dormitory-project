@@ -43,10 +43,12 @@ public class FcmOutboxProcessor {
     private static final int FCM_BATCH_SIZE = 30;
     private static final String FCM_SUCCESS_KEY_PREFIX = "fcm:success:";
     private static final String FCM_FAIL_KEY_PREFIX = "fcm:fail:";
+    private static final String FCM_DEAD_KEY_PREFIX = "fcm:dead:";
     private static final String FCM_DLQ_ALERT_KEY = "fcm:dlq:alert";
     private static final List<String> PERMANENT_ERROR_CODES = List.of("UNREGISTERED", "INVALID_ARGUMENT");
     private static final int STUCK_THRESHOLD_MINUTES = 5;
-    private static final int DLQ_ALERT_THRESHOLD = 100;
+    private static final double DLQ_ERROR_RATE_THRESHOLD = 0.05;
+    private static final int DLQ_MIN_SAMPLE_SIZE = 100;
 
     @Value("${slack.webhook-url:}")
     private String slackWebhookUrl;
@@ -84,7 +86,6 @@ public class FcmOutboxProcessor {
     }
 
     @Scheduled(fixedDelay = 30_000)
-    @Transactional
     public void process() {
         LocalDateTime now = LocalDateTime.now();
 
@@ -103,6 +104,7 @@ public class FcmOutboxProcessor {
         Pageable pageable = PageRequest.of(0, DB_CHUNK_SIZE);
         int totalSuccess = 0;
         int totalFail = 0;
+        int totalDead = 0;
         List<String> permanentFailTokens = new ArrayList<>();
 
         while (true) {
@@ -131,6 +133,7 @@ public class FcmOutboxProcessor {
                     int[] counts = collectBatch(batch, title, body, sentIds, deadPermMap, exhaustedMap, failedMap, permanentFailTokens);
                     totalSuccess += counts[0];
                     totalFail += counts[1];
+                    totalDead += counts[2];
                 }
             }
 
@@ -153,29 +156,41 @@ public class FcmOutboxProcessor {
         }
 
         if (totalSuccess > 0 || totalFail > 0) {
-            recordStats(totalSuccess, totalFail);
-            log.info("FcmOutboxProcessor 처리 완료: 성공={}, 실패={}", totalSuccess, totalFail);
+            recordStats(totalSuccess, totalFail, totalDead);
+            log.info("FcmOutboxProcessor 처리 완료: 성공={}, 실패={}, DEAD={}", totalSuccess, totalFail, totalDead);
         }
 
         checkDlqAlert();
     }
 
     private void checkDlqAlert() {
-        long dlqCount = fcmOutboxRepository.countByStatusIn(
-                List.of(OutboxStatus.DEAD_PERMANENT, OutboxStatus.DEAD_EXHAUSTED)
-        );
-        if (dlqCount > DLQ_ALERT_THRESHOLD && !slackWebhookUrl.isBlank()) {
+        String today = LocalDate.now().toString();
+        long success = getRedisLong(FCM_SUCCESS_KEY_PREFIX + today);
+        long fail = getRedisLong(FCM_FAIL_KEY_PREFIX + today);
+        long dead = getRedisLong(FCM_DEAD_KEY_PREFIX + today);
+        long total = success + fail;
+
+        if (total < DLQ_MIN_SAMPLE_SIZE) return;
+
+        double errorRate = (double) dead / total;
+        if (errorRate > DLQ_ERROR_RATE_THRESHOLD && !slackWebhookUrl.isBlank()) {
             Boolean isNew = redisTemplate.opsForValue().setIfAbsent(FCM_DLQ_ALERT_KEY, "1", Duration.ofHours(1));
             if (Boolean.TRUE.equals(isNew)) {
-                sendSlackAlert(dlqCount);
+                sendSlackAlert(dead, total, errorRate);
             }
         }
     }
 
-    private void sendSlackAlert(long dlqCount) {
+    private long getRedisLong(String key) {
+        Object val = redisTemplate.opsForValue().get(key);
+        if (val == null) return 0L;
+        return Long.parseLong(val.toString());
+    }
+
+    private void sendSlackAlert(long deadCount, long totalCount, double errorRate) {
         String payload = String.format(
-                "{\"text\": \"[FCM DLQ 경고] 처리 실패 알림이 %d건을 초과했습니다. 즉시 확인이 필요합니다.\"}",
-                dlqCount
+                "{\"text\": \"[FCM DLQ 경고] 오늘 에러율 %.1f%% 초과 (DEAD %d건 / 전체 %d건). 즉시 확인이 필요합니다.\"}",
+                errorRate * 100, deadCount, totalCount
         );
         try {
             HttpClient.newHttpClient().send(
@@ -186,7 +201,8 @@ public class FcmOutboxProcessor {
                             .build(),
                     HttpResponse.BodyHandlers.ofString()
             );
-            log.warn("FCM DLQ 경고 Slack 알림 전송: {}건", dlqCount);
+            log.warn("FCM DLQ 경고 Slack 알림 전송: 에러율 {}% (DEAD {}건 / 전체 {}건)",
+                    String.format("%.1f", errorRate * 100), deadCount, totalCount);
         } catch (Exception e) {
             log.error("Slack 알림 전송 실패: {}", e.getMessage());
         }
@@ -211,6 +227,7 @@ public class FcmOutboxProcessor {
             List<SendResponse> responses = batchResponse.getResponses();
             int successCount = 0;
             int failCount = 0;
+            int deadCount = 0;
 
             for (int i = 0; i < responses.size(); i++) {
                 SendResponse response = responses.get(i);
@@ -228,11 +245,13 @@ public class FcmOutboxProcessor {
                     if (PERMANENT_ERROR_CODES.contains(errorCode)) {
                         deadPermMap.computeIfAbsent(errorCode, k -> new ArrayList<>()).add(outbox.getId());
                         permanentFailTokens.add(outbox.getToken());
+                        deadCount++;
                         log.warn("FCM 영구 오류 (id={}): {}", outbox.getId(), errorCode);
                     } else {
                         boolean exhausted = outbox.getRetryCount() + 1 >= outbox.getMaxRetry();
                         if (exhausted) {
                             exhaustedMap.computeIfAbsent(errorCode, k -> new ArrayList<>()).add(outbox.getId());
+                            deadCount++;
                             log.warn("FCM 최대 재시도 초과 (id={}): {}", outbox.getId(), errorCode);
                         } else {
                             RetryKey key = new RetryKey(outbox.getRetryCount(), errorCode);
@@ -247,23 +266,25 @@ public class FcmOutboxProcessor {
             }
 
             log.info("FCM 배치 전송: 성공={}, 실패={} ({}건 중)", successCount, failCount, batch.size());
-            return new int[]{successCount, failCount};
+            return new int[]{successCount, failCount, deadCount};
 
         } catch (FirebaseMessagingException e) {
             log.error("FCM 배치 전송 오류: {}", e.getMessage());
+            int deadCount = 0;
             for (FcmOutbox outbox : batch) {
                 boolean exhausted = outbox.getRetryCount() + 1 >= outbox.getMaxRetry();
                 if (exhausted) {
                     exhaustedMap.computeIfAbsent("BATCH_ERROR", k -> new ArrayList<>()).add(outbox.getId());
+                    deadCount++;
                 } else {
                     failedMap.computeIfAbsent(new RetryKey(outbox.getRetryCount(), "BATCH_ERROR"), k -> new ArrayList<>()).add(outbox.getId());
                 }
             }
-            return new int[]{0, batch.size()};
+            return new int[]{0, batch.size(), deadCount};
         }
     }
 
-    private void recordStats(int successCount, int failCount) {
+    private void recordStats(int successCount, int failCount, int deadCount) {
         String today = LocalDate.now().toString();
         if (successCount > 0) {
             String key = FCM_SUCCESS_KEY_PREFIX + today;
@@ -273,6 +294,11 @@ public class FcmOutboxProcessor {
         if (failCount > 0) {
             String key = FCM_FAIL_KEY_PREFIX + today;
             redisTemplate.opsForValue().increment(key, failCount);
+            redisTemplate.expire(key, Duration.ofHours(24));
+        }
+        if (deadCount > 0) {
+            String key = FCM_DEAD_KEY_PREFIX + today;
+            redisTemplate.opsForValue().increment(key, deadCount);
             redisTemplate.expire(key, Duration.ofHours(24));
         }
     }
