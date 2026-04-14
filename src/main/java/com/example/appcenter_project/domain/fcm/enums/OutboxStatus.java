@@ -6,5 +6,6 @@ public enum OutboxStatus {
     SENT,
     FAILED,
     DEAD_PERMANENT,
-    DEAD_EXHAUSTED
+    DEAD_EXHAUSTED,
+    EXPIRED
 }
