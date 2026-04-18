@@ -156,7 +156,7 @@ public class UserNotificationService {
     private static void changeType(GroupOrderType beforeCategory, GroupOrderType afterCategory, User user) {
         int index = user.getGroupOrderTypes().indexOf(beforeCategory);
 
-        if (index != -1) {
+        if (index == -1) {
             throw new CustomException(USER_GROUP_ORDER_TYPE_NOT_FOUND);
         }
 
@@ -166,7 +166,7 @@ public class UserNotificationService {
     private static void changeKeyword(String beforeKeyword, String afterKeyword, User user) {
         int index = user.getGroupOrderKeywords().indexOf(beforeKeyword);
 
-        if (index != -1) {
+        if (index == -1) {
             throw new CustomException(USER_GROUP_ORDER_KEYWORD_NOT_FOUND);
         }
 
