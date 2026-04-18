@@ -18,6 +18,7 @@
 | 2026-04-09 | [#594](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/594) | FCM 알림 Outbox Pattern + DLQ 적용으로 안정성 개선 | teach/refactor/fcm-outbox-dlq-594 | Outbox 적재, 지수 백오프 재시도, DEAD_PERMANENT/DEAD_EXHAUSTED DLQ, ADMIN 조회/재시도 API |
 | 2026-04-09 | [#596](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/596) | FCM Outbox/DLQ 성능 및 안정성 개선 | teach/refactor/fcm-outbox-improvement-596 | SKIP LOCKED, 배치 전환, Bulk Update, TTL, Dedup, Graceful Shutdown, Slack 알림 등 14개 작업 |
 | 2026-04-14 | [#601](https://github.com/Teach-D/appcenter-16.5-dormitory-project/pull/601) | FCM Outbox/DLQ 성능 및 안정성 개선 PR | teach/refactor/fcm-outbox-improvement-596 | PR #601 생성 |
+| 2026-04-18 | [#603](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/603) | User 도메인 단위 테스트 작성 | teach/test/user-service-test-603 | UserService, UserNotificationService Mockito 단위 테스트 |
 
 ## 완료된 이슈
 
