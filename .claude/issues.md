@@ -20,19 +20,9 @@
 | 2026-04-14 | [#601](https://github.com/Teach-D/appcenter-16.5-dormitory-project/pull/601) | FCM Outbox/DLQ 성능 및 안정성 개선 PR | teach/refactor/fcm-outbox-improvement-596 | PR #601 생성 |
 | 2026-04-19 | [#604](https://github.com/Teach-D/appcenter-16.5-dormitory-project/issues/604) | 서비스 에러 발생 시 Sentry, Slack 알림 전송 | teach/feat/sentry-slack-error-alert-604 | Sentry SDK + Slack webhook 연동, GlobalExceptionHandler 통합 |
 
-## 현재 작업 이슈
-
-- **번호**: #604
-- **제목**: [feat] 서비스 에러 발생 시 Sentry, Slack 알림 전송
-- **브랜치**: teach/feat/sentry-slack-error-alert-604
-- **작업 목록**:
-  - [x] `build.gradle`에 `sentry-spring-boot-starter-jakarta` 의존성 추가
-  - [x] `application.yml`에 Sentry DSN 설정 추가 (`${SENTRY_DSN:}`)
-  - [x] `SlackErrorNotifier` 서비스 생성 (unhandled exception 전용 Slack 알림)
-  - [x] `GlobalExceptionHandler`에 `Exception.class` 핸들러 추가 → Slack 알림 + Sentry 캡처 연결
-
 ## 완료된 이슈
 
+- [x] #604 [feat] 서비스 에러 발생 시 Sentry, Slack 알림 전송 → PR #605 merged
 - [x] #596 [refactor] FCM Outbox/DLQ 성능 및 안정성 개선 → PR #601 merged
 - [x] #594 [refactor] FCM 알림 Outbox Pattern + DLQ 적용으로 안정성 개선 → PR #597 merged
 - [x] #592 [refactor] FCM 전체 알림 전송 병렬화 및 성능 개선 → PR #595 merged
