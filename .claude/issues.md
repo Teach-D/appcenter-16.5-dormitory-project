@@ -26,10 +26,10 @@
 - **제목**: [feat] 서비스 에러 발생 시 Sentry, Slack 알림 전송
 - **브랜치**: teach/feat/sentry-slack-error-alert-604
 - **작업 목록**:
-  - [ ] `build.gradle`에 `sentry-spring-boot-starter-jakarta` 의존성 추가
-  - [ ] `application.yml`에 Sentry DSN 설정 추가 (`${SENTRY_DSN:}`)
-  - [ ] `SlackErrorNotifier` 서비스 생성 (unhandled exception 전용 Slack 알림)
-  - [ ] `GlobalExceptionHandler`에 `Exception.class` 핸들러 추가 → Slack 알림 + Sentry 캡처 연결
+  - [x] `build.gradle`에 `sentry-spring-boot-starter-jakarta` 의존성 추가
+  - [x] `application.yml`에 Sentry DSN 설정 추가 (`${SENTRY_DSN:}`)
+  - [x] `SlackErrorNotifier` 서비스 생성 (unhandled exception 전용 Slack 알림)
+  - [x] `GlobalExceptionHandler`에 `Exception.class` 핸들러 추가 → Slack 알림 + Sentry 캡처 연결
 
 ## 완료된 이슈
 
