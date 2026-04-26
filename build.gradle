@@ -95,6 +95,9 @@ dependencies {
 
 	// Sentry (Spring Boot 3 / Jakarta)
 	implementation 'io.sentry:sentry-spring-boot-starter-jakarta:7.20.0'
+
+	// Mixpanel
+	implementation 'com.mixpanel:mixpanel-java:1.5.2'
 }
 
 tasks.named('test') {

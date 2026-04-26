@@ -16,8 +16,10 @@ import com.example.appcenter_project.domain.roommate.repository.RoommateChatting
 import com.example.appcenter_project.domain.roommate.repository.RoommateMatchingRepository;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.domain.fcm.service.FcmMessageService;
+import com.example.appcenter_project.global.mixpanel.MixpanelService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +38,7 @@ public class RoommateMatchingService {
     private final RoommateChattingRoomRepository roommateChattingRoomRepository;
     private final FcmMessageService fcmMessageService;
     private final NotificationService notificationService;
+    private final MixpanelService mixpanelService;
 
     //매칭요청 학번
     @Transactional
@@ -99,6 +102,15 @@ public class RoommateMatchingService {
         cleanUpOldMatchingRecords(sender, receiver);
         sendAcceptNotification(sender, receiver, matching.getId());
         sendAcceptNotification(receiver, sender, matching.getId());
+
+        try {
+            mixpanelService.trackEvent(user.getStudentNumber(), "matching_accept", new JSONObject());
+            JSONObject profileProps = new JSONObject();
+            profileProps.put("matching_completed", true);
+            mixpanelService.setUserProfile(user.getStudentNumber(), profileProps);
+        } catch (Exception e) {
+            log.warn("Mixpanel 매칭 수락 이벤트 추적 실패 - userId: {}", userId);
+        }
     }
 
     // 매칭 거절
@@ -118,6 +130,12 @@ public class RoommateMatchingService {
         }
 
         matching.fail();
+
+        try {
+            mixpanelService.trackEvent(user.getStudentNumber(), "matching_reject", new JSONObject());
+        } catch (Exception e) {
+            log.warn("Mixpanel 매칭 거절 이벤트 추적 실패 - userId: {}", userId);
+        }
     }
 
     // 매칭조회
@@ -212,6 +230,12 @@ public class RoommateMatchingService {
 
         roommateMatchingRepository.save(matching);
         sendRequestNotification(sender, receiver, matching.getId());
+
+        try {
+            mixpanelService.trackEvent(sender.getStudentNumber(), "matching_request_send", new JSONObject());
+        } catch (Exception e) {
+            log.warn("Mixpanel 매칭 요청 이벤트 추적 실패 - senderId: {}", sender.getId());
+        }
 
         return ResponseRoommateMatchingDto.builder()
                 .matchingId(matching.getId())

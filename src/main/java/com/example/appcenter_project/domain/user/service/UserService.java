@@ -19,6 +19,7 @@ import com.example.appcenter_project.domain.user.repository.RefreshTokenReposito
 import com.example.appcenter_project.domain.user.repository.SchoolLoginRepository;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.global.exception.ErrorCode;
+import com.example.appcenter_project.global.mixpanel.MixpanelService;
 import com.example.appcenter_project.global.security.jwt.JwtTokenProvider;
 import com.example.appcenter_project.domain.fcm.service.FcmMessageService;
 import com.example.appcenter_project.common.image.service.ImageService;
@@ -27,11 +28,13 @@ import com.example.appcenter_project.domain.tip.service.TipQueryService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -54,23 +57,33 @@ public class UserService {
     private final RoommateQueryService roommateQueryService;
     private final ImageService imageService;
     private final FcmMessageService fcmMessageService;
+    private final MixpanelService mixpanelService;
 
     // ========== Public Methods ========== //
 
     public ResponseLoginDto saveUser(SignupUser signupUser) {
-        checkINUStudent(signupUser);
         User user = createUser(signupUser);
+        trackSignupProfile(user);
+        trackLoginComplete(user);
         return createDto(user);
     }
 
     public ResponseLoginDto saveFreshman(SignupUser signupUser) {
         User user = createFreshman(signupUser);
+        trackSignupProfile(user);
+        trackLoginComplete(user);
         return createDto(user);
     }
 
     public ResponseLoginDto loginFreshman(SignupUser signupUser) {
-        User user = findFreshmanForLogin(signupUser);
-        return createDto(user);
+        try {
+            User user = findFreshmanForLogin(signupUser);
+            trackLoginComplete(user);
+            return createDto(user);
+        } catch (CustomException e) {
+            trackLoginFail(signupUser.getStudentNumber(), e.getErrorCode().name());
+            throw e;
+        }
     }
 
     public ResponseLoginDto reissueAccessToken(RequestTokenDto request) {
@@ -200,6 +213,13 @@ public class UserService {
 
     public void updateUserTimeTableImage(Long userId, MultipartFile image) {
         imageService.updateImage(ImageType.TIME_TABLE, userId, image);
+
+        try {
+            User user = findUserById(userId);
+            mixpanelService.trackEvent(user.getStudentNumber(), "schedule_update", new JSONObject());
+        } catch (Exception e) {
+            log.warn("Mixpanel schedule_update 이벤트 추적 실패 - userId: {}", userId);
+        }
     }
 
     public void deleteUser(Long userId) {
@@ -331,6 +351,58 @@ public class UserService {
                 Role.ROLE_DORM_MANAGER,
                 Role.ROLE_DORM_EXPEDITED_COMPLAINT_MANAGER
         );
+    }
+
+    private void trackSignupProfile(User user) {
+        try {
+            JSONObject profileProps = new JSONObject();
+            profileProps.put("$created", user.getCreatedDate() != null ? user.getCreatedDate().toString() : LocalDate.now().toString());
+            if (user.getDormType() != null) {
+                profileProps.put("dormitory", user.getDormType().toValue());
+            }
+            if (user.getCollege() != null) {
+                profileProps.put("department", user.getCollege().toValue());
+            }
+            mixpanelService.setUserProfile(user.getStudentNumber(), profileProps);
+        } catch (Exception e) {
+            log.warn("Mixpanel 가입 프로필 설정 실패 - studentNumber: {}", user.getStudentNumber());
+        }
+    }
+
+    private void trackLoginComplete(User user) {
+        try {
+            JSONObject eventProps = new JSONObject();
+            if (user.getDormType() != null) {
+                eventProps.put("dormitory", user.getDormType().toValue());
+            }
+            if (user.getCollege() != null) {
+                eventProps.put("department", user.getCollege().toValue());
+            }
+            mixpanelService.trackEvent(user.getStudentNumber(), "Login_complete", eventProps);
+            mixpanelService.identifyUser(user.getStudentNumber(), user.getStudentNumber());
+
+            JSONObject profileProps = new JSONObject();
+            profileProps.put("last_active_date", LocalDate.now().toString());
+            if (user.getDormType() != null) {
+                profileProps.put("dormitory", user.getDormType().toValue());
+            }
+            if (user.getCollege() != null) {
+                profileProps.put("department", user.getCollege().toValue());
+            }
+            mixpanelService.setUserProfile(user.getStudentNumber(), profileProps);
+        } catch (Exception e) {
+            log.warn("Mixpanel 로그인 이벤트 추적 실패 - studentNumber: {}", user.getStudentNumber());
+        }
+    }
+
+    private void trackLoginFail(String studentNumber, String reason) {
+        try {
+            JSONObject eventProps = new JSONObject();
+            eventProps.put("reason", reason);
+            mixpanelService.trackEvent(studentNumber, "Login_fail", eventProps);
+        } catch (Exception e) {
+            log.warn("Mixpanel 로그인 실패 이벤트 추적 실패 - studentNumber: {}", studentNumber);
+        }
     }
 
 
