@@ -1,0 +1,39 @@
+{
+  "enabledPlugins": {
+    "skill-creator@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "mcp__github__create_branch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/post-create-branch.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/check-checkout.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/check-checkout.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
