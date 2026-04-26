@@ -411,7 +411,7 @@ public class SurveyService {
             JSONObject eventProps = new JSONObject();
             eventProps.put("survey_id", requestDto.getSurveyId());
             eventProps.put("survey_title", survey.getTitle());
-            mixpanelService.trackEvent(user.getStudentNumber(), "form_submit", eventProps);
+            mixpanelService.trackEvent(user.getId().toString(), "form_submit", eventProps);
         } catch (Exception e) {
             log.warn("Mixpanel form_submit 이벤트 추적 실패 - userId: {}, surveyId: {}", userId, requestDto.getSurveyId());
         }

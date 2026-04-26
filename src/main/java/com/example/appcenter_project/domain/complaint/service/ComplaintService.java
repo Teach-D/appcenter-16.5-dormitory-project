@@ -139,8 +139,8 @@ public class ComplaintService {
                     (saved.getFloor() != null ? " " + saved.getFloor() + "층" : "") +
                     (saved.getRoomNumber() != null ? " " + saved.getRoomNumber() + "호" : "");
             eventProps.put("room_info", roomInfo.trim());
-            mixpanelService.trackEvent(user.getStudentNumber(), "complaint_submit", eventProps);
-            mixpanelService.incrementUserProperty(user.getStudentNumber(), "total_complaints", 1);
+            mixpanelService.trackEvent(user.getId().toString(), "complaint_submit", eventProps);
+            mixpanelService.incrementUserProperty(user.getId().toString(), "total_complaints", 1);
         } catch (Exception e) {
             log.warn("Mixpanel 민원 이벤트 추적 실패 - 민원ID: {}", saved.getId());
         }

@@ -295,7 +295,7 @@ public class RoommateService {
         }
 
         try {
-            mixpanelService.trackEvent(user.getStudentNumber(), "room_rules_edit", new JSONObject());
+            mixpanelService.trackEvent(user.getId().toString(), "room_rules_edit", new JSONObject());
         } catch (Exception e) {
             log.warn("Mixpanel room_rules_edit 이벤트 추적 실패 - userId: {}", userId);
         }
