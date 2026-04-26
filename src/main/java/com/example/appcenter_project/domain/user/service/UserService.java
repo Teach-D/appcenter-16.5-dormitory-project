@@ -382,7 +382,7 @@ public class UserService {
             mixpanelService.trackEvent(user.getId().toString(), "Login_complete", eventProps);
 
             JSONObject profileProps = new JSONObject();
-            profileProps.put("last_active_date", LocalDate.now().toString());
+            profileProps.put("last_active_date", java.time.Instant.now().toString());
             if (user.getDormType() != null) {
                 profileProps.put("dormitory", user.getDormType().toValue());
             }
