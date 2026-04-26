@@ -217,7 +217,7 @@ public class UserService {
 
         try {
             User user = findUserById(userId);
-            mixpanelService.trackEvent(user.getStudentNumber(), "schedule_update", new JSONObject());
+            mixpanelService.trackEvent(user.getId().toString(), "schedule_update", new JSONObject());
         } catch (Exception e) {
             log.warn("Mixpanel schedule_update 이벤트 추적 실패 - userId: {}", userId);
         }
@@ -364,9 +364,9 @@ public class UserService {
             if (user.getCollege() != null) {
                 profileProps.put("department", user.getCollege().toValue());
             }
-            mixpanelService.setUserProfile(user.getStudentNumber(), profileProps);
+            mixpanelService.setUserProfile(user.getId().toString(), profileProps);
         } catch (Exception e) {
-            log.warn("Mixpanel 가입 프로필 설정 실패 - studentNumber: {}", user.getStudentNumber());
+            log.warn("Mixpanel 가입 프로필 설정 실패 - userId: {}", user.getId());
         }
     }
 
@@ -379,8 +379,7 @@ public class UserService {
             if (user.getCollege() != null) {
                 eventProps.put("department", user.getCollege().toValue());
             }
-            mixpanelService.trackEvent(user.getStudentNumber(), "Login_complete", eventProps);
-            mixpanelService.identifyUser(user.getStudentNumber(), user.getStudentNumber());
+            mixpanelService.trackEvent(user.getId().toString(), "Login_complete", eventProps);
 
             JSONObject profileProps = new JSONObject();
             profileProps.put("last_active_date", LocalDate.now().toString());
@@ -390,9 +389,9 @@ public class UserService {
             if (user.getCollege() != null) {
                 profileProps.put("department", user.getCollege().toValue());
             }
-            mixpanelService.setUserProfile(user.getStudentNumber(), profileProps);
+            mixpanelService.setUserProfile(user.getId().toString(), profileProps);
         } catch (Exception e) {
-            log.warn("Mixpanel 로그인 이벤트 추적 실패 - studentNumber: {}", user.getStudentNumber());
+            log.warn("Mixpanel 로그인 이벤트 추적 실패 - userId: {}", user.getId());
         }
     }
 
