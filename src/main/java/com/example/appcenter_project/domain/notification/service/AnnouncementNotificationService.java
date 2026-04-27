@@ -1,6 +1,8 @@
 package com.example.appcenter_project.domain.notification.service;
 
 import com.example.appcenter_project.domain.announcement.entity.Announcement;
+import com.example.appcenter_project.domain.fcm.entity.FcmOutbox;
+import com.example.appcenter_project.domain.fcm.repository.FcmOutboxRepository;
 import com.example.appcenter_project.domain.notification.entity.Notification;
 import com.example.appcenter_project.domain.notification.entity.UserNotification;
 import com.example.appcenter_project.domain.user.entity.User;
@@ -9,8 +11,8 @@ import com.example.appcenter_project.domain.user.enums.NotificationType;
 import com.example.appcenter_project.domain.user.enums.Role;
 import com.example.appcenter_project.domain.notification.repository.NotificationRepository;
 import com.example.appcenter_project.domain.notification.repository.UserNotificationRepository;
+import com.example.appcenter_project.domain.user.repository.FcmTokenRepository;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
-import com.example.appcenter_project.domain.fcm.service.FcmMessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +27,8 @@ public class AnnouncementNotificationService {
 
     private final UserRepository userRepository;
     private final UserNotificationRepository userNotificationRepository;
-    private final FcmMessageService fcmMessageService;
+    private final FcmTokenRepository fcmTokenRepository;
+    private final FcmOutboxRepository fcmOutboxRepository;
     private final NotificationRepository notificationRepository;
 
     private static final List<Role> DORMITORY_ROLES = List.of(
@@ -84,27 +87,30 @@ public class AnnouncementNotificationService {
 
     private void sendMessagesTo(List<User> targetUser, Notification notification, NotificationType notificationType) {
         switch(notificationType) {
-            case DORMITORY: sendDormitoryMessages(targetUser, notification.getTitle(), notification.getBody());
-            case SUPPORTERS: sendSupporterMessages(targetUser, notification.getTitle(), notification.getBody());
-            case UNI_DORM: sendUnidormMessages(targetUser, notification.getTitle(), notification.getBody());
+            case DORMITORY -> sendDormitoryMessages(targetUser, notification.getTitle(), notification.getBody());
+            case SUPPORTERS -> sendSupporterMessages(targetUser, notification.getTitle(), notification.getBody());
+            case UNI_DORM -> sendUnidormMessages(targetUser, notification.getTitle(), notification.getBody());
         }
     }
 
     private void sendDormitoryMessages(List<User> targetUser, String title, String body) {
-        for (User user : targetUser) {
-            fcmMessageService.sendDormitoryNotification(user, title, body);
-        }
+        bulkEnqueueOutbox(targetUser, title, body);
     }
 
     private void sendSupporterMessages(List<User> targetUser, String title, String body) {
-        for (User user : targetUser) {
-            fcmMessageService.sendSupporterNotification(user, title, body);
-        }
+        bulkEnqueueOutbox(targetUser, title, body);
     }
 
     private void sendUnidormMessages(List<User> targetUser, String title, String body) {
-        for (User user : targetUser) {
-            fcmMessageService.sendUnidormNotification(user, title, body);
+        bulkEnqueueOutbox(targetUser, title, body);
+    }
+
+    private void bulkEnqueueOutbox(List<User> users, String title, String body) {
+        List<FcmOutbox> outboxes = fcmTokenRepository.findAllByUserIn(users).stream()
+                .map(token -> FcmOutbox.create(token.getToken(), title, body))
+                .toList();
+        if (!outboxes.isEmpty()) {
+            fcmOutboxRepository.saveAll(outboxes);
         }
     }
 
