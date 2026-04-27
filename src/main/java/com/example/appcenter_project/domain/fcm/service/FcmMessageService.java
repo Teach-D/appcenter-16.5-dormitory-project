@@ -1,8 +1,12 @@
 package com.example.appcenter_project.domain.fcm.service;
 
+import com.example.appcenter_project.domain.fcm.dto.response.ResponseFcmDlqDto;
 import com.example.appcenter_project.domain.fcm.dto.response.ResponseFcmMessageDto;
 import com.example.appcenter_project.domain.fcm.dto.response.ResponseFcmStatsDto;
+import com.example.appcenter_project.domain.fcm.entity.FcmOutbox;
 import com.example.appcenter_project.domain.fcm.entity.FcmToken;
+import com.example.appcenter_project.domain.fcm.enums.OutboxStatus;
+import com.example.appcenter_project.domain.fcm.repository.FcmOutboxRepository;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.user.enums.DormType;
 import com.example.appcenter_project.domain.user.enums.NotificationType;
@@ -10,14 +14,18 @@ import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.global.exception.ErrorCode;
 import com.example.appcenter_project.domain.user.repository.FcmTokenRepository;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
-import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.messaging.Message;
-import com.google.firebase.messaging.Notification;
-import java.time.LocalDate;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.HexFormat;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -32,107 +40,63 @@ public class FcmMessageService {
 
     private static final String FCM_SUCCESS_KEY_PREFIX = "fcm:success:";
     private static final String FCM_FAIL_KEY_PREFIX = "fcm:fail:";
+    private static final String FCM_DEDUP_KEY_PREFIX = "fcm:dedup:";
+    private static final Duration DEDUP_TTL = Duration.ofMinutes(5);
 
     private final FcmTokenRepository fcmTokenRepository;
     private final UserRepository userRepository;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final FcmOutboxRepository fcmOutboxRepository;
 
     @Async("fcmExecutor")
     public void sendNotification(User user, String title, String body) {
         User freshUser = userRepository.findById(user.getId())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        for (FcmToken fcmToken : fcmTokenRepository.findAllByUser(freshUser)) {
-            String targetToken = fcmToken.getToken();
-
-            Notification notification = Notification.builder()
-                    .setTitle(title)
-                    .setBody(body)
-                    .build();
-
-            Message message = Message.builder()
-                    .setToken(targetToken)
-                    .setNotification(notification)
-                    .build();
-
-            try {
-                String response = FirebaseMessaging.getInstance().send(message);
-                log.info("Successfully sent FCM message: {}", response);
-                recordFcmSuccess();
-            } catch (Exception e) {
-                log.error("Error sending FCM message", e);
-                fcmTokenRepository.deleteByToken(targetToken);
-                recordFcmFail();
-            }
-        }
+        enqueueOutbox(freshUser, title, body);
     }
 
-    // 추가: 전체 사용자(회원 + 비회원)에게 전송
-    @Transactional
     public ResponseFcmMessageDto sendNotificationToAllUsers(String title, String body) {
-        List<FcmToken> allTokens = fcmTokenRepository.findAll();
-
-        if (allTokens.isEmpty()) {
-            log.warn("No FCM tokens found. 전체 사용자에게 보낼 토큰이 없습니다.");
-            throw new CustomException(ErrorCode.FCM_TOKEN_NOT_FOUND);
+        String dedupKey = FCM_DEDUP_KEY_PREFIX + sha256(title + "\0" + body);
+        Boolean isNew = redisTemplate.opsForValue().setIfAbsent(dedupKey, "1", DEDUP_TTL);
+        if (!Boolean.TRUE.equals(isNew)) {
+            log.warn("FCM 전체 발송 중복 요청 차단 (title={})", title);
+            return ResponseFcmMessageDto.builder()
+                    .messageId("ALL_USERS")
+                    .status("DUPLICATE")
+                    .build();
         }
 
-        for (FcmToken fcmToken : allTokens) {
-            String targetToken = fcmToken.getToken();
+        List<String> tokens = fcmTokenRepository.findAll().stream()
+                .map(FcmToken::getToken)
+                .toList();
 
-            Notification notification = Notification.builder()
-                    .setTitle(title)
-                    .setBody(body)
-                    .build();
+        List<FcmOutbox> outboxes = tokens.stream()
+                .map(token -> FcmOutbox.create(token, title, body))
+                .toList();
+        fcmOutboxRepository.saveAll(outboxes);
 
-            Message message = Message.builder()
-                    .setToken(targetToken)
-                    .setNotification(notification)
-                    .build();
-
-            try {
-                String response = FirebaseMessaging.getInstance().send(message);
-                log.info("Successfully sent FCM message to token: {}", response);
-                recordFcmSuccess();
-            } catch (Exception e) {
-                log.error("Error sending FCM message to token: {}", targetToken, e);
-                fcmTokenRepository.deleteByToken(targetToken);
-                recordFcmFail();
-            }
-        }
-
+        log.info("전체 FCM Outbox 적재 완료: {}개 토큰", tokens.size());
         return ResponseFcmMessageDto.builder()
                 .messageId("ALL_USERS")
-                .status("SUCCESS")
+                .status("QUEUED")
                 .build();
+    }
+
+    private String sha256(String input) {
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256")
+                    .digest(input.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 not available", e);
+        }
     }
 
     @Async("fcmExecutor")
     public void sendNotificationDormitoryPerson(String title, String body) {
         List<User> dormitoryUsers = userRepository.findDormitoryUsersWithFcmTokens(DormType.NONE, NotificationType.DORMITORY);
         for (User user : dormitoryUsers) {
-            for (FcmToken fcmToken : user.getFcmTokenList()) {
-                String targetToken = fcmToken.getToken();
-
-                Notification notification = Notification.builder()
-                        .setTitle(title)
-                        .setBody(body)
-                        .build();
-
-                Message message = Message.builder()
-                        .setToken(targetToken)
-                        .setNotification(notification)
-                        .build();
-
-                try {
-                    String response = FirebaseMessaging.getInstance().send(message);
-                    log.info("Successfully sent FCM message: {}", response);
-                    recordFcmSuccess();
-                } catch (Exception e) {
-                    log.error("Error sending FCM message", e);
-                    fcmTokenRepository.deleteByToken(targetToken);
-                    recordFcmFail();
-                }
-            }
+            enqueueOutbox(user, title, body);
         }
     }
 
@@ -143,8 +107,7 @@ public class FcmMessageService {
         if (!freshUser.getReceiveNotificationTypes().contains(NotificationType.GROUP_ORDER)) {
             return;
         }
-
-        sendMessageToUser(freshUser, title, body);
+        enqueueOutbox(freshUser, title, body);
     }
 
     @Async("fcmExecutor")
@@ -154,8 +117,7 @@ public class FcmMessageService {
         if (!freshUser.getReceiveNotificationTypes().contains(NotificationType.DORMITORY)) {
             return;
         }
-
-        sendMessageToUser(freshUser, title, body);
+        enqueueOutbox(freshUser, title, body);
     }
 
     @Async("fcmExecutor")
@@ -165,70 +127,27 @@ public class FcmMessageService {
         if (!freshUser.getReceiveNotificationTypes().contains(NotificationType.UNI_DORM)) {
             return;
         }
-
-        sendMessageToUser(freshUser, title, body);
+        enqueueOutbox(freshUser, title, body);
     }
 
-/*    private void sendMessageToUser(User user, String title, String body) {
-        for (FcmToken fcmToken : user.getFcmTokenList()) {
-            String targetToken = fcmToken.getToken();
-
-            Notification notification = Notification.builder()
-                    .setTitle(title)
-                    .setBody(body)
-                    .build();
-
-            Message message = Message.builder()
-                    .setToken(targetToken)
-                    .setNotification(notification)
-                    .build();
-
-            try {
-                String response = FirebaseMessaging.getInstance().send(message);
-                log.info("Successfully sent FCM message: {}", response);
-            } catch (Exception e) {
-                log.error("Error sending FCM message", e);
-                fcmTokenRepository.deleteByToken(targetToken);
-                throw new RuntimeException("FCM 발송 실패", e);
-            }
+    @Async("fcmExecutor")
+    public void sendSupporterNotification(User user, String title, String body) {
+        User freshUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        if (!freshUser.getReceiveNotificationTypes().contains(NotificationType.SUPPORTERS)) {
+            return;
         }
-    }*/
+        enqueueOutbox(freshUser, title, body);
+    }
 
-    private void sendMessageToUser(User user, String title, String body) {
-        log.info("      🚀 sendMessageToUser 시작 (User ID: {})", user.getId());
-        List<FcmToken> fcmTokens = fcmTokenRepository.findAllByUser(user);
-        log.info("      📱 FCM Token 리스트 크기: {}", fcmTokens.size());
-
-        int tokenIndex = 0;
-        for (FcmToken fcmToken : fcmTokens) {
-            tokenIndex++;
-            String targetToken = fcmToken.getToken();
-
-            log.info("      ━━━ Token [{}/{}] ━━━", tokenIndex, fcmTokens.size());
-            log.info("      Token: {}...", targetToken.substring(0, Math.min(30, targetToken.length())));
-
-            Notification notification = Notification.builder()
-                    .setTitle(title)
-                    .setBody(body)
-                    .build();
-
-            Message message = Message.builder()
-                    .setToken(targetToken)
-                    .setNotification(notification)
-                    .build();
-
-            try {
-                String response = FirebaseMessaging.getInstance().send(message);
-                log.info("      ✅ FCM 전송 성공: {}", response);
-                recordFcmSuccess();
-            } catch (Exception e) {
-                log.error("      ❌ FCM 전송 실패", e);
-                fcmTokenRepository.deleteByToken(targetToken);
-                recordFcmFail();
-            }
+    @Async("fcmExecutor")
+    public void sendUnidormAnnouncementNotification(User user, String title, String body) {
+        User freshUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        if (!freshUser.getReceiveNotificationTypes().contains(NotificationType.UNI_DORM)) {
+            return;
         }
-
-        log.info("      🚀 sendMessageToUser 종료 (User ID: {}, 총 {}개 토큰 처리)", user.getId(), tokenIndex);
+        enqueueOutbox(freshUser, title, body);
     }
 
     @Transactional(readOnly = true)
@@ -250,37 +169,27 @@ public class FcmMessageService {
                 .build();
     }
 
-    private void recordFcmSuccess() {
-        String key = FCM_SUCCESS_KEY_PREFIX + LocalDate.now();
-        redisTemplate.opsForValue().increment(key);
-        redisTemplate.expire(key, Duration.ofHours(24));
+    @Transactional(readOnly = true)
+    public Page<ResponseFcmDlqDto> getDlqList(Pageable pageable) {
+        return fcmOutboxRepository.findByStatusIn(
+                List.of(OutboxStatus.DEAD_PERMANENT, OutboxStatus.DEAD_EXHAUSTED), pageable
+        ).map(ResponseFcmDlqDto::from);
     }
 
-    private void recordFcmFail() {
-        String key = FCM_FAIL_KEY_PREFIX + LocalDate.now();
-        redisTemplate.opsForValue().increment(key);
-        redisTemplate.expire(key, Duration.ofHours(24));
-    }
-
-    @Async("fcmExecutor")
-    public void sendSupporterNotification(User user, String title, String body) {
-        User freshUser = userRepository.findById(user.getId())
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        if (!freshUser.getReceiveNotificationTypes().contains(NotificationType.SUPPORTERS)) {
-            return;
+    public void retryDlq(Long outboxId) {
+        FcmOutbox outbox = fcmOutboxRepository.findById(outboxId)
+                .orElseThrow(() -> new CustomException(ErrorCode.FCM_OUTBOX_NOT_FOUND));
+        if (outbox.getStatus() != OutboxStatus.DEAD_EXHAUSTED) {
+            throw new CustomException(ErrorCode.FCM_OUTBOX_NOT_RETRYABLE);
         }
-
-        sendMessageToUser(freshUser, title, body);
+        outbox.resetToPending();
     }
 
-    @Async("fcmExecutor")
-    public void sendUnidormAnnouncementNotification(User user, String title, String body) {
-        User freshUser = userRepository.findById(user.getId())
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        if (!freshUser.getReceiveNotificationTypes().contains(NotificationType.UNI_DORM)) {
-            return;
+    private void enqueueOutbox(User user, String title, String body) {
+        List<FcmToken> tokens = fcmTokenRepository.findAllByUser(user);
+        for (FcmToken token : tokens) {
+            fcmOutboxRepository.save(FcmOutbox.create(token.getToken(), title, body));
         }
-
-        sendMessageToUser(freshUser, title, body);
     }
+
 }

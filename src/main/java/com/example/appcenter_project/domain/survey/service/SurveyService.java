@@ -10,10 +10,12 @@ import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.survey.enums.QuestionType;
 import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
+import com.example.appcenter_project.global.mixpanel.MixpanelService;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import com.opencsv.CSVWriter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -41,6 +43,7 @@ public class SurveyService {
     private final SurveyResponseRepository surveyResponseRepository;
     private final SurveyAnswerRepository surveyAnswerRepository;
     private final UserRepository userRepository;
+    private final MixpanelService mixpanelService;
 
     // 설문 생성 (관리자)
     public Long createSurvey(Long userId, RequestSurveyDto requestDto) {
@@ -403,6 +406,16 @@ public class SurveyService {
 
         survey.addResponse(response);
         log.info("[submitSurveyResponse] userId={}의 surveyId={} 응답 제출 완료", userId, requestDto.getSurveyId());
+
+        try {
+            JSONObject eventProps = new JSONObject();
+            eventProps.put("survey_id", requestDto.getSurveyId());
+            eventProps.put("survey_title", survey.getTitle());
+            mixpanelService.trackEvent(user.getId().toString(), "form_submit", eventProps);
+        } catch (Exception e) {
+            log.warn("Mixpanel form_submit 이벤트 추적 실패 - userId: {}, surveyId: {}", userId, requestDto.getSurveyId());
+        }
+
         return response.getId();
     }
 

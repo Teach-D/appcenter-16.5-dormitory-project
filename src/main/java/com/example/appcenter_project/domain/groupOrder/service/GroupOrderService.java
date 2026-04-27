@@ -28,8 +28,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.springframework.data.domain.PageRequest;
+
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.example.appcenter_project.global.exception.ErrorCode.*;
@@ -104,19 +107,26 @@ public class GroupOrderService {
         return imageService.findImages(ImageType.GROUP_ORDER, groupOrderId, request);
     }
 
-    public List<ResponseGroupOrderDto> findGroupOrders(CustomUserDetails currentUser, GroupOrderSort sort, GroupOrderType type, String search, HttpServletRequest request) {
+    public List<ResponseGroupOrderDto> findGroupOrders(CustomUserDetails currentUser, GroupOrderSort sort, GroupOrderType type, String search, int page, int size, HttpServletRequest request) {
         addUserSearchLog(currentUser, search);
 
-        List<ResponseGroupOrderDto> responseGroupOrderDtoList = new ArrayList<>();
-        LocalDateTime now = LocalDateTime.now();
-
-        for (GroupOrder groupOrder : groupOrderRepository.findGroupOrdersComplex(sort, type, search)) {
-            updateExpiredGroupOrder(groupOrder, now);
-            String imagePath = findRepresentativeImage(request, groupOrder);
-            responseGroupOrderDtoList.add(ResponseGroupOrderDto.of(groupOrder, imagePath));
+        List<GroupOrder> groupOrders = groupOrderRepository.findGroupOrdersComplex(sort, type, search, PageRequest.of(page, size));
+        if (groupOrders.isEmpty()) {
+            return Collections.emptyList();
         }
 
-        return responseGroupOrderDtoList;
+        List<Long> ids = groupOrders.stream().map(GroupOrder::getId).toList();
+        Map<Long, Image> representativeImageMap = buildRepresentativeImageMap(ids);
+
+        LocalDateTime now = LocalDateTime.now();
+        List<ResponseGroupOrderDto> result = new ArrayList<>();
+        for (GroupOrder groupOrder : groupOrders) {
+            updateExpiredGroupOrder(groupOrder, now);
+            Image image = representativeImageMap.get(groupOrder.getId());
+            String imagePath = image != null ? imageService.getImageUrl(ImageType.GROUP_ORDER, image, request) : null;
+            result.add(ResponseGroupOrderDto.of(groupOrder, imagePath));
+        }
+        return result;
     }
 
     public Integer likeGroupOrder(Long userId, Long groupOrderId) {
@@ -269,60 +279,61 @@ public class GroupOrderService {
     }
 
     private void addCommentToDto(Long groupOrderId, HttpServletRequest request, ResponseGroupOrderDetailDto dto) {
-        List<ResponseGroupOrderCommentDto> commentDtos = buildCommentHierarchy(groupOrderId, request, dto);
+        List<GroupOrderComment> allComments = groupOrderCommentRepository.findByGroupOrder_Id(groupOrderId);
+        if (allComments.isEmpty()) {
+            dto.updateGroupOrderCommentDtoList(Collections.emptyList());
+            return;
+        }
+
+        List<Long> authorIds = allComments.stream()
+                .filter(c -> !c.isDeleted())
+                .map(c -> c.getUser().getId())
+                .distinct()
+                .toList();
+        Map<Long, String> userImageUrlMap = buildUserImageUrlMap(authorIds, request);
+
+        Map<Long, List<GroupOrderComment>> childrenByParentId = allComments.stream()
+                .filter(c -> c.getParentGroupOrderComment() != null)
+                .collect(Collectors.groupingBy(c -> c.getParentGroupOrderComment().getId()));
+
+        List<ResponseGroupOrderCommentDto> commentDtos = allComments.stream()
+                .filter(c -> c.getParentGroupOrderComment() == null)
+                .map(parent -> buildCommentDto(parent, childrenByParentId, userImageUrlMap))
+                .toList();
+
         dto.updateGroupOrderCommentDtoList(commentDtos);
     }
 
-    private List<ResponseGroupOrderCommentDto> buildCommentHierarchy(Long groupOrderId, HttpServletRequest request, ResponseGroupOrderDetailDto dto) {
-        List<GroupOrderComment> parentComments = groupOrderCommentRepository
-                .findByGroupOrderIdAndParentGroupOrderCommentIsNull(groupOrderId);
+    private ResponseGroupOrderCommentDto buildCommentDto(
+            GroupOrderComment parent,
+            Map<Long, List<GroupOrderComment>> childrenByParentId,
+            Map<Long, String> userImageUrlMap) {
 
-        if (parentComments.isEmpty()) {
-            return new ArrayList<>();
-        }
+        ResponseGroupOrderCommentDto parentDto = convertCommentToDto(parent, userImageUrlMap);
 
-        return parentComments.stream()
-                .map(parentComment -> buildCommentDto(parentComment, request))
+        List<ResponseGroupOrderCommentDto> childDtos = childrenByParentId
+                .getOrDefault(parent.getId(), Collections.emptyList()).stream()
+                .map(child -> convertCommentToDto(child, userImageUrlMap))
                 .toList();
-    }
+        parentDto.updateChildGroupOrderCommentList(childDtos);
 
-    private ResponseGroupOrderCommentDto buildCommentDto(GroupOrderComment parentComment, HttpServletRequest request) {
-        ResponseGroupOrderCommentDto parentDto = convertCommentToDto(parentComment, request);
-        addChildCommentToParentComment(request, parentComment, parentDto);
         return parentDto;
     }
 
-    private void addChildCommentToParentComment(HttpServletRequest request, GroupOrderComment parentComment, ResponseGroupOrderCommentDto parentDto) {
-        List<ResponseGroupOrderCommentDto> childDtos = parentComment.getChildGroupOrderComments().stream()
-                .map(childComment -> convertCommentToDto(childComment, request))
-                .toList();
-        parentDto.updateChildGroupOrderCommentList(childDtos);
-    }
-
-    private ResponseGroupOrderCommentDto convertCommentToDto(GroupOrderComment comment, HttpServletRequest request) {
+    private ResponseGroupOrderCommentDto convertCommentToDto(GroupOrderComment comment, Map<Long, String> userImageUrlMap) {
         ResponseGroupOrderCommentDto dto = ResponseGroupOrderCommentDto.from(comment);
 
         if (comment.isDeleted()) {
-            setDeletedCommentInfo(dto);
+            dto.updateReply("삭제된 메시지입니다.");
+            dto.updateUsername("알 수 없는 사용자");
+            dto.updateCommentAuthorImagePath(null);
         } else {
-            setNotDeletedCommentInfo(comment, request, dto);
+            dto.updateReply(comment.getReply());
+            dto.updateUsername(comment.getUser().getName());
+            dto.updateCommentAuthorImagePath(userImageUrlMap.get(comment.getUser().getId()));
         }
 
         return dto;
-    }
-
-    private void setNotDeletedCommentInfo(GroupOrderComment comment, HttpServletRequest request, ResponseGroupOrderCommentDto dto) {
-        dto.updateReply(comment.getReply());
-        dto.updateUsername(comment.getUser().getName());
-
-        String writerImageUrl = imageService.findStaticImageUrl(ImageType.USER, comment.getUser().getId(), request);
-        dto.updateCommentAuthorImagePath(writerImageUrl);
-    }
-
-    private void setDeletedCommentInfo(ResponseGroupOrderCommentDto dto) {
-        dto.updateReply("삭제된 메시지입니다.");
-        dto.updateUsername("알 수 없는 사용자");
-        dto.updateCommentAuthorImagePath(null);
     }
 
     private static List<ResponseGroupOrderPopularSearch> createDtoWithRank(List<GroupOrderPopularSearchKeyword> topKeywords) {
@@ -349,14 +360,22 @@ public class GroupOrderService {
         return !groupOrder.isRecruitmentComplete() && now.isAfter(groupOrder.getDeadline());
     }
 
-    private String findRepresentativeImage(HttpServletRequest request, GroupOrder groupOrder) {
-        List<ImageLinkDto> images = imageService.findImages(ImageType.GROUP_ORDER, groupOrder.getId(), request);
+    private Map<Long, Image> buildRepresentativeImageMap(List<Long> groupOrderIds) {
+        return imageRepository.findGroupOrderImagesByEntityIds(groupOrderIds).stream()
+                .collect(Collectors.toMap(
+                        Image::getEntityId,
+                        image -> image,
+                        (existing, replacement) -> existing
+                ));
+    }
 
-        String imagePath = null;
-        if (!images.isEmpty()) {
-            imagePath = images.get(0).getImageUrl();
-        }
-        return imagePath;
+    private Map<Long, String> buildUserImageUrlMap(List<Long> userIds, HttpServletRequest request) {
+        return imageRepository.findByImageTypeAndEntityIdIn(ImageType.USER, userIds).stream()
+                .collect(Collectors.toMap(
+                        Image::getEntityId,
+                        image -> imageService.getImageUrl(ImageType.USER, image, request),
+                        (existing, replacement) -> existing
+                ));
     }
 
     private void createGroupOrderLike(User user, GroupOrder groupOrder) {

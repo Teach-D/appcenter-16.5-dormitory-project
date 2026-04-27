@@ -2,6 +2,7 @@ package com.example.appcenter_project.domain.fcm.controller;
 
 import com.example.appcenter_project.domain.fcm.dto.request.RequestFcmMessageDto;
 import com.example.appcenter_project.domain.fcm.dto.request.RequestFcmTokenDto;
+import com.example.appcenter_project.domain.fcm.dto.response.ResponseFcmDlqDto;
 import com.example.appcenter_project.domain.fcm.dto.response.ResponseFcmMessageDto;
 import com.example.appcenter_project.domain.fcm.dto.response.ResponseFcmStatsDto;
 import com.example.appcenter_project.global.security.CustomUserDetails;
@@ -11,6 +12,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -73,6 +76,30 @@ public interface FcmApiSpecification {
             RequestFcmMessageDto requestDto
     );
 
+
+    @Operation(
+            summary = "FCM DLQ 목록 조회 (ADMIN)",
+            description = "DEAD_PERMANENT / DEAD_EXHAUSTED 상태인 Outbox 레코드를 페이지 단위로 조회합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "DLQ 목록 조회 성공",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseFcmDlqDto.class))),
+                    @ApiResponse(responseCode = "403", description = "ADMIN 권한 없음", content = @Content())
+            }
+    )
+    ResponseEntity<Page<ResponseFcmDlqDto>> getDlqList(Pageable pageable);
+
+    @Operation(
+            summary = "FCM DLQ 재시도 (ADMIN)",
+            description = "DEAD_EXHAUSTED 상태인 Outbox 레코드를 PENDING으로 초기화하여 재전송을 시도합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "재시도 요청 성공"),
+                    @ApiResponse(responseCode = "400", description = "DEAD_EXHAUSTED 상태가 아님", content = @Content()),
+                    @ApiResponse(responseCode = "403", description = "ADMIN 권한 없음", content = @Content()),
+                    @ApiResponse(responseCode = "404", description = "Outbox 레코드 없음", content = @Content())
+            }
+    )
+    ResponseEntity<Void> retryDlq(@Parameter(description = "재시도할 Outbox ID") Long outboxId);
 
 /*    @Operation(
             summary = "FCM 메시지 발송",

@@ -10,6 +10,7 @@ import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -29,7 +30,7 @@ public class GroupOrderRepositoryImpl implements GroupOrderQuerydslRepository {
     }
 
     @Override
-    public List<GroupOrder> findGroupOrdersComplex(GroupOrderSort sort, GroupOrderType type, String search) {
+    public List<GroupOrder> findGroupOrdersComplex(GroupOrderSort sort, GroupOrderType type, String search, Pageable pageable) {
         return queryFactory
                 .select(groupOrder)
                 .from(groupOrder)
@@ -37,10 +38,10 @@ public class GroupOrderRepositoryImpl implements GroupOrderQuerydslRepository {
                         groupOrderEqType(type),
                         groupOrderLikeSearch(search)
                 )
-                .orderBy(
-                        groupOrderObSort(sort)
-                ).fetch();
-
+                .orderBy(groupOrderObSort(sort))
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
     }
 
     private OrderSpecifier[] groupOrderObSort(GroupOrderSort sort) {

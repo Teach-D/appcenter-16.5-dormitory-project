@@ -20,9 +20,12 @@ import com.example.appcenter_project.domain.roommate.repository.RoommateChatting
 import com.example.appcenter_project.domain.roommate.repository.RoommateMatchingRepository;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.domain.notification.service.RoommateNotificationService;
+import com.example.appcenter_project.global.mixpanel.MixpanelService;
 import com.example.appcenter_project.shared.utils.DormDayUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -35,6 +38,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 @Transactional
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RoommateService {
@@ -47,6 +51,7 @@ public class RoommateService {
     private final RoommateChattingRoomRepository roommateChattingRoomRepository;
     private final ImageService imageService;
     private final RoommateNotificationService roommateNotificationService;
+    private final MixpanelService mixpanelService;
 
 
     @Transactional
@@ -287,6 +292,12 @@ public class RoommateService {
             checkList.update(requestDto);
         } catch (Exception e) {
             throw new CustomException(ErrorCode.ROOMMATE_CHECKLIST_UPDATE_FAILED);
+        }
+
+        try {
+            mixpanelService.trackEvent(user.getId().toString(), "room_rules_edit", new JSONObject());
+        } catch (Exception e) {
+            log.warn("Mixpanel room_rules_edit 이벤트 추적 실패 - userId: {}", userId);
         }
 
         String writerImg = null;

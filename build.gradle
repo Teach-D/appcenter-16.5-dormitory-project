@@ -36,6 +36,9 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
 	testImplementation 'org.testcontainers:junit-jupiter'
 	testImplementation 'org.testcontainers:mysql'
+
+	// H2 (DataJpaTest용 인메모리 DB)
+	testRuntimeOnly 'com.h2database:h2'
 //	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
 	// security
@@ -86,6 +89,15 @@ dependencies {
 
 	// CSV
 	implementation 'com.opencsv:opencsv:5.9'
+
+	// p6spy (SQL 실행시간 로깅)
+	implementation 'p6spy:p6spy:3.9.1'
+
+	// Sentry (Spring Boot 3 / Jakarta)
+	implementation 'io.sentry:sentry-spring-boot-starter-jakarta:7.20.0'
+
+	// Mixpanel
+	implementation 'com.mixpanel:mixpanel-java:1.5.2'
 }
 
 tasks.named('test') {

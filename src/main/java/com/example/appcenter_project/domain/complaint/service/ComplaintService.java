@@ -25,7 +25,9 @@ import com.example.appcenter_project.common.image.repository.ImageRepository;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.domain.notification.service.AdminComplaintNotificationService;
 import com.example.appcenter_project.domain.complaint.dto.response.ResponseComplaintCsvDto;
+import com.example.appcenter_project.global.mixpanel.MixpanelService;
 import com.example.appcenter_project.shared.utils.CsvUtils;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -60,6 +62,7 @@ public class ComplaintService {
     private final AdminComplaintNotificationService adminComplaintNotificationService;
     private final ImageService imageService;
     private final CsvUtils csvUtils;
+    private final MixpanelService mixpanelService;
 
     // 민원 등록
     public ResponseComplaintDto createComplaint(Long userId, RequestComplaintDto dto, List<MultipartFile> images) {
@@ -126,6 +129,20 @@ public class ComplaintService {
             log.info("관리자 새 민원 알림 발송 완료 - 민원ID: {}", saved.getId());
         } catch (Exception e) {
             log.error("관리자 새 민원 알림 발송 실패 - 민원ID: {}", saved.getId(), e);
+        }
+
+        try {
+            JSONObject eventProps = new JSONObject();
+            eventProps.put("category", saved.getType() != null ? saved.getType().toValue() : "");
+            eventProps.put("has_image", images != null && !images.isEmpty());
+            String roomInfo = (saved.getBuilding() != null ? saved.getBuilding().toValue() : "") +
+                    (saved.getFloor() != null ? " " + saved.getFloor() + "층" : "") +
+                    (saved.getRoomNumber() != null ? " " + saved.getRoomNumber() + "호" : "");
+            eventProps.put("room_info", roomInfo.trim());
+            mixpanelService.trackEvent(user.getId().toString(), "complaint_submit", eventProps);
+            mixpanelService.incrementUserProperty(user.getId().toString(), "total_complaints", 1);
+        } catch (Exception e) {
+            log.warn("Mixpanel 민원 이벤트 추적 실패 - 민원ID: {}", saved.getId());
         }
 
 

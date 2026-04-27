@@ -40,8 +40,16 @@ out/
 
 ### Claude Code ###
 .claude/settings.local.json
+.claude/tmp/
+.mcp.json
 
 ### yml ###
 application.yml
 serviceAccountKey.json
 images
+
+### QueryDSL generated sources ###
+src/main/generated/
+
+### nGrinder local libs ###
+lib/

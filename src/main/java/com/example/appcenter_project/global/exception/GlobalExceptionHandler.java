@@ -1,5 +1,8 @@
 package com.example.appcenter_project.global.exception;
 
+import io.sentry.Sentry;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -11,8 +14,11 @@ import javax.naming.AuthenticationException;
 import java.util.List;
 
 @Slf4j
+@RequiredArgsConstructor
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private final SlackErrorNotifier slackErrorNotifier;
 
     @ExceptionHandler(CustomException.class)
     protected ResponseEntity<ErrorResponseEntity> handleCustomException(CustomException ex) {
@@ -41,5 +47,13 @@ public class GlobalExceptionHandler {
         log.warn("MissingServletRequestPartException 발생: {}", ex.getMessage());
 
         return ErrorResponseEntity.toResponseEntity(ErrorCode.VALIDATION_FAILED);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponseEntity> handleUnexpectedException(Exception ex, HttpServletRequest request) {
+        log.error("처리되지 않은 예외 발생: {} {}", request.getMethod(), request.getRequestURI(), ex);
+        Sentry.captureException(ex);
+        slackErrorNotifier.sendErrorAlert(ex, request);
+        return ErrorResponseEntity.toResponseEntity(ErrorCode.UNHANDLED_EXCEPTION);
     }
 }
