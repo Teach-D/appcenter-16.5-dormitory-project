@@ -108,9 +108,13 @@ public class AnnouncementCrawlScheduler {
         options.addArguments("--disable-gpu");
         options.addArguments("--disable-software-rasterizer");
         options.addArguments("--disable-extensions");
-        options.addArguments("--remote-debugging-port=9222");
         options.addArguments("--window-size=1920,1080");
         options.addArguments("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+        options.addArguments("--disable-background-networking");
+        options.addArguments("--disable-default-apps");
+        options.addArguments("--no-first-run");
+        options.addArguments("--disable-sync");
+        options.addArguments("--disable-crash-reporter");
         return options;
     }
 
