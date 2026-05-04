@@ -24,6 +24,12 @@ public class Calender extends BaseTimeEntity {
     private String title;
     private String link;
 
+    @Column(name = "source_announcement_id")
+    private Long sourceAnnouncementId;
+
+    @Column(name = "ai_generated")
+    private boolean aiGenerated = false;
+
     @Builder
     public Calender(LocalDate startDate, LocalDate endDate, String title, String link) {
         this.startDate = startDate;
@@ -46,5 +52,18 @@ public class Calender extends BaseTimeEntity {
                 .title(requestDto.getTitle())
                 .link(requestDto.getLink())
                 .build();
+    }
+
+    public static Calender ofAiGenerated(LocalDate startDate, LocalDate endDate,
+                                         String title, String link, Long sourceAnnouncementId) {
+        Calender calender = Calender.builder()
+                .startDate(startDate)
+                .endDate(endDate)
+                .title(title)
+                .link(link)
+                .build();
+        calender.sourceAnnouncementId = sourceAnnouncementId;
+        calender.aiGenerated = true;
+        return calender;
     }
 }
