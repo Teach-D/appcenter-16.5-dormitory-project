@@ -4,6 +4,8 @@ import com.example.appcenter_project.domain.announcement.entity.CrawledAnnouncem
 import com.example.appcenter_project.domain.announcement.repository.CrawledAnnouncementRepository;
 import com.example.appcenter_project.domain.calender.entity.Calender;
 import com.example.appcenter_project.domain.calender.repository.CalenderRepository;
+import com.example.appcenter_project.global.exception.CustomException;
+import com.example.appcenter_project.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,7 +27,7 @@ public class AiCalendarPersistenceService {
         calenderRepository.deleteAiGeneratedBySourceId(announcementId);
         calenderRepository.saveAll(calenders);
         CrawledAnnouncement announcement = crawledAnnouncementRepository.findById(announcementId)
-                .orElseThrow(() -> new IllegalArgumentException("공지사항을 찾을 수 없습니다: " + announcementId));
+                .orElseThrow(() -> new CustomException(ErrorCode.ANNOUNCEMENT_NOT_FOUND));
         announcement.markSuccess();
         log.info("AI 일정 추출 성공 - 공지 ID: {}, 저장된 일정 수: {}", announcementId, calenders.size());
     }
@@ -34,7 +36,7 @@ public class AiCalendarPersistenceService {
     public void markNoSchedule(Long announcementId) {
         calenderRepository.deleteAiGeneratedBySourceId(announcementId);
         CrawledAnnouncement announcement = crawledAnnouncementRepository.findById(announcementId)
-                .orElseThrow(() -> new IllegalArgumentException("공지사항을 찾을 수 없습니다: " + announcementId));
+                .orElseThrow(() -> new CustomException(ErrorCode.ANNOUNCEMENT_NOT_FOUND));
         announcement.markNoSchedule();
         log.debug("AI 일정 없음 처리 - 공지 ID: {}", announcementId);
     }
@@ -42,7 +44,7 @@ public class AiCalendarPersistenceService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void markFailed(Long announcementId, String reason) {
         CrawledAnnouncement announcement = crawledAnnouncementRepository.findById(announcementId)
-                .orElseThrow(() -> new IllegalArgumentException("공지사항을 찾을 수 없습니다: " + announcementId));
+                .orElseThrow(() -> new CustomException(ErrorCode.ANNOUNCEMENT_NOT_FOUND));
         announcement.markFailed(reason);
         log.warn("AI 일정 추출 실패 - 공지 ID: {}, 사유: {}, 재시도 횟수: {}",
                 announcementId, reason, announcement.getScheduleExtractRetryCount());
