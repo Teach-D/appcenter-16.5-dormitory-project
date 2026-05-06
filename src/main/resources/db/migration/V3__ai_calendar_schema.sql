@@ -1,13 +1,17 @@
--- AI 기반 캘린더 일정 자동 추출 기능을 위한 스키마 변경
-
 -- crawled_announcement 테이블 (JOINED 전략 자식 테이블)
 ALTER TABLE crawled_announcement
     ADD COLUMN schedule_extract_status      VARCHAR(32)  NULL     DEFAULT 'PENDING' COMMENT 'AI 일정 추출 상태 (PENDING/SUCCESS/NO_SCHEDULE/FAILED)',
     ADD COLUMN schedule_extract_retry_count INT          NOT NULL DEFAULT 0         COMMENT 'AI 일정 추출 재시도 횟수',
     ADD COLUMN schedule_extract_last_error  VARCHAR(500) NULL                       COMMENT '마지막 추출 실패 오류 메시지',
-    ADD COLUMN schedule_extracted_at        DATETIME(6)  NULL                       COMMENT '일정 추출 완료 시각';
+    ADD COLUMN schedule_extracted_at        DATETIME(6)  NULL                       COMMENT '마지막 추출 시도 시각';
 
 UPDATE crawled_announcement SET schedule_extract_status = 'PENDING' WHERE schedule_extract_status IS NULL;
+
+-- 마이그레이션 직후 백로그 폭주 방지: 3일 이전 공지는 추출 대상에서 제외
+UPDATE crawled_announcement
+SET schedule_extract_status = 'NO_SCHEDULE',
+    schedule_extracted_at   = NOW(6)
+WHERE crawled_date < (CURRENT_DATE - INTERVAL 3 DAY);
 
 CREATE INDEX idx_crawled_extract_status ON crawled_announcement (schedule_extract_status);
 
