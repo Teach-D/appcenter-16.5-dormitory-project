@@ -1,67 +1,81 @@
 package com.example.appcenter_project.global.scheduler;
 
 import com.example.appcenter_project.domain.announcement.entity.CrawledAnnouncement;
+import com.example.appcenter_project.domain.announcement.enums.ScheduleExtractStatus;
 import com.example.appcenter_project.domain.announcement.repository.CrawledAnnouncementRepository;
+import com.example.appcenter_project.domain.calender.client.AiScheduleExtractClient;
 import com.example.appcenter_project.domain.calender.service.AiScheduleService;
+import com.example.appcenter_project.domain.calender.service.AiScheduleService.ProcessResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.util.List;
+
+import static com.example.appcenter_project.domain.announcement.enums.ScheduleExtractStatus.SUCCESS;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class AiCalendarScheduler {
 
-    private static final int BATCH_SIZE = 20;
-    private static final long REQUEST_DELAY_MS = 2_000L;
-    private static final long BATCH_DELAY_MS = 15_000L;
-    private static final int MAX_CONSECUTIVE_FAILURES = 3;
+    private static final int BATCH_SIZE = 50;
+    private static final int CRAWLED_DATE_CUTOFF_DAYS = 3;
+    private static final long REQUEST_DELAY_MS = 1_000L;
+    private static final List<ScheduleExtractStatus> TARGET_STATUSES =
+            List.of(ScheduleExtractStatus.PENDING, ScheduleExtractStatus.FAILED);
 
-    private final CrawledAnnouncementRepository repository;
+    private final CrawledAnnouncementRepository crawledAnnouncementRepository;
     private final AiScheduleService aiScheduleService;
+    private final AiScheduleExtractClient aiClient;
 
-    @Scheduled(fixedDelay = 60_000)
+    //매일 새벽 05:00(Asia/Seoul)에 PENDING/FAILED 상태의 공지를 일괄 처리.
+    @Scheduled(cron = "0 0 5 * * *", zone = "Asia/Seoul")
     public void extractSchedules() {
-        if (!aiScheduleService.isRunnable()) return;
+        if (!aiClient.isConfigured()) {
+            log.error("AI 클라이언트 미설정 (ai-url 또는 api key 누락) — AI 일정 추출 스킵");
+            return;
+        }
 
-        log.info("AI 캘린더 일정 추출 시작");
+        LocalDate cutoff = LocalDate.now().minusDays(CRAWLED_DATE_CUTOFF_DAYS);
+        log.info("AI 캘린더 일정 추출 시작 (cutoff={})", cutoff);
 
-        int consecutiveFailures = 0;
+        long lastId = 0L;
+        int processed = 0;
+        int succeeded = 0;
+        int noSchedule = 0;
+        int failed = 0;
 
-        while (aiScheduleService.isWithinWindow()) {
+        while (true) {
+            List<CrawledAnnouncement> batch = crawledAnnouncementRepository.findScheduleExtractTargets(
+                    TARGET_STATUSES, cutoff, lastId, PageRequest.of(0, BATCH_SIZE));
 
-            List<CrawledAnnouncement> batch =
-                    repository.findScheduleExtractTargets(
-                            aiScheduleService.getTargetStatuses(),
-                            PageRequest.of(0, BATCH_SIZE)
-                    );
-
-            if (batch.isEmpty()) {
-                log.info("처리할 공지사항 없음 → 종료");
-                return;
-            }
+            if (batch.isEmpty()) break;
 
             for (CrawledAnnouncement announcement : batch) {
-
-                if (!aiScheduleService.isWithinWindow()) return;
-
-                if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-                    log.error("연속 실패 {}회 → 중단", MAX_CONSECUTIVE_FAILURES);
-                    return;
+                Long id = announcement.getId();
+                lastId = id;
+                try {
+                    ProcessResult result = aiScheduleService.process(announcement);
+                    switch (result) {
+                        case SUCCESS -> succeeded++;
+                        case NO_SCHEDULE -> noSchedule++;
+                        case FAILED -> failed++;
+                    }
+                } catch (Exception e) {
+                    log.error("공지 처리 중 예기치 못한 예외 - ID: {}", id, e);
+                    failed++;
                 }
-
-                boolean failed = aiScheduleService.process(announcement);
-                consecutiveFailures = failed ? consecutiveFailures + 1 : 0;
-
+                processed++;
                 sleep(REQUEST_DELAY_MS);
             }
-
-            sleep(BATCH_DELAY_MS);
         }
+
+        log.info("AI 캘린더 일정 추출 종료 - 처리:{}, 성공:{}, 일정없음:{}, 실패:{}",
+                processed, succeeded, noSchedule, failed);
     }
 
     private void sleep(long millis) {

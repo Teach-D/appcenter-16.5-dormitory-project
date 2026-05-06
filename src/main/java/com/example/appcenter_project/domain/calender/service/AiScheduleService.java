@@ -1,8 +1,8 @@
 package com.example.appcenter_project.domain.calender.service;
 
 import com.example.appcenter_project.domain.announcement.entity.CrawledAnnouncement;
-import com.example.appcenter_project.domain.announcement.enums.ScheduleExtractStatus;
 import com.example.appcenter_project.domain.calender.client.AiScheduleExtractClient;
+import com.example.appcenter_project.domain.calender.dto.ai.AiScheduleExtractItem;
 import com.example.appcenter_project.domain.calender.dto.ai.AiScheduleExtractResponse;
 import com.example.appcenter_project.domain.calender.entity.Calender;
 import lombok.RequiredArgsConstructor;
@@ -10,68 +10,64 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AiScheduleService {
 
-    private static final ZoneId ZONE = ZoneId.of("Asia/Seoul");
-    private static final LocalTime START = LocalTime.of(3, 0);
-    private static final LocalTime END = LocalTime.of(7, 0);
+    public enum ProcessResult { SUCCESS, NO_SCHEDULE, FAILED }
+
+    private static final int TITLE_MAX_LENGTH = 100;
+    private static final String DEFAULT_TITLE = "[일정]";
 
     private final AiScheduleExtractClient aiClient;
     private final AiCalendarPersistenceService persistenceService;
 
-    public boolean process(CrawledAnnouncement announcement) {
+    public ProcessResult process(CrawledAnnouncement announcement) {
         Long id = announcement.getId();
 
-        String request = buildRequest(announcement);
-        if (request.isBlank()) {
+        boolean titleBlank = announcement.getTitle() == null || announcement.getTitle().isBlank();
+        boolean contentBlank = announcement.getContent() == null || announcement.getContent().isBlank();
+        if (titleBlank && contentBlank) {
             persistenceService.markNoSchedule(id);
-            return false;
+            return ProcessResult.NO_SCHEDULE;
         }
 
+        String request = buildRequest(announcement);
+
         try {
-            var response = aiClient.extract(request);
+            AiScheduleExtractResponse response = aiClient.extract(request);
 
             if (isEmpty(response)) {
                 persistenceService.markNoSchedule(id);
-                return false;
+                return ProcessResult.NO_SCHEDULE;
             }
 
-            var calendars = buildCalendars(id, announcement.getTitle(), response);
+            List<Calender> calendars = buildCalendars(id, announcement.getTitle(), announcement.getLink(), response);
 
             if (calendars.isEmpty()) {
                 persistenceService.markNoSchedule(id);
-                return false;
+                return ProcessResult.NO_SCHEDULE;
             }
 
             persistenceService.saveSuccess(id, calendars);
-            return false;
+            return ProcessResult.SUCCESS;
 
         } catch (Exception e) {
-            log.warn("공지 {} 실패: {}", id, e.getMessage());
-            persistenceService.markFailed(id, e.getMessage());
-            return true;
+            log.warn("공지 {} AI 일정 추출 실패: {}", id, e.getMessage());
+            try {
+                persistenceService.markFailed(id, e.getMessage());
+            } catch (Exception persistError) {
+                log.error("공지 {} 실패 상태 저장 중 추가 오류 발생", id, persistError);
+            }
+            return ProcessResult.FAILED;
         }
-    }
-
-    public boolean isRunnable() {
-        return isWithinWindow() && aiClient.isConfigured();
-    }
-
-    public boolean isWithinWindow() {
-        LocalTime now = ZonedDateTime.now(ZONE).toLocalTime();
-        return !now.isBefore(START) && now.isBefore(END);
-    }
-
-    public List<ScheduleExtractStatus> getTargetStatuses() {
-        return List.of(ScheduleExtractStatus.PENDING, ScheduleExtractStatus.FAILED);
     }
 
     private boolean isEmpty(AiScheduleExtractResponse res) {
@@ -87,41 +83,44 @@ public class AiScheduleService {
         return s == null ? "" : s;
     }
 
-    private List<Calender> buildCalendars(Long id, String fallbackTitle,
+    private List<Calender> buildCalendars(Long id, String fallbackTitle, String link,
                                           AiScheduleExtractResponse res) {
 
         List<Calender> result = new ArrayList<>();
         Set<String> seen = new HashSet<>();
 
-        for (var item : res.getData()) {
+        for (AiScheduleExtractItem item : res.getData()) {
 
             LocalDate start = parse(item.getStartDate());
             if (start == null) continue;
 
-            LocalDate end = Optional.ofNullable(parse(item.getEndDate()))
-                    .orElse(start);
+            LocalDate end = Optional.ofNullable(parse(item.getEndDate())).orElse(start);
 
-            String title = (item.getTitle() != null && !item.getTitle().isBlank())
+            String rawTitle = (item.getTitle() != null && !item.getTitle().isBlank())
                     ? item.getTitle()
                     : fallbackTitle;
-
-            if (title.length() > 100) {
-                title = title.substring(0, 100);
+            if (rawTitle == null || rawTitle.isBlank()) {
+                rawTitle = DEFAULT_TITLE;
             }
+            String title = rawTitle.length() > TITLE_MAX_LENGTH
+                    ? rawTitle.substring(0, TITLE_MAX_LENGTH)
+                    : rawTitle;
 
-            String key = title + "|" + start;
+            String key = title + "|" + start + "|" + end;
             if (!seen.add(key)) continue;
 
-            result.add(Calender.ofAiGenerated(start, end, title, null, id));
+            result.add(Calender.ofAiGenerated(start, end, title, link, id));
         }
 
         return result;
     }
 
     private LocalDate parse(String date) {
+        if (date == null || date.isBlank()) return null;
         try {
-            return (date == null || date.isBlank()) ? null : LocalDate.parse(date);
+            return LocalDate.parse(date);
         } catch (Exception e) {
+            log.warn("AI 응답에 잘못된 날짜 형식: '{}'", date);
             return null;
         }
     }
