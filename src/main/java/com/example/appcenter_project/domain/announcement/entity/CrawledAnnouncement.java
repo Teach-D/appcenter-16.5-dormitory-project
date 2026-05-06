@@ -75,6 +75,7 @@ public class CrawledAnnouncement extends Announcement {
         this.scheduleExtractLastError = reason != null && reason.length() > 500
                 ? reason.substring(0, 500)
                 : reason;
+        this.scheduleExtractedAt = LocalDateTime.now();
     }
 
     @Override
