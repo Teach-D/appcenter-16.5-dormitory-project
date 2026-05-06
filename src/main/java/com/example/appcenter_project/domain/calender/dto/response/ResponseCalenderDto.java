@@ -27,6 +27,9 @@ public class ResponseCalenderDto {
     @Schema(description = "관련 링크", example = "https://example.com")
     private String link;
 
+    @Schema(description = "원본 공지사항 ID (AI 생성 일정만 값 있음)", example = "42")
+    private Long sourceAnnouncementId;
+
     public static ResponseCalenderDto from(Calender calender) {
         return ResponseCalenderDto.builder()
                 .id(calender.getId())
@@ -34,6 +37,7 @@ public class ResponseCalenderDto {
                 .endDate(calender.getEndDate())
                 .title(calender.getTitle())
                 .link(calender.getLink())
+                .sourceAnnouncementId(calender.getSourceAnnouncementId())
                 .build();
     }
 }
