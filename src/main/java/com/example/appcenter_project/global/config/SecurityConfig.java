@@ -129,6 +129,10 @@ public class SecurityConfig {
                         .requestMatchers("/calenders/**")
                             .hasAnyRole("DORM_SUPPORTERS", "ADMIN", "DORM_LIFE_MANAGER", "DORM_ROOMMATE_MANAGER", "DORM_MANAGER", "DORM_EXPEDITED_COMPLAINT_MANAGER")
 
+                        /** AI캘린더 **/
+                        .requestMatchers("/admin/ai-schedule/**")
+                        .hasAnyAuthority("ROLE_ADMIN", "ROLE_DORM_MANAGER")
+
                         /** 알림 **/
                         // 특정 유저 1:1 직접 알림 전송(ADMIN 전용)
                         .requestMatchers(POST, "/notifications/admin/direct").hasRole("ADMIN")

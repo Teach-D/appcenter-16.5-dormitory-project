@@ -3,7 +3,6 @@ package com.example.appcenter_project.global.exception;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import static org.springframework.http.HttpStatus.*;
 
 import static org.springframework.http.HttpStatus.*;
 
@@ -110,6 +109,7 @@ public enum ErrorCode {
     // ANNOUNCEMENT
     ANNOUNCEMENT_NOT_REGISTERED(NOT_FOUND, 12001, "[ANNOUNCEMENT] 해당 공지사항 정보를 찾을 수 없습니다"),
     ANNOUNCEMENT_FORBIDDEN(FORBIDDEN, 12002, "[ANNOUNCEMENT] 해당 유형의 공지사항에 대한 권한이 없습니다."),
+    ANNOUNCEMENT_NOT_FOUND(NOT_FOUND, 12003, "[ANNOUNCEMENT] 공지사항이 존재하지 않습니다."),
 
     // ATTACHEDFILE
     ATTACHEDFILE_NOT_REGISTERED(NOT_FOUND, 13001, "[ATTACHEDFILE] 해당 파일을 찾을 수 없습니다"),
