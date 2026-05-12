@@ -159,6 +159,17 @@ public class User extends BaseTimeEntity {
         return user;
     }
 
+    public static User createTestUser(String studentNumber, String password,
+                                      String name, DormType dormType, College college, Role role) {
+        User user = User.builder()
+                .studentNumber(studentNumber).password(password)
+                .name(name).dormType(dormType)
+                .penalty(0).image(null).role(role).build();
+        user.isFreshman = false;
+        user.college = college;
+        return user;
+    }
+
     public static User createFreshman(String username, String password) {
         User user = User.builder()
                 .studentNumber(username).password(password)

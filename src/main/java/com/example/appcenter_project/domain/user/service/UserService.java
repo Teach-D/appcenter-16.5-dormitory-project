@@ -12,7 +12,10 @@ import com.example.appcenter_project.domain.user.dto.response.ResponseUserDto;
 import com.example.appcenter_project.domain.user.dto.response.ResponseUserRole;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.common.image.enums.ImageType;
+import com.example.appcenter_project.domain.user.enums.College;
+import com.example.appcenter_project.domain.user.enums.DormType;
 import com.example.appcenter_project.domain.user.enums.Role;
+import com.example.appcenter_project.global.config.TestAccountProperties;
 import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.domain.user.entity.RefreshToken;
 import com.example.appcenter_project.domain.user.repository.RefreshTokenRepository;
@@ -58,12 +61,16 @@ public class UserService {
     private final ImageService imageService;
     private final FcmMessageService fcmMessageService;
     private final MixpanelService mixpanelService;
+    private final TestAccountProperties testAccountProperties;
 
     // ========== Public Methods ========== //
 
     public ResponseLoginDto saveUser(SignupUser signupUser) {
-        checkINUStudent(signupUser);
-        User user = createUser(signupUser);
+        boolean isTestAccount = testAccountProperties.matches(signupUser.getStudentNumber(), signupUser.getPassword());
+        if (!isTestAccount) {
+            checkINUStudent(signupUser);
+        }
+        User user = isTestAccount ? createTestAccountUser(signupUser) : createUser(signupUser);
         trackSignupProfile(user);
         trackLoginComplete(user);
         return createDto(user);
@@ -254,6 +261,23 @@ public class UserService {
         User user = User.createNewUser(signupUser.getStudentNumber(), passwordEncoder.encode(signupUser.getPassword()));
         userRepository.save(user);
 
+        return user;
+    }
+
+    private User createTestAccountUser(SignupUser signupUser) {
+        if (existsUser(signupUser)) {
+            return userRepository.findByStudentNumber(signupUser.getStudentNumber()).get();
+        }
+
+        User user = User.createTestUser(
+                signupUser.getStudentNumber(),
+                passwordEncoder.encode(signupUser.getPassword()),
+                testAccountProperties.getName(),
+                DormType.from(testAccountProperties.getDormType()),
+                College.from(testAccountProperties.getCollege()),
+                Role.from(testAccountProperties.getRole())
+        );
+        userRepository.save(user);
         return user;
     }
 
