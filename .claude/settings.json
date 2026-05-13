@@ -14,7 +14,7 @@
           },
           {
             "type": "command",
-            "command": "python3 .claude/hooks/context-tracker.py"
+            "command": "python .claude/hooks/context-tracker.py"
           }
         ]
       }
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/hooks/context-tracker.py",
+            "command": "python .claude/hooks/context-tracker.py",
             "timeout": 10
           }
         ]
@@ -37,7 +37,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/hooks/session-end.py",
+            "command": "python .claude/hooks/session-end.py",
             "timeout": 15
           }
         ]
