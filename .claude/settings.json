@@ -4,6 +4,45 @@
     "code-review@claude-plugins-official": true
   },
   "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/validate-prompt.sh"
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/context-tracker.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/context-tracker.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/session-end.py",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "mcp__github__create_branch",
@@ -17,6 +56,12 @@
       {
         "matcher": "Edit|Write",
         "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/format-code.sh",
+            "timeout": 15,
+            "statusMessage": "코드 포맷 중..."
+          },
           {
             "type": "command",
             "command": "bash .claude/hooks/post-edit-compile.sh",
@@ -34,6 +79,29 @@
       }
     ],
     "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pre-tool-check.sh",
+            "timeout": 10,
+            "statusMessage": "명령어 안전 검사 중..."
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/security-scan.sh",
+            "timeout": 20,
+            "statusMessage": "보안 스캔 중..."
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pre-commit.sh",
+            "timeout": 180,
+            "statusMessage": "커밋 전 도메인 테스트 실행 중..."
+          }
+        ]
+      },
       {
         "matcher": "Edit",
         "hooks": [
