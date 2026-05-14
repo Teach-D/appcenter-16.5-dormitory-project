@@ -137,7 +137,29 @@ api-spec.md를 기반으로 이슈 목록 초안을 작성합니다.
 
 ---
 
-## STEP 4 — 브랜치 생성 및 체크아웃
+## STEP 4 — issue-list.md 저장
+
+모든 이슈 생성이 완료된 후 `docs/issue-list.md`를 생성합니다.
+
+### 파일 형식
+```markdown
+# Issue List
+
+> 생성일: {YYYY-MM-DD}
+> 총 이슈 수: {N}개
+
+| 순서 | 번호 | 타입 | 제목 | 선행 이슈 | 브랜치 |
+|------|------|------|------|-----------|--------|
+| 1 | #{issue_number} | feat | 공동구매 참여 기능 | 없음 | teach/feat/group-order-join-{issue_number} |
+| 2 | #{issue_number} | chore | 공통 예외 핸들러 설정 | #{선행번호} | teach/chore/global-exception-handler-{issue_number} |
+```
+
+- 이슈 번호는 `gh issue create` 결과에서 파싱한 실제 번호를 기입합니다.
+- 파일이 이미 존재하면 덮어씁니다.
+
+---
+
+## STEP 5 — 브랜치 생성 및 체크아웃
 
 이슈 생성 완료 후 첫 번째 이슈 브랜치를 준비합니다.
 
@@ -168,3 +190,4 @@ teach/{type}/{kebab-description}-{issue_number}
 - api-spec.md에 없는 이슈를 임의로 추가하지 않음
 - 추가가 필요하다 판단되면 사용자에게 확인 후 진행
 - 이슈 제목 형식 `[{type}] {기능 설명}` 준수
+- **`git add`, `git commit`, `git push` 절대 금지** — 이 스킬은 GitHub 이슈·브랜치 생성과 로컬 문서 저장만 수행하며, 코드 변경사항을 스테이징·커밋·푸시하는 일체의 git 쓰기 작업을 수행하지 않음
