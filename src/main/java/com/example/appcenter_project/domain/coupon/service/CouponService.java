@@ -96,6 +96,7 @@ public class CouponService {
 
     @Transactional
     public ResponseCouponDto issuanceCoupon(Long userId, Long couponId) {
+        boolean redisDecremented = false;
         try {
             Coupon coupon = couponRepository.findByIdWithLock(couponId)
                     .orElse(null);
@@ -117,12 +118,15 @@ public class CouponService {
             createUserNotification(user, notification);
 
             couponRepository.delete(coupon);
-            decrementStockCache();
+            redisDecremented = decrementStockCache();
 
             log.info("쿠폰 발급 성공 - userId: {}, couponId: {}", userId, coupon.getId());
             return ResponseCouponDto.of(true, false);
 
         } catch (Exception e) {
+            if (redisDecremented) {
+                incrementStockCache();
+            }
             log.error("쿠폰 발급 실패 - userId: {}, couponId: {}, error: {}",
                     userId, couponId, e.getMessage(), e);
             return ResponseCouponDto.builder()
@@ -149,11 +153,26 @@ public class CouponService {
         }
     }
 
-    private void decrementStockCache() {
+    private boolean decrementStockCache() {
         try {
-            redisTemplate.opsForValue().decrement(REDIS_STOCK_KEY);
+            Long newStock = redisTemplate.opsForValue().decrement(REDIS_STOCK_KEY);
+            if (newStock != null && newStock < 0) {
+                redisTemplate.opsForValue().increment(REDIS_STOCK_KEY);
+                log.warn("Redis 재고 음수 감지, INCR 롤백 - newStock: {}", newStock);
+                return false;
+            }
+            return true;
         } catch (Exception e) {
             log.warn("Redis 쿠폰 잔여 수 DECR 실패: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private void incrementStockCache() {
+        try {
+            redisTemplate.opsForValue().increment(REDIS_STOCK_KEY);
+        } catch (Exception e) {
+            log.warn("Redis 쿠폰 잔여 수 INCR 롤백 실패: {}", e.getMessage());
         }
     }
 
