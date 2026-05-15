@@ -115,6 +115,9 @@ Nullable 필드는 비고에 `nullable` 표기한다.
 
 ## 출력 형식
 
+출력 전 `.claude/skills/api-spec/references/api-spec-example.md`를 읽고
+엔드포인트 서술 방식·Schemas 테이블 형식·에러 코드 표기·신규 에러 코드 안내 패턴을 참고하세요.
+
 아래 형식을 정확히 따른다.
 
 ````

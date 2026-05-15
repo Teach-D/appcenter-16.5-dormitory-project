@@ -90,6 +90,9 @@ api-spec.md를 기반으로 이슈 목록 초안을 작성합니다.
 
 ## STEP 3 — 이슈 생성
 
+이슈 본문 작성 전 `.claude/skills/github-issue/references/issue-body-example.md`를 읽고
+feat/chore 유형별 본문 구조·섹션 포함 기준·에러 케이스 표기 방식을 참고하세요.
+
 사용자 확인 후 아래 순서로 실행합니다.
 
 1. `gh issue create` 명령어로 이슈 생성
@@ -140,6 +143,8 @@ api-spec.md를 기반으로 이슈 목록 초안을 작성합니다.
 ## STEP 4 — issue-list.md 저장
 
 모든 이슈 생성이 완료된 후 `docs/issue-list.md`를 생성합니다.
+저장 전 `.claude/skills/github-issue/references/issue-list-example.md`를 읽고
+테이블 컬럼 구성과 브랜치명 형식을 참고하세요.
 
 ### 파일 형식
 ```markdown
