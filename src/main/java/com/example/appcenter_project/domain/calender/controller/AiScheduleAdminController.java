@@ -4,13 +4,12 @@ import com.example.appcenter_project.domain.announcement.entity.CrawledAnnouncem
 import com.example.appcenter_project.domain.announcement.enums.ScheduleExtractStatus;
 import com.example.appcenter_project.domain.announcement.repository.CrawledAnnouncementRepository;
 import com.example.appcenter_project.domain.calender.dto.response.ResponseFailedScheduleDto;
+import com.example.appcenter_project.global.scheduler.AiCalendarScheduler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -22,6 +21,7 @@ public class AiScheduleAdminController implements AiScheduleAdminApiSpecificatio
     private static final int RETRY_LIMIT = 3;
 
     private final CrawledAnnouncementRepository crawledAnnouncementRepository;
+    private final AiCalendarScheduler aiCalendarScheduler;
 
     @Override
     @GetMapping("/failed")
@@ -36,5 +36,11 @@ public class AiScheduleAdminController implements AiScheduleAdminApiSpecificatio
         return result.stream()
                 .map(ResponseFailedScheduleDto::from)
                 .toList();
+    }
+
+    @PostMapping("/run")
+    public ResponseEntity<Void> runNow() {
+        aiCalendarScheduler.extractSchedules();
+        return ResponseEntity.accepted().build();
     }
 }
