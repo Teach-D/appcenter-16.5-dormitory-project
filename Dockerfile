@@ -5,6 +5,7 @@ WORKDIR /app
 
 # Chrome 및 필수 라이브러리 설치
 RUN apt-get update && apt-get install -y \
+    tini \
     wget \
     gnupg \
     unzip \
@@ -31,4 +32,4 @@ RUN apt-get update && apt-get install -y \
 COPY build/libs/*.jar app.jar
 
 # 실행 명령
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["/usr/bin/tini", "--", "java", "-jar", "app.jar"]

@@ -320,7 +320,7 @@ public class AnnouncementCrawlScheduler {
                 UserNotification userNotification = UserNotification.of(receiveUser, notification);
                 userNotificationRepository.save(userNotification);
 
-                fcmMessageService.sendNotification(receiveUser, notification.getTitle(), notification.getBody());
+                //fcmMessageService.sendNotification(receiveUser, notification.getTitle(), notification.getBody());
             }
 
         } catch (Exception e) {
