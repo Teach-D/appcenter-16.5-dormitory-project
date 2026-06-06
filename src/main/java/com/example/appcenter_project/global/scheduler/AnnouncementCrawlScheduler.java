@@ -54,49 +54,77 @@ public class AnnouncementCrawlScheduler {
 
     @Scheduled(cron = "0 0 9,14,18 * * ?")
     public void crawling() {
-        WebDriver driver = null; // 드라이버 선언
+        WebDriver driver = null;
 
         try {
-            // 1. WebDriver 생성 (단 한 번)
-            ChromeOptions options = createChromeOptions(); // 옵션 설정
+            ChromeOptions options = createChromeOptions();
             driver = new ChromeDriver(options);
             log.info("WebDriver 인스턴스를 성공적으로 생성했습니다.");
 
-            // 2. 목록 크롤링 (드라이버 재활용)
-            List<Map<String, String>> crawlGeneralNoticesLinks = crawlWithSeleniumNotices(driver, GENERAL_NOTICE_BASE_URL);
-            List<Map<String, String>> crawlDormitoryMoveNoticesLinks = crawlWithSeleniumNotices(driver, DORMITORY_MOVE_BASE_URL);
-
-            // 입퇴사 공지 링크 Set 생성
-            Set<String> dormitoryMoveLinks = crawlDormitoryMoveNoticesLinks.stream()
-                    .map(map -> map.keySet().stream().findFirst().orElse(""))
-                    .collect(Collectors.toSet());
-
-            List<Map<String, String>> allNotices = new ArrayList<>();
-            allNotices.addAll(crawlGeneralNoticesLinks);
-            allNotices.addAll(crawlDormitoryMoveNoticesLinks);
-
-            // value(date) 기준으로 정렬 (최신순)
-            allNotices.sort((map1, map2) -> {
-                String date1 = map1.values().stream().findFirst().orElse("");
-                String date2 = map2.values().stream().findFirst().orElse("");
-                return date1.compareTo(date2); // 오름차순
-            });
-
-            List<String> links = allNotices.stream()
-                    .map(map -> map.keySet().stream().findFirst().orElse("")) // key(link) 추출
-                    .collect(Collectors.toList());
-
-            // 3. 개별 공지사항 상세 저장 (드라이버 재활용)
-            saveCrawlAnnouncements(driver, links, dormitoryMoveLinks);
+            crawlAndSaveBoard(driver, GENERAL_NOTICE_BASE_URL, false);
+            crawlAndSaveBoard(driver, DORMITORY_MOVE_BASE_URL, true);
 
         } catch (Exception e) {
             log.error("전체 크롤링 작업 중 치명적인 오류 발생: {}", e.getMessage(), e);
         } finally {
-            // 4. WebDriver 종료 (작업 완료 후 단 한 번)
             if (driver != null) {
                 driver.quit();
                 log.info("WebDriver 인스턴스를 성공적으로 종료했습니다.");
             }
+        }
+    }
+
+    private void crawlAndSaveBoard(WebDriver driver, String baseUrl, boolean isDormMove) {
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        try {
+            driver.get(baseUrl);
+            wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("table.board-table")));
+            int totalPages = getTotalPages(driver);
+            log.info("총 페이지 수: {}", totalPages);
+
+            for (int page = 1; page <= 2; page++) {
+                log.info("페이지 {} 크롤링 시작...", page);
+
+                int rowCount = getRowCountForPage(driver, wait, baseUrl, page);
+                log.info("페이지 {}에서 {}개 공지사항 발견", page, rowCount);
+
+                for (int i = 0; i < rowCount; i++) {
+                    try {
+                        navigateToListPage(driver, wait, baseUrl, page);
+
+                        List<WebElement> linkElements = driver.findElements(By.cssSelector("td.td-subject a"));
+                        if (i >= linkElements.size()) break;
+
+                        linkElements.get(i).click();
+                        wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".view-title")));
+
+                        String detailUrl = driver.getCurrentUrl();
+                        log.info("상세 페이지 이동: {}", detailUrl);
+                        saveCrawlAnnouncement(driver, detailUrl, isDormMove);
+
+                    } catch (Exception e) {
+                        log.error("공지사항 저장 실패 (page: {}, index: {}): {}", page, i, e.getMessage());
+                    }
+                }
+            }
+            log.info("전체 크롤링 완료 (baseUrl: {})", baseUrl);
+        } catch (Exception e) {
+            log.error("Selenium 크롤링 실패 (URL: {}): ", baseUrl, e);
+        }
+    }
+
+    private int getRowCountForPage(WebDriver driver, WebDriverWait wait, String baseUrl, int page) throws InterruptedException {
+        navigateToListPage(driver, wait, baseUrl, page);
+        return driver.findElements(By.cssSelector("td.td-subject a")).size();
+    }
+
+    private void navigateToListPage(WebDriver driver, WebDriverWait wait, String baseUrl, int page) throws InterruptedException {
+        driver.get(baseUrl);
+        wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("table.board-table")));
+        if (page > 1) {
+            ((JavascriptExecutor) driver).executeScript("page_link('" + page + "')");
+            Thread.sleep(1000);
+            wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("table.board-table")));
         }
     }
 
