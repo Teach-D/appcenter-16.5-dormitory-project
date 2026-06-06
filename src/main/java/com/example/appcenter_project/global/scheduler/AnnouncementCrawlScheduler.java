@@ -345,12 +345,17 @@ public class AnnouncementCrawlScheduler {
                     try {
                         WebElement linkElement = row.findElement(By.cssSelector("td.td-subject a"));
                         String href = linkElement.getAttribute("href");
-                        if (href != null && !href.isEmpty()) {
+                        if (href != null && href.startsWith("http")) {
                             link = href;
                         } else {
                             String onclick = linkElement.getAttribute("onclick");
                             if (onclick != null && onclick.contains("jf_viewArtcl")) {
-                                link = "javascript:" + onclick;
+                                java.util.regex.Matcher m = java.util.regex.Pattern
+                                        .compile("jf_viewArtcl\\('([^']+)',\\s*'([^']+)'\\)")
+                                        .matcher(onclick);
+                                if (m.find()) {
+                                    link = "https://dorm.inu.ac.kr/bbs/dorm/" + m.group(1) + "/" + m.group(2) + "/artclView";
+                                }
                             }
                         }
                     } catch (Exception e) {
