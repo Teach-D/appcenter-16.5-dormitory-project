@@ -28,6 +28,7 @@ public class CrawledAnnouncement extends Announcement {
 
     private LocalDate crawledDate;
 
+    @Column(columnDefinition = "TEXT")
     private String link;
 
     @Enumerated(EnumType.STRING)

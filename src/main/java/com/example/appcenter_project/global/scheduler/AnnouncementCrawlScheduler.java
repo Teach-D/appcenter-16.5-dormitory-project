@@ -275,6 +275,7 @@ public class AnnouncementCrawlScheduler {
                     String textContent = child.getText().trim();
                     content = content + textContent + "\n";
                 }
+                content = content.replaceAll("[^\\u0000-\\uFFFF]", "");
             } catch (Exception e) {
                 log.debug("본문 내용 추출 실패");
             }
