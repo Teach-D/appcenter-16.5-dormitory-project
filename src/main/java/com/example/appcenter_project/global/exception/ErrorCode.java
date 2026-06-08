@@ -161,6 +161,12 @@ public enum ErrorCode {
     FEATURE_NOT_FOUND(NOT_FOUND, 12001, "[FEATURE] feature가 존재하지 않습니다."),
     DUPLICATE_FEATURE_KEY(CONFLICT, 12001, "[FEATURE] 같은 key의 feature가 존재합니다."),
 
+    // OPEN_CHAT
+    OPEN_CHAT_ROOM_NOT_FOUND(NOT_FOUND, 22001, "[OpenChat] 채팅방을 찾을 수 없습니다."),
+    OPEN_CHAT_ROOM_FORBIDDEN(FORBIDDEN, 22002, "[OpenChat] 채팅방 접근 권한이 없습니다."),
+    OPEN_CHAT_ROOM_FULL(BAD_REQUEST, 22003, "[OpenChat] 최대 인원에 도달한 채팅방입니다."),
+    OPEN_CHAT_PARTICIPANT_NOT_FOUND(NOT_FOUND, 22004, "[OpenChat] 참여하지 않은 채팅방입니다."),
+
     // RATE LIMIT
     RATE_LIMIT_EXCEEDED(TOO_MANY_REQUESTS, 20001, "[RateLimit] 요청 횟수를 초과했습니다. 잠시 후 다시 시도해주세요."),
 
