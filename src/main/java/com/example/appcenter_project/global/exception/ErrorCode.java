@@ -167,6 +167,13 @@ public enum ErrorCode {
     OPEN_CHAT_ROOM_FULL(BAD_REQUEST, 22003, "[OpenChat] 최대 인원에 도달한 채팅방입니다."),
     OPEN_CHAT_PARTICIPANT_NOT_FOUND(NOT_FOUND, 22004, "[OpenChat] 참여하지 않은 채팅방입니다."),
     OPEN_CHAT_NOT_PARTICIPANT(FORBIDDEN, 22005, "[OpenChat] 채팅 내역 조회 권한이 없습니다."),
+    OPEN_CHAT_INVITATION_NOT_FOUND(NOT_FOUND, 22006, "[OpenChat] 초대를 찾을 수 없습니다."),
+    OPEN_CHAT_INVITATION_INVALID_TARGET(BAD_REQUEST, 22007, "[OpenChat] 초대 대상이 부모 방의 참여자가 아닙니다."),
+    OPEN_CHAT_INVITATION_ALREADY_EXISTS(CONFLICT, 22008, "[OpenChat] 이미 대기 중인 초대가 존재합니다."),
+    OPEN_CHAT_PARTICIPANT_ALREADY_EXISTS(CONFLICT, 22009, "[OpenChat] 이미 채팅방에 참여 중인 사용자입니다."),
+    VALIDATION_ERROR(BAD_REQUEST, 22010, "[OpenChat] 유효하지 않은 요청입니다."),
+    OPEN_CHAT_INVITATION_ALREADY_PROCESSED(BAD_REQUEST, 22011, "[OpenChat] 이미 처리된 초대입니다."),
+    OPEN_CHAT_INVITATION_SELF_INVITE(BAD_REQUEST, 22012, "[OpenChat] 자기 자신을 초대할 수 없습니다."),
 
     // RATE LIMIT
     RATE_LIMIT_EXCEEDED(TOO_MANY_REQUESTS, 20001, "[RateLimit] 요청 횟수를 초과했습니다. 잠시 후 다시 시도해주세요."),

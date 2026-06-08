@@ -2,6 +2,7 @@ package com.example.appcenter_project.domain.openChat.entity;
 
 import com.example.appcenter_project.common.BaseTimeEntity;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomScope;
+import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -46,6 +47,12 @@ public class OpenChatRoom extends BaseTimeEntity {
 
     private Long createdBy;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private OpenChatRoomType roomType;
+
+    private Long parentRoomId;
+
     public static OpenChatRoom create(String name, String description, OpenChatRoomScope scope,
                                        int maxParticipants, Long hostUserId,
                                        String creatorDormitory, boolean isOfficial) {
@@ -58,6 +65,23 @@ public class OpenChatRoom extends BaseTimeEntity {
         room.creatorDormitory = creatorDormitory;
         room.isOfficial = isOfficial;
         room.createdBy = hostUserId;
+        room.roomType = OpenChatRoomType.OPEN;
+        return room;
+    }
+
+    public static OpenChatRoom createDerived(String name, String description, int maxParticipants,
+                                              Long hostUserId, Long parentRoomId) {
+        OpenChatRoom room = new OpenChatRoom();
+        room.name = name;
+        room.description = description;
+        room.scope = OpenChatRoomScope.ALL;
+        room.maxParticipants = maxParticipants;
+        room.hostUserId = hostUserId;
+        room.creatorDormitory = null;
+        room.isOfficial = false;
+        room.createdBy = hostUserId;
+        room.roomType = OpenChatRoomType.DERIVED;
+        room.parentRoomId = parentRoomId;
         return room;
     }
 
