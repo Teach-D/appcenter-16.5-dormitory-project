@@ -173,6 +173,9 @@ public class SecurityConfig {
                         /** 피처 플래그 **/
                         .requestMatchers("/features/**").permitAll()
 
+                        /** 오픈 채팅 **/
+                        .requestMatchers("/open-chat-rooms/**").authenticated()
+
                         /** 나머지 **/
                         .anyRequest().authenticated()
                 )
