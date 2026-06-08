@@ -17,7 +17,6 @@ import com.example.appcenter_project.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -57,7 +56,6 @@ public class OpenChatMessageService {
         messagingTemplate.convertAndSend("/sub/openchat/" + request.getRoomId(), response);
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendSystemMessage(Long roomId, String content) {
         OpenChatRoom room = openChatRoomRepository.findById(roomId).orElse(null);
         if (room == null) return;

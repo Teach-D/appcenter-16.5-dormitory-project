@@ -1,16 +1,16 @@
 # 요구사항 명세서
 
-> 기능: 오픈채팅 (Phase 1 — 채팅방 CRUD / Phase 2 — 실시간 채팅)
+> **기능**: 파생 톡방 (비공개 그룹 채팅)
 
 ---
 
 ## 1. 개요
 
-- **서비스 목적**: 기숙사생이 오픈 채팅방을 생성·입장·탈퇴하고 공개 범위에 따른 3탭 목록을 조회할 수 있는 기능 (실시간 채팅은 Phase 2)
-- **핵심 사용자**: 기숙사 입주 학생 (USER)
+- **서비스 목적**: 오픈채팅방 참여자끼리 초대 기반 비공개 그룹 채팅방(파생 톡방)을 만들어 소규모 소통 공간을 제공
+- **핵심 사용자**: 기숙사 입주 학생(USER)
 - **범위**
-  - In Scope: 채팅방 생성, 방 목록 3탭 조회(내 방 / 내 기숙사 / 전체), 방 입장, 방 나가기, 초기 9개 공식 방 Flyway 삽입
-  - Out of Scope: 실시간 채팅 메시지 전송·수신 (Phase 2), 채팅 신고, 채팅방 검색
+  - In Scope: 파생 톡방 생성, 초대 발송/수락/거절, 탐색 목록 제외, 참여자 목록 조회
+  - Out of Scope: 파생 톡방 내 채팅 기능(기존 WebSocket/STOMP 재사용), 파생 톡방에서 재파생, FCM 초대 알림
 
 ---
 
@@ -20,53 +20,68 @@
 
 | 엔티티 | 핵심 속성 |
 |--------|-----------|
-| `OpenChatRoom` | id, name, description, scope(DORMITORY/ALL), maxParticipants, creatorDormitory(DormType), lastMessageAt, isOfficial, createdBy(User FK, nullable), createdAt |
-| `OpenChatParticipant` | id, room(FK), user(FK), notificationEnabled, joinedAt |
-| `OpenChatMessage` | id, room(FK), sender(FK), content, type(TEXT/IMAGE), createdAt |
+| `OpenChatRoom` | id, name, description, scope, maxParticipants, hostUserId, isOfficial, **roomType**, **parentRoomId**, lastMessage, lastMessageAt |
+| `OpenChatParticipant` | id, roomId, userId, notificationEnabled, joinedAt, lastReadMessageId |
+| `OpenChatInvitation` | id, roomId, inviterUserId, inviteeUserId, status, createdAt |
+| `User` | id, name, dormType, role |
 
 ### 엔티티 간 관계
 
 - `OpenChatRoom` 1 ↔ N `OpenChatParticipant`
-- `OpenChatRoom` 1 ↔ N `OpenChatMessage`
-- `User` 1 ↔ N `OpenChatParticipant` (한 유저가 여러 방에 참여 가능)
-- `User` 1 ↔ N `OpenChatRoom` (방 생성자, nullable — 공식 방은 NULL)
+- `OpenChatRoom` 1 ↔ N `OpenChatInvitation`
+- `OpenChatRoom` (OPEN) 1 ↔ N `OpenChatRoom` (DERIVED, parentRoomId FK)
+- `User` 1 ↔ N `OpenChatInvitation` (inviter / invitee)
 
-### 서비스 생성 방 식별자
+### 상태 다이어그램 — OpenChatInvitation.status
 
-- `created_by = NULL` + `is_official = TRUE` 조합이 공식 방의 식별자
-- 공식 방은 방장 이전·자동 삭제 로직에서 제외, seed 유저 의존 없음
+```
+PENDING → ACCEPTED (invitee가 수락)
+PENDING → REJECTED (invitee가 거절)
+ACCEPTED / REJECTED → (종료, 변경 불가)
+```
+
+### roomType 구분
+
+```
+OPEN   : 기존 오픈채팅방 (탐색 목록에 노출)
+DERIVED: 파생 톡방 (탐색 목록에서 제외, 초대로만 입장)
+```
 
 ---
 
 ## 3. 비즈니스 규칙
 
-1. **BR-01** USER만 채팅방 생성 가능
+1. **BR-01** 파생 톡방은 특정 오픈채팅방(OPEN) 참여자만 생성 가능
+   - 생성 시 `parentRoomId`를 지정하며, 요청자가 해당 방의 참여자인지 검증
+   - 위반 시: 403 FORBIDDEN (OPEN_CHAT_ROOM_FORBIDDEN)
+
+2. **BR-02** 파생 톡방 초대 대상은 `parentRoomId` 오픈채팅방의 참여자만 가능
+   - invitee가 parent 방의 참여자인지 검증
+   - 위반 시: 400 BAD_REQUEST (OPEN_CHAT_INVITATION_INVALID_TARGET)
+
+3. **BR-03** 동일 대상에게 이미 PENDING 초대가 존재하면 중복 초대 불가
+   - 위반 시: 409 CONFLICT (OPEN_CHAT_INVITATION_ALREADY_EXISTS)
+
+4. **BR-04** 이미 해당 파생 톡방 참여자인 사람은 초대 불가
+   - 위반 시: 409 CONFLICT (OPEN_CHAT_PARTICIPANT_ALREADY_EXISTS)
+
+5. **BR-05** 초대 수락 시 즉시 해당 파생 톡방의 `OpenChatParticipant`로 등록
+   - 수락 후 invitation status = ACCEPTED, 이후 재수락/재거절 불가
+
+6. **BR-06** 초대 거절 시 invitation status = REJECTED, 재초대 가능
+   - 거절 후 동일 invitee에게 새 초대 발송 허용 (BR-03은 PENDING 상태만 체크)
+
+7. **BR-07** 초대 수락/거절은 invitee 본인만 가능
    - 위반 시: 403 FORBIDDEN
 
-2. **BR-02** `scope = DORMITORY`인 방은 `creator_dormitory = 요청자 DormType`인 경우에만 "내 기숙사 탭" 목록에 노출
-   - `DormType = NONE` 유저의 내 기숙사 탭: 빈 목록 반환 (오류 아님)
+8. **BR-08** 파생 톡방은 방 탐색 목록(ALL 탭)에서 제외 (`roomType = DERIVED` 필터링)
+   - MY 탭(내가 참여한 방 목록)에는 정상 노출
 
-3. **BR-03** `scope = DORMITORY`인 방에 직접 입장 시 요청자 DormType ≠ creator_dormitory → 입장 차단
-   - 위반 시: 403 FORBIDDEN (링크 우회 차단)
+9. **BR-09** 참여자 목록 조회는 해당 방의 참여자만 가능
+   - 위반 시: 403 FORBIDDEN (OPEN_CHAT_ROOM_FORBIDDEN)
 
-4. **BR-04** 현재 참여 인원 ≥ max_participants인 방에 입장 시도 → 입장 불가
-   - 위반 시: 400 BAD_REQUEST (OPEN_CHAT_ROOM_FULL)
-
-5. **BR-05** 이미 참여 중인 방에 재입장 요청 → 멱등 처리 (에러 없이 roomId 정상 응답)
-   - 앱 재시작·탭 이동 등 중복 요청이 자연 발생하는 환경 고려
-
-6. **BR-06** 방장이 나가기 → `joined_at` 기준 가장 오래된 참여자에게 방장 자동 이전
-   - 참여자가 0명이 되면 방 자동 삭제 (단, `is_official = TRUE` 방은 삭제 보호)
-
-7. **BR-07** `is_official = TRUE` 방은 방장 이전·자동 삭제 로직 적용 제외
-   - `is_official` 방에서 방장이 나가도 삭제되지 않고 다음 참여자에게 방장 이전만 수행
-
-8. **BR-08** 방 삭제 권한: 방장 또는 ADMIN
-   - `is_official = TRUE` 방은 ADMIN만 삭제 가능
-   - 위반 시: 403 FORBIDDEN
-
-9. **BR-09** 방 목록 응답에 `isJoined` 필드 포함
-   - "내 기숙사 탭"과 "전체 탭"에서 이미 참여한 방 구분 표시
+10. **BR-10** 파생 톡방 인원 제한은 생성 시 지정 (`maxParticipants`), 기본 상한 TBD
+    - 정원 초과 상태에서 초대 수락 시: 400 BAD_REQUEST (OPEN_CHAT_ROOM_FULL)
 
 ---
 
@@ -74,186 +89,49 @@
 
 | 역할 | 접근 가능 리소스 |
 |------|-----------------|
-| `USER` | 방 생성(본인), 방 목록 3탭 조회, 방 입장, 방 나가기, 방 삭제(본인이 방장인 경우) |
-| `ADMIN` | 방 삭제 전체 (is_official 포함) |
-| 비인증 | 없음 (전체 인증 필요) |
+| `USER` | 파생 톡방 생성(parent 참여자), 초대 발송, 초대 수락/거절(본인), 참여자 목록(참여자만), MY 탭 조회 |
+| `DORMITORY` | USER와 동일 |
+| 비인증 | 없음 |
 
 ---
 
 ## 5. 주요 시나리오
 
-### Happy Path
+### Happy Path — 파생 톡방 생성 & 초대
 
-1. USER가 오픈 채팅방을 생성한다 (`scope=ALL`, `maxParticipants=50`)
-2. 다른 USER가 "전체 탭"에서 해당 방을 발견하고 입장한다
-3. 입장 후 "내 방 탭"에 해당 방이 추가되고 `isJoined=true`로 표시된다
-4. 방장(생성자)이 나가기를 요청하면 다음 참여자(joined_at 가장 오래된)에게 방장이 이전된다
+1. USER A가 오픈채팅방(id=10)에 참여 중이다.
+2. A가 parentRoomId=10을 지정해 파생 톡방(roomType=DERIVED)을 생성한다.
+3. A가 방 10의 참여자 B, C에게 초대를 발송한다 → invitation status=PENDING.
+4. B가 초대를 수락한다 → B가 파생 톡방의 참여자로 등록, status=ACCEPTED.
+5. C가 초대를 거절한다 → status=REJECTED, 이후 재초대 가능.
+6. A와 B가 파생 톡방에서 채팅한다 (기존 WebSocket 재사용).
 
 ### 예외 시나리오
 
 | 시나리오 | 처리 방식 |
 |----------|-----------|
-| DORM_1 유저가 `scope=DORMITORY` + `creator_dormitory=DORM_2` 방 입장 시도 | 403 FORBIDDEN (BR-03) |
-| 최대 인원이 가득 찬 방에 입장 시도 | 400 OPEN_CHAT_ROOM_FULL (BR-04) |
-| 이미 참여 중인 방에 재입장 요청 | 멱등 처리, roomId 정상 응답 (BR-05) |
-| 유일한 참여자(방장)가 나가기 | 참여자 0명 → 방 자동 삭제 (is_official=FALSE인 경우만) |
-| is_official 방에서 방장 나가기 | 방장 이전만 수행, 방 삭제 없음 (BR-07) |
-| DormType=NONE 유저의 내 기숙사 탭 요청 | 빈 목록 반환 (BR-02) |
+| parent 방 비참여자가 파생 톡방 생성 시도 | 403 FORBIDDEN |
+| parent 방 비참여자를 초대 대상으로 지정 | 400 BAD_REQUEST |
+| 이미 PENDING 초대가 있는 대상에게 재초대 | 409 CONFLICT |
+| 이미 파생 톡방 참여자인 사람 초대 | 409 CONFLICT |
+| 정원 초과 상태에서 초대 수락 | 400 BAD_REQUEST (ROOM_FULL) |
+| 방 탐색(ALL 탭)에서 파생 톡방 접근 시도 | 목록에 노출되지 않으므로 진입 불가 |
+| 비참여자가 참여자 목록 조회 | 403 FORBIDDEN |
 
 ---
 
 ## 6. 비기능 요구사항
 
-- **성능**: 목록 조회 응답 200ms 이내
-- **정렬 기준**: TBD (last_message_at DESC vs 참여자 수 vs 생성 시간)
-- **페이지네이션**: TBD (offset vs cursor)
-- **데이터 보존**: `is_official = TRUE` 방은 영구 보존, 일반 방은 참여자 0명 시 자동 삭제
-- **외부 연동**: 없음 (Phase 2에서 WebSocket 연동 예정)
+- **성능**: 참여자 목록 조회 200ms 이내 (페이지네이션 필요 여부 TBD)
+- **동시성**: 초대 수락 시 정원 초과 방지 — 비관적 락(`findByIdWithLock`) 적용
+- **데이터 보존**: 파생 톡방 삭제 시 invitation, participant 연쇄 삭제 (hard delete)
+- **외부 연동**: 없음 (FCM 알림 발송은 Out of Scope)
 
 ---
 
 ## 7. 미결 사항 (TBD)
 
-- [ ] 방 목록 정렬 기준: `last_message_at DESC` vs 참여자 수 DESC vs 생성 시간 DESC
-- [ ] 페이지네이션 방식: offset 기반 vs cursor 기반
-- [ ] 방 상세 조회 API 별도 필요 여부 (입장 응답에 상세 정보 포함 가능)
-- [ ] `notification_enabled` ON/OFF 변경 API Phase 1 포함 여부
-- [ ] `open_chat_message` 테이블 Phase 1에서 실제 사용 여부 (테이블 생성만, API 없음)
-- [ ] 방 검색 기능 (이름 키워드) Phase 1 포함 여부
-
----
-
-## 8. 초기 데이터 (Flyway 삽입 대상)
-
-| 방 이름 | scope | creator_dormitory | is_official | created_by |
-|---------|-------|-------------------|-------------|------------|
-| 1긱 오픈채팅 | DORMITORY | DORM_1 | TRUE | NULL |
-| 2긱 오픈채팅 | DORMITORY | DORM_2 | TRUE | NULL |
-| 3긱 오픈채팅 | DORMITORY | DORM_3 | TRUE | NULL |
-| 1긱 공동구매방 | DORMITORY | DORM_1 | TRUE | NULL |
-| 2긱 공동구매방 | DORMITORY | DORM_2 | TRUE | NULL |
-| 3긱 공동구매방 | DORMITORY | DORM_3 | TRUE | NULL |
-| 기숙사 생활 질문방 | ALL | NULL | TRUE | NULL |
-| 기숙사 입사 준비방 | ALL | NULL | TRUE | NULL |
-| 여름방학 심심한 사람들 | ALL | NULL | TRUE | NULL |
-
----
-
----
-
-# Phase 2 — 실시간 채팅 (WebSocket + STOMP)
-
-## 1. 개요
-
-- **서비스 목적**: 오픈채팅 방 참여자들이 실시간으로 메시지를 송수신하고, 채팅 내역을 커서 기반으로 조회하며, 내 채팅방 목록에서 최신 메시지 미리보기를 확인
-- **핵심 사용자**: 기숙사 입주 학생 (USER)
-- **범위**
-  - In Scope: STOMP `@MessageMapping` 메시지 발행·브로드캐스트, 메시지 DB 저장, 시스템 메시지(입장/퇴장), 채팅 내역 커서 기반 페이징 조회, 메시지별 읽지 않은 사람 수, 내 채팅방 목록 최신 메시지 정렬·미리보기
-  - Out of Scope: FCM 오프라인 알림(Phase 3), 이미지 메시지(Phase 3), 메시지 삭제·수정, 공지 고정
-
----
-
-## 2. 도메인 모델 변경
-
-### 엔티티 변경 사항
-
-| 엔티티 | 추가 컬럼 | 비고 |
-|--------|-----------|------|
-| `OpenChatRoom` | `lastMessage VARCHAR(500)` | 방 목록 미리보기용 |
-| `OpenChatParticipant` | `lastReadMessageId BIGINT` | 읽지 않은 메시지 수 산정용 |
-| `OpenChatMessageType` | `SYSTEM` 타입 추가 | 입장/퇴장 시스템 메시지 |
-
-### 읽지 않은 사람 수 산정 방식
-
-메시지 M의 **읽지 않은 사람 수** = 방의 총 참여자 수 − (lastReadMessageId ≥ M.id 인 참여자 수)
-
-### 새 컴포넌트
-
-- `OpenChatWebSocketEventListener`: 구독 이벤트 감지, `lastReadMessageId` 갱신 (룸메이트의 `RoommateWebSocketEventListener`와 동일 패턴)
-- `OpenChatMessageService`: 메시지 발행·저장·브로드캐스트 담당
-
----
-
-## 3. 비즈니스 규칙 (Phase 2)
-
-1. **BR-P2-01** 메시지 발행 엔드포인트: STOMP `/pub/openchat/socketchat` (`@MessageMapping`만 사용)
-2. **BR-P2-02** 발행자는 해당 방의 `OpenChatParticipant`로 등록된 참여자여야 함
-   - 위반 시: 메시지 처리 중단 (STOMP ERROR 프레임 또는 무시)
-3. **BR-P2-03** 메시지 저장 후 방 구독자 전체에 브로드캐스트 (`/sub/openchat/{roomId}`)
-4. **BR-P2-04** 메시지 저장 후 `OpenChatRoom.lastMessage`(내용 최대 500자 truncate), `lastMessageAt` 즉시 갱신
-5. **BR-P2-05** 참여자가 `/sub/openchat/{roomId}` 구독 시 (`SessionSubscribeEvent`) `lastReadMessageId`를 현재 방의 최신 메시지 ID로 갱신
-6. **BR-P2-06** 메시지 발송 후 발신자의 `lastReadMessageId`도 해당 메시지 ID로 갱신
-7. **BR-P2-07** 입장 시 SYSTEM 메시지(`{닉네임}님이 입장했습니다`) 저장 + `/sub/openchat/{roomId}` 브로드캐스트
-   - Phase 1의 `joinRoom()` 서비스에서 직접 발행
-8. **BR-P2-08** 퇴장 시 SYSTEM 메시지(`{닉네임}님이 퇴장했습니다`) 저장 + 브로드캐스트
-   - Phase 1의 `leaveRoom()` 서비스에서 직접 발행
-9. **BR-P2-09** 채팅 내역 조회: 커서 기반 페이징, 기본 30건, 오래된 방향(ID 오름차순)으로 반환
-   - `lastMessageId` 미전달 시 가장 최신 30건 반환
-   - 조회 후 해당 참여자의 `lastReadMessageId` 갱신 (응답에 포함된 최신 메시지 ID로)
-10. **BR-P2-10** 내 채팅방 목록(MY 탭): `lastMessageAt` DESC 정렬, 응답에 `lastMessage`, `lastMessageAt`, `unreadCount` 포함
-    - `unreadCount` = 방의 메시지 중 id > 내 `lastReadMessageId` 인 건수
-11. **BR-P2-11** 채팅 내역 조회는 해당 방의 참여자만 가능
-    - 위반 시: 403 FORBIDDEN
-
----
-
-## 4. 사용자 & 권한 (Phase 2)
-
-| 역할 | 접근 가능 리소스 |
-|------|-----------------|
-| `USER` (참여자) | WebSocket 메시지 발행, 채팅 내역 조회, 내 방 목록 조회 |
-| `USER` (비참여자) | 채팅 내역 조회 불가, 메시지 발행 불가 |
-| 비인증 | WebSocket 연결 거부 (WebSocketAuthInterceptor) |
-
----
-
-## 5. 주요 시나리오 (Phase 2)
-
-### Happy Path — 메시지 발행
-
-1. USER가 STOMP CONNECT → JWT 검증 → 세션에 `userId` 저장
-2. `/sub/openchat/{roomId}` 구독 → `lastReadMessageId` 갱신
-3. `/pub/openchat/socketchat`으로 메시지 발행 (`roomId`, `content` 포함)
-4. 서버: 참여자 검증 → `OpenChatMessage` 저장 → `lastMessage`, `lastMessageAt` 갱신 → 발신자 `lastReadMessageId` 갱신
-5. `/sub/openchat/{roomId}` 전체 구독자에게 메시지 응답 브로드캐스트
-
-### Happy Path — 채팅 내역 조회
-
-1. `GET /openchat/{roomId}/messages?size=30` (첫 조회)
-2. 참여자 검증 후 최신 30건 반환
-3. 응답 후 `lastReadMessageId` 갱신
-4. 이전 메시지 조회: `GET /openchat/{roomId}/messages?lastMessageId={id}&size=30`
-
-### Happy Path — 내 채팅방 목록(MY 탭)
-
-1. `GET /openchat/rooms?tab=MY`
-2. 참여 중인 방을 `lastMessageAt` DESC 정렬
-3. 각 방의 `lastMessage`, `lastMessageAt`, `unreadCount`(내 lastReadMessageId 기준) 포함 응답
-
-### 예외 시나리오
-
-| 시나리오 | 처리 방식 |
-|----------|-----------|
-| WebSocket 미인증 발행 | 세션 userId 없음 → 처리 중단 |
-| 참여자가 아닌 사용자의 발행 | 참여자 검증 실패 → 처리 중단 |
-| 존재하지 않는 roomId로 발행 | 방 조회 실패 → 처리 중단 |
-| lastMessageId가 실제 존재하지 않는 경우 | 해당 ID 미만 최신 30건 반환 |
-| 방 삭제 후 구독자가 메시지 수신 | 브로드캐스트 수신 없음 (정상) |
-
----
-
-## 6. 비기능 요구사항 (Phase 2)
-
-- **성능**: 채팅 내역 조회 200ms 이내, 커서 기반 인덱스(`room_id, id DESC`) 활용
-- **WebSocket**: 기존 `/ws-stomp` 엔드포인트 재사용 (설정 변경 없음)
-- **세션 관리**: `OpenChatWebSocketEventListener` 신규 생성, prefix `/sub/openchat/` 로 분리 관리
-- **데이터 보존**: 메시지 hard delete 없음, 방 삭제 시 메시지 cascade 삭제
-
----
-
-## 7. 미결 사항 (Phase 2 TBD)
-
-- [ ] 오프라인 참여자 FCM 알림 발송 (Phase 3)
-- [ ] 이미지 메시지 지원 (Phase 3)
-- [ ] 메시지 최대 길이 제한 (현재 TEXT 타입, 필요 시 500자 논의)
-- [ ] 입장/퇴장 시스템 메시지의 `unreadCount` 포함 여부
+- [ ] 파생 톡방 `maxParticipants` 기본값 및 상한 (예: 최대 50명)
+- [ ] 파생 톡방 host가 나갔을 때 처리 (기존 OPEN 방과 동일 로직 적용 여부)
+- [ ] 초대 목록 조회 API 필요 여부 (나에게 온 초대 목록, 내가 보낸 초대 목록)
+- [ ] parent 오픈채팅방이 삭제됐을 때 파생 톡방 처리 (유지 vs. 연쇄 삭제)

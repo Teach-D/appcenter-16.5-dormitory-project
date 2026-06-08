@@ -31,6 +31,8 @@ public interface OpenChatParticipantRepository extends JpaRepository<OpenChatPar
 
     Optional<OpenChatParticipant> findByRoomIdAndUserId(Long roomId, Long userId);
 
+    List<OpenChatParticipant> findByRoomId(Long roomId);
+
     @Modifying
     @Transactional
     @Query("DELETE FROM OpenChatParticipant p WHERE p.roomId = :roomId")
