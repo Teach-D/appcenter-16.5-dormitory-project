@@ -8,13 +8,15 @@ import com.example.appcenter_project.domain.openChat.entity.OpenChatParticipant;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatRoom;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomScope;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomTab;
+import com.example.appcenter_project.domain.openChat.repository.OpenChatMessageRepository;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatParticipantRepository;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatRoomRepository;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.global.exception.ErrorCode;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -29,12 +31,27 @@ import java.util.Optional;
 import java.util.Set;
 
 @Service
-@RequiredArgsConstructor
 public class OpenChatRoomService {
 
     private final OpenChatRoomRepository openChatRoomRepository;
     private final OpenChatParticipantRepository openChatParticipantRepository;
+    private final OpenChatMessageRepository openChatMessageRepository;
     private final UserRepository userRepository;
+    private final OpenChatMessageService openChatMessageService;
+
+    @Autowired
+    public OpenChatRoomService(
+            OpenChatRoomRepository openChatRoomRepository,
+            OpenChatParticipantRepository openChatParticipantRepository,
+            OpenChatMessageRepository openChatMessageRepository,
+            UserRepository userRepository,
+            @Lazy OpenChatMessageService openChatMessageService) {
+        this.openChatRoomRepository = openChatRoomRepository;
+        this.openChatParticipantRepository = openChatParticipantRepository;
+        this.openChatMessageRepository = openChatMessageRepository;
+        this.userRepository = userRepository;
+        this.openChatMessageService = openChatMessageService;
+    }
 
     @Transactional
     public Long createRoom(RequestCreateOpenChatRoomDto request, Long userId) {
@@ -66,7 +83,7 @@ public class OpenChatRoomService {
     public Page<ResponseOpenChatRoomDto> getRooms(Long userId, OpenChatRoomTab tab, Pageable pageable) {
         if (tab == OpenChatRoomTab.MY) {
             List<OpenChatRoom> rooms = openChatRoomRepository.findMyRooms(userId);
-            return toPageDto(rooms, userId, pageable);
+            return toPageDtoWithUnread(rooms, userId, pageable);
         } else if (tab == OpenChatRoomTab.ALL) {
             List<OpenChatRoom> rooms = openChatRoomRepository.findAllPublicRooms();
             return toPageDto(rooms, userId, pageable);
@@ -108,6 +125,11 @@ public class OpenChatRoomService {
         }
 
         openChatParticipantRepository.save(OpenChatParticipant.create(roomId, userId, LocalDateTime.now()));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        openChatMessageService.sendSystemMessage(roomId, user.getName() + "님이 입장했습니다.");
+
         return toDetailDto(room, roomId);
     }
 
@@ -120,7 +142,12 @@ public class OpenChatRoomService {
                 .findByRoomIdAndUserId(roomId, userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_PARTICIPANT_NOT_FOUND));
 
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
         openChatParticipantRepository.delete(participant);
+
+        openChatMessageService.sendSystemMessage(roomId, user.getName() + "님이 퇴장했습니다.");
 
         if (userId.equals(room.getHostUserId())) {
             return handleHostLeave(room);
@@ -175,6 +202,28 @@ public class OpenChatRoomService {
                         room,
                         countMap.getOrDefault(room.getId(), 0L).intValue(),
                         joinedRoomIds.contains(room.getId())))
+                .toList();
+        return new PageImpl<>(dtos, pageable, dtos.size());
+    }
+
+    private Page<ResponseOpenChatRoomDto> toPageDtoWithUnread(List<OpenChatRoom> rooms, Long userId, Pageable pageable) {
+        if (rooms.isEmpty()) {
+            return new PageImpl<>(Collections.emptyList(), pageable, 0);
+        }
+        List<Long> roomIds = rooms.stream().map(OpenChatRoom::getId).toList();
+        Map<Long, Long> countMap = openChatParticipantRepository.countByRoomIds(roomIds);
+        Set<Long> joinedRoomIds = openChatParticipantRepository.findJoinedRoomIds(userId, roomIds);
+        Map<Long, Long> lastReadMap = openChatParticipantRepository.findLastReadMessageIdsByUserId(userId, roomIds);
+        List<ResponseOpenChatRoomDto> dtos = rooms.stream()
+                .map(room -> {
+                    Long lastReadMessageId = lastReadMap.get(room.getId());
+                    int unreadCount = (int) openChatMessageRepository.countByRoomIdAndIdGreaterThan(room.getId(), lastReadMessageId);
+                    return ResponseOpenChatRoomDto.from(
+                            room,
+                            countMap.getOrDefault(room.getId(), 0L).intValue(),
+                            joinedRoomIds.contains(room.getId()),
+                            unreadCount);
+                })
                 .toList();
         return new PageImpl<>(dtos, pageable, dtos.size());
     }

@@ -7,4 +7,6 @@ import java.util.Set;
 public interface OpenChatParticipantQuerydslRepository {
     Map<Long, Long> countByRoomIds(List<Long> roomIds);
     Set<Long> findJoinedRoomIds(Long userId, List<Long> roomIds);
+    Map<Long, Long> findLastReadMessageIdsByUserId(Long userId, List<Long> roomIds);
+    long countReadByRoomIdAndMessageId(Long roomId, Long messageId);
 }

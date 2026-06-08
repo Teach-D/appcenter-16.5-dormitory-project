@@ -133,7 +133,8 @@ public class OpenChatRoomFixture {
                 .maxParticipants(10)
                 .isJoined(false)
                 .lastMessageAt(null)
-                .lastMessagePreview(null)
+                .lastMessage(null)
+                .unreadCount(0)
                 .build();
     }
 

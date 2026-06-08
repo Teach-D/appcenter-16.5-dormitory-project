@@ -1,5 +1,6 @@
 package com.example.appcenter_project.domain.openChat.repository;
 
+import com.example.appcenter_project.domain.openChat.entity.OpenChatParticipant;
 import com.example.appcenter_project.domain.openChat.entity.QOpenChatParticipant;
 import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -53,5 +54,36 @@ public class OpenChatParticipantQuerydslRepositoryImpl implements OpenChatPartic
                 .fetch();
 
         return new HashSet<>(results);
+    }
+
+    @Override
+    public Map<Long, Long> findLastReadMessageIdsByUserId(Long userId, List<Long> roomIds) {
+        List<OpenChatParticipant> participants = queryFactory
+                .selectFrom(openChatParticipant)
+                .where(
+                        openChatParticipant.userId.eq(userId),
+                        openChatParticipant.roomId.in(roomIds)
+                )
+                .fetch();
+
+        Map<Long, Long> result = new HashMap<>();
+        for (OpenChatParticipant participant : participants) {
+            result.put(participant.getRoomId(), participant.getLastReadMessageId());
+        }
+        return result;
+    }
+
+    @Override
+    public long countReadByRoomIdAndMessageId(Long roomId, Long messageId) {
+        Long count = queryFactory
+                .select(openChatParticipant.count())
+                .from(openChatParticipant)
+                .where(
+                        openChatParticipant.roomId.eq(roomId),
+                        openChatParticipant.lastReadMessageId.isNotNull(),
+                        openChatParticipant.lastReadMessageId.goe(messageId)
+                )
+                .fetchOne();
+        return count != null ? count : 0L;
     }
 }

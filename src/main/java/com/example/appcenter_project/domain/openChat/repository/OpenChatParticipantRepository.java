@@ -35,4 +35,9 @@ public interface OpenChatParticipantRepository extends JpaRepository<OpenChatPar
     @Transactional
     @Query("DELETE FROM OpenChatParticipant p WHERE p.roomId = :roomId")
     void deleteAllByRoomId(@Param("roomId") Long roomId);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE OpenChatParticipant p SET p.lastReadMessageId = :messageId WHERE p.roomId = :roomId AND p.userId = :userId")
+    void updateLastReadMessageId(@Param("roomId") Long roomId, @Param("userId") Long userId, @Param("messageId") Long messageId);
 }
