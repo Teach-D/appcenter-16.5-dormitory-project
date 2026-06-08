@@ -19,7 +19,8 @@ public class ResponseOpenChatRoomDto {
     private int maxParticipants;
     private boolean isJoined;
     private LocalDateTime lastMessageAt;
-    private String lastMessagePreview;
+    private String lastMessage;
+    private int unreadCount;
 
     public static ResponseOpenChatRoomDto from(OpenChatRoom room, int currentParticipants, boolean joined) {
         return ResponseOpenChatRoomDto.builder()
@@ -31,7 +32,23 @@ public class ResponseOpenChatRoomDto {
                 .maxParticipants(room.getMaxParticipants())
                 .isJoined(joined)
                 .lastMessageAt(room.getLastMessageAt())
-                .lastMessagePreview(null)
+                .lastMessage(room.getLastMessage())
+                .unreadCount(0)
+                .build();
+    }
+
+    public static ResponseOpenChatRoomDto from(OpenChatRoom room, int currentParticipants, boolean joined, int unreadCount) {
+        return ResponseOpenChatRoomDto.builder()
+                .roomId(room.getId())
+                .name(room.getName())
+                .description(room.getDescription())
+                .scope(room.getScope())
+                .currentParticipants(currentParticipants)
+                .maxParticipants(room.getMaxParticipants())
+                .isJoined(joined)
+                .lastMessageAt(room.getLastMessageAt())
+                .lastMessage(room.getLastMessage())
+                .unreadCount(unreadCount)
                 .build();
     }
 }

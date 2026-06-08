@@ -38,6 +38,9 @@ public class OpenChatRoom extends BaseTimeEntity {
 
     private LocalDateTime lastMessageAt;
 
+    @Column(length = 500)
+    private String lastMessage;
+
     @Column(nullable = false)
     private boolean isOfficial;
 
@@ -60,5 +63,10 @@ public class OpenChatRoom extends BaseTimeEntity {
 
     public void updateHost(Long userId) {
         this.hostUserId = userId;
+    }
+
+    public void updateLastMessage(String content, LocalDateTime at) {
+        this.lastMessage = content != null && content.length() > 500 ? content.substring(0, 500) : content;
+        this.lastMessageAt = at;
     }
 }

@@ -30,6 +30,8 @@ public class OpenChatParticipant {
     @Column(nullable = false)
     private LocalDateTime joinedAt;
 
+    private Long lastReadMessageId;
+
     public static OpenChatParticipant create(Long roomId, Long userId, LocalDateTime joinedAt) {
         OpenChatParticipant participant = new OpenChatParticipant();
         participant.roomId = roomId;
@@ -37,5 +39,9 @@ public class OpenChatParticipant {
         participant.joinedAt = joinedAt;
         participant.notificationEnabled = true;
         return participant;
+    }
+
+    public void updateLastReadMessageId(Long messageId) {
+        this.lastReadMessageId = messageId;
     }
 }

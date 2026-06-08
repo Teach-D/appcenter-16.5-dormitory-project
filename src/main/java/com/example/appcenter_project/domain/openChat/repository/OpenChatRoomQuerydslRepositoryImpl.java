@@ -29,6 +29,10 @@ public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslR
                         openChatRoom.id.eq(openChatParticipant.roomId),
                         openChatParticipant.userId.eq(userId)
                 )
+                .orderBy(
+                        openChatRoom.lastMessageAt.desc().nullsLast(),
+                        openChatRoom.createdDate.desc()
+                )
                 .fetch();
     }
 

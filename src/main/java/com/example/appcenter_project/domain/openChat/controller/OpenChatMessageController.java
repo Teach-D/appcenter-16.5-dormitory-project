@@ -1,0 +1,46 @@
+package com.example.appcenter_project.domain.openChat.controller;
+
+import com.example.appcenter_project.domain.openChat.dto.request.RequestOpenChatMessageDto;
+import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatMessageListDto;
+import com.example.appcenter_project.domain.openChat.service.OpenChatMessageService;
+import com.example.appcenter_project.global.security.CustomUserDetails;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/open-chat-rooms")
+public class OpenChatMessageController implements OpenChatMessageApiSpecification {
+
+    private final OpenChatMessageService openChatMessageService;
+
+    @MessageMapping("/openchat/socketchat")
+    public void sendChatViaWebSocket(@Valid RequestOpenChatMessageDto dto, SimpMessageHeaderAccessor headerAccessor) {
+        Map<String, Object> sessionAttributes = headerAccessor.getSessionAttributes();
+        if (sessionAttributes == null) return;
+        String userIdStr = (String) sessionAttributes.get("userId");
+        if (userIdStr == null) return;
+        Long userId = Long.parseLong(userIdStr);
+        openChatMessageService.sendMessage(userId, dto);
+    }
+
+    @GetMapping("/{roomId}/messages")
+    public ResponseEntity<ResponseOpenChatMessageListDto> getMessages(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId,
+            @RequestParam(required = false) Long lastMessageId,
+            @RequestParam(defaultValue = "30") int size) {
+        return ResponseEntity.ok(openChatMessageService.getMessages(user.getId(), roomId, lastMessageId, size));
+    }
+}
