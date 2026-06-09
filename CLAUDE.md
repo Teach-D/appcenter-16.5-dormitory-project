@@ -1,216 +1,95 @@
-# UniDorm 프로젝트 - Claude Code 가이드
+# UniDorm — CLAUDE.md
 
-## 프로젝트 개요
+## 참조 문서
 
-**UniDorm** - 인천대학교 기숙사 통합 앱/웹 서비스
-- Spring Boot 3.4.4 / Java 17
-- 기숙사생을 위한 공지, 민원, 룸메이트 매칭, 공동구매, 알림, 쿠폰 관리 서비스
+| 파일 | 읽는 시점 |
+|------|----------|
+| `docs/api-spec.md` | API 추가/수정, DTO 설계, 권한 확인 |
+| `docs/db-schema.md` | 테이블 구조, FK, 컬럼 제약조건, 마이그레이션 작성 |
+| `docs/architecture.md` | 기능 흐름, 외부 시스템 연동, 스케줄러/비동기 패턴 확인 (§14 작업 체크리스트) |
+| `docs/github.md` | PR/이슈 작성, 브랜치 네이밍, 커밋 메시지 |
+| `docs/domain-dependencies.json` | X 변경 시 영향받는 도메인 확인 |
 
-## 기술 스택
+## 코딩 규칙
 
-| 분류 | 기술 |
-|------|------|
-| Framework | Spring Boot 3.4.4, Spring Security, Spring Data JPA |
-| ORM | Hibernate 6, QueryDSL 5.0.0, MyBatis |
-| DB | MySQL (primary), Oracle (학교 DB), Redis (캐시) |
-| Auth | JWT (Access: 24h, Refresh: 30일) |
-| 실시간 | WebSocket (STOMP) |
-| 알림 | Firebase FCM |
-| 문서 | SpringDoc OpenAPI 2.7.0 (Swagger) |
-| 기타 | Selenium (공지 크롤링), Resilience4j (Circuit Breaker), Flyway (마이그레이션) |
+코드 작성 전 항상 확인:
+- `.claude/rules/antipatterns.md` — Spring 아키텍처, Lombok/엔티티, API/예외
+- `.claude/rules/antipatterns-jpa.md` — JPA, N+1, 트랜잭션, QueryDSL
 
-## 패키지 구조
-
-```
-com.example.appcenter_project
-├── domain/          # 13개 비즈니스 도메인
-│   └── {domain}/
-│       ├── controller/   # REST + ApiSpecification (Swagger 인터페이스)
-│       ├── service/
-│       ├── entity/
-│       ├── repository/   # JpaRepository + QuerydslRepository
-│       ├── dto/
-│       │   ├── request/
-│       │   └── response/
-│       └── enums/
-├── common/          # 공통 컴포넌트 (file, image, like, metrics)
-├── global/          # 인프라 설정 (SecurityConfig, JwtFilter, 예외처리)
-└── shared/          # 공통 enum, utils
-```
-
-### 도메인 목록
-`user`, `announcement`, `complaint`, `groupOrder`, `roommate`, `notification`, `calender`, `fcm`, `coupon`, `feature`, `report`, `survey`, `tip`
-
-## 네이밍 컨벤션
-
-- **Controller**: `{Domain}Controller` + `{Domain}ApiSpecification` (Swagger 인터페이스 분리)
-- **Service**: `{Domain}Service`
-- **Repository**: `{Entity}Repository`, `{Entity}QuerydslRepositoryImpl`
-- **Entity**: 단수 명사 (e.g., `User`, `GroupOrder`)
-- **Request DTO**: `Request{Action}{Entity}Dto` (e.g., `RequestCreateComplaintDto`)
-- **Response DTO**: `Response{Entity}Dto` (e.g., `ResponseComplaintDto`)
-- **Enum**: `{Name}Type`, `{Name}Status`
-- **DB 컬럼/테이블**: snake_case
-
-## 주요 명령어
+## 명령어
 
 ```bash
-# 빌드
-./gradlew build
-
-# 테스트 실행
-./gradlew test
-
-# 특정 테스트만 실행
-./gradlew test --tests "com.example.appcenter_project.*"
-
-# QueryDSL Q클래스 생성
-./gradlew compileJava
-
-# Q클래스 초기화
-./gradlew clean compileJava
-
-# 로컬 실행 (application.yml 필요)
-./gradlew bootRun
+./gradlew build              # 빌드
+./gradlew test               # 테스트
+./gradlew compileJava        # QueryDSL Q클래스 생성
+./gradlew clean compileJava  # Q클래스 초기화
+./gradlew flywayInfo         # 마이그레이션 상태 확인
 ```
 
-## DB 마이그레이션 (Flyway)
+## 네이밍 규칙
 
-- 파일 위치: `src/main/resources/db/migration/`
-- 네이밍: `V{버전}__{설명}.sql` (e.g., `V3__add_tip_table.sql`)
-- 로컬에서는 `flyway.enabled=false` (ddl-auto: create 사용)
-- 프로덕션에서는 Flyway 활성화
+`{Domain}Controller` + `{Domain}ApiSpecification` (Swagger 인터페이스 분리) · `{Domain}Service` · `{Entity}Repository` · `Request{Action}{Entity}Dto` / `Response{Entity}Dto` · `{Name}Type` / `{Name}Status` · DB 컬럼 snake_case
 
-## 인증/보안 패턴
+## 인증/보안
 
-- JWT 필터: `global/security/jwt/`
-- 권한: `USER`, `ADMIN`, `DORMITORY`
-- 공개 경로 예외: `SecurityConfig.java`의 `permitAll()` 목록에 추가
-- 현재 사용자 조회: `SecurityContextHolder` 또는 `@AuthenticationPrincipal`
+- 권한 3가지: `USER`, `ADMIN`, `DORMITORY`
+- 새 공개 경로 추가 시 `SecurityConfig.java`의 `permitAll()` 목록에 반드시 추가
+- Oracle DB: `@OracleRepository` qualifier — `global/config/OracleConfig.java`
 
-## 엔티티 작성 규칙
+## 도메인별 함정 (non-obvious)
 
-```java
-@Entity
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "table_name")
-public class EntityName extends BaseTimeEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+| 도메인 | 함정 |
+|--------|------|
+| `calender` | 오탈자 아님 — DB·엔티티·패키지 모두 `calender`(e 하나). `calendar`로 쓰면 불일치 |
+| `fcm` | `@Async` 메서드에 `@Transactional` 필수 (별도 스레드 → 컨텍스트 없음 → LazyInit 예외). `@Modifying`에도 `@Transactional` 필수 |
+| `coupon` | 재고 차감 시 반드시 `findByIdWithLock`(비관적 락). ADMIN에게 발급 금지 로직 필수 |
+| `roommate` | `RoommateCheckList` → `RoommateBoard` 순서로 생성. `MyRoommate`는 양방향(user_id·roommate_id 각각 UQ) → 두 row 동시 생성 |
+| `survey` | 응답 시 상태(OPEN) + 날짜 범위(start_date ≤ now ≤ end_date) 이중 검증 필수 |
+| `notification` | 발송 전 `User.receiveNotificationTypes` 필터링 필수. DORMITORY 타입만 공지 수신 |
+| `announcement` | FCM 전체 발송 시 `bulkEnqueueOutbox` 패턴 사용 (N+1 방지) |
+| `complaint` | 답변 첨부파일은 `crawled_announcement_file` 테이블 공유 |
+| `tip` | 댓글 soft-delete(`is_deleted=true`). `deleteById()` 금지 |
+| `report` | `ResponseReportDto` 금지 → `ResponseEntity<Void>` + HTTP 201 |
+| `feature` | 미등록 key → 예외 아닌 `false` 반환 (`orElseThrow` 금지) |
 
-    // 정적 팩토리 메서드 사용
-    public static EntityName create(...) { ... }
+## 완료 체크리스트
 
-    // update 메서드 엔티티 내부 정의
-    public void update(...) { ... }
-}
-```
+1. **컴파일** — PostToolUse 훅이 `.java` 수정 시 자동 실행 (실패 시 즉시 수정)
+2. **테스트** — asyncRewake 훅이 백그라운드 자동 실행 (실패 시 Claude에 알림)
+3. **antipatterns 자가 검토** — `.claude/rules/antipatterns.md`, `antipatterns-jpa.md` 확인
+4. **AI 기여도 기록** — PR 완료 시 `.claude/ai-metrics.md`에 보완비율·clarification 횟수 기록
 
-## API 응답 패턴
+## 세션 실패 기록
+### 2026-06-08 01:53 UTC (세션: 1b6c14b9)
 
-- 성공: `ResponseEntity<ResponseDto>` 또는 직접 DTO 반환
-- 예외: `global/exception/` 의 커스텀 예외 사용
-- Swagger: `ApiSpecification` 인터페이스에 `@Operation`, `@ApiResponse` 정의
+- `Bash(gh auth status 2>&1)` → `Exit code 127`
+- `Bash(git -C "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-pr)` → `<tool_use_error>Cancelled: parallel tool call Bash(gh auth status 2>&1) errored</tool_use_error>`
+- `mcp__github__create_issue(Teach-D)` → `MCP error -32603: Failed to create issue: Bad credentials`
 
-## 멀티 데이터소스
+### 2026-06-08 01:53 UTC (세션: 94d7daeb)
 
-- MySQL 설정: `global/config/MySqlConfig.java` (`@Primary`)
-- Oracle 설정: `global/config/OracleConfig.java`
-- Oracle용 Repository는 별도 패키지로 분리하고 `@OracleRepository` qualifier 사용
+- `Bash(gh auth status 2>&1)` → `Exit code 127`
+- `Bash(git status --porcelain 2>&1)` → `<tool_use_error>Cancelled: parallel tool call Bash(gh auth status 2>&1) errored</tool_use_error>`
+- `Glob(docs/*)` → `<tool_use_error>Cancelled: parallel tool call Bash(gh auth status) errored</tool_use_error>`
+- `mcp__github__create_issue(Teach-D)` → `MCP error -32603: Failed to create issue: Bad credentials`
+- `Bash(powershell.exe -Command "Get-Command gh -ErrorAction SilentlyContinue | Select-O)` → `Exit code 1`
 
-## GitHub PR 구조
+### 2026-06-08 01:52 UTC (세션: f654db82)
 
-**제목**: `{type}: {한 줄 요약} #{이슈번호}` (70자 이내)
+- `Bash(git push)` → `Exit code 128`
+- `Bash($env:GITHUB_TOKEN)` → `Exit code 127`
+- `Bash(powershell -Command "
+\$stream = [System.IO.MemoryStream]::new([System.Text.Enco)` → `Exit code 2`
 
-**본문**:
-```
-## 개요
-{변경 목적 2~3줄}
+### 2026-06-07 05:01 UTC (세션: 1b6c14b9)
 
-## 변경 사항
-- [엔티티] TipComment 엔티티 추가
-- [API] POST /tips/{id}/comments 댓글 작성 엔드포인트 추가
-- [설정] SecurityConfig USER 권한 추가
+- `Bash(gh auth status 2>&1)` → `Exit code 127`
+- `Bash(git -C "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-pr)` → `<tool_use_error>Cancelled: parallel tool call Bash(gh auth status 2>&1) errored</tool_use_error>`
+- `mcp__github__create_issue(Teach-D)` → `MCP error -32603: Failed to create issue: Bad credentials`
 
-## 테스트
-- [ ] 로컬 빌드 확인 (`./gradlew build`)
-- [ ] {기능별 확인 항목}
+### 2026-06-07 05:00 UTC (세션: 1b6c14b9)
 
-closes #{이슈번호}
-```
+- `Bash(gh auth status 2>&1)` → `Exit code 127`
+- `Bash(git -C "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-pr)` → `<tool_use_error>Cancelled: parallel tool call Bash(gh auth status 2>&1) errored</tool_use_error>`
+- `mcp__github__create_issue(Teach-D)` → `MCP error -32603: Failed to create issue: Bad credentials`
 
-## GitHub 이슈 구조
-
-**제목**: `[{type}] {기능 설명}` (예: `[feat] 팁 게시판 댓글 기능`)
-
-**본문**:
-```
-## 개요
-{기능 목적 2~3줄. 왜 필요한지 포함.}
-
-## 작업 목록
-- [ ] {작업1}
-- [ ] {작업2}
-
-## API 설계
-| Method | URL | 권한 | 설명 |
-|--------|-----|------|------|
-| POST   | /endpoint | USER | 설명 |
-```
-- API 설계 없는 이슈(chore/docs/refactor)는 해당 섹션 생략
-
-## Git 컨벤션
-
-### 브랜치 네이밍
-`{닉네임}/{활동}/{설명}-{이슈번호}` (예: `teach/fix/user-update-513`)
-- 닉네임: `teach`
-- 활동: `feat` / `fix` / `refactor` / `chore` / `docs`
-- 설명: kebab-case 영문
-
-### 커밋 메시지
-```
-{type}: {제목} #{이슈번호}
-```
-
-| type | 용도 |
-|------|------|
-| `feat` | 새 기능 추가 |
-| `fix` | 버그 수정 |
-| `refactor` | 동작 변경 없는 코드 개선 |
-| `chore` | 빌드/설정/도구 변경 |
-| `docs` | 문서/Swagger 변경 |
-| `test` | 테스트 코드 |
-| `style` | 포맷팅 등 코드 변경 없는 수정 |
-
-**규칙**
-- 제목 50자 이내, 한글 허용
-- 이슈번호 필수 (`#번호`)
-- `add:` 사용 금지 → `feat:` 으로 통일
-- 본문은 선택, 쓸 경우 "왜" 변경했는지 위주로
-
-**예시**
-```
-feat: 팁 게시판 댓글 기능 추가 #552
-fix: FCM 토큰 중복 저장 오류 수정 #545
-refactor: refresh token 30일 연장 #545
-docs: 민원 알림 수신 설정 swagger 업데이트 #548
-chore: Claude Code 프로젝트 설정 추가 #551
-test: RoommateService 단위 테스트 추가 #532
-```
-
-## CI/CD
-
-- **dev 브랜치**: `dev-deploy.yml` → 포트 8055, `inu-network`
-- **main 브랜치**: `main-deploy.yml` → 포트 8056, `unidorm-network`
-- Docker Hub 이미지로 빌드 후 SSH 배포
-
-## 코드 작성 시 주의사항
-
-1. **Lombok**: `@Builder` 대신 정적 팩토리 메서드 선호
-2. **QueryDSL**: 복잡한 조회는 `*QuerydslRepositoryImpl`에 구현
-3. **비동기**: `AsyncConfig`의 스레드풀 사용 (`@Async`)
-4. **캐싱**: Redis 우선, 로컬 Caffeine 폴백
-5. **테스트**: `src/test/java/` 에 서비스 단위 테스트 작성
-6. **AOP 메트릭**: API 엔드포인트에 `@TrackApi` 어노테이션 추가

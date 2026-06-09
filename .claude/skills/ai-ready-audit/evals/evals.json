@@ -1,0 +1,50 @@
+{
+  "skill_name": "ai-ready-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "현재 프로젝트 AI-ready 점수 알려줘",
+      "expected_output": "7개 카테고리(A-G) 점수표 + 등급 + 카테고리별 근거 + 개선 권고",
+      "assertions": [
+        "점수표에 7개 카테고리가 모두 포함된다",
+        "총점과 등급(AI-Native/AI-Ready/AI-Assisted/AI-Fragile/AI-Hostile)이 명시된다",
+        "감점 이유가 구체적으로 서술된다 (파일명 수준)",
+        "개선 권고가 즉시 실행 가능한 액션으로 제시된다"
+      ],
+      "run_history": [
+        {
+          "date": "2026-05-11",
+          "score": 64,
+          "grade": "AI-Assisted",
+          "notes": "key files 없음, CI freshness 없음"
+        },
+        {
+          "date": "2026-05-11",
+          "score": 81,
+          "grade": "AI-Ready",
+          "notes": "CLAUDE.md nav 보강, dependency matrix, CI validation 추가 후"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "AI 친화도 채점해줘, 개선할 게 뭐 있는지 알고 싶어",
+      "expected_output": "점수표 + ROI 높은 개선 항목 우선순위 목록",
+      "assertions": [
+        "즉시 실행 가능 항목과 장기 개선 항목을 구분해서 제시한다",
+        "다음 등급까지 필요한 점수와 방법을 안내한다"
+      ],
+      "run_history": []
+    },
+    {
+      "id": 3,
+      "prompt": "AI-ready audit 해줘, 특히 문서화 쪽이 얼마나 잘 돼 있는지 궁금해",
+      "expected_output": "B. Context Document Quality 항목 상세 분석 포함",
+      "assertions": [
+        "B1-B5 세부 항목별 점수가 표시된다",
+        "문서화 관련 구체적 파일명이 언급된다"
+      ],
+      "run_history": []
+    }
+  ]
+}

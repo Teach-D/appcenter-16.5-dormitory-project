@@ -3,7 +3,6 @@ package com.example.appcenter_project.global.exception;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import static org.springframework.http.HttpStatus.*;
 
 import static org.springframework.http.HttpStatus.*;
 
@@ -110,6 +109,7 @@ public enum ErrorCode {
     // ANNOUNCEMENT
     ANNOUNCEMENT_NOT_REGISTERED(NOT_FOUND, 12001, "[ANNOUNCEMENT] 해당 공지사항 정보를 찾을 수 없습니다"),
     ANNOUNCEMENT_FORBIDDEN(FORBIDDEN, 12002, "[ANNOUNCEMENT] 해당 유형의 공지사항에 대한 권한이 없습니다."),
+    ANNOUNCEMENT_NOT_FOUND(NOT_FOUND, 12003, "[ANNOUNCEMENT] 공지사항이 존재하지 않습니다."),
 
     // ATTACHEDFILE
     ATTACHEDFILE_NOT_REGISTERED(NOT_FOUND, 13001, "[ATTACHEDFILE] 해당 파일을 찾을 수 없습니다"),
@@ -160,6 +160,28 @@ public enum ErrorCode {
     // FEATURE
     FEATURE_NOT_FOUND(NOT_FOUND, 12001, "[FEATURE] feature가 존재하지 않습니다."),
     DUPLICATE_FEATURE_KEY(CONFLICT, 12001, "[FEATURE] 같은 key의 feature가 존재합니다."),
+
+    // OPEN_CHAT
+    OPEN_CHAT_ROOM_NOT_FOUND(NOT_FOUND, 22001, "[OpenChat] 채팅방을 찾을 수 없습니다."),
+    OPEN_CHAT_ROOM_FORBIDDEN(FORBIDDEN, 22002, "[OpenChat] 채팅방 접근 권한이 없습니다."),
+    OPEN_CHAT_ROOM_FULL(BAD_REQUEST, 22003, "[OpenChat] 최대 인원에 도달한 채팅방입니다."),
+    OPEN_CHAT_PARTICIPANT_NOT_FOUND(NOT_FOUND, 22004, "[OpenChat] 참여하지 않은 채팅방입니다."),
+    OPEN_CHAT_NOT_PARTICIPANT(FORBIDDEN, 22005, "[OpenChat] 채팅 내역 조회 권한이 없습니다."),
+    OPEN_CHAT_INVITATION_NOT_FOUND(NOT_FOUND, 22006, "[OpenChat] 초대를 찾을 수 없습니다."),
+    OPEN_CHAT_INVITATION_INVALID_TARGET(BAD_REQUEST, 22007, "[OpenChat] 초대 대상이 부모 방의 참여자가 아닙니다."),
+    OPEN_CHAT_INVITATION_ALREADY_EXISTS(CONFLICT, 22008, "[OpenChat] 이미 대기 중인 초대가 존재합니다."),
+    OPEN_CHAT_PARTICIPANT_ALREADY_EXISTS(CONFLICT, 22009, "[OpenChat] 이미 채팅방에 참여 중인 사용자입니다."),
+    VALIDATION_ERROR(BAD_REQUEST, 22010, "[OpenChat] 유효하지 않은 요청입니다."),
+    OPEN_CHAT_INVITATION_ALREADY_PROCESSED(BAD_REQUEST, 22011, "[OpenChat] 이미 처리된 초대입니다."),
+    OPEN_CHAT_INVITATION_SELF_INVITE(BAD_REQUEST, 22012, "[OpenChat] 자기 자신을 초대할 수 없습니다."),
+
+    // STUDENT_ID_DISCLOSURE
+    DISCLOSURE_REQUEST_NOT_FOUND(NOT_FOUND, 23001, "[StudentIdDisclosure] 학번 공개 요청을 찾을 수 없습니다."),
+    DISCLOSURE_REQUEST_ALREADY_EXISTS(CONFLICT, 23002, "[StudentIdDisclosure] 이미 진행 중인 요청이 있습니다."),
+    DISCLOSURE_REQUEST_FORBIDDEN(FORBIDDEN, 23003, "[StudentIdDisclosure] 권한이 없습니다."),
+    DISCLOSURE_CANNOT_REQUEST_SELF(BAD_REQUEST, 23004, "[StudentIdDisclosure] 자기 자신에게 요청할 수 없습니다."),
+    DISCLOSURE_NOT_IN_SAME_ROOM(BAD_REQUEST, 23005, "[StudentIdDisclosure] 같은 채팅방에 있는 사용자에게만 요청할 수 있습니다."),
+    DISCLOSURE_INVALID_STATUS(BAD_REQUEST, 23006, "[StudentIdDisclosure] 현재 상태에서 허용되지 않는 요청입니다."),
 
     // RATE LIMIT
     RATE_LIMIT_EXCEEDED(TOO_MANY_REQUESTS, 20001, "[RateLimit] 요청 횟수를 초과했습니다. 잠시 후 다시 시도해주세요."),

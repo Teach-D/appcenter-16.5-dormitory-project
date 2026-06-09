@@ -4,6 +4,7 @@ import io.sentry.Sentry;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -47,6 +48,18 @@ public class GlobalExceptionHandler {
         log.warn("MissingServletRequestPartException 발생: {}", ex.getMessage());
 
         return ErrorResponseEntity.toResponseEntity(ErrorCode.VALIDATION_FAILED);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponseEntity> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        String message = ex.getMessage() != null ? ex.getMessage() : "";
+        if (message.contains("open_chat_invitation")) {
+            log.warn("DataIntegrityViolationException - open_chat_invitation constraint: {}", message);
+            return ErrorResponseEntity.toResponseEntity(ErrorCode.OPEN_CHAT_INVITATION_ALREADY_EXISTS);
+        }
+        log.error("DataIntegrityViolationException 발생: {}", message, ex);
+        Sentry.captureException(ex);
+        return ErrorResponseEntity.toResponseEntity(ErrorCode.UNHANDLED_EXCEPTION);
     }
 
     @ExceptionHandler(Exception.class)

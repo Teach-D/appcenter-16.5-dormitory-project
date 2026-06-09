@@ -36,6 +36,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -414,7 +415,7 @@ public class ComplaintService {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("user").get("id"), userId));
         }
 
-        return complaintRepository.findAll(spec).stream()
+        List<ResponseComplaintListDto> list = complaintRepository.findAll(spec).stream()
                 .map(c -> ResponseComplaintListDto.builder()
                         .id(c.getId())
                         .date(c.getCreatedDate() != null
@@ -431,6 +432,8 @@ public class ComplaintService {
                         .bedNumber(c.getBedNumber())
                         .build())
                 .toList();
+        Collections.reverse(list);
+        return list;
     }
 
     // 민원 목록을 CSV로 변환 (전체 조회)
