@@ -176,6 +176,9 @@ public class SecurityConfig {
                         /** 오픈 채팅 **/
                         .requestMatchers("/open-chat-rooms/**").authenticated()
 
+                        /** 학번 공개 **/
+                        .requestMatchers("/student-id-disclosures/**").authenticated()
+
                         /** 나머지 **/
                         .anyRequest().authenticated()
                 )

@@ -1,7 +1,7 @@
 # 도메인 모델
 
 > 기반 요구사항: `docs/requirements.md`
-> 기능: 파생 톡방 (비공개 그룹 채팅)
+> 기능: 상호 동의 학번 공개
 
 ---
 
@@ -9,147 +9,93 @@
 
 | 용어 | 정의 |
 |------|------|
-| 오픈채팅방 (OPEN) | 탐색 목록에 노출되어 누구나 참여 가능한 기존 채팅방 (`roomType = OPEN`) |
-| 파생 톡방 (DERIVED) | 특정 오픈채팅방 참여자끼리 초대로만 입장 가능한 비공개 채팅방 (`roomType = DERIVED`) |
-| 부모 방 (Parent Room) | 파생 톡방이 파생된 원본 오픈채팅방 (`parentRoomId`로 참조) |
-| 초대 (Invitation) | 파생 톡방 참여자가 부모 방의 다른 참여자에게 보내는 입장 요청 |
-| 초대자 (Inviter) | 초대를 발송한 파생 톡방 참여자 |
-| 피초대자 (Invitee) | 초대를 수신한 사용자 (부모 방 참여자여야 함) |
-| 호스트 (Host) | 채팅방을 생성하거나 승계받은 대표 참여자 |
+| 학번 공개 요청 (Disclosure Request) | 특정 채팅방 안에서 A가 B에게 학번(`studentNumber`)을 서로 공개하자고 보내는 요청 |
+| 요청자 (Requester) | 학번 공개 요청을 발송한 사용자 |
+| 대상자 (Target) | 학번 공개 요청을 수신한 사용자 |
+| 공개 관계 (Disclosed Pair) | 수락 상태(ACCEPTED)인 (requester, target, roomId) 3-tuple — 해당 방 안에서만 유효 |
+| 닉네임 모드 | 공개 관계가 없는 상태 — 채팅방에서 상대방 이름 대신 닉네임이 표시됨 |
+| 학번 모드 | 공개 관계가 ACCEPTED인 상태 — 채팅방에서 상대방의 `studentNumber`가 표시됨 |
 
 ---
 
 ## 2. 바운디드 컨텍스트
 
-단일 컨텍스트: `openChat`
-- 기존 OpenChatRoom/OpenChatParticipant/OpenChatMessage 애그리거트에 OpenChatInvitation 애그리거트를 추가
+단일 신규 컨텍스트: `studentIdDisclosure`
+- `openChat` 컨텍스트와 협력 (참여 여부 검증, 퇴장 이벤트 연동)
+- `User` 컨텍스트 의존: `studentNumber` 필드 조회
 
 ---
 
 ## 3. 애그리거트
 
-### Aggregate: OpenChatRoom
+### Aggregate: StudentIdDisclosureRequest
 
 #### 책임
-채팅방의 유형(OPEN/DERIVED)·정원·호스트 일관성을 보호하며, 파생 톡방 생성 자격을 검증한다.
+요청의 발송·수락·거절·취소 상태 전이를 보호하고, 한 쌍(pair)에 중복 활성 요청이 없음을 보장한다.
 
 #### 애그리거트 루트
-`OpenChatRoom`
+`StudentIdDisclosureRequest`
 
 #### 엔티티 & 값 객체
 
 | 구분 | 이름 | 핵심 속성 | 설명 |
 |------|------|-----------|------|
-| Entity (Root) | `OpenChatRoom` | id, name, description, scope, maxParticipants, hostUserId, isOfficial, roomType, parentRoomId, lastMessage, lastMessageAt | 방 자체 |
+| Entity (Root) | `StudentIdDisclosureRequest` | id, requesterId, targetId, roomId, status, createdAt, updatedAt | 요청 단건 |
 
 #### 비즈니스 불변식 (Invariants)
-- **INV-01**: `roomType = DERIVED`인 방은 반드시 `parentRoomId`가 존재해야 한다.
-  - 위반 시: 도메인 생성 메서드 내부에서 IllegalArgumentException → CustomException 변환
-- **INV-02**: `roomType = OPEN`인 방은 `parentRoomId`가 null이어야 한다.
-  - 위반 시: 동일
-- **INV-03**: `isOfficial = true`인 방은 삭제 불가.
+
+- **INV-01**: 동일 (requesterId, targetId, roomId) 쌍에 레코드는 최대 1개 존재한다.
+  - DB UNIQUE 제약 `(requester_id, target_id, room_id)` 로 보장
+  - 재요청 시 기존 REJECTED/CANCELED 레코드를 먼저 삭제 후 신규 삽입
+- **INV-02**: requesterId ≠ targetId (자기 자신에게 요청 불가).
+  - 위반 시: 400 BAD_REQUEST (CANNOT_REQUEST_SELF)
+- **INV-03**: PENDING 상태 전이는 cancel(요청자) 또는 accept/reject(대상자)만 가능.
   - 위반 시: 403 FORBIDDEN
-
-#### 라이프사이클 & 상태 머신
-```
-[생성] roomType=OPEN or DERIVED
-[존재] host 퇴장 시 → 다음 참여자로 host 승계
-[존재] 참여자 0명 + isOfficial=false → 방 자동 삭제
-[삭제] invitation, participant 연쇄 hard delete
-```
-
-#### 트랜잭션 경계
-- 파생 톡방 생성: OpenChatRoom 단독 트랜잭션 (생성자를 첫 참여자로 OpenChatParticipant와 함께)
-- 초대 수락 시 정원 체크: `findByIdWithLock(roomId)`로 OpenChatRoom에 비관적 락 → participant count 검증 후 OpenChatParticipant 등록
-
-#### 동시성 고려사항
-- 초대 수락 동시 요청 시 정원 초과 방지: `SELECT ... FOR UPDATE` (비관적 락)
-- 기존 `joinRoom` 패턴(`findByIdWithLock`) 동일하게 적용
-
-#### 도메인 이벤트
-- `DerivedRoomCreated`: 파생 톡방 생성 완료 시 (현재 구독자 없음, 확장 고려)
-
----
-
-### Aggregate: OpenChatParticipant
-
-#### 책임
-특정 방의 참여자 목록 일관성을 보호하며, 중복 참여를 방지한다.
-
-#### 애그리거트 루트
-`OpenChatParticipant`
-
-#### 엔티티 & 값 객체
-
-| 구분 | 이름 | 핵심 속성 | 설명 |
-|------|------|-----------|------|
-| Entity (Root) | `OpenChatParticipant` | id, roomId, userId, notificationEnabled, joinedAt, lastReadMessageId | 방-사용자 참여 관계 |
-
-#### 비즈니스 불변식 (Invariants)
-- **INV-04**: (roomId, userId) 조합은 유일해야 한다 (DB UNIQUE 제약 + 애플리케이션 중복 체크).
-  - 위반 시: 409 CONFLICT (OPEN_CHAT_PARTICIPANT_ALREADY_EXISTS)
-
-#### 트랜잭션 경계
-- 초대 수락 도메인 서비스(`InvitationAcceptService`)가 OpenChatRoom 락 획득 후 OpenChatParticipant를 등록한다. 단일 트랜잭션.
-
-#### 동시성 고려사항
-- DB UNIQUE 제약이 최후 방어선; 애플리케이션 레벨에서 existsByRoomIdAndUserId 선검증.
-
----
-
-### Aggregate: OpenChatInvitation
-
-#### 책임
-초대의 발송·수락·거절 상태 전이를 보호하며, 중복 초대와 비자격 초대를 막는다.
-
-#### 애그리거트 루트
-`OpenChatInvitation`
-
-#### 엔티티 & 값 객체
-
-| 구분 | 이름 | 핵심 속성 | 설명 |
-|------|------|-----------|------|
-| Entity (Root) | `OpenChatInvitation` | id, roomId, inviterUserId, inviteeUserId, status, createdAt | 초대 단건 |
-
-#### 비즈니스 불변식 (Invariants)
-- **INV-05**: 동일 (roomId, inviteeUserId) 쌍에 PENDING 초대가 이미 존재하면 신규 초대 불가.
-  - 위반 시: 409 CONFLICT (OPEN_CHAT_INVITATION_ALREADY_EXISTS)
-- **INV-06**: ACCEPTED 또는 REJECTED 상태로 전이된 초대는 재전이 불가.
+- **INV-04**: ACCEPTED/REJECTED/CANCELED 상태의 요청은 상태 재전이 불가.
   - 위반 시: 400 BAD_REQUEST
-- **INV-07**: 수락/거절은 inviteeUserId 본인만 수행 가능.
-  - 위반 시: 403 FORBIDDEN
 
 #### 라이프사이클 & 상태 머신
+
 ```
-PENDING -[invitee 수락]→ ACCEPTED
-PENDING -[invitee 거절]→ REJECTED
-ACCEPTED → (종료, 불변)
-REJECTED → (종료, 불변) — 재초대 시 신규 PENDING 생성
+[없음]   -[요청자 발송]→         PENDING
+PENDING  -[대상자 수락]→         ACCEPTED
+PENDING  -[대상자 거절]→         REJECTED
+PENDING  -[요청자 취소]→         CANCELED
+ACCEPTED -[어느 한쪽 퇴장/방 삭제]→ [hard delete]
+REJECTED -[요청자 재요청]→       [기존 삭제 후 신규 PENDING]
+CANCELED -[요청자 재요청]→       [기존 삭제 후 신규 PENDING]
 ```
 
 #### 트랜잭션 경계
-- 초대 발송: OpenChatInvitation 단독 트랜잭션 (부모 방 참여 여부·중복 체크 포함)
-- 초대 수락: `InvitationAcceptService` 도메인 서비스가 단일 트랜잭션 내에서
-  1. OpenChatRoom 비관적 락 → 정원 체크
-  2. OpenChatInvitation 상태 → ACCEPTED
-  3. OpenChatParticipant 생성
+- 요청 발송: `StudentIdDisclosureRequestService` 단일 트랜잭션
+  1. 자기 자신 여부 검증
+  2. 두 유저가 동일 방에 있는지 확인 (`OpenChatParticipantRepository` 조회)
+  3. 기존 활성 레코드(PENDING/ACCEPTED) 존재 시 409 예외
+  4. 기존 비활성 레코드(REJECTED/CANCELED) 존재 시 삭제
+  5. 신규 PENDING 레코드 저장
+- 수락/거절/취소: 단건 상태 전이, 단일 트랜잭션
 
 #### 동시성 고려사항
-- 수락 요청이 동시에 들어와도 OpenChatRoom 비관적 락이 순차 처리를 보장.
+- 동일 쌍의 동시 발송: DB UNIQUE 제약이 최후 방어선
+  - 애플리케이션 레벨 선검증(existsByRequesterIdAndTargetIdAndRoomId) 후 저장
+  - 충돌 시 `DataIntegrityViolationException` → 409 CONFLICT 변환
 
 #### 도메인 이벤트
-- `InvitationAccepted`: 초대 수락 완료 시 (현재 구독자 없음, FCM 확장 고려)
+- `DisclosureRequestCreated`: 요청 발송 완료 시 → FCM 알림 트리거 (대상자에게)
+- `DisclosureRequestAccepted`: 수락 완료 시 → FCM 알림 트리거 (요청자에게)
+- `DisclosureRequestRejected`: 거절 완료 시 → FCM 알림 트리거 (요청자에게)
 
 ---
 
 ## 4. 애그리거트 관계도
 
 ```
-OpenChatRoom (OPEN) --1:N--> OpenChatRoom (DERIVED, parentRoomId)
-OpenChatRoom        --1:N--> OpenChatParticipant (roomId)
-OpenChatRoom        --1:N--> OpenChatInvitation (roomId)
-OpenChatInvitation           → inviterUserId (User ID 참조)
-OpenChatInvitation           → inviteeUserId (User ID 참조)
+User (requester)  --N:1-- StudentIdDisclosureRequest
+User (target)     --N:1-- StudentIdDisclosureRequest
+OpenChatRoom      --N:1-- StudentIdDisclosureRequest (roomId 참조, ID만)
+
+StudentIdDisclosureRequest는 OpenChatParticipant와 직접 연관 없음
+  → 서비스 레이어에서 OpenChatParticipantRepository로 참여 여부 검증
 ```
 
 ---
@@ -158,71 +104,55 @@ OpenChatInvitation           → inviteeUserId (User ID 참조)
 
 | 이벤트명 | 발행 주체 | 발행 시점 | 구독 주체 | 처리 내용 |
 |----------|-----------|-----------|-----------|-----------|
-| `DerivedRoomCreated` | OpenChatRoom | 파생 톡방 생성 완료 | (없음, 확장용) | — |
-| `InvitationAccepted` | OpenChatInvitation | 수락 상태 전이 완료 | (없음, 확장용) | — |
+| `DisclosureRequestCreated` | StudentIdDisclosureRequest | 요청 저장 완료 | FcmService | 대상자에게 CHAT 타입 FCM 알림 전송 |
+| `DisclosureRequestAccepted` | StudentIdDisclosureRequest | 수락 상태 전이 완료 | FcmService | 요청자에게 CHAT 타입 FCM 알림 전송 |
+| `DisclosureRequestRejected` | StudentIdDisclosureRequest | 거절 상태 전이 완료 | FcmService | 요청자에게 CHAT 타입 FCM 알림 전송 |
+
+> `NotificationType.CHAT`이 이미 존재하므로 별도 타입 추가 불필요
 
 ---
 
 ## 6. 도메인 서비스
 
-### InvitationAcceptService
-- **책임**: 초대 수락 시 두 애그리거트(OpenChatRoom, OpenChatInvitation) + OpenChatParticipant 생성을 단일 트랜잭션으로 조율
-- **관여 애그리거트**: OpenChatRoom, OpenChatInvitation, OpenChatParticipant
-- **로직 요약**:
-  1. OpenChatInvitation 조회 → invitee 본인 검증 (INV-07)
-  2. 상태 PENDING 확인 (INV-06)
-  3. OpenChatRoom 비관적 락 획득 → 정원 체크 (BR-10)
-  4. OpenChatParticipant 중복 체크 (INV-04)
-  5. OpenChatInvitation.status → ACCEPTED
-  6. OpenChatParticipant 생성 & 저장
-- **트랜잭션 전략**: 단일 트랜잭션 (`@Transactional`)
+단일 서비스 `StudentIdDisclosureRequestService`로 통합 (로직이 단순하여 별도 도메인 서비스 불필요).
 
-### InvitationSendService
-- **책임**: 초대 발송 자격(inviter가 파생 톡방 참여자, invitee가 부모 방 참여자)을 검증하고 초대를 생성
-- **관여 애그리거트**: OpenChatRoom, OpenChatParticipant, OpenChatInvitation
-- **로직 요약**:
-  1. 파생 톡방 존재 확인 + roomType=DERIVED 검증
-  2. inviter가 해당 파생 톡방 참여자인지 확인 (BR-01 파생)
-  3. invitee가 부모 방(parentRoomId) 참여자인지 확인 (BR-02)
-  4. invitee가 이미 파생 톡방 참여자인지 확인 (BR-04)
-  5. PENDING 중복 초대 확인 (INV-05)
-  6. OpenChatInvitation 생성 & 저장
-- **트랜잭션 전략**: 단일 트랜잭션
+크로스-도메인 협력은 서비스 레이어에서 리포지토리 직접 참조로 처리:
+- `OpenChatParticipantRepository.existsByRoomIdAndUserId()` — 동일 방 참여 여부 검증
 
 ---
 
 ## 7. 크로스-애그리거트 상호작용
 
-| 상황 | 관여 애그리거트 | 일관성 전략 | 이유 |
-|------|----------------|-------------|------|
-| 파생 톡방 생성 | OpenChatRoom → OpenChatParticipant | 단일 트랜잭션 | 생성자를 즉시 참여자로 등록해야 일관성 보장 |
-| 초대 발송 | OpenChatParticipant(검증) → OpenChatInvitation(생성) | 단일 트랜잭션 | 발송 자격과 초대 생성이 원자적이어야 함 |
-| 초대 수락 | OpenChatRoom(락) + OpenChatInvitation(상태변경) + OpenChatParticipant(생성) | 단일 트랜잭션 | 정원 체크·상태 전이·참여 등록이 동시에 일관되어야 함 |
+| 상황 | 관여 컨텍스트 | 일관성 전략 | 처리 위치 |
+|------|--------------|-------------|-----------|
+| 요청 발송 시 동일 방 검증 | studentIdDisclosure → openChat | 단일 트랜잭션 (읽기만) | `DisclosureRequestService` |
+| 채팅방 퇴장 시 공개 관계 삭제 | openChat → studentIdDisclosure | 순차 호출 (Controller) | `OpenChatRoomController.leave()` → `DisclosureRequestService.deleteByRoomAndUser()` 순차 호출 |
+| 채팅방 삭제 시 공개 관계 삭제 | openChat → studentIdDisclosure | DB Cascade 또는 순차 호출 | `OpenChatRoomService.deleteRoom()` 내에서 순차 삭제 |
 
 ---
 
 ## 8. 레포지토리 인터페이스
 
-### OpenChatRoomRepository (기존 확장)
-```
-// 기존 메서드 유지
-findAllPublicRooms(): List<OpenChatRoom>   // roomType=OPEN만 반환하도록 필터 추가
-findMyRooms(userId): List<OpenChatRoom>     // DERIVED 포함 (MY 탭)
-findByIdWithLock(roomId): Optional<OpenChatRoom>  // 비관적 락 (기존)
-```
+### StudentIdDisclosureRequestRepository
 
-### OpenChatParticipantRepository (기존 확장)
 ```
-// 기존 메서드 유지
-findByRoomId(roomId): List<OpenChatParticipant>  // 참여자 목록 조회 (신규)
-existsByRoomIdAndUserId(roomId, userId): boolean
-```
+// 활성 요청(PENDING/ACCEPTED) 존재 여부
+existsByRequesterIdAndTargetIdAndRoomIdAndStatusIn(
+    requesterId, targetId, roomId, statuses): boolean
 
-### OpenChatInvitationRepository (신규)
-```
-findByIdAndInviteeUserId(id, inviteeUserId): Optional<OpenChatInvitation>
-existsByRoomIdAndInviteeUserIdAndStatus(roomId, inviteeUserId, PENDING): boolean
-findByInviteeUserId(inviteeUserId): List<OpenChatInvitation>  // TBD
+// 요청 단건 조회 (수락/거절/취소 처리용)
+findByIdAndRequesterId(id, requesterId): Optional<StudentIdDisclosureRequest>
+findByIdAndTargetId(id, targetId): Optional<StudentIdDisclosureRequest>
+
+// 재요청 전 기존 비활성 레코드 삭제
+deleteByRequesterIdAndTargetIdAndRoomId(requesterId, targetId, roomId): void
+
+// 채팅방 퇴장/삭제 시 해당 방의 특정 유저 관련 레코드 삭제
+deleteByRoomIdAndRequesterIdOrRoomIdAndTargetId(roomId, userId): void
+
+// 학번 공개 상태 조회 (특정 방에서 두 유저 간 ACCEPTED 여부)
+findByRoomIdAndRequesterIdAndTargetIdAndStatus(
+    roomId, userAId, userBId, ACCEPTED): Optional<StudentIdDisclosureRequest>
 ```
 
 ---
@@ -232,67 +162,55 @@ findByInviteeUserId(inviteeUserId): List<OpenChatInvitation>  // TBD
 ```
 com.example.appcenter_project
 └── domain/
-    └── openChat/
+    └── studentIdDisclosure/
         ├── entity/
-        │   ├── OpenChatRoom.java         (roomType, parentRoomId 필드 추가)
-        │   ├── OpenChatParticipant.java  (기존 유지)
-        │   ├── OpenChatMessage.java      (기존 유지)
-        │   └── OpenChatInvitation.java   (신규)
+        │   └── StudentIdDisclosureRequest.java
         ├── enums/
-        │   ├── OpenChatRoomType.java     (신규: OPEN, DERIVED)
-        │   ├── OpenChatInvitationStatus.java  (신규: PENDING, ACCEPTED, REJECTED)
-        │   ├── OpenChatRoomScope.java    (기존 유지)
-        │   └── OpenChatRoomTab.java      (기존 유지)
+        │   └── DisclosureRequestStatus.java   (PENDING, ACCEPTED, REJECTED, CANCELED)
         ├── dto/
         │   ├── request/
-        │   │   ├── RequestCreateDerivedRoomDto.java   (신규)
-        │   │   └── RequestSendInvitationDto.java      (신규)
+        │   │   └── RequestCreateDisclosureDto.java   (targetId, roomId)
         │   └── response/
-        │       ├── ResponseOpenChatParticipantDto.java  (신규)
-        │       └── ResponseOpenChatInvitationDto.java   (신규)
+        │       └── ResponseDisclosureStatusDto.java  (status, targetStudentNumber?)
         ├── service/
-        │   ├── OpenChatRoomService.java         (기존, findAllPublicRooms 필터 수정)
-        │   ├── OpenChatInvitationService.java   (신규: InvitationSendService + InvitationAcceptService 통합)
-        │   └── OpenChatMessageService.java      (기존 유지)
+        │   └── StudentIdDisclosureRequestService.java
+        ├── controller/
+        │   ├── StudentIdDisclosureController.java
+        │   └── StudentIdDisclosureApiSpecification.java
         └── repository/
-            ├── OpenChatRoomRepository.java
-            ├── OpenChatInvitationRepository.java      (신규)
-            ├── OpenChatInvitationQuerydslRepository.java  (신규)
-            └── OpenChatInvitationQuerydslRepositoryImpl.java (신규)
+            └── StudentIdDisclosureRequestRepository.java
 ```
 
 ---
 
 ## 10. 설계 결정 사항 (ADR)
 
-### ADR-01: OpenChatInvitation을 독립 애그리거트로 분리
-- **결정**: OpenChatInvitation을 OpenChatRoom 내부 엔티티가 아닌 독립 애그리거트 루트로 설계
-- **이유**: 초대 조회(나에게 온 초대 목록 등)가 Room 경계를 넘으며, 초대 목록이 커져도 Room 애그리거트를 비대화하지 않기 위함
-- **trade-off**: 수락 로직에 도메인 서비스(InvitationAcceptService)가 추가되지만, 각 애그리거트 책임이 명확해짐
+### ADR-01: 재요청 시 기존 레코드 삭제 후 신규 삽입
+- **결정**: REJECTED/CANCELED 레코드를 삭제하고 새 PENDING 레코드를 삽입
+- **이유**: `(requesterId, targetId, roomId)` UNIQUE 제약으로 중복 활성 요청을 DB 레벨에서 원천 차단, 쿼리 단순화
+- **trade-off**: 요청 이력이 사라지나, 이력 조회 요구사항이 없으므로 허용
 
-### ADR-02: 초대 수락 시 OpenChatRoom 비관적 락으로 정원 체크
-- **결정**: `findByIdWithLock(roomId)` → participant count 검증 → 참여자 등록 순으로 단일 트랜잭션 처리
-- **이유**: 기존 `joinRoom` 패턴과 동일하게 유지해 코드 일관성 확보, 이중 락 없이 정원 보장
-- **trade-off**: 같은 방에 동시 수락 요청 시 순차 처리되지만, 파생 톡방 특성상 동시 수락 빈도가 낮아 허용
+### ADR-02: 채팅방 퇴장 연동을 Controller 순차 호출로 처리
+- **결정**: `openChat` 도메인 서비스에 `studentIdDisclosure` 의존성을 추가하지 않고, Controller에서 leave → deleteByRoomAndUser 순서로 호출
+- **이유**: 도메인 간 결합 제거, 두 작업 모두 실패해도 재시도 가능(멱등)
+- **trade-off**: 퇴장 성공 후 삭제 실패 시 고아 레코드 발생 가능 — ACCEPTED 레코드가 남아있어도 방 참여자가 아니면 실제 노출되지 않으므로 허용
 
-### ADR-03: 파생 톡방 host 퇴장 처리를 기존 OPEN 방과 동일하게 적용
-- **결정**: host 퇴장 시 가장 오래된 참여자 승계, 참여자 0명이면 방 삭제 (`handleHostLeave` 재사용)
-- **이유**: 파생 톡방도 지속적인 소통 공간이 될 수 있으므로 host 부재로 강제 삭제하지 않음
-- **trade-off**: 로직 재사용으로 구현 간단하나, 파생 톡방 특화 처리(예: 부모 방 연결 해제)는 TBD
+### ADR-03: FCM 알림에 기존 NotificationType.CHAT 재사용
+- **결정**: 별도 `STUDENT_ID_DISCLOSURE` 타입 추가 없이 기존 `CHAT` 타입 사용
+- **이유**: 이미 `CHAT` 타입이 존재하며, 사용자 알림 수신 설정 UI를 변경하지 않아도 됨
+- **trade-off**: 알림 종류를 세분화할 수 없으나, 현재 요구사항에서 불필요
 
 ---
 
 ## 11. 아키텍처 위험 요소
 
-- **위험 1 — 기존 findAllPublicRooms 필터 누락**: `OpenChatRoomQuerydslRepositoryImpl`의 탐색 조회에서 `roomType = OPEN` 필터를 누락하면 파생 톡방이 노출됨. 마이그레이션으로 기존 row에 `room_type = 'OPEN'` 기본값 설정 필수.
-- **위험 2 — parentRoomId 정합성**: 파생 톡방 생성 시 parentRoomId가 실제 OPEN 방인지 검증하지 않으면 DERIVED 방을 부모로 지정 가능 (재파생). 서비스 레이어에서 `roomType = OPEN` 검증 필수.
-- **위험 3 — 초대 수락 후 parent 방 탈퇴**: invitee가 초대 수락 후 부모 방을 나가도 파생 톡방 참여는 유지됨. 의도된 동작이나 UX 혼란 가능성 있음 → 문서화 필요.
+- **위험 1 — 고아 레코드**: 채팅방 퇴장 후 `deleteByRoomAndUser` 실패 시 ACCEPTED 레코드가 잔존. 방 참여자 여부를 함께 검증하는 조회 쿼리로 방어 가능.
+- **위험 2 — 방향성 중복**: A→B와 B→A는 별개 레코드. "공개 관계" 조회 시 두 방향을 모두 검색해야 함 (`(requesterId=A AND targetId=B) OR (requesterId=B AND targetId=A)`). 조회 쿼리 설계 시 반드시 고려.
+- **위험 3 — N+1**: 채팅방 참여자 목록 조회 시 각 참여자마다 학번 공개 여부를 단건 조회하면 N+1 발생. 조회 API는 roomId + currentUserId 기준으로 ACCEPTED 레코드를 한 번에 조회 후 매핑 필요.
 
 ---
 
 ## 12. TBD
 
-- [ ] `maxParticipants` 기본값 및 상한 (예: 최대 50명)
-- [ ] 초대 목록 조회 API (나에게 온 초대, 내가 보낸 초대) 포함 여부
-- [ ] parent 오픈채팅방 삭제 시 파생 톡방 처리 (유지 vs. 연쇄 삭제)
-- [ ] 파생 톡방 참여자가 부모 방을 나갈 경우 파생 톡방 유지 여부
+- [ ] 채팅 메시지에서 학번 표시 시점: 수락 이후 메시지부터만 표시할지, 이전 메시지에도 소급 적용할지
+- [ ] 채팅방 삭제 시 연쇄 삭제 방식: DB Cascade vs. 서비스 레이어 순차 삭제
