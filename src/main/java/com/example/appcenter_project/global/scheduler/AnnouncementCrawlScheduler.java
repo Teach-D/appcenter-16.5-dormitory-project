@@ -347,7 +347,7 @@ public class AnnouncementCrawlScheduler {
 
             for (User receiveUser : allUsers) {
                 UserNotification userNotification = UserNotification.of(receiveUser, notification);
-                userNotificationRepository.save(userNotification);
+                //userNotificationRepository.save(userNotification);
 
                 //fcmMessageService.sendNotification(receiveUser, notification.getTitle(), notification.getBody());
             }
