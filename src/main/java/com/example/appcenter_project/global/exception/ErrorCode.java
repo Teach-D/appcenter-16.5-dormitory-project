@@ -64,6 +64,7 @@ public enum ErrorCode {
     IMAGE_SAVE_FAIL(FORBIDDEN, 6003, "[Image] 저장에 실패했습니다."),
     IMAGE_DIRECTORY_SAVE_FAIL(FORBIDDEN, 6003, "[Image] 이미지 폴더 저장에 실패했습니다."),
     IMAGE_UPDATE_NOT_ALLOWED(FORBIDDEN, 6004, "[Image] 수정 권한이 없습니다."),
+    IMAGE_INVALID_FORMAT(BAD_REQUEST, 6005, "[Image] 허용되지 않는 이미지 형식입니다."),
 
 
     // ROOMMATE
@@ -174,6 +175,8 @@ public enum ErrorCode {
     VALIDATION_ERROR(BAD_REQUEST, 22010, "[OpenChat] 유효하지 않은 요청입니다."),
     OPEN_CHAT_INVITATION_ALREADY_PROCESSED(BAD_REQUEST, 22011, "[OpenChat] 이미 처리된 초대입니다."),
     OPEN_CHAT_INVITATION_SELF_INVITE(BAD_REQUEST, 22012, "[OpenChat] 자기 자신을 초대할 수 없습니다."),
+    OPEN_CHAT_IMAGE_EMPTY(BAD_REQUEST, 22013, "[OpenChat] 전송할 이미지가 없습니다."),
+    OPEN_CHAT_IMAGE_COUNT_EXCEEDED(BAD_REQUEST, 22014, "[OpenChat] 이미지는 최대 5장까지 전송 가능합니다."),
 
     // STUDENT_ID_DISCLOSURE
     DISCLOSURE_REQUEST_NOT_FOUND(NOT_FOUND, 23001, "[StudentIdDisclosure] 학번 공개 요청을 찾을 수 없습니다."),
