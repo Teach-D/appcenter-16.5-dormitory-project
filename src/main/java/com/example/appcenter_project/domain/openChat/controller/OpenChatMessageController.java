@@ -48,8 +48,9 @@ public class OpenChatMessageController implements OpenChatMessageApiSpecificatio
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long roomId,
             @RequestParam(required = false) Long lastMessageId,
-            @RequestParam(defaultValue = "30") int size) {
-        return ResponseEntity.ok(openChatMessageService.getMessages(user.getId(), roomId, lastMessageId, size));
+            @RequestParam(defaultValue = "30") int size,
+            HttpServletRequest request) {
+        return ResponseEntity.ok(openChatMessageService.getMessages(user.getId(), roomId, lastMessageId, size, request));
     }
 
     @PostMapping(value = "/{roomId}/messages/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
