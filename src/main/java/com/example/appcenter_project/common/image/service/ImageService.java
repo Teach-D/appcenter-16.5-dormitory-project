@@ -35,6 +35,7 @@ public class ImageService {
     private static final String COMPLAINT_IMAGE_PREFIX = "complaint";
     private static final String COMPLAINT_REPLY_IMAGE_PREFIX = "complaint_reply";
     private static final String POPUP_NOTIFICATION_IMAGE_PREFIX = "popup_notification";
+    private static final String OPEN_CHAT_MESSAGE_IMAGE_PREFIX = "open_chat_message";
     private static final String DEFAULT_IMAGE_EXTENSION = ".jpg";
 
     private final ImageRepository imageRepository;
@@ -157,6 +158,9 @@ public class ImageService {
             if (imageType == ImageType.POPUP_NOTIFICATION) {
                 imageName = "/images/" + POPUP_NOTIFICATION_IMAGE_PREFIX + "/" + imageName;
             }
+            if (imageType == ImageType.OPEN_CHAT_MESSAGE) {
+                imageName = "/images/" + OPEN_CHAT_MESSAGE_IMAGE_PREFIX + "/" + imageName;
+            }
 
             return appcenterHttpsUrl + imageName;
         } catch (Exception e) {
@@ -209,6 +213,9 @@ public class ImageService {
         }
         if (imageType == ImageType.POPUP_NOTIFICATION) {
             directoryPath += (POPUP_NOTIFICATION_IMAGE_PREFIX + "/");
+        }
+        if (imageType == ImageType.OPEN_CHAT_MESSAGE) {
+            directoryPath += (OPEN_CHAT_MESSAGE_IMAGE_PREFIX + "/");
         }
 
         return directoryPath;
@@ -287,7 +294,9 @@ public class ImageService {
         if (imageType == ImageType.POPUP_NOTIFICATION) {
             imageName = POPUP_NOTIFICATION_IMAGE_PREFIX + "_" + imageName;
         }
-
+        if (imageType == ImageType.OPEN_CHAT_MESSAGE) {
+            imageName = OPEN_CHAT_MESSAGE_IMAGE_PREFIX + "_" + imageName;
+        }
 
         return imageName;
     }
@@ -341,7 +350,7 @@ public class ImageService {
             return Optional.empty();
         }
 
-        return Optional.of(imageRepository.findByImageTypeAndEntityId(imageType, entityId).get(0));
+        return Optional.of(images.get(0));
     }
 
     private List<ImageLinkDto> createImageDtos(ImageType imageType, HttpServletRequest request, List<Image> images) {
