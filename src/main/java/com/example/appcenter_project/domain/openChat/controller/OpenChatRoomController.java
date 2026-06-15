@@ -66,6 +66,15 @@ public class OpenChatRoomController implements OpenChatRoomApiSpecification {
         return ResponseEntity.ok(result);
     }
 
+    @PatchMapping("/{roomId}/participants/me/notification")
+    public ResponseEntity<Void> updateNotification(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId,
+            @RequestParam boolean enabled) {
+        openChatRoomService.updateNotification(user.getId(), roomId, enabled);
+        return ResponseEntity.noContent().build();
+    }
+
     @DeleteMapping("/{roomId}")
     public ResponseEntity<Void> deleteRoom(
             @AuthenticationPrincipal CustomUserDetails user,

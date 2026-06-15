@@ -1,6 +1,8 @@
 package com.example.appcenter_project.domain.openChat.repository;
 
+import com.example.appcenter_project.domain.openChat.dto.UnreadNotificationInfo;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatParticipant;
+import com.example.appcenter_project.domain.openChat.entity.QOpenChatMessage;
 import com.example.appcenter_project.domain.openChat.entity.QOpenChatParticipant;
 import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -85,5 +87,34 @@ public class OpenChatParticipantQuerydslRepositoryImpl implements OpenChatPartic
                 )
                 .fetchOne();
         return count != null ? count : 0L;
+    }
+
+    @Override
+    public List<UnreadNotificationInfo> findUnreadCountsForNotification() {
+        QOpenChatMessage message = QOpenChatMessage.openChatMessage;
+
+        List<Tuple> results = queryFactory
+                .select(
+                        openChatParticipant.roomId,
+                        openChatParticipant.userId,
+                        message.id.count()
+                )
+                .from(openChatParticipant)
+                .join(message).on(
+                        message.roomId.eq(openChatParticipant.roomId),
+                        openChatParticipant.lastReadMessageId.isNull()
+                                .or(message.id.gt(openChatParticipant.lastReadMessageId))
+                )
+                .where(openChatParticipant.notificationEnabled.isTrue())
+                .groupBy(openChatParticipant.roomId, openChatParticipant.userId)
+                .fetch();
+
+        return results.stream()
+                .map(t -> new UnreadNotificationInfo(
+                        t.get(openChatParticipant.roomId),
+                        t.get(openChatParticipant.userId),
+                        t.get(message.id.count()) != null ? t.get(message.id.count()) : 0L
+                ))
+                .toList();
     }
 }

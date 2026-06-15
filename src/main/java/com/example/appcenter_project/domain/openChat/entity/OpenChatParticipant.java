@@ -44,4 +44,8 @@ public class OpenChatParticipant {
     public void updateLastReadMessageId(Long messageId) {
         this.lastReadMessageId = messageId;
     }
+
+    public void updateNotificationEnabled(boolean enabled) {
+        this.notificationEnabled = enabled;
+    }
 }

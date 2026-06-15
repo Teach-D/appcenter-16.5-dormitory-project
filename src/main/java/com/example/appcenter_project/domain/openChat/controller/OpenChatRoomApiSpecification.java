@@ -43,6 +43,12 @@ public interface OpenChatRoomApiSpecification {
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long roomId);
 
+    @Operation(summary = "알림 설정 변경", description = "해당 채팅방의 알림 수신 여부를 변경한다 (enabled=true/false)")
+    ResponseEntity<Void> updateNotification(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId,
+            @RequestParam boolean enabled);
+
     @Operation(summary = "채팅방 삭제", description = "채팅방을 강제 삭제한다")
     ResponseEntity<Void> deleteRoom(
             @AuthenticationPrincipal CustomUserDetails user,

@@ -157,6 +157,14 @@ public class OpenChatRoomService {
     }
 
     @Transactional
+    public void updateNotification(Long userId, Long roomId, boolean enabled) {
+        OpenChatParticipant participant = openChatParticipantRepository
+                .findByRoomIdAndUserId(roomId, userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_PARTICIPANT_NOT_FOUND));
+        participant.updateNotificationEnabled(enabled);
+    }
+
+    @Transactional
     public void deleteRoom(Long userId, Long roomId) {
         OpenChatRoom room = openChatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND));
