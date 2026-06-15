@@ -120,7 +120,7 @@ public class OpenChatMessageService {
         messagingTemplate.convertAndSend("/sub/openchat/" + roomId, response);
     }
 
-    public ResponseOpenChatMessageListDto getMessages(Long userId, Long roomId, Long lastMessageId, int size) {
+    public ResponseOpenChatMessageListDto getMessages(Long userId, Long roomId, Long lastMessageId, int size, HttpServletRequest request) {
         openChatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND));
 
@@ -149,7 +149,7 @@ public class OpenChatMessageService {
                 : imageRepository.findByImageTypeAndEntityIdIn(ImageType.OPEN_CHAT_MESSAGE, imageMessageIds).stream()
                         .collect(Collectors.groupingBy(
                                 Image::getEntityId,
-                                Collectors.mapping(Image::getImageName, Collectors.toList())
+                                Collectors.mapping(img -> imageService.getImageUrl(ImageType.OPEN_CHAT_MESSAGE, img, request), Collectors.toList())
                         ));
 
         List<Long> senderIds = messages.stream()
@@ -159,7 +159,7 @@ public class OpenChatMessageService {
                 .toList();
 
         final Map<Long, String> nicknameByUserId = userRepository.findAllById(senderIds).stream()
-                .collect(Collectors.toMap(User::getId, User::getName));
+                .collect(Collectors.toMap(User::getId, u -> u.getName() != null ? u.getName() : ""));
 
         List<ResponseOpenChatMessageDto> dtos = messages.stream()
                 .map(msg -> {

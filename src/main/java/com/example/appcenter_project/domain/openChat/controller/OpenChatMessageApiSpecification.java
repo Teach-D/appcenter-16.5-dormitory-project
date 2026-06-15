@@ -24,7 +24,8 @@ public interface OpenChatMessageApiSpecification {
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long roomId,
             @RequestParam(required = false) Long lastMessageId,
-            @RequestParam(defaultValue = "30") int size);
+            @RequestParam(defaultValue = "30") int size,
+            HttpServletRequest request);
 
     @Operation(summary = "이미지 메시지 전송", description = "채팅방에 이미지를 전송한다. 저장 완료 후 WebSocket으로 전체 참여자에게 브로드캐스트된다.")
     ResponseEntity<ResponseOpenChatMessageDto> sendImageMessage(
