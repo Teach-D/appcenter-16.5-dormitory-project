@@ -35,8 +35,6 @@ public class OpenChatRoom extends BaseTimeEntity {
 
     private String creatorDormitory;
 
-    private Long hostUserId;
-
     private LocalDateTime lastMessageAt;
 
     @Column(length = 500)
@@ -54,39 +52,48 @@ public class OpenChatRoom extends BaseTimeEntity {
     private Long parentRoomId;
 
     public static OpenChatRoom create(String name, String description, OpenChatRoomScope scope,
-                                       int maxParticipants, Long hostUserId,
+                                       int maxParticipants, Long createdBy,
                                        String creatorDormitory, boolean isOfficial) {
         OpenChatRoom room = new OpenChatRoom();
         room.name = name;
         room.description = description;
         room.scope = scope;
         room.maxParticipants = maxParticipants;
-        room.hostUserId = hostUserId;
         room.creatorDormitory = creatorDormitory;
         room.isOfficial = isOfficial;
-        room.createdBy = hostUserId;
+        room.createdBy = createdBy;
+        room.roomType = OpenChatRoomType.OPEN;
+        return room;
+    }
+
+    public static OpenChatRoom createOfficial(String name, String description, OpenChatRoomScope scope,
+                                               int maxParticipants, Long createdBy,
+                                               String creatorDormitory) {
+        OpenChatRoom room = new OpenChatRoom();
+        room.name = name;
+        room.description = description;
+        room.scope = scope != null ? scope : OpenChatRoomScope.ALL;
+        room.maxParticipants = maxParticipants;
+        room.creatorDormitory = creatorDormitory;
+        room.isOfficial = true;
+        room.createdBy = createdBy;
         room.roomType = OpenChatRoomType.OPEN;
         return room;
     }
 
     public static OpenChatRoom createDerived(String name, String description, int maxParticipants,
-                                              Long hostUserId, Long parentRoomId) {
+                                              Long createdBy, Long parentRoomId) {
         OpenChatRoom room = new OpenChatRoom();
         room.name = name;
         room.description = description;
         room.scope = OpenChatRoomScope.ALL;
         room.maxParticipants = maxParticipants;
-        room.hostUserId = hostUserId;
         room.creatorDormitory = null;
         room.isOfficial = false;
-        room.createdBy = hostUserId;
+        room.createdBy = createdBy;
         room.roomType = OpenChatRoomType.DERIVED;
         room.parentRoomId = parentRoomId;
         return room;
-    }
-
-    public void updateHost(Long userId) {
-        this.hostUserId = userId;
     }
 
     public void updateLastMessage(String content, LocalDateTime at) {
