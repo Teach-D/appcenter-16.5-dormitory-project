@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface OpenChatParticipantRepository extends JpaRepository<OpenChatParticipant, Long>, OpenChatParticipantQuerydslRepository {
 
@@ -40,4 +41,9 @@ public interface OpenChatParticipantRepository extends JpaRepository<OpenChatPar
     @Transactional
     @Query("UPDATE OpenChatParticipant p SET p.lastReadMessageId = :messageId WHERE p.roomId = :roomId AND p.userId = :userId")
     void updateLastReadMessageId(@Param("roomId") Long roomId, @Param("userId") Long userId, @Param("messageId") Long messageId);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE OpenChatParticipant p SET p.lastReadMessageId = :messageId WHERE p.roomId = :roomId AND p.userId IN :userIds")
+    void updateLastReadMessageIdByRoomIdAndUserIdIn(@Param("roomId") Long roomId, @Param("userIds") Set<Long> userIds, @Param("messageId") Long messageId);
 }
