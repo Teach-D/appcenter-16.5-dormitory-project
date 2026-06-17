@@ -75,6 +75,15 @@ public class OpenChatRoomController implements OpenChatRoomApiSpecification {
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/{roomId}/participants/{targetUserId}")
+    public ResponseEntity<Void> kickParticipant(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId,
+            @PathVariable Long targetUserId) {
+        openChatRoomService.kickParticipant(user.getId(), roomId, targetUserId);
+        return ResponseEntity.noContent().build();
+    }
+
     @DeleteMapping("/{roomId}")
     public ResponseEntity<Void> deleteRoom(
             @AuthenticationPrincipal CustomUserDetails user,

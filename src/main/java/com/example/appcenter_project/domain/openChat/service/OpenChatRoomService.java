@@ -12,6 +12,7 @@ import com.example.appcenter_project.domain.openChat.repository.OpenChatMessageR
 import com.example.appcenter_project.domain.openChat.repository.OpenChatParticipantRepository;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatRoomRepository;
 import com.example.appcenter_project.domain.user.entity.User;
+import com.example.appcenter_project.domain.user.enums.Role;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.global.exception.ErrorCode;
@@ -162,6 +163,44 @@ public class OpenChatRoomService {
                 .findByRoomIdAndUserId(roomId, userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_PARTICIPANT_NOT_FOUND));
         participant.updateNotificationEnabled(enabled);
+    }
+
+    @Transactional
+    public void kickParticipant(Long actorId, Long roomId, Long targetUserId) {
+        OpenChatRoom room = openChatRoomRepository.findByIdWithLock(roomId)
+                .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND));
+
+        if (actorId.equals(targetUserId)) {
+            throw new CustomException(ErrorCode.OPEN_CHAT_KICK_FORBIDDEN);
+        }
+
+        User actor = userRepository.findById(actorId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        boolean isAdmin = actor.getRole() == Role.ROLE_ADMIN;
+
+        if (!isAdmin) {
+            openChatParticipantRepository.findByRoomIdAndUserId(roomId, actorId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_FORBIDDEN));
+
+            if (!actorId.equals(room.getHostUserId())) {
+                throw new CustomException(ErrorCode.OPEN_CHAT_KICK_FORBIDDEN);
+            }
+        }
+
+        OpenChatParticipant targetParticipant = openChatParticipantRepository
+                .findByRoomIdAndUserId(roomId, targetUserId)
+                .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_PARTICIPANT_NOT_FOUND));
+
+        User targetUser = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        openChatParticipantRepository.delete(targetParticipant);
+
+        openChatMessageService.sendSystemMessage(roomId, targetUser.getName() + "님이 강제퇴장되었습니다.");
+
+        if (targetUserId.equals(room.getHostUserId())) {
+            handleHostLeave(room);
+        }
     }
 
     @Transactional

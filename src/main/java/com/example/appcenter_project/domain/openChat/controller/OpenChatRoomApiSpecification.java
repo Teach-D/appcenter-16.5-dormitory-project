@@ -53,4 +53,10 @@ public interface OpenChatRoomApiSpecification {
     ResponseEntity<Void> deleteRoom(
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long roomId);
+
+    @Operation(summary = "참여자 강제퇴장", description = "방장 또는 ADMIN이 특정 참여자를 강제퇴장시킨다")
+    ResponseEntity<Void> kickParticipant(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId,
+            @PathVariable Long targetUserId);
 }
