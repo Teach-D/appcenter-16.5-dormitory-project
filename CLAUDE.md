@@ -60,7 +60,11 @@
 4. **AI 기여도 기록** — PR 완료 시 `.claude/ai-metrics.md`에 보완비율·clarification 횟수 기록
 
 ## 세션 실패 기록
-### 2026-06-16 06:19 UTC (세션: 5cd535ff)
+### 2026-06-17 05:52 UTC (세션: adc029a1)
+
+- `Bash(dir /b "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-pr)` → `Exit code 2`
+
+### 2026-06-16 13:17 UTC (세션: 5cd535ff)
 
 - `Bash(ls "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 2`
 - `Bash(gh auth status 2>&1)` → `Exit code 127`
@@ -70,30 +74,27 @@
 - `Write(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>`
 - `Write(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `PreToolUse:Write hook error: [bash .claude/hooks/check-checkout.sh]: No stderr output`
 - `Edit(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `PreToolUse:Edit hook error: [bash .claude/hooks/check-checkout.sh]: No stderr output`
-
-### 2026-06-15 22:44 UTC (세션: 0d77f741)
-
-- `Bash(gh pr list --head feat/openchat-image-message-639 --base dev 2>&1)` → `Exit code 127`
 - `Read(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `File does not exist. Note: your current working directory is C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project.`
-
-### 2026-06-15 07:21 UTC (세션: 97b01754)
-
-- `Read(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `File does not exist. Note: your current working directory is C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project.`
-- `Bash(gh issue list --repo Teach-D/appcenter-16.5-dormitory-project --limit 5 2>&1)` → `Exit code 127`
-- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 2`
 - `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 127`
-- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 2`
+- `Bash(where gh 2>&1 || powershell -Command "where.exe gh 2>&1")` → `Exit code 1`
 
-### 2026-06-15 06:59 UTC (세션: 97b01754)
+### 2026-06-08 01:53 UTC (세션: 1b6c14b9)
 
-- `Read(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `File does not exist. Note: your current working directory is C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project.`
-- `Bash(gh issue list --repo Teach-D/appcenter-16.5-dormitory-project --limit 5 2>&1)` → `Exit code 127`
-- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 2`
-- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 127`
+- `Bash(gh auth status 2>&1)` → `Exit code 127`
+- `Bash(git -C "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-pr)` → `<tool_use_error>Cancelled: parallel tool call Bash(gh auth status 2>&1) errored</tool_use_error>`
+- `mcp__github__create_issue(Teach-D)` → `MCP error -32603: Failed to create issue: Bad credentials`
 
-### 2026-06-14 09:54 UTC (세션: 98d8f513)
+### 2026-06-08 01:53 UTC (세션: 94d7daeb)
 
-- `Write(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>`
 - `Bash(gh auth status 2>&1)` → `Exit code 127`
 - `Bash(git status --porcelain 2>&1)` → `<tool_use_error>Cancelled: parallel tool call Bash(gh auth status 2>&1) errored</tool_use_error>`
-- `Agent(학번 공개 기능 구현)` → `The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to`
+- `Glob(docs/*)` → `<tool_use_error>Cancelled: parallel tool call Bash(gh auth status) errored</tool_use_error>`
+- `mcp__github__create_issue(Teach-D)` → `MCP error -32603: Failed to create issue: Bad credentials`
+- `Bash(powershell.exe -Command "Get-Command gh -ErrorAction SilentlyContinue | Select-O)` → `Exit code 1`
+
+### 2026-06-08 01:52 UTC (세션: f654db82)
+
+- `Bash(git push)` → `Exit code 128`
+- `Bash($env:GITHUB_TOKEN)` → `Exit code 127`
+- `Bash(powershell -Command "
+\$stream = [System.IO.MemoryStream]::new([System.Text.Enco)` → `Exit code 2`
