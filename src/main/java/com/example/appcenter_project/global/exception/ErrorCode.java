@@ -177,7 +177,9 @@ public enum ErrorCode {
     OPEN_CHAT_INVITATION_SELF_INVITE(BAD_REQUEST, 22012, "[OpenChat] 자기 자신을 초대할 수 없습니다."),
     OPEN_CHAT_IMAGE_EMPTY(BAD_REQUEST, 22013, "[OpenChat] 전송할 이미지가 없습니다."),
     OPEN_CHAT_IMAGE_COUNT_EXCEEDED(BAD_REQUEST, 22014, "[OpenChat] 이미지는 최대 5장까지 전송 가능합니다."),
-    OPEN_CHAT_KICK_FORBIDDEN(FORBIDDEN, 22015, "[OpenChat] 강제퇴장 권한이 없습니다."),
+    OPEN_CHAT_ALREADY_HOST(BAD_REQUEST, 22015, "[OpenChat] 이미 방장인 사용자입니다."),
+    OPEN_CHAT_SOLE_HOST_CANNOT_LEAVE(BAD_REQUEST, 22016, "[OpenChat] 단독 방장은 방 삭제 또는 방장 위임 후 나갈 수 있습니다."),
+    OPEN_CHAT_KICK_FORBIDDEN(FORBIDDEN, 22017, "[OpenChat] 강제퇴장 권한이 없습니다."),
 
     // STUDENT_ID_DISCLOSURE
     DISCLOSURE_REQUEST_NOT_FOUND(NOT_FOUND, 23001, "[StudentIdDisclosure] 학번 공개 요청을 찾을 수 없습니다."),

@@ -32,13 +32,31 @@ public class OpenChatParticipant {
 
     private Long lastReadMessageId;
 
+    @Column(name = "is_host", nullable = false)
+    private boolean isHost = false;
+
     public static OpenChatParticipant create(Long roomId, Long userId, LocalDateTime joinedAt) {
         OpenChatParticipant participant = new OpenChatParticipant();
         participant.roomId = roomId;
         participant.userId = userId;
         participant.joinedAt = joinedAt;
         participant.notificationEnabled = true;
+        participant.isHost = false;
         return participant;
+    }
+
+    public static OpenChatParticipant create(Long roomId, Long userId, boolean isHost) {
+        OpenChatParticipant participant = new OpenChatParticipant();
+        participant.roomId = roomId;
+        participant.userId = userId;
+        participant.joinedAt = LocalDateTime.now();
+        participant.notificationEnabled = true;
+        participant.isHost = isHost;
+        return participant;
+    }
+
+    public void grantHost() {
+        this.isHost = true;
     }
 
     public void updateLastReadMessageId(Long messageId) {

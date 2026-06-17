@@ -68,7 +68,7 @@ public class UserService {
     public ResponseLoginDto saveUser(SignupUser signupUser) {
         boolean isTestAccount = testAccountProperties.matches(signupUser.getStudentNumber(), signupUser.getPassword());
         if (!isTestAccount) {
-            checkINUStudent(signupUser);
+            //checkINUStudent(signupUser);
         }
         User user = isTestAccount ? createTestAccountUser(signupUser) : createUser(signupUser);
         trackSignupProfile(user);
