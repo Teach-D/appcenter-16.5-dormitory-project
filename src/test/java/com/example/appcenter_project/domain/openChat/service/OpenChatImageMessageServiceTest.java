@@ -17,6 +17,7 @@ import com.example.appcenter_project.domain.user.enums.College;
 import com.example.appcenter_project.domain.user.enums.DormType;
 import com.example.appcenter_project.domain.user.enums.Role;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
+import com.example.appcenter_project.global.config.OpenChatSessionRegistry;
 import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.global.exception.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,6 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -62,6 +64,8 @@ class OpenChatImageMessageServiceTest {
     private ImageRepository imageRepository;
     @Mock
     private HttpServletRequest httpServletRequest;
+    @Mock
+    private OpenChatSessionRegistry sessionRegistry;
 
     @InjectMocks
     private OpenChatMessageService openChatMessageService;
@@ -377,7 +381,7 @@ class OpenChatImageMessageServiceTest {
     }
 
     @Test
-    @DisplayName("이미지 메시지 전송 성공 — 발신자 lastReadMessageId 갱신됨")
+    @DisplayName("이미지 메시지 전송 성공 — 발신자 포함 구독자 lastReadMessageId 일괄 갱신됨")
     void should_update_participant_last_read_message_id() {
         OpenChatRoom room = OpenChatImageMessageFixture.createRoom();
         OpenChatParticipant participant = OpenChatImageMessageFixture.createParticipant(ROOM_ID, USER_ID);
@@ -396,7 +400,7 @@ class OpenChatImageMessageServiceTest {
 
         openChatMessageService.sendImageMessage(USER_ID, ROOM_ID, images, httpServletRequest);
 
-        assertThat(participant.getLastReadMessageId()).isEqualTo(message.getId());
+        then(openChatParticipantRepository).should().updateLastReadMessageIdByRoomIdAndUserIdIn(eq(ROOM_ID), any(Set.class), any());
     }
 
     @Test

@@ -1,7 +1,7 @@
 # 도메인 모델
 
 > 기반 요구사항: `docs/requirements.md`
-> 기능: 오픈채팅 다중 방장 시스템
+> 기능: 오픈채팅 읽음 처리 (Read Receipt)
 
 ---
 
@@ -9,14 +9,12 @@
 
 | 용어 | 정의 |
 |------|------|
-| 방장 (Host) | `OpenChatParticipant.isHost = true`인 참여자. 방장 부여·방 삭제 권한을 가짐 |
-| 단독 방장 (Sole Host) | 해당 방에서 `isHost = true`인 참여자가 오직 1명인 상태 |
-| 방장 부여 (Grant Host) | 방장이 다른 참여자의 `isHost`를 `true`로 변경하는 행위 |
-| 위임+나가기 (Delegate & Leave) | 단독 방장이 다른 참여자를 방장으로 지정하는 동시에 자신은 퇴장하는 단일 원자적 행위 |
-| 방장 소멸 | 방장이 방을 나갈 때 해당 `OpenChatParticipant` row가 삭제되어 방장 권한이 사라지는 것 |
-| 공식 방 (Official Room) | `isOfficial = true`인 방. ADMIN만 삭제 가능하며 ADMIN 참여 시 자동 방장 |
-| 파생 방 (Derived Room) | `roomType = DERIVED`인 방. 다중 방장 규칙이 동일하게 적용됨 |
-| ADMIN 역할 권한 | ADMIN role 사용자는 참여자 여부와 무관하게 모든 방의 방장 권한 행위를 수행할 수 있음 (`isHost` row 미생성) |
+| 읽음 처리 (Mark as Read) | 특정 참여자의 `lastReadMessageId`를 메시지 ID로 갱신하는 행위 |
+| 미읽음 수 (unreadCount) | 전체 참여자 중 해당 메시지를 아직 읽지 않은 참여자 수. `전체 참여자 수 - lastReadMessageId >= messageId 인 참여자 수` |
+| READ 이벤트 | `/sub/openchat/{roomId}/read` 토픽으로 전파되는 `{messageId, unreadCount}` 페이로드 |
+| 구독자 (Subscriber) | 현재 WebSocket `/sub/openchat/{roomId}`를 구독 중인 사용자. 메시지 수신 즉시 자동 읽음 처리됨 |
+| 세션 레지스트리 (SessionRegistry) | `roomId → Set<userId>` 를 in-memory로 유지하는 단일 서버 컴포넌트 |
+| 오프라인 읽음 | WebSocket 미연결 상태에서 `getMessages()` API 호출로 발생하는 읽음 처리 |
 
 ---
 
@@ -25,97 +23,104 @@
 단일 컨텍스트: `openChat`
 
 외부 컨텍스트 의존:
-- `fcm` — 방장 부여 시 알림 발송
-- `user` — ADMIN role 확인, 참여자 정보 조회
+- `user` — userId → 사용자 존재 확인 (기존 의존 유지)
+- WebSocket 인프라 (`SimpMessagingTemplate`) — READ 이벤트 전파
 
 ---
 
 ## 3. 애그리거트
 
-### Aggregate: OpenChatRoom
+### Aggregate: OpenChatRoom (기존, 수정 없음)
+
+읽음 처리 기능에서 `OpenChatRoom` 엔티티 자체에는 변경이 없습니다. `lastMessage`, `lastMessageAt` 갱신은 기존과 동일합니다.
+
+---
+
+### Aggregate: OpenChatParticipant (기존, DB 스키마 변경 없음)
 
 #### 책임
-방의 메타데이터와 방장 목록(via OpenChatParticipant)의 일관성을 보호한다.
+각 참여자의 읽음 커서(`lastReadMessageId`)를 보호하여 `unreadCount` 계산의 정확성을 보장한다.
 
 #### 애그리거트 루트
-`OpenChatRoom`
+`OpenChatParticipant`
 
 #### 엔티티 & 값 객체
 
 | 구분 | 이름 | 핵심 속성 | 설명 |
 |------|------|-----------|------|
-| Entity (Root) | `OpenChatRoom` | id, name, description, scope, maxParticipants, createdBy, isOfficial, roomType, parentRoomId | `hostUserId` 제거됨 |
-| Entity | `OpenChatParticipant` | id, roomId, userId, **isHost**, notificationEnabled, joinedAt, lastReadMessageId | `isHost` 신규 추가 |
+| Entity (Root) | `OpenChatParticipant` | id, roomId, userId, **lastReadMessageId**, isHost, notificationEnabled, joinedAt | `lastReadMessageId`: 마지막으로 읽은 메시지 ID. NULL = 한 번도 읽지 않음 |
 
 #### 비즈니스 불변식 (Invariants)
 
-- **INV-01**: 방에는 반드시 1명 이상의 방장이 존재해야 한다 (단, 방 삭제 직전 제외)
-  - 위반 시: 단독 방장 퇴장 시도 → 400 BAD_REQUEST (OPEN_CHAT_SOLE_HOST_CANNOT_LEAVE)
+- **INV-01**: `lastReadMessageId`는 한 번 갱신되면 이전 값으로 되돌릴 수 없다 (단조 증가)
+  - 위반 시: 무시 (서비스 레이어에서 `messageId <= lastReadMessageId` 이면 업데이트 생략)
 
-- **INV-02**: 방장 부여는 현재 참여자에게만 가능하다
-  - 위반 시: 404 NOT_FOUND (OPEN_CHAT_PARTICIPANT_NOT_FOUND)
-
-- **INV-03**: 이미 방장인 참여자에게는 방장을 중복 부여할 수 없다
-  - 위반 시: 400 BAD_REQUEST (OPEN_CHAT_ALREADY_HOST)
-
-- **INV-04**: 방장 권한은 박탈할 수 없다 — 부여 후 해당 참여자가 직접 나갈 때만 소멸
-  - 설계상 revoke API 없음
-
-- **INV-05**: 공식 방(`isOfficial=true`)은 ADMIN만 삭제할 수 있다
-  - 위반 시: 403 FORBIDDEN (OPEN_CHAT_ROOM_FORBIDDEN)
-
-- **INV-06**: 참여자 수는 `maxParticipants`를 초과할 수 없다 (기존 불변식 유지)
-
-#### 라이프사이클 & 상태 머신
-
-`OpenChatParticipant.isHost` 전이:
-
-```
-[false] -[방장 부여 by 방장 or ADMIN]→ [true]
-[true]  -[퇴장 (participant row 삭제)]→ (소멸)
-[재입장] → 새 row 생성, isHost = false
-```
-
-`OpenChatRoom` 전이:
-
-```
-[생성] -[방장 부여/위임/나가기/삭제]→ [운영 중]
-[운영 중] -[호스트 삭제 or ADMIN 삭제]→ [삭제됨]
-```
+- **INV-02**: 구독 중인 사용자의 `lastReadMessageId`는 해당 방의 최신 메시지 ID보다 작을 수 없다
+  - 보장 방법: 메시지 저장 완료 직후 구독자 전원을 일괄 업데이트
 
 #### 트랜잭션 경계
 
 | 유스케이스 | 트랜잭션 범위 |
 |-----------|-------------|
-| 방장 부여 | `OpenChatParticipant.isHost` 변경 + FCM 이벤트 발행 (단일 트랜잭션, FCM은 트랜잭션 외 비동기) |
-| 위임+나가기 | 대상 participant `isHost=true` 변경 + 요청자 participant row 삭제 + 시스템 메시지 (단일 트랜잭션) |
-| 방 삭제 | 모든 participant row 삭제 + room row 삭제 (단일 트랜잭션) |
-| 일반 나가기 | participant row 삭제 + 시스템 메시지 (단일 트랜잭션) |
+| 메시지 전송 | 메시지 저장 + 구독자 `lastReadMessageId` bulk update + READ 이벤트 전파 (단일 트랜잭션, WebSocket 전파는 트랜잭션 내 허용) |
+| `getMessages()` 호출 | 최신 메시지 id로 `lastReadMessageId` 단건 update + READ 이벤트 전파 (단일 트랜잭션) |
+| WebSocket subscribe | 최신 메시지 id로 `lastReadMessageId` 단건 update + READ 이벤트 전파 (단일 트랜잭션) |
 
 #### 동시성 고려사항
 
-- **위임+나가기**: 단독 방장 여부 확인과 위임 처리 사이에 다른 방장 부여가 발생할 수 있음
-  - 전략: **비관적 락** — 해당 `roomId`의 participant rows에 `SELECT FOR UPDATE` 적용
-  - 적용 메서드: `findByRoomIdWithLock(roomId)` 또는 `findParticipantsByRoomIdWithLock(roomId)`
-
-- **방장 부여**: 동시에 두 방장이 같은 참여자에게 방장 부여 시도 → DB unique constraint 없음, INV-03으로 서비스 레이어에서 방어
+- **구독자 일괄 업데이트**: `UPDATE ... WHERE roomId = :roomId AND userId IN :userIds` JPQL bulk update 사용
+  - 영속성 컨텍스트를 우회하지만, 업데이트 직후 재조회하지 않으므로 무해
+- **SessionRegistry**: `ConcurrentHashMap<Long, Set<Long>>` 기반으로 thread-safe 보장
+  - Set은 `ConcurrentHashMap.newKeySet()`으로 생성
 
 #### 도메인 이벤트
 
-- `OpenChatHostGranted`: 방장이 부여된 시점 → FCM 서비스가 구독, 대상 유저에게 알림 발송
+- `OpenChatReadUpdated`: 읽음 상태 변경 시 발행 → `/sub/openchat/{roomId}/read` 토픽으로 전파
+
+---
+
+### Non-Entity Component: OpenChatSessionRegistry
+
+#### 책임
+현재 WebSocket으로 특정 채팅방을 구독 중인 사용자 집합을 in-memory로 유지한다. DB 저장 없음.
+
+#### 상태 구조
+
+```
+sessionRoomMap:  Map<String sessionId, Long roomId>
+sessionUserMap:  Map<String sessionId, Long userId>
+roomSubscribers: Map<Long roomId, Set<Long userId>>   ← 신규
+```
+
+#### 오퍼레이션
+
+| 메서드 | 설명 |
+|--------|------|
+| `subscribe(sessionId, roomId, userId)` | 세 맵 동시 등록 |
+| `unsubscribe(sessionId)` | 세 맵에서 sessionId 제거 |
+| `getSubscriberUserIds(roomId): Set<Long>` | 해당 방 구독자 userId 집합 반환 (defensive copy) |
+
+#### 라이프사이클
+
+```
+[서버 시작] → registry 초기화 (empty)
+[SessionSubscribeEvent] → subscribe(sessionId, roomId, userId)
+[SessionDisconnectEvent] → unsubscribe(sessionId)
+[서버 재시작] → 모든 상태 초기화 → 클라이언트 재연결 시 re-subscribe
+```
 
 ---
 
 ## 4. 애그리거트 관계도
 
 ```
-OpenChatRoom --1:N--> OpenChatParticipant (roomId로 참조)
-OpenChatRoom --1:N--> OpenChatMessage (roomId로 참조, 기존)
-OpenChatRoom --0:1--> OpenChatRoom (parentRoomId, 파생 방)
+OpenChatRoom --1:N--> OpenChatMessage (roomId)
+OpenChatRoom --1:N--> OpenChatParticipant (roomId)
+OpenChatParticipant.lastReadMessageId --> OpenChatMessage.id (soft reference)
 
-[외부]
-OpenChatParticipant --N:1--> User (userId로 참조)
-OpenChatHostGranted --발행→ FCM 서비스
+[인프라]
+OpenChatSessionRegistry (in-memory) -- roomId --> Set<userId>
+OpenChatReadUpdated --발행→ SimpMessagingTemplate (/sub/openchat/{roomId}/read)
 ```
 
 ---
@@ -124,36 +129,20 @@ OpenChatHostGranted --발행→ FCM 서비스
 
 | 이벤트명 | 발행 주체 | 발행 시점 | 구독 주체 | 처리 내용 |
 |----------|-----------|-----------|-----------|-----------|
-| `OpenChatHostGranted` | OpenChatRoom | 방장 부여 완료 후 | OpenChatNotificationService | 대상 유저에게 FCM 알림 ("방장 권한이 부여되었습니다") |
+| `OpenChatReadUpdated` | OpenChatMessageService | 읽음 상태 변경 후 | WebSocket 인프라 | `/sub/openchat/{roomId}/read`로 `{messageId, unreadCount}` 전파 |
 
 ---
 
 ## 6. 도메인 서비스
 
-### HostGrantService (or OpenChatRoomService 내 메서드)
+### ReadEventPublishService (또는 OpenChatMessageService 내 private 메서드)
 
-- **책임**: 방장 부여 행위의 권한 검증 + participant isHost 변경 + 이벤트 발행
-- **관여 애그리거트**: OpenChatRoom, OpenChatParticipant, User(role 확인)
+- **책임**: 읽음 상태 변경 후 unreadCount 재계산 + READ 이벤트 WebSocket 전파
+- **관여 컴포넌트**: `OpenChatParticipantRepository`, `SimpMessagingTemplate`
 - **로직 요약**:
-  1. 요청자가 ADMIN role이거나 해당 방의 `isHost=true` participant인지 확인
-  2. 대상이 해당 방의 participant인지 확인 (없으면 404)
-  3. 대상이 이미 `isHost=true`인지 확인 (이미 방장이면 400)
-  4. 대상 participant의 `isHost = true` 저장
-  5. `OpenChatHostGranted` 이벤트 발행
-- **트랜잭션 전략**: 단일 트랜잭션 (FCM은 트랜잭션 커밋 후 비동기)
-
-### SoleHostLeaveService (or OpenChatRoomService 내 메서드)
-
-- **책임**: 단독 방장의 위임+나가기 원자적 처리
-- **관여 애그리거트**: OpenChatRoom, OpenChatParticipant
-- **로직 요약**:
-  1. 비관적 락으로 해당 방 participant rows 잠금
-  2. 요청자가 방장이며 단독 방장(`isHost=true` count == 1)인지 확인
-  3. 위임 대상(`newHostUserId`)이 해당 방 participant인지 확인
-  4. 위임 대상 participant의 `isHost = true` 저장
-  5. 요청자 participant row 삭제 + 시스템 메시지 발송
-  6. `OpenChatHostGranted` 이벤트 발행 (위임 대상 대상)
-- **트랜잭션 전략**: 단일 트랜잭션 + 비관적 락
+  1. `calculateUnreadCount(roomId, messageId)` 호출
+  2. `messagingTemplate.convertAndSend("/sub/openchat/{roomId}/read", {messageId, unreadCount})`
+- **트랜잭션 전략**: 호출자(sendMessage, getMessages, handleSubscribe) 트랜잭션에 합류
 
 ---
 
@@ -161,33 +150,31 @@ OpenChatHostGranted --발행→ FCM 서비스
 
 | 상황 | 관여 | 일관성 전략 | 이유 |
 |------|------|------------|------|
-| 방장 부여 후 FCM 발송 | OpenChatParticipant → FCM | 최종 일관성 (비동기) | FCM 실패 시 방장 부여 롤백하지 않음 (BR-11) |
-| ADMIN role 확인 | OpenChatRoom ← User | 동기 (트랜잭션 내 조회) | 권한 결정이 핵심 불변식에 영향 |
+| 메시지 전송 → 구독자 읽음 처리 | OpenChatMessage ← OpenChatParticipant | 강한 일관성 (단일 트랜잭션) | 메시지 저장과 읽음 처리가 원자적으로 완료돼야 unreadCount 오염 없음 |
+| getMessages → READ 이벤트 전파 | OpenChatParticipant → WebSocket | 강한 일관성 (트랜잭션 내 전파) | 기존 sendMessage 방식과 일관성 유지 |
 
 ---
 
 ## 8. 레포지토리 인터페이스
 
-### OpenChatParticipantRepository (추가 메서드)
+### OpenChatParticipantRepository (신규 추가 메서드)
 
 ```
-// isHost 여부 확인
-existsByRoomIdAndUserIdAndIsHost(roomId, userId, isHost): boolean
+// 구독자 userId 목록으로 lastReadMessageId 일괄 업데이트 (JPQL bulk update)
+updateLastReadMessageIdByRoomIdAndUserIdIn(roomId, userIds, messageId): void
 
-// 방의 방장 수 조회
-countByRoomIdAndIsHost(roomId, isHost): long
+// roomId의 최신 구독자 읽음 수 조회 (기존 유지)
+countReadByRoomIdAndMessageId(roomId, messageId): long
 
-// 비관적 락으로 방 participant 전체 조회
-findAllByRoomIdWithLock(roomId): List<OpenChatParticipant>
-
-// 방의 방장 목록 조회
-findAllByRoomIdAndIsHost(roomId, isHost): List<OpenChatParticipant>
+// roomId 참여자 수 조회 (기존 유지)
+countByRoomId(roomId): long
 ```
 
-### OpenChatRoomRepository (기존 유지, hostUserId 관련 쿼리 제거)
+### OpenChatMessageRepository (기존 유지)
 
 ```
-// 기존 findOldestParticipantExcluding 제거 (자동 방장 선임 로직 삭제)
+// 채팅방 최신 메시지 ID 조회 (기존 유지)
+findLatestMessageIdByRoomId(roomId): Optional<Long>
 ```
 
 ---
@@ -199,54 +186,63 @@ com.example.appcenter_project
 └── domain/
     └── openChat/
         ├── entity/
-        │   ├── OpenChatRoom.java        (hostUserId 필드 제거)
-        │   └── OpenChatParticipant.java (isHost 필드 추가)
+        │   └── OpenChatParticipant.java        (변경 없음, lastReadMessageId 기존 필드)
         ├── dto/
-        │   └── request/
-        │       └── RequestLeaveOpenChatRoomDto.java (newHostUserId 포함)
+        │   └── response/
+        │       └── ResponseOpenChatReadEventDto.java  (신규: {messageId, unreadCount})
         ├── service/
-        │   └── OpenChatRoomService.java (grantHost, leaveRoom 변경)
+        │   └── OpenChatMessageService.java     (수정: 구독자 bulk 읽음 처리 + READ 이벤트)
         └── repository/
-            └── OpenChatParticipantRepository.java (신규 메서드 추가)
+            └── OpenChatParticipantRepository.java     (신규 메서드 추가)
+            └── OpenChatParticipantQuerydslRepositoryImpl.java  (bulk update 구현)
+
+global/
+└── config/
+    ├── OpenChatSessionRegistry.java            (신규: in-memory 구독자 관리)
+    └── OpenChatWebSocketEventListener.java     (수정: SessionRegistry 사용 + READ 이벤트)
 ```
 
 ---
 
 ## 10. 설계 결정 사항 (ADR)
 
-### ADR-01: ADMIN 방장 권한은 role 체크로 처리 (isHost row 미생성)
-- **결정**: ADMIN은 `OpenChatParticipant.isHost` 없이 role로 방장 행위 권한 보유
-- **이유**: ADMIN이 의도치 않게 방 참여자 목록에 포함되는 부작용 방지
-- **trade-off**: 방장 목록 조회 시 ADMIN은 노출되지 않음. ADMIN이 공식 방에 실제 참여할 때는 별도 입장 API 통해 participant row 생성 (isHost=true 포함)
+### ADR-01: DB 스키마 변경 없이 기존 `lastReadMessageId` 컬럼 활용
+- **결정**: `open_chat_participant.last_read_message_id` 컬럼은 이미 존재. Flyway 마이그레이션 불필요
+- **이유**: 기존 필드가 읽음 커서 목적으로 설계됨
+- **trade-off**: `lastReadMessageId`가 NULL인 경우(한 번도 읽지 않음)를 `unreadCount` 계산에서 반드시 처리해야 함 (현재 `countReadByRoomIdAndMessageId`에서 `isNotNull()` 조건으로 이미 처리 중)
 
-### ADR-02: 단독 방장 위임+나가기에 비관적 락 적용
-- **결정**: 위임+나가기 트랜잭션 시작 시 해당 방 participant rows에 `SELECT FOR UPDATE`
-- **이유**: "단독 방장 여부 확인 → 위임 → 나가기" 사이 동시 방장 부여로 INV-01 위반 가능성 차단
-- **trade-off**: 잠금으로 인한 처리량 감소. 방장 수 변경이 빈번하지 않아 실용적으로 허용 가능
+### ADR-02: 구독자 일괄 업데이트에 JPQL bulk update 사용
+- **결정**: `UPDATE OpenChatParticipant SET lastReadMessageId = :messageId WHERE roomId = :roomId AND userId IN :userIds`
+- **이유**: 구독자 수에 비례한 N+1 쿼리 방지. 단일 쿼리로 처리
+- **trade-off**: 영속성 컨텍스트 우회. 단, bulk update 후 같은 트랜잭션에서 해당 엔티티를 재조회하지 않으므로 1차 캐시 불일치 무해
 
-### ADR-03: hostUserId 컬럼 제거
-- **결정**: `open_chat_room.host_user_id` 컬럼 삭제, 방장 정보는 `open_chat_participant.is_host`로 일원화
-- **이유**: 단일 진실 공급원 원칙. 두 곳에 방장 정보가 분산되면 동기화 오류 발생 가능
-- **trade-off**: Flyway 마이그레이션으로 기존 데이터 이관 필요
+### ADR-03: OpenChatSessionRegistry를 별도 Spring 컴포넌트로 분리
+- **결정**: 기존 `OpenChatWebSocketEventListener`의 static map을 `OpenChatSessionRegistry` 빈으로 추출
+- **이유**: `OpenChatMessageService`가 구독자 목록에 접근해야 하므로, static 접근보다 DI 방식이 테스트 가능성·교체 가능성에서 우수
+- **trade-off**: 클래스 하나 추가. 멀티 서버 전환 시 인터페이스화 권장 (현재 범위 외)
+
+### ADR-04: READ 이벤트를 별도 토픽 `/sub/openchat/{roomId}/read`로 분리
+- **결정**: 기존 `/sub/openchat/{roomId}` 메시지 토픽과 READ 이벤트 토픽을 분리
+- **이유**: 메시지 토픽 구독자가 READ 이벤트를 필터링하지 않아도 됨. 역할 명확 분리
+- **trade-off**: 클라이언트가 두 토픽을 구독해야 함
 
 ---
 
 ## 11. 아키텍처 위험 요소
 
-- **위험 1 — 비관적 락 데드락**: `findAllByRoomIdWithLock`과 다른 트랜잭션이 같은 participant row를 역순으로 잠그면 데드락 가능
-  - 권고: 항상 `roomId` 단위로 잠금 범위를 제한, 단일 방에 대한 participant 잠금 순서 일관성 유지
+- **위험 1 — SessionRegistry 메모리 누수**: `SessionDisconnectEvent`가 정상 발생하지 않는 비정상 종료 시 구독자 정보가 registry에 잔류
+  - 권고: `SimpUserRegistry` 또는 Spring WebSocket의 연결 감시 활용. 또는 heartbeat 기반 주기적 정리 고려
 
-- **위험 2 — FCM 알림 누락**: 트랜잭션 커밋 후 비동기 FCM 발송 실패 시 알림 유실
-  - 권고: 기존 `FcmOutbox` 패턴 활용하거나, 실패 로그 기록 후 재시도 정책 적용 (현재 비동기 허용 — BR-11)
+- **위험 2 — getMessages() 호출 후 READ 이벤트 전파 시 트랜잭션 충돌**: `@Transactional` 내부에서 `messagingTemplate.convertAndSend`를 호출하면 트랜잭션 커밋 전 이벤트가 전파될 수 있음
+  - 권고: 기존 `sendMessage()`도 동일 방식으로 동작 중이므로 일관성 유지. 만약 커밋 후 전파가 필요하다면 `TransactionSynchronizationManager.registerSynchronization()` 적용
 
-- **위험 3 — 공식 방 방장 없는 상태**: ADMIN이 공식 방에 입장하지 않은 경우 공식 방에 방장이 0명일 수 있음
-  - 권고: 공식 방 생성 시 ADMIN을 자동 입장시키거나, 공식 방의 방장 조회 시 ADMIN role 보유자를 가상 방장으로 포함하는 로직 고려 (TBD)
+- **위험 3 — 대규모 방에서 구독자 목록 조회 성능**: `getSubscriberUserIds(roomId)` 가 `Set<Long>`을 defensive copy로 반환 시 대규모 구독자 방에서 오버헤드 가능
+  - 권고: 오픈채팅 방 최대 참여 인원(`maxParticipants`) 범위 내에서는 허용 가능. 필요 시 unmodifiableSet으로 대체
 
 ---
 
 ## 12. TBD
 
-- [ ] ADMIN이 공식 방에 자동 입장(participant row 생성)해야 하는지, 아니면 role 기반 권한만 갖는지
-- [ ] 한 방의 최대 방장 수 제한 여부 (현재 무제한)
-- [ ] 방장 부여 FCM 알림에 사용할 `NotificationType` — 기존 타입 재사용 또는 신규 추가
-- [ ] 공식 방에 방장이 0명인 상태 허용 여부 및 처리 방침
+- [ ] `OpenChatSessionRegistry`를 인터페이스로 분리하여 멀티 서버 전환 시 Redis 구현체로 교체 가능하도록 할지 (현재 범위 외)
+- [ ] 이미지 메시지 전송 HTTP API(`POST /openchat/message/image`) 호출 시 READ 이벤트 전파 여부 (이 API는 WebSocket 경유하지 않으므로 `sendImageMessage` 내에서도 동일 처리 필요)
+- [ ] 한 사용자가 여러 기기로 동시 접속 시 userId 단위 중복 처리 확인 (현재 `Set<userId>` 구조로 자연 중복 제거)

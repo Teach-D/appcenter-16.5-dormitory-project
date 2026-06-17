@@ -2,27 +2,36 @@
 
 > 기반 요구사항: `docs/requirements.md`
 > 기반 도메인 모델: `docs/domain-model.md`
-> 기능: 오픈채팅 다중 방장 시스템
+> 기능: 오픈채팅 읽음 처리 (Read Receipt)
 
 ---
 
 ## 1. 공통 정보
 
-### Base URL
+### WebSocket 연결
+
+| 항목 | 값 |
+|------|-----|
+| STOMP 엔드포인트 | `ws://{host}/ws-stomp` (순수 WebSocket) |
+| SockJS 엔드포인트 | `ws://{host}/ws-stomp-sockjs` |
+| 발신 prefix | `/pub` |
+| 구독 prefix | `/sub` |
+| 인증 방식 | WebSocket 연결 시 `Authorization: Bearer {accessToken}` 헤더 전달 |
+
+### Base URL (HTTP REST)
 `/open-chat-rooms`
 
 ### 인증 방식
-- 헤더: `Authorization: Bearer {accessToken}`
-- 미인증 시: `401 UNAUTHORIZED`
+- HTTP: `Authorization: Bearer {accessToken}`
+- WebSocket: 연결(CONNECT) 시 헤더에 토큰 전달 → 서버가 세션 속성에 `userId` 저장
 
 ### 신규 에러 코드
 
 | 코드 | HTTP Status | 설명 |
 |------|-------------|------|
-| `OPEN_CHAT_ALREADY_HOST` | 400 | 대상이 이미 방장입니다 |
-| `OPEN_CHAT_SOLE_HOST_CANNOT_LEAVE` | 400 | 단독 방장은 방 삭제 또는 방장 위임 후 나갈 수 있습니다 |
+| (없음) | — | 이번 기능은 DB 스키마 변경 없음. 신규 에러 코드 불필요 |
 
-> 기존 에러 코드 유지: `OPEN_CHAT_ROOM_NOT_FOUND(22001)`, `OPEN_CHAT_ROOM_FORBIDDEN(22002)`, `OPEN_CHAT_PARTICIPANT_NOT_FOUND(22004)`
+> 기존 에러 코드 유지: `OPEN_CHAT_ROOM_NOT_FOUND`, `OPEN_CHAT_NOT_PARTICIPANT`
 
 ---
 
@@ -30,64 +39,132 @@
 
 ---
 
-### [NEW] 방장 부여
+### [NEW] READ 이벤트 구독
 
-**`POST /open-chat-rooms/{roomId}/hosts/{targetUserId}`**
+**`SUBSCRIBE /sub/openchat/{roomId}/read`**
 
 | 항목 | 내용 |
 |------|------|
-| 설명 | 방장이 다른 참여자에게 방장 권한을 부여한다 |
-| 인증 | 필요 |
-| 권한 | `USER` (해당 방 방장), `ADMIN` (참여 여부 무관) |
-| 멱등성 | 비멱등 |
+| 설명 | 특정 채팅방의 읽음 상태 변화를 실시간으로 수신한다 |
+| 인증 | WebSocket 연결 인증 필수 |
+| 권한 | 해당 방 참여자 |
+| 방향 | 서버 → 클라이언트 (단방향 수신) |
 
-**Path Parameters:**
+**수신 Payload:**
 
-| 이름 | 타입 | 설명 |
-|------|------|------|
-| `roomId` | Long | 채팅방 ID |
-| `targetUserId` | Long | 방장 권한을 부여받을 참여자의 userId |
+```json
+{
+  "messageId": "Long | 읽음 상태가 변경된 메시지 ID",
+  "unreadCount": "int | 해당 메시지의 현재 미읽음 참여자 수"
+}
+```
 
-**Request Body:** 없음
+**발행 트리거:**
 
-**Response (성공): `204 No Content`**
+| 트리거 | 설명 |
+|--------|------|
+| WebSocket 메시지 전송 (`/pub/openchat/socketchat`) | 새 메시지 저장 + 구독자 읽음 처리 완료 후 |
+| `GET /open-chat-rooms/{roomId}/messages` 호출 | 호출한 사용자의 읽음 처리 완료 후 |
+| `POST /open-chat-rooms/{roomId}/messages/image` 호출 | 이미지 메시지 저장 + 구독자 읽음 처리 완료 후 |
+| 클라이언트가 `/sub/openchat/{roomId}` 구독 (WebSocket subscribe) | 최신 메시지 읽음 처리 완료 후 |
 
-**비즈니스 로직 요약:**
-1. 요청자가 `ADMIN` role이거나 해당 방의 `OpenChatParticipant.isHost = true`인지 확인 (BR-03)
-2. `targetUserId`가 해당 방의 참여자인지 확인 (INV-02)
-3. 대상이 이미 방장(`isHost = true`)인지 확인 (INV-03)
-4. 대상의 `OpenChatParticipant.isHost = true` 저장
-5. `OpenChatHostGranted` 이벤트 발행 → 대상 유저에게 FCM 알림 (BR-11)
+**클라이언트 처리 방식 (batch read 의미론):**
 
-**에러 케이스:**
+> `getMessages()` 호출 시 READ 이벤트는 **조회된 메시지 중 가장 최신 `messageId` 단건**으로 발행된다.
+> 클라이언트는 이 이벤트를 수신하면 **`id ≤ messageId`인 모든 메시지의 `unreadCount`를 1 감소**시켜야 한다.
+> (단, `unreadCount`가 이미 0인 메시지는 변경하지 않음)
 
-| 상황 | HTTP | code | message |
-|------|------|------|---------|
-| 요청자가 방장도 ADMIN도 아닌 경우 | 403 | `OPEN_CHAT_ROOM_FORBIDDEN` | 채팅방 접근 권한이 없습니다 |
-| roomId에 해당하는 방이 없음 | 404 | `OPEN_CHAT_ROOM_NOT_FOUND` | 채팅방을 찾을 수 없습니다 |
-| targetUserId가 해당 방 참여자가 아님 | 404 | `OPEN_CHAT_PARTICIPANT_NOT_FOUND` | 참여하지 않은 채팅방입니다 |
-| targetUserId가 이미 방장인 경우 | 400 | `OPEN_CHAT_ALREADY_HOST` | 이미 방장인 사용자입니다 |
-| targetUserId == 요청자 본인 | 400 | `OPEN_CHAT_ALREADY_HOST` | 이미 방장인 사용자입니다 |
+**예시 시나리오:**
 
-**사이드 이펙트 / 도메인 이벤트:**
-- `OpenChatHostGranted`: 방장 부여 완료 후 발행 → FCM 서비스가 구독, 대상 유저에게 알림 발송
-- FCM 발송 실패 시 방장 부여는 롤백하지 않음 (BR-11)
+```
+A, B 구독 중 / C 오프라인
 
-**엣지 케이스:**
-- [ ] 방장 부여 직후 대상이 나가는 경우: 나감과 동시에 `isHost` 소멸 (별도 처리 불필요)
+A가 메시지 전송 (id=50):
+  → 서버: A, B의 lastReadMessageId = 50 업데이트
+  → /sub/openchat/{roomId}/read: {messageId: 50, unreadCount: 1}  (C 미읽음)
+
+C가 getMessages() 호출:
+  → 서버: C의 lastReadMessageId = 50 업데이트
+  → /sub/openchat/{roomId}/read: {messageId: 50, unreadCount: 0}  (전원 읽음)
+  → A, B: id ≤ 50인 모든 메시지 unreadCount 1 감소 처리
+```
 
 ---
 
-### [CHANGED] 채팅방 나가기
+### [CHANGED] WebSocket 메시지 전송
 
-**`DELETE /open-chat-rooms/{roomId}/participants/me`**
+**`SEND /pub/openchat/socketchat`**
 
 | 항목 | 내용 |
 |------|------|
-| 설명 | 채팅방에서 나간다. 단독 방장은 반드시 `newHostUserId`를 지정해야 한다 |
+| 설명 | 채팅방에 텍스트 메시지를 전송한다. 현재 구독 중인 사용자는 자동으로 읽음 처리된다 |
+| 인증 | WebSocket 연결 인증 필수 |
+| 권한 | 해당 방 참여자 |
+
+**Request Payload:**
+
+```json
+{
+  "roomId": "Long | 필수 | 채팅방 ID",
+  "content": "String | 필수 | 메시지 내용"
+}
+```
+
+**브로드캐스트 — `/sub/openchat/{roomId}`:**
+
+```json
+{
+  "messageId": "Long | 저장된 메시지 ID",
+  "roomId": "Long | 채팅방 ID",
+  "senderId": "Long | 발신자 userId",
+  "senderNickname": "String | 발신자 닉네임",
+  "content": "String | 메시지 내용",
+  "type": "TEXT",
+  "imageUrls": [],
+  "unreadCount": "int | 현재 미읽음 참여자 수 (구독자는 자동 읽음 처리된 후 계산)",
+  "createdAt": "String | ISO 8601"
+}
+```
+
+**브로드캐스트 — `/sub/openchat/{roomId}/read`:**
+
+```json
+{
+  "messageId": "Long | 방금 저장된 메시지 ID",
+  "unreadCount": "int | 구독자 자동 읽음 처리 후 계산된 미읽음 수"
+}
+```
+
+**비즈니스 로직 요약 (변경된 부분):**
+1. 메시지 DB 저장
+2. `OpenChatSessionRegistry.getSubscriberUserIds(roomId)`로 현재 구독자 userId Set 조회 (BR-01)
+3. 구독자 전원(발신자 포함)의 `lastReadMessageId`를 해당 메시지 ID로 **JPQL bulk update** (ADR-02)
+4. `calculateUnreadCount(roomId, messageId)` 호출 — 구독자는 이미 읽음 처리돼 제외됨 (BR-03)
+5. `/sub/openchat/{roomId}`로 메시지 브로드캐스트
+6. `/sub/openchat/{roomId}/read`로 READ 이벤트 전파 (BR-02)
+
+**에러 케이스:**
+
+> WebSocket 특성상 예외를 클라이언트에게 직접 반환하지 않고 메시지 전송을 무시한다.
+
+| 상황 | 처리 |
+|------|------|
+| roomId에 해당하는 방 없음 | 무시 (early return) |
+| 요청자가 해당 방 참여자 아님 | 무시 (early return) |
+| 세션에 userId 없음 | 무시 (early return) |
+
+---
+
+### [CHANGED] 메시지 목록 조회 (오프라인 읽음 처리)
+
+**`GET /open-chat-rooms/{roomId}/messages`**
+
+| 항목 | 내용 |
+|------|------|
+| 설명 | 채팅방 메시지를 커서 기반으로 조회한다. 조회 시 최신 메시지 ID로 읽음 처리되고 READ 이벤트가 전파된다 |
 | 인증 | 필요 |
-| 권한 | `USER`, `ADMIN`, `DORMITORY` (참여자만) |
-| 멱등성 | 비멱등 |
+| 권한 | `USER`, `ADMIN`, `DORMITORY` (해당 방 참여자) |
+| 멱등성 | 비멱등 (읽음 상태 변경 발생) |
 
 **Path Parameters:**
 
@@ -97,70 +174,66 @@
 
 **Query Parameters:**
 
-| 이름 | 타입 | 필수 | 설명 |
-|------|------|------|------|
-| `newHostUserId` | Long | 조건부 필수 | 단독 방장인 경우 필수. 위임할 참여자의 userId |
-
-**Request Body:** 없음
+| 이름 | 타입 | 필수 | 기본값 | 설명 |
+|------|------|------|--------|------|
+| `lastMessageId` | Long | N | null | 커서 ID. null이면 최신부터 조회 |
+| `size` | int | N | 30 | 조회 메시지 수 |
 
 **Response (성공): `200 OK`**
 
 ```json
 {
-  "roomDeleted": false
+  "messages": [
+    {
+      "messageId": "Long",
+      "roomId": "Long",
+      "senderId": "Long",
+      "senderNickname": "String | SYSTEM 메시지는 null",
+      "content": "String",
+      "type": "TEXT | IMAGE | SYSTEM",
+      "imageUrls": ["String | 이미지 URL 목록 (IMAGE 타입만)"],
+      "unreadCount": "int | 조회 시점 미읽음 수",
+      "createdAt": "String | ISO 8601"
+    }
+  ],
+  "hasNext": "boolean",
+  "nextCursor": "Long | null이면 더 이상 없음"
 }
 ```
 
-> `roomDeleted`는 항상 `false`. 단독 방장 나가기는 반드시 위임이 필요하므로 나가기 후 방이 삭제되는 경우는 없음 (방 삭제는 별도 DELETE /open-chat-rooms/{roomId} 사용)
-
-**비즈니스 로직 요약:**
-
-**[케이스 A] 일반 참여자 또는 복수 방장 중 1명이 나가는 경우** (`newHostUserId` 미제공)
-1. 요청자의 `OpenChatParticipant` 존재 확인
-2. 요청자가 단독 방장인지 확인 (`isHost = true` count == 1 AND 요청자가 방장)
-3. 단독 방장이면 400 에러 반환 (BR-06)
-4. 단독 방장이 아니면 요청자의 `OpenChatParticipant` row 삭제
-5. 퇴장 시스템 메시지 전송 (BR-08)
-
-**[케이스 B] 단독 방장이 위임+나가기를 하는 경우** (`newHostUserId` 제공)
-1. 해당 방 participant rows에 **비관적 락** 적용 (ADR-02)
-2. 요청자가 단독 방장인지 재확인 (락 획득 후 재검증)
-3. `newHostUserId`가 해당 방 참여자인지 확인
-4. `newHostUserId == 요청자 본인`이면 400 에러
-5. 위임 대상의 `OpenChatParticipant.isHost = true` 저장
-6. 위임 대상에게 FCM 알림 (`OpenChatHostGranted` 이벤트)
-7. 요청자의 `OpenChatParticipant` row 삭제
-8. 퇴장 시스템 메시지 전송
+**비즈니스 로직 요약 (변경된 부분):**
+1. 참여자 검증 후 커서 기반 메시지 조회 (기존 유지)
+2. 조회된 메시지 중 `latestId = max(messageId)` 계산
+3. `latestId`가 존재하면 요청자의 `lastReadMessageId` 업데이트 (기존 유지)
+4. **[신규]** `/sub/openchat/{roomId}/read`로 READ 이벤트 전파 `{messageId: latestId, unreadCount}` (BR-05)
+5. 각 메시지의 `unreadCount`는 업데이트 후 계산된 값을 반환
 
 **에러 케이스:**
 
 | 상황 | HTTP | code | message |
 |------|------|------|---------|
-| 요청자가 해당 방 참여자가 아님 | 404 | `OPEN_CHAT_PARTICIPANT_NOT_FOUND` | 참여하지 않은 채팅방입니다 |
-| 단독 방장이 `newHostUserId` 없이 나가기 시도 | 400 | `OPEN_CHAT_SOLE_HOST_CANNOT_LEAVE` | 단독 방장은 방 삭제 또는 방장 위임 후 나갈 수 있습니다 |
-| `newHostUserId`가 해당 방 참여자가 아님 | 404 | `OPEN_CHAT_PARTICIPANT_NOT_FOUND` | 참여하지 않은 채팅방입니다 |
-| `newHostUserId == 요청자 본인` | 400 | `OPEN_CHAT_ALREADY_HOST` | 이미 방장인 사용자입니다 |
+| roomId에 해당하는 방 없음 | 404 | `OPEN_CHAT_ROOM_NOT_FOUND` | 채팅방을 찾을 수 없습니다 |
+| 요청자가 해당 방 참여자 아님 | 403 | `OPEN_CHAT_NOT_PARTICIPANT` | 참여하지 않은 채팅방입니다 |
 
-**동시성 & 멱등성:**
-- 케이스 B(위임+나가기): 비관적 락(`SELECT FOR UPDATE`) 적용으로 동시 방장 부여와의 충돌 방지
-
-**사이드 이펙트 / 도메인 이벤트:**
-- `OpenChatHostGranted` (케이스 B만): 위임 대상 유저에게 FCM 알림
+**사이드 이펙트:**
+- `OpenChatReadUpdated` 이벤트: `/sub/openchat/{roomId}/read`로 latestMessageId와 새 unreadCount 전파
+- 방에 현재 구독자가 없으면 READ 이벤트를 발행해도 수신자 없음 (정상 동작)
 
 **엣지 케이스:**
-- [ ] 재입장 시 방장 권한 미복원 — 새 `OpenChatParticipant` row는 `isHost = false`로 생성 (BR-08)
+- [ ] 조회된 메시지가 0건이면 읽음 처리 및 READ 이벤트 전파 생략
 
 ---
 
-### [CHANGED] 채팅방 삭제
+### [CHANGED] 이미지 메시지 전송
 
-**`DELETE /open-chat-rooms/{roomId}`**
+**`POST /open-chat-rooms/{roomId}/messages/image`**
 
 | 항목 | 내용 |
 |------|------|
-| 설명 | 채팅방을 삭제한다. 모든 방장이 삭제 권한을 가진다 |
+| 설명 | 채팅방에 이미지 메시지를 전송한다. 텍스트 메시지와 동일하게 구독자 자동 읽음 처리 및 READ 이벤트 전파 |
 | 인증 | 필요 |
-| 권한 | `USER` (해당 방 방장), `ADMIN` (참여 여부 무관) |
+| 권한 | `USER`, `ADMIN`, `DORMITORY` (해당 방 참여자) |
+| Content-Type | `multipart/form-data` |
 | 멱등성 | 비멱등 |
 
 **Path Parameters:**
@@ -169,116 +242,166 @@
 |------|------|------|
 | `roomId` | Long | 채팅방 ID |
 
-**Request Body:** 없음
+**Request Body (multipart):**
 
-**Response (성공): `204 No Content`**
+| 파트 이름 | 타입 | 필수 | 설명 |
+|-----------|------|------|------|
+| `images` | MultipartFile[] | Y | 이미지 파일 목록 (최대 5장, 각 10MB 이하) |
 
-**비즈니스 로직 요약:**
-1. 요청자가 `ADMIN` role이거나 해당 방의 `OpenChatParticipant.isHost = true`인지 확인 (BR-07)
-2. 공식 방(`isOfficial = true`)이면 `ADMIN`만 삭제 가능 (INV-05, BR-07)
-3. 해당 방의 모든 `OpenChatParticipant` row 삭제
-4. `OpenChatRoom` row 삭제
+**Validation Rules:**
+- 이미지 수: 1~5장
+- 허용 확장자: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`
+- 허용 MIME: `image/jpeg`, `image/png`, `image/gif`, `image/webp`
+- 파일 크기: 장당 10MB 이하
+
+**Response (성공): `201 Created`**
+
+```json
+{
+  "messageId": "Long",
+  "roomId": "Long",
+  "senderId": "Long",
+  "senderNickname": "String",
+  "content": "",
+  "type": "IMAGE",
+  "imageUrls": ["String | 업로드된 이미지 URL 목록"],
+  "unreadCount": "int | 구독자 읽음 처리 후 계산된 미읽음 수",
+  "createdAt": "String | ISO 8601"
+}
+```
+
+**비즈니스 로직 요약 (변경된 부분):**
+1. 이미지 유효성 검증 + 저장 (기존 유지)
+2. `OpenChatSessionRegistry.getSubscriberUserIds(roomId)`로 구독자 조회 (BR-01)
+3. 구독자 전원 `lastReadMessageId` bulk update
+4. `unreadCount` 계산 후 `/sub/openchat/{roomId}` 브로드캐스트
+5. **[신규]** `/sub/openchat/{roomId}/read`로 READ 이벤트 전파 (BR-02)
 
 **에러 케이스:**
 
 | 상황 | HTTP | code | message |
 |------|------|------|---------|
-| 요청자가 방장도 ADMIN도 아닌 경우 | 403 | `OPEN_CHAT_ROOM_FORBIDDEN` | 채팅방 접근 권한이 없습니다 |
-| 공식 방을 비 ADMIN이 삭제 시도 | 403 | `OPEN_CHAT_ROOM_FORBIDDEN` | 채팅방 접근 권한이 없습니다 |
-| roomId에 해당하는 방이 없음 | 404 | `OPEN_CHAT_ROOM_NOT_FOUND` | 채팅방을 찾을 수 없습니다 |
-
-**변경 내용 요약 (기존 대비):**
-- 기존: `hostUserId == 요청자` 단일 비교
-- 변경: `OpenChatParticipant.isHost = true AND userId == 요청자` OR `role == ADMIN`
+| roomId에 해당하는 방 없음 | 404 | `OPEN_CHAT_ROOM_NOT_FOUND` | 채팅방을 찾을 수 없습니다 |
+| 요청자가 참여자 아님 | 403 | `OPEN_CHAT_NOT_PARTICIPANT` | 참여하지 않은 채팅방입니다 |
+| 이미지 없음 | 400 | `OPEN_CHAT_IMAGE_EMPTY` | 이미지를 첨부해주세요 |
+| 이미지 5장 초과 | 400 | `OPEN_CHAT_IMAGE_COUNT_EXCEEDED` | 이미지는 최대 5장까지 전송 가능합니다 |
+| 허용되지 않는 파일 형식 | 400 | `IMAGE_INVALID_FORMAT` | 지원하지 않는 이미지 형식입니다 |
 
 ---
 
-### [EXISTING - 응답 변경] 참여자 목록 조회
+### [CONFIRMED] 채팅방 목록 조회 — unreadCount 포함
 
-**`GET /open-chat-rooms/{roomId}/participants`**
+**`GET /open-chat-rooms`**
 
 | 항목 | 내용 |
 |------|------|
-| 설명 | 채팅방 참여자 목록 조회 (방장 여부 포함) |
+| 설명 | 채팅방 목록을 조회한다. 참여 중인 방은 `unreadCount` 뱃지를 포함한다 |
 | 인증 | 필요 |
-| 권한 | `USER`, `ADMIN`, `DORMITORY` (참여자만) |
+| 권한 | `USER`, `ADMIN`, `DORMITORY` |
 | 멱등성 | 멱등 |
 
-**Path Parameters:**
+**Query Parameters:**
 
-| 이름 | 타입 | 설명 |
-|------|------|------|
-| `roomId` | Long | 채팅방 ID |
+| 이름 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| `tab` | `OpenChatRoomTab` | Y | 탭 구분 (ALL, MY, DORMITORY 등) |
+| `page`, `size`, `sort` | — | N | 페이지네이션 |
 
 **Response (성공): `200 OK`**
 
 ```json
 {
-  "participants": [
+  "content": [
     {
-      "userId": "Long | 참여자 userId",
-      "nickname": "String | 닉네임",
-      "joinedAt": "String | ISO 8601 입장 시각",
-      "isHost": "Boolean | 방장 여부"
+      "roomId": "Long",
+      "name": "String",
+      "description": "String",
+      "scope": "OpenChatRoomScope",
+      "currentParticipants": "int",
+      "maxParticipants": "int",
+      "isJoined": "boolean",
+      "lastMessageAt": "String | ISO 8601",
+      "lastMessage": "String",
+      "unreadCount": "int | 미참여 방은 0. 참여 중인 방은 lastReadMessageId 이후 메시지 수 (BR-08)"
     }
   ],
-  "hostCount": "int | 방장 수"
+  "totalElements": "Long",
+  "totalPages": "int",
+  "currentPage": "int",
+  "hasNext": "boolean"
 }
 ```
 
-> `isHost` 필드: `OpenChatParticipant.isHost` 값을 그대로 반영. 기존 `ResponseOpenChatParticipantDto`에 이미 `isHost` 필드 존재하나, `OpenChatParticipant` 엔티티에 `isHost` 컬럼 추가 전까지는 항상 `false` 반환됨 → 엔티티 컬럼 추가 후 정상 반영
+**비즈니스 로직 요약:**
+1. 참여 중인 방(`isJoined = true`): `countByRoomIdAndIdGreaterThan(roomId, lastReadMessageId)`로 `unreadCount` 계산 (BR-08)
+2. 미참여 방(`isJoined = false`): `unreadCount = 0`
 
-**변경 내용 요약 (기존 대비):**
-- `isHost` 필드 응답에 올바른 값 반영 (`OpenChatParticipant.isHost` 기반)
-- `hostCount` 필드 신규 추가 (클라이언트가 단독 방장 여부 판단에 사용)
+> 이 API는 기존에 `unreadCount` 필드가 있었으나 미참여 방에서 항상 0이었음. 읽음 처리 기능 도입으로 참여 중인 방에서 정확한 값을 반환함.
+
+---
+
+### [IMPLICIT] WebSocket 구독 시 자동 읽음 처리
+
+**`SUBSCRIBE /sub/openchat/{roomId}`**
+
+> 이 구독 행위는 별도 API 호출 없이 서버에서 `SessionSubscribeEvent`로 감지하여 자동 처리된다.
+
+| 처리 내용 | 설명 |
+|-----------|------|
+| `OpenChatSessionRegistry` 등록 | `subscribe(sessionId, roomId, userId)` 호출 |
+| `lastReadMessageId` 업데이트 | 해당 방의 최신 메시지 ID로 갱신 (BR-06) |
+| READ 이벤트 전파 | `/sub/openchat/{roomId}/read`로 `{messageId: latestId, unreadCount}` 발행 |
+
+**`DISCONNECT` 시 처리:**
+
+| 처리 내용 | 설명 |
+|-----------|------|
+| `OpenChatSessionRegistry` 제거 | `unsubscribe(sessionId)` 호출 |
 
 ---
 
 ## 3. 도메인 이벤트 & 사이드 이펙트 요약
 
-| API | 발행 이벤트 | 구독 주체 | 처리 내용 |
-|-----|------------|-----------|-----------|
-| POST /hosts/{targetUserId} | `OpenChatHostGranted` | OpenChatNotificationService | 대상 유저에게 FCM 알림 |
-| DELETE /participants/me (케이스 B) | `OpenChatHostGranted` | OpenChatNotificationService | 위임 대상 유저에게 FCM 알림 |
+| API / 트리거 | 발행 토픽 | 페이로드 | 조건 |
+|-------------|-----------|---------|------|
+| WebSocket 메시지 전송 | `/sub/openchat/{roomId}/read` | `{messageId, unreadCount}` | 항상 |
+| WebSocket 이미지 전송 | `/sub/openchat/{roomId}/read` | `{messageId, unreadCount}` | 항상 |
+| `GET /messages` 호출 | `/sub/openchat/{roomId}/read` | `{messageId: latestId, unreadCount}` | 메시지가 1건 이상일 때 |
+| `/sub/openchat/{roomId}` 구독 | `/sub/openchat/{roomId}/read` | `{messageId: latestId, unreadCount}` | 방에 메시지가 1건 이상일 때 |
 
 ---
 
 ## 4. API 간 의존 관계
 
-- `POST /hosts/{targetUserId}` 호출 전 `POST /{roomId}/participants/me` (입장) 선행 필요 (요청자가 참여자이자 방장이어야 함)
-- 단독 방장이 `DELETE /participants/me` 호출 시 `newHostUserId`를 알기 위해 `GET /participants` 선행 조회 필요 (클라이언트 책임)
+- `SUBSCRIBE /sub/openchat/{roomId}/read` 구독은 `/sub/openchat/{roomId}` 구독과 동시에 해야 한다 — READ 이벤트만 구독해서는 메시지를 받을 수 없음
+- `GET /messages` 호출은 `POST /{roomId}/participants/me` (채팅방 입장) 이후에만 가능
 
 ---
 
-## 5. DB 마이그레이션 체크리스트
+## 5. 보안 체크리스트
 
-> API 스펙과 연동된 DB 변경사항 (구현 시 Flyway 마이그레이션 필수)
-
-- [ ] `open_chat_participant` 테이블에 `is_host BOOLEAN NOT NULL DEFAULT FALSE` 컬럼 추가
-- [ ] 기존 `open_chat_room.host_user_id` 기준으로 `open_chat_participant.is_host = true` 데이터 이관
-  ```sql
-  UPDATE open_chat_participant p
-  JOIN open_chat_room r ON p.room_id = r.id
-  SET p.is_host = TRUE
-  WHERE p.user_id = r.host_user_id;
-  ```
-- [ ] `open_chat_room.host_user_id` 컬럼 제거
+- [x] 모든 HTTP 쓰기 API에 JWT 인증 적용
+- [x] WebSocket 연결 시 `WebSocketAuthInterceptor`로 토큰 검증
+- [x] `getMessages()`: 참여자 여부 검증으로 타인 방 메시지 조회 차단
+- [x] READ 이벤트는 서버가 발행하는 단방향 이벤트 — 클라이언트가 위조 불가
+- [x] `OpenChatSessionRegistry`는 서버 내부 상태 — 외부 노출 없음
+- [ ] READ 이벤트 전파 시 민감 정보(userId) 포함 여부 확인 — 현재 `{messageId, unreadCount}`만 전파, userId 미포함 (안전)
 
 ---
 
-## 6. 보안 체크리스트
+## 6. 최종 검토
 
-- [x] 모든 쓰기 API에 인증 적용
-- [x] 방장 부여: 요청자가 해당 방의 방장인지 서비스 레이어에서 검증 (타인 방 방장 부여 차단)
-- [x] 나가기: 요청자 본인의 participant만 삭제 (`me` 엔드포인트로 고정)
-- [x] 방 삭제: ADMIN 역할 체크 + 방장 `isHost` 체크 이중 검증
-- [x] `newHostUserId == 요청자 본인` 자기 위임 차단
+- [x] `/sub/openchat/{roomId}/read` 신규 토픽 명세 완료
+- [x] batch read의 "up-to 의미론" 클라이언트 처리 방식 명시
+- [x] 구독자 bulk update가 READ 이벤트 전파 전에 완료됨을 흐름에서 보장
+- [x] SYSTEM 메시지도 동일한 읽음 처리 대상임을 서비스 로직에 명시 (BR-04)
+- [x] 메시지 없는 방 구독 시 READ 이벤트 생략 엣지케이스 처리 명시
+- [ ] 하위 호환성: 기존 클라이언트가 `/sub/openchat/{roomId}/read`를 구독하지 않아도 동작 가능 (추가 구독이므로 breaking change 없음)
 
 ---
 
 ## 7. TBD
 
-- [ ] 방장 부여 FCM 알림에 사용할 `NotificationType` 확정 (기존 타입 재사용 vs 신규 추가)
-- [ ] `GET /participants` 응답에 `hostCount` 필드 추가 여부 확인 (현재 `ResponseOpenChatParticipantListDto` 구조 미확인)
-- [ ] ADMIN이 공식 방에 자동 입장(participant row 생성)해야 하는지 여부
-- [ ] 방당 최대 방장 수 제한 여부
+- [ ] `OpenChatSessionRegistry` 인터페이스 분리 여부 — 멀티 서버 전환 시 Redis pub/sub으로 교체 가능하도록 설계할지 (현재 단일 서버 in-memory)
+- [ ] 이미지 메시지 HTTP 응답에서도 `/sub/openchat/{roomId}/read` READ 이벤트가 이미 전파되므로, 클라이언트가 HTTP 응답과 WebSocket 이벤트를 중복 수신하는 경우 처리 방식 명시 필요
+- [ ] `lastReadMessageId`가 NULL인 참여자(한 번도 읽지 않은 사용자)에 대한 `unreadCount` 계산 정확성 검증 — 현재 `isNotNull()` 조건 적용 중
