@@ -404,8 +404,7 @@ public class ImageService {
     private String createImageUrl(ImageType imageType, HttpServletRequest request, Image image) {
         String appcenterHttpsUrl = getAppcenterHttpsUrl(request);
         String imagePath = (image != null) ? image.getImagePath() : null;
-        String staticImageUrl = findStaticImageUrl(imageType, imagePath, appcenterHttpsUrl);
-        return staticImageUrl != null ? staticImageUrl.replace("http", "https") : null;
+        return findStaticImageUrl(imageType, imagePath, appcenterHttpsUrl);
     }
 
     private File getImageInDirectory(Image image) {
@@ -429,7 +428,8 @@ public class ImageService {
     }
 
     private String getAppcenterHttpsUrl(HttpServletRequest request) {
-        String scheme = request.getScheme();
+        String forwardedProto = request.getHeader("X-Forwarded-Proto");
+        String scheme = (forwardedProto != null && !forwardedProto.isBlank()) ? forwardedProto : request.getScheme();
         String serverName = request.getServerName();
         int serverPort = request.getServerPort();
         String contextPath = request.getContextPath();
