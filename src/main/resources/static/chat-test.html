@@ -33,7 +33,7 @@
     #chat-room-name { font-weight: 700; font-size: 15px; }
     #chat-room-id { font-size: 11px; color: #888; }
 
-    #room-menu { display: flex; gap: 4px; flex-shrink: 0; }
+    #room-menu { display: flex; gap: 4px; flex-shrink: 0; flex-wrap: wrap; }
     .menu-btn { padding: 5px 9px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fff; font-size: 12px; cursor: pointer; white-space: nowrap; }
     .menu-btn:hover { background: #f3f4f6; }
     .menu-btn.active { background: #fef3c7; border-color: #f59e0b; }
@@ -133,6 +133,10 @@
 
     /* ── 학번 공개 상태 ── */
     .disclosure-status { font-size: 12px; padding: 6px 10px; border-radius: 6px; background: #f3f4f6; margin-top: 6px; }
+
+    /* ── 방장 위임 선택 ── */
+    .transfer-card { padding: 8px 10px; border: 1px solid #e5e7eb; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .transfer-card-name { font-size: 13px; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -227,6 +231,21 @@
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModal('modal-disclosure-req')">취소</button>
       <button class="btn-primary" onclick="doSendDisclosure()">요청 전송</button>
+    </div>
+  </div>
+</div>
+
+<!-- ───────────── 모달: 방장 위임 후 나가기 ───────────── -->
+<div id="modal-transfer-host" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-title">방장 위임 후 나가기</div>
+    <div class="modal-notice">
+      방장이 1명이므로 나가기 전에 다른 참여자에게 방장을 위임해야 합니다.<br>
+      새 방장을 선택해주세요.
+    </div>
+    <div id="transfer-host-list"></div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-transfer-host')">취소</button>
     </div>
   </div>
 </div>
@@ -371,7 +390,7 @@
   <!-- ══════════════ 우측 채팅 패널 ══════════════ -->
   <div id="right-panel">
 
-    <!-- 채팅 헤더 + 메뉴 (§7) -->
+    <!-- 채팅 헤더 + 메뉴 -->
     <div id="chat-header">
       <div id="chat-header-info">
         <div id="chat-room-name">채팅방을 선택해주세요</div>
@@ -382,6 +401,7 @@
         <button class="menu-btn" onclick="showParticipants()" title="§9 참여자 보기 및 초대">👥 참여자</button>
         <button class="menu-btn" onclick="openDerivedModal()" title="§9 파생 톡방 만들기">+ 파생톡방</button>
         <button class="menu-btn" id="btn-load-history" onclick="loadHistory()" style="display:none">이전 메시지</button>
+        <button class="menu-btn" id="btn-delete-room" onclick="deleteCurrentRoom()" style="display:none;background:#fef2f2;border-color:#fca5a5;color:#b91c1c;" title="방 삭제 (방장 전용)">🗑️ 방삭제</button>
         <button class="menu-btn btn-danger" style="background:#fef2f2;border-color:#fca5a5;color:#b91c1c" onclick="leaveCurrentRoom()" title="§7 방 나가기">나가기</button>
       </div>
     </div>
@@ -424,8 +444,13 @@ let stompClient = null;
 let nextCursor  = null;
 let hasNext     = false;
 let notifEnabled = true;
-let pendingDisclosureTarget = null; // { userId, nickname }
+let pendingDisclosureTarget = null;
 let disclaimerCallback = null;
+
+// 방장/방 상태
+let currentUserIsHost   = false;
+let currentHostCount    = 0;
+let currentRoomIsOfficial = false;
 
 // §4 초기 방 목록
 const INITIAL_ROOMS = [
@@ -575,13 +600,11 @@ function renderRoomList(rooms) {
     const unreadBadge = r.unreadCount > 0 ? `<span class="unread-dot">${r.unreadCount}</span>` : '';
 
     if (currentTab === 'MY') {
-      // §5 내 채팅방: 이름 + 최근 메시지
       return `<div class="room-card ${r.roomId === currentRoomId ? 'active' : ''}" onclick="enterRoom(${r.roomId}, '${escHtml(r.name)}', '${escHtml(r.description || '')}')">
         <div class="room-card-name">${escHtml(r.name)} ${joinedBadge} ${unreadBadge}</div>
         <div class="room-card-last">${escHtml(r.lastMessage || '메시지 없음')}</div>
       </div>`;
     } else {
-      // §5 내 기숙사 / 전체: 이름 + 설명 + 범위 + 인원
       return `<div class="room-card ${r.roomId === currentRoomId ? 'active' : ''}" onclick="enterRoom(${r.roomId}, '${escHtml(r.name)}', '${escHtml(r.description || '')}')">
         <div class="room-card-name">${escHtml(r.name)} ${joinedBadge} ${unreadBadge}</div>
         <div class="room-card-meta">${scopeBadge} &nbsp;${r.currentParticipants}/${r.maxParticipants}명</div>
@@ -609,8 +632,10 @@ async function enterRoom(roomId, name, description) {
       const detail = await res.json();
       name = detail.name || name;
       description = detail.description || description;
+      currentRoomIsOfficial = !!detail.isOfficial;
       log(`방 ${roomId} 입장 완료`, 'ok');
     } else {
+      currentRoomIsOfficial = false;
       log(`방 ${roomId} 이미 참여중, 재연결`, 'info');
     }
   } catch (e) { log(`입장 오류: ${e.message}`, 'err'); return; }
@@ -629,10 +654,13 @@ function openChat(roomId, name, description) {
   currentRoomId = roomId;
   currentRoomName = name;
   notifEnabled = true;
+  currentUserIsHost = false;
+  currentHostCount = 0;
 
   document.getElementById('chat-room-name').textContent = name;
   document.getElementById('chat-room-id').textContent = `#${roomId}`;
   document.getElementById('room-menu').style.display = 'flex';
+  document.getElementById('btn-delete-room').style.display = 'none';
   updateNotifBtn();
 
   // §7 고정 안내문구
@@ -655,7 +683,6 @@ function openChat(roomId, name, description) {
 //  채팅방 생성 (§6)
 // ═══════════════════════════════════════════════════════
 function openCreateRoomModal() {
-  // §12 방 생성 전 안내
   showModal('modal-create-notice');
 }
 
@@ -710,7 +737,6 @@ async function createInitialRooms() {
         statusEl.textContent = `✅ #${data.roomId}`;
         statusEl.className = 'ok';
       } else {
-        const err = await res.text();
         statusEl.textContent = `❌ ${res.status}`;
         statusEl.className = 'fail';
       }
@@ -722,27 +748,96 @@ async function createInitialRooms() {
 }
 
 // ═══════════════════════════════════════════════════════
-//  §7 방 나가기 / §8 알림 끄기
+//  §7 방 나가기
 // ═══════════════════════════════════════════════════════
 async function leaveCurrentRoom() {
   if (!currentRoomId) return;
   if (!confirm(`"${currentRoomName}" 방에서 나가시겠습니까?`)) return;
+
+  // 유일 방장인 경우 위임 모달 선제 표시
+  if (currentUserIsHost && currentHostCount === 1) {
+    await openTransferHostModal();
+    return;
+  }
+
   try {
     const res = await authFetch(`/open-chat-rooms/${currentRoomId}/participants/me`, { method: 'DELETE' });
     if (res.ok || res.status === 200) {
-      log(`방 나가기 완료`, 'ok');
-      disconnectWs();
-      currentRoomId = null;
-      document.getElementById('chat-room-name').textContent = '채팅방을 선택해주세요';
-      document.getElementById('chat-room-id').textContent = '';
-      document.getElementById('room-menu').style.display = 'none';
-      document.getElementById('pinned-desc').style.display = 'none';
-      clearMessages();
-      loadRooms();
-    } else { log(`방 나가기 실패 (${res.status})`, 'err'); }
+      const body = await res.json().catch(() => ({}));
+      log(`방 나가기 완료 (roomDeleted: ${body.roomDeleted ?? false})`, 'ok');
+      resetChatPanel();
+    } else {
+      const errText = await res.text();
+      log(`방 나가기 실패 (${res.status}): ${errText}`, 'err');
+      // 방장 단독 나가기 실패인 경우 위임 모달 표시
+      if (currentUserIsHost) {
+        log('방장 위임이 필요합니다.', 'info');
+        await openTransferHostModal();
+      }
+    }
   } catch (e) { log(`방 나가기 오류: ${e.message}`, 'err'); }
 }
 
+function resetChatPanel() {
+  disconnectWs();
+  currentRoomId = null;
+  currentUserIsHost = false;
+  currentHostCount = 0;
+  currentRoomIsOfficial = false;
+  document.getElementById('chat-room-name').textContent = '채팅방을 선택해주세요';
+  document.getElementById('chat-room-id').textContent = '';
+  document.getElementById('room-menu').style.display = 'none';
+  document.getElementById('pinned-desc').style.display = 'none';
+  clearMessages();
+  loadRooms();
+}
+
+// ═══════════════════════════════════════════════════════
+//  방장 위임 후 나가기
+// ═══════════════════════════════════════════════════════
+async function openTransferHostModal() {
+  if (!currentRoomId) return;
+  try {
+    const res = await authFetch(`/open-chat-rooms/${currentRoomId}/participants`);
+    if (!res.ok) { log(`참여자 조회 실패 (${res.status})`, 'err'); return; }
+    const data = await res.json();
+    const candidates = (data.participants || []).filter(p => p.userId !== myUserId && !p.isHost);
+    const list = document.getElementById('transfer-host-list');
+    if (!candidates.length) {
+      list.innerHTML = '<p style="color:#aaa;font-size:13px;text-align:center;">위임할 수 있는 참여자가 없습니다.<br>(비방장 참여자가 없으면 방 삭제 후 나가야 합니다)</p>';
+    } else {
+      list.innerHTML = candidates.map(p => `
+        <div class="transfer-card">
+          <div>
+            <div class="transfer-card-name">${escHtml(p.nickname)}</div>
+            <div style="font-size:11px;color:#888;">userId: ${p.userId}</div>
+          </div>
+          <button class="btn-warning btn-sm" onclick="doTransferAndLeave(${p.userId}, '${escHtml(p.nickname)}')">위임 후 나가기</button>
+        </div>`).join('');
+    }
+    closeModal('modal-participants');
+    showModal('modal-transfer-host');
+  } catch (e) { log(`위임 모달 오류: ${e.message}`, 'err'); }
+}
+
+async function doTransferAndLeave(newHostUserId, nickname) {
+  if (!confirm(`${nickname}님에게 방장을 위임하고 나가시겠습니까?`)) return;
+  closeModal('modal-transfer-host');
+  try {
+    const res = await authFetch(`/open-chat-rooms/${currentRoomId}/participants/me?newHostUserId=${newHostUserId}`, { method: 'DELETE' });
+    if (res.ok || res.status === 200) {
+      log(`${nickname}님에게 방장 위임 후 나가기 완료`, 'ok');
+      resetChatPanel();
+    } else {
+      const err = await res.text();
+      log(`위임 후 나가기 실패 (${res.status}): ${err}`, 'err');
+    }
+  } catch (e) { log(`위임 후 나가기 오류: ${e.message}`, 'err'); }
+}
+
+// ═══════════════════════════════════════════════════════
+//  §8 알림 끄기/켜기
+// ═══════════════════════════════════════════════════════
 async function toggleNotification() {
   if (!currentRoomId) return;
   notifEnabled = !notifEnabled;
@@ -762,7 +857,28 @@ function updateNotifBtn() {
 }
 
 // ═══════════════════════════════════════════════════════
-//  §9 참여자 목록 + 파생 톡방 초대
+//  방 삭제 (방장 전용, 비공식 방만)
+// ═══════════════════════════════════════════════════════
+async function deleteCurrentRoom() {
+  if (!currentRoomId) return;
+  if (!currentUserIsHost) { log('방장만 방을 삭제할 수 있습니다.', 'err'); return; }
+  if (currentRoomIsOfficial) { log('공식 방은 삭제할 수 없습니다.', 'err'); return; }
+  if (!confirm(`"${currentRoomName}" 방을 삭제하시겠습니까?\n모든 참여자가 퇴장됩니다.`)) return;
+
+  try {
+    const res = await authFetch(`/open-chat-rooms/${currentRoomId}`, { method: 'DELETE' });
+    if (res.status === 204 || res.ok) {
+      log('방 삭제 완료', 'ok');
+      resetChatPanel();
+    } else {
+      const err = await res.text();
+      log(`방 삭제 실패 (${res.status}): ${err}`, 'err');
+    }
+  } catch (e) { log(`방 삭제 오류: ${e.message}`, 'err'); }
+}
+
+// ═══════════════════════════════════════════════════════
+//  §9 참여자 목록
 // ═══════════════════════════════════════════════════════
 async function showParticipants() {
   if (!currentRoomId) return;
@@ -770,24 +886,47 @@ async function showParticipants() {
     const res = await authFetch(`/open-chat-rooms/${currentRoomId}/participants`);
     if (!res.ok) { log(`참여자 조회 실패 (${res.status})`, 'err'); return; }
     const data = await res.json();
-    renderParticipants(data.participants || [], data.totalCount);
+
+    // 방장 상태 갱신
+    const me = (data.participants || []).find(p => p.userId === myUserId);
+    currentUserIsHost = me ? !!me.isHost : false;
+    currentHostCount = data.hostCount ?? 0;
+
+    // 방장이고 비공식 방이면 방 삭제 버튼 표시
+    const deleteBtn = document.getElementById('btn-delete-room');
+    deleteBtn.style.display = (currentUserIsHost && !currentRoomIsOfficial) ? 'inline-block' : 'none';
+
+    renderParticipants(data.participants || [], data.totalCount, data.hostCount ?? 0);
     showModal('modal-participants');
   } catch (e) { log(`참여자 오류: ${e.message}`, 'err'); }
 }
 
-function renderParticipants(participants, total) {
-  document.getElementById('participant-count').textContent = `(${total}명)`;
+function renderParticipants(participants, total, hostCount) {
+  document.getElementById('participant-count').textContent =
+    `(${total}명 · 방장 ${hostCount}명)`;
   const list = document.getElementById('participant-list');
   if (!participants.length) { list.innerHTML = '<p style="color:#aaa;font-size:13px;">참여자 없음</p>'; return; }
   list.innerHTML = participants.map(p => {
     const isMe = p.userId === myUserId;
     const hostBadge = p.isHost ? '<span class="badge" style="background:#dbeafe;color:#1d4ed8;">방장</span>' : '';
     const meBadge   = isMe    ? '<span class="badge" style="background:#f0fdf4;color:#15803d;">나</span>' : '';
-    const actions = !isMe ? `
-      <button class="btn-xs btn-secondary" onclick="inviteToRoom(${p.userId}, '${escHtml(p.nickname)}')">파생톡방 초대</button>
-      <button class="btn-xs btn-warning" onclick="requestDisclosure(${p.userId}, '${escHtml(p.nickname)}')">학번공개요청</button>
-      <button class="btn-xs btn-secondary" onclick="checkDisclosureStatus(${p.userId}, '${escHtml(p.nickname)}')">공개상태확인</button>
-    ` : '';
+
+    let actions = '';
+    if (!isMe) {
+      // 초대 / 학번 공개 요청 (항상 표시)
+      actions += `<button class="btn-xs btn-secondary" onclick="inviteToRoom(${p.userId}, '${escHtml(p.nickname)}')">파생톡방 초대</button>`;
+      actions += `<button class="btn-xs btn-warning" onclick="requestDisclosure(${p.userId}, '${escHtml(p.nickname)}')">학번공개요청</button>`;
+      actions += `<button class="btn-xs btn-secondary" onclick="checkDisclosureStatus(${p.userId}, '${escHtml(p.nickname)}')">공개상태확인</button>`;
+
+      // 방장 전용: 방장 추가 / 강제퇴장
+      if (currentUserIsHost) {
+        if (!p.isHost) {
+          actions += `<button class="btn-xs btn-primary" onclick="grantHostToUser(${p.userId}, '${escHtml(p.nickname)}')">방장추가</button>`;
+          actions += `<button class="btn-xs btn-danger" onclick="kickParticipantUser(${p.userId}, '${escHtml(p.nickname)}')">강제퇴장</button>`;
+        }
+      }
+    }
+
     return `<div class="participant-card">
       <div>
         <div class="participant-name">${escHtml(p.nickname)} ${hostBadge} ${meBadge}</div>
@@ -798,6 +937,47 @@ function renderParticipants(participants, total) {
   }).join('');
 }
 
+// ═══════════════════════════════════════════════════════
+//  강제퇴장 (방장 전용)
+// ═══════════════════════════════════════════════════════
+async function kickParticipantUser(targetUserId, nickname) {
+  if (!currentRoomId) return;
+  if (!confirm(`${nickname}님을 강제퇴장하시겠습니까?`)) return;
+  try {
+    const res = await authFetch(`/open-chat-rooms/${currentRoomId}/participants/${targetUserId}`, { method: 'DELETE' });
+    if (res.status === 204 || res.ok) {
+      log(`${nickname}님 강제퇴장 완료`, 'ok');
+      closeModal('modal-participants');
+      showParticipants();
+    } else {
+      const err = await res.text();
+      log(`강제퇴장 실패 (${res.status}): ${err}`, 'err');
+    }
+  } catch (e) { log(`강제퇴장 오류: ${e.message}`, 'err'); }
+}
+
+// ═══════════════════════════════════════════════════════
+//  방장 추가 (방장 전용)
+// ═══════════════════════════════════════════════════════
+async function grantHostToUser(targetUserId, nickname) {
+  if (!currentRoomId) return;
+  if (!confirm(`${nickname}님을 방장으로 추가하시겠습니까?`)) return;
+  try {
+    const res = await authFetch(`/open-chat-rooms/${currentRoomId}/hosts/${targetUserId}`, { method: 'POST' });
+    if (res.status === 204 || res.ok) {
+      log(`${nickname}님 방장 추가 완료`, 'ok');
+      closeModal('modal-participants');
+      showParticipants();
+    } else {
+      const err = await res.text();
+      log(`방장 추가 실패 (${res.status}): ${err}`, 'err');
+    }
+  } catch (e) { log(`방장 추가 오류: ${e.message}`, 'err'); }
+}
+
+// ═══════════════════════════════════════════════════════
+//  §9 파생 톡방 초대 (현재 방이 파생 톡방이어야 함)
+// ═══════════════════════════════════════════════════════
 async function inviteToRoom(inviteeUserId, nickname) {
   if (!currentRoomId) return;
   try {
@@ -810,7 +990,10 @@ async function inviteToRoom(inviteeUserId, nickname) {
       const data = await res.json();
       log(`${nickname}에게 초대 전송 완료. invitationId: ${data.invitationId}`, 'ok');
       alert(`${nickname}에게 초대장을 보냈습니다.\ninvitationId: ${data.invitationId}\n(상대방은 ⑥ 섹션에서 수락/거절할 수 있습니다)`);
-    } else { log(`초대 실패 (${res.status})`, 'err'); }
+    } else {
+      const err = await res.text();
+      log(`초대 실패 (${res.status}): ${err}`, 'err');
+    }
   } catch (e) { log(`초대 오류: ${e.message}`, 'err'); }
 }
 
@@ -856,7 +1039,11 @@ async function acceptInvitation() {
   if (!roomId || !invId) { log('roomId와 invitationId를 입력하세요.', 'err'); return; }
   try {
     const res = await authFetch(`/open-chat-rooms/${roomId}/invitations/${invId}/accept`, { method: 'POST' });
-    if (res.ok) { log(`초대 수락 완료! 파생 톡방 roomId: ${roomId}`, 'ok'); loadRooms(); }
+    if (res.ok) {
+      const d = await res.json();
+      log(`초대 수락 완료! 파생 톡방 "${d.roomName}" (roomId: ${d.roomId})`, 'ok');
+      loadRooms();
+    }
     else { log(`수락 실패 (${res.status})`, 'err'); }
   } catch (e) { log(`수락 오류: ${e.message}`, 'err'); }
 }
@@ -956,9 +1143,17 @@ function connectWebSocket(roomId) {
     onConnect: () => {
       setWsStatus('🟢 연결됨');
       log(`WS 연결됨 (방 ${roomId})`, 'ok');
+
+      // 메시지 수신
       stompClient.subscribe(`/sub/openchat/${roomId}`, frame => {
         try { appendMessage(JSON.parse(frame.body), true); } catch (_) {}
       }, { Authorization: `Bearer ${token}` });
+
+      // 읽음 이벤트 수신 — 메시지의 unreadCount 실시간 갱신
+      stompClient.subscribe(`/sub/openchat/${roomId}/read`, frame => {
+        try { handleReadEvent(JSON.parse(frame.body)); } catch (_) {}
+      }, { Authorization: `Bearer ${token}` });
+
       enableChatInput(true);
     },
     onStompError: frame => { setWsStatus('🔴 오류'); log(`STOMP 오류: ${frame.headers?.message || '알 수 없음'}`, 'err'); },
@@ -979,6 +1174,24 @@ function enableChatInput(on) {
   document.getElementById('msg-input').disabled = !on;
   document.getElementById('btn-send').disabled = !on;
   document.getElementById('btn-send-image').disabled = !on;
+}
+
+// READ 이벤트: 메시지 unreadCount 업데이트
+function handleReadEvent(data) {
+  // data: { messageId, unreadCount }
+  const row = document.querySelector(`[data-message-id="${data.messageId}"]`);
+  if (!row) return;
+  let unreadEl = row.querySelector('.msg-unread');
+  if (data.unreadCount > 0) {
+    if (!unreadEl) {
+      unreadEl = document.createElement('div');
+      unreadEl.className = 'msg-unread';
+      row.appendChild(unreadEl);
+    }
+    unreadEl.textContent = `안읽음 ${data.unreadCount}`;
+  } else {
+    if (unreadEl) unreadEl.remove();
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1032,6 +1245,7 @@ async function sendImage() {
 // ═══════════════════════════════════════════════════════
 async function loadHistory() {
   if (!token || !currentRoomId) return;
+  const isInitialLoad = !nextCursor;
   const url = nextCursor
     ? `/open-chat-rooms/${currentRoomId}/messages?lastMessageId=${nextCursor}&size=30`
     : `/open-chat-rooms/${currentRoomId}/messages?size=30`;
@@ -1047,11 +1261,14 @@ async function loadHistory() {
       if (area.children.length <= 1) area.innerHTML = '<div style="text-align:center;color:#bbb;margin-top:40px;">메시지가 없습니다</div>';
       return;
     }
-    // 이전 메시지 placeholder 제거
     const placeholder = area.querySelector('[data-placeholder]');
     if (placeholder) placeholder.remove();
 
-    data.messages.forEach(msg => appendMessage(msg, false, true));
+    if (isInitialLoad) {
+      data.messages.forEach(msg => appendMessage(msg, false, false));
+    } else {
+      [...data.messages].reverse().forEach(msg => appendMessage(msg, false, true));
+    }
     if (nextCursor) area.scrollTop = area.scrollHeight - prevScrollHeight;
     else area.scrollTop = area.scrollHeight;
 
