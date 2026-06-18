@@ -52,8 +52,10 @@ class OpenChatMultiHostServiceTest {
     void should_grant_host_when_requester_is_host() {
         OpenChatRoom room = OpenChatMultiHostFixture.createRoom();
         OpenChatParticipant target = createParticipant();
+        User requester = mockUser(HOST_USER_ID);
 
         given(openChatRoomRepository.findById(ROOM_ID)).willReturn(Optional.of(room));
+        given(userRepository.findById(HOST_USER_ID)).willReturn(Optional.of(requester));
         given(openChatParticipantRepository.existsByRoomIdAndUserIdAndIsHost(ROOM_ID, HOST_USER_ID, true)).willReturn(true);
         given(openChatParticipantRepository.findByRoomIdAndUserId(ROOM_ID, PARTICIPANT_USER_ID)).willReturn(Optional.of(target));
 
@@ -63,11 +65,13 @@ class OpenChatMultiHostServiceTest {
     }
 
     @Test
-    @DisplayName("방장 부여 — 비ADMIN 미참여자는 방장 부여 불가 (BR-10: ADMIN 미참여 허용은 미구현)")
+    @DisplayName("방장 부여 — 비ADMIN 미참여자는 방장 부여 불가 (BR-10)")
     void should_throw_when_non_participant_non_host_grants_host() {
         OpenChatRoom room = OpenChatMultiHostFixture.createRoom();
+        User nonParticipant = mockUser(NON_PARTICIPANT_USER_ID);
 
         given(openChatRoomRepository.findById(ROOM_ID)).willReturn(Optional.of(room));
+        given(userRepository.findById(NON_PARTICIPANT_USER_ID)).willReturn(Optional.of(nonParticipant));
         given(openChatParticipantRepository.existsByRoomIdAndUserIdAndIsHost(ROOM_ID, NON_PARTICIPANT_USER_ID, true)).willReturn(false);
 
         ThrowingCallable action = () -> openChatRoomService.grantHost(ROOM_ID, NON_PARTICIPANT_USER_ID, PARTICIPANT_USER_ID);
@@ -82,8 +86,10 @@ class OpenChatMultiHostServiceTest {
     void should_keep_host_grant_without_explicit_save() {
         OpenChatRoom room = OpenChatMultiHostFixture.createRoom();
         OpenChatParticipant target = createParticipant();
+        User requester = mockUser(HOST_USER_ID);
 
         given(openChatRoomRepository.findById(ROOM_ID)).willReturn(Optional.of(room));
+        given(userRepository.findById(HOST_USER_ID)).willReturn(Optional.of(requester));
         given(openChatParticipantRepository.existsByRoomIdAndUserIdAndIsHost(ROOM_ID, HOST_USER_ID, true)).willReturn(true);
         given(openChatParticipantRepository.findByRoomIdAndUserId(ROOM_ID, PARTICIPANT_USER_ID)).willReturn(Optional.of(target));
 
@@ -98,8 +104,10 @@ class OpenChatMultiHostServiceTest {
     void should_grant_host_in_derived_room() {
         OpenChatRoom derivedRoom = OpenChatRoom.createDerived("파생방", "설명", 50, HOST_USER_ID, ROOM_ID);
         OpenChatParticipant target = createParticipant();
+        User requester = mockUser(HOST_USER_ID);
 
         given(openChatRoomRepository.findById(ROOM_ID)).willReturn(Optional.of(derivedRoom));
+        given(userRepository.findById(HOST_USER_ID)).willReturn(Optional.of(requester));
         given(openChatParticipantRepository.existsByRoomIdAndUserIdAndIsHost(ROOM_ID, HOST_USER_ID, true)).willReturn(true);
         given(openChatParticipantRepository.findByRoomIdAndUserId(ROOM_ID, PARTICIPANT_USER_ID)).willReturn(Optional.of(target));
 
@@ -111,7 +119,10 @@ class OpenChatMultiHostServiceTest {
     @Test
     @DisplayName("CustomException 발생 — 비방장이 방장 부여 (BR-03: OPEN_CHAT_ROOM_FORBIDDEN)")
     void should_throw_CustomException_when_requester_is_not_host_nor_admin() {
+        User nonHost = mockUser(PARTICIPANT_USER_ID);
+
         given(openChatRoomRepository.findById(ROOM_ID)).willReturn(Optional.of(createRoom()));
+        given(userRepository.findById(PARTICIPANT_USER_ID)).willReturn(Optional.of(nonHost));
         given(openChatParticipantRepository.existsByRoomIdAndUserIdAndIsHost(ROOM_ID, PARTICIPANT_USER_ID, true)).willReturn(false);
 
         ThrowingCallable action = () -> openChatRoomService.grantHost(ROOM_ID, PARTICIPANT_USER_ID, HOST_USER_ID);
@@ -124,7 +135,10 @@ class OpenChatMultiHostServiceTest {
     @Test
     @DisplayName("CustomException 발생 — 이미 방장인 참여자에게 방장 부여 (OPEN_CHAT_ALREADY_HOST)")
     void should_throw_CustomException_when_target_is_already_host() {
+        User requester = mockUser(HOST_USER_ID);
+
         given(openChatRoomRepository.findById(ROOM_ID)).willReturn(Optional.of(createRoom()));
+        given(userRepository.findById(HOST_USER_ID)).willReturn(Optional.of(requester));
         given(openChatParticipantRepository.existsByRoomIdAndUserIdAndIsHost(ROOM_ID, HOST_USER_ID, true)).willReturn(true);
         given(openChatParticipantRepository.findByRoomIdAndUserId(ROOM_ID, ANOTHER_HOST_USER_ID))
                 .willReturn(Optional.of(createAnotherHostParticipant()));
@@ -140,8 +154,10 @@ class OpenChatMultiHostServiceTest {
     @DisplayName("CustomException 발생 — 자기 자신을 방장 부여 대상으로 지정 (OPEN_CHAT_ALREADY_HOST)")
     void should_throw_CustomException_when_target_is_self() {
         OpenChatParticipant hostParticipant = createHostParticipant();
+        User requester = mockUser(HOST_USER_ID);
 
         given(openChatRoomRepository.findById(ROOM_ID)).willReturn(Optional.of(createRoom()));
+        given(userRepository.findById(HOST_USER_ID)).willReturn(Optional.of(requester));
         given(openChatParticipantRepository.existsByRoomIdAndUserIdAndIsHost(ROOM_ID, HOST_USER_ID, true)).willReturn(true);
         given(openChatParticipantRepository.findByRoomIdAndUserId(ROOM_ID, HOST_USER_ID)).willReturn(Optional.of(hostParticipant));
 
@@ -155,7 +171,10 @@ class OpenChatMultiHostServiceTest {
     @Test
     @DisplayName("CustomException 발생 — 비참여자를 방장 부여 대상으로 지정 (OPEN_CHAT_PARTICIPANT_NOT_FOUND)")
     void should_throw_CustomException_when_target_is_not_participant() {
+        User requester = mockUser(HOST_USER_ID);
+
         given(openChatRoomRepository.findById(ROOM_ID)).willReturn(Optional.of(createRoom()));
+        given(userRepository.findById(HOST_USER_ID)).willReturn(Optional.of(requester));
         given(openChatParticipantRepository.existsByRoomIdAndUserIdAndIsHost(ROOM_ID, HOST_USER_ID, true)).willReturn(true);
         given(openChatParticipantRepository.findByRoomIdAndUserId(ROOM_ID, NON_PARTICIPANT_USER_ID)).willReturn(Optional.empty());
 
@@ -407,7 +426,7 @@ class OpenChatMultiHostServiceTest {
 
     private static User mockUser(Long userId) {
         User user = org.mockito.Mockito.mock(User.class);
-        given(user.getName()).willReturn("테스트유저");
+        lenient().when(user.getName()).thenReturn("테스트유저");
         return user;
     }
 }

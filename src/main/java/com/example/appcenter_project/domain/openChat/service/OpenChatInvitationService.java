@@ -16,6 +16,7 @@ import com.example.appcenter_project.domain.openChat.repository.OpenChatInvitati
 import com.example.appcenter_project.domain.openChat.repository.OpenChatParticipantRepository;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatRoomRepository;
 import com.example.appcenter_project.domain.user.entity.User;
+import com.example.appcenter_project.domain.user.enums.Role;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.global.exception.ErrorCode;
@@ -169,14 +170,20 @@ public class OpenChatInvitationService {
         List<Long> userIds = participants.stream().map(OpenChatParticipant::getUserId).toList();
         List<User> users = userRepository.findAllById(userIds);
         Map<Long, String> nicknameMap = users.stream()
-                .collect(Collectors.toMap(User::getId, User::getName));
+                .collect(Collectors.toMap(User::getId, u -> {
+                    if (u.getRole() == Role.ROLE_ADMIN) return "관리자";
+                    return u.getName() != null ? u.getName() : "";
+                }));
+        Map<Long, Boolean> adminMap = users.stream()
+                .collect(Collectors.toMap(User::getId, u -> u.getRole() == Role.ROLE_ADMIN));
 
         List<ResponseOpenChatParticipantDto> dtos = participants.stream()
                 .sorted((a, b) -> a.getJoinedAt().compareTo(b.getJoinedAt()))
                 .map(p -> ResponseOpenChatParticipantDto.of(
                         p,
                         nicknameMap.getOrDefault(p.getUserId(), ""),
-                        p.isHost()
+                        p.isHost(),
+                        adminMap.getOrDefault(p.getUserId(), false)
                 ))
                 .toList();
 

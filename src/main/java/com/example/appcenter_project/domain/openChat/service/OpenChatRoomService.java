@@ -228,6 +228,10 @@ public class OpenChatRoomService {
         User targetUser = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
+        if (targetUser.getRole() == Role.ROLE_ADMIN) {
+            throw new CustomException(ErrorCode.OPEN_CHAT_KICK_FORBIDDEN);
+        }
+
         openChatParticipantRepository.delete(targetParticipant);
         openChatMessageService.sendSystemMessage(roomId, targetUser.getName() + "님이 강제퇴장되었습니다.");
     }
@@ -257,9 +261,15 @@ public class OpenChatRoomService {
         openChatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND));
 
-        boolean requesterIsHost = openChatParticipantRepository.existsByRoomIdAndUserIdAndIsHost(roomId, requesterId, true);
-        if (!requesterIsHost) {
-            throw new CustomException(ErrorCode.OPEN_CHAT_ROOM_FORBIDDEN);
+        User requester = userRepository.findById(requesterId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        boolean isAdmin = requester.getRole() == Role.ROLE_ADMIN;
+
+        if (!isAdmin) {
+            boolean requesterIsHost = openChatParticipantRepository.existsByRoomIdAndUserIdAndIsHost(roomId, requesterId, true);
+            if (!requesterIsHost) {
+                throw new CustomException(ErrorCode.OPEN_CHAT_ROOM_FORBIDDEN);
+            }
         }
 
         OpenChatParticipant target = openChatParticipantRepository
@@ -271,6 +281,54 @@ public class OpenChatRoomService {
         }
 
         target.grantHost();
+    }
+
+    @Transactional
+    public void transferHost(Long roomId, Long requesterId, Long targetUserId) {
+        openChatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND));
+
+        if (requesterId.equals(targetUserId)) {
+            throw new CustomException(ErrorCode.OPEN_CHAT_ALREADY_HOST);
+        }
+
+        OpenChatParticipant requester = openChatParticipantRepository
+                .findByRoomIdAndUserId(roomId, requesterId)
+                .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_PARTICIPANT_NOT_FOUND));
+
+        if (!requester.isHost()) {
+            throw new CustomException(ErrorCode.OPEN_CHAT_ROOM_FORBIDDEN);
+        }
+
+        OpenChatParticipant target = openChatParticipantRepository
+                .findByRoomIdAndUserId(roomId, targetUserId)
+                .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_PARTICIPANT_NOT_FOUND));
+
+        target.grantHost();
+        requester.revokeHost();
+    }
+
+    @Transactional
+    public void revokeHostByAdmin(Long roomId, Long actorId, Long targetUserId) {
+        openChatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND));
+
+        User actor = userRepository.findById(actorId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        if (actor.getRole() != Role.ROLE_ADMIN) {
+            throw new CustomException(ErrorCode.OPEN_CHAT_ROOM_FORBIDDEN);
+        }
+
+        OpenChatParticipant target = openChatParticipantRepository
+                .findByRoomIdAndUserId(roomId, targetUserId)
+                .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_PARTICIPANT_NOT_FOUND));
+
+        if (!target.isHost()) {
+            throw new CustomException(ErrorCode.OPEN_CHAT_ROOM_FORBIDDEN);
+        }
+
+        target.revokeHost();
     }
 
     @Transactional(readOnly = true)
@@ -287,14 +345,20 @@ public class OpenChatRoomService {
         List<Long> userIds = participants.stream().map(OpenChatParticipant::getUserId).toList();
         List<User> users = userRepository.findAllById(userIds);
         Map<Long, String> nicknameMap = users.stream()
-                .collect(Collectors.toMap(User::getId, User::getName));
+                .collect(Collectors.toMap(User::getId, u -> {
+                    if (u.getRole() == Role.ROLE_ADMIN) return "관리자";
+                    return u.getName() != null ? u.getName() : "";
+                }));
+        Map<Long, Boolean> adminMap = users.stream()
+                .collect(Collectors.toMap(User::getId, u -> u.getRole() == Role.ROLE_ADMIN));
 
         List<ResponseOpenChatParticipantDto> dtos = participants.stream()
                 .sorted((a, b) -> a.getJoinedAt().compareTo(b.getJoinedAt()))
                 .map(p -> ResponseOpenChatParticipantDto.of(
                         p,
                         nicknameMap.getOrDefault(p.getUserId(), ""),
-                        p.isHost()))
+                        p.isHost(),
+                        adminMap.getOrDefault(p.getUserId(), false)))
                 .toList();
 
         int hostCount = (int) participants.stream().filter(OpenChatParticipant::isHost).count();

@@ -3,7 +3,6 @@ package com.example.appcenter_project.domain.openChat.controller;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestSendInvitationDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseInvitationAcceptDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseInvitationCreatedDto;
-import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatParticipantListDto;
 import com.example.appcenter_project.domain.openChat.service.OpenChatInvitationService;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import jakarta.validation.Valid;
@@ -46,13 +45,5 @@ public class OpenChatInvitationController {
             @PathVariable Long invitationId) {
         openChatInvitationService.rejectInvitation(user.getId(), roomId, invitationId);
         return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/{roomId}/participants")
-    public ResponseEntity<ResponseOpenChatParticipantListDto> getParticipants(
-            @AuthenticationPrincipal CustomUserDetails user,
-            @PathVariable Long roomId) {
-        ResponseOpenChatParticipantListDto result = openChatInvitationService.getParticipants(user.getId(), roomId);
-        return ResponseEntity.ok(result);
     }
 }

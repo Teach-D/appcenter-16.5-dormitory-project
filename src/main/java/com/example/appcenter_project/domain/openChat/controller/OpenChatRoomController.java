@@ -103,6 +103,24 @@ public class OpenChatRoomController implements OpenChatRoomApiSpecification {
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/{roomId}/hosts/{targetUserId}")
+    public ResponseEntity<Void> revokeHostByAdmin(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId,
+            @PathVariable Long targetUserId) {
+        openChatRoomService.revokeHostByAdmin(roomId, user.getId(), targetUserId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{roomId}/hosts/me")
+    public ResponseEntity<Void> transferHost(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId,
+            @RequestParam Long targetUserId) {
+        openChatRoomService.transferHost(roomId, user.getId(), targetUserId);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/{roomId}/participants")
     public ResponseEntity<ResponseOpenChatParticipantListDto> getParticipants(
             @AuthenticationPrincipal CustomUserDetails user,

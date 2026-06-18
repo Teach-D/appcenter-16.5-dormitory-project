@@ -59,6 +59,10 @@ public class OpenChatParticipant {
         this.isHost = true;
     }
 
+    public void revokeHost() {
+        this.isHost = false;
+    }
+
     public void updateLastReadMessageId(Long messageId) {
         this.lastReadMessageId = messageId;
     }

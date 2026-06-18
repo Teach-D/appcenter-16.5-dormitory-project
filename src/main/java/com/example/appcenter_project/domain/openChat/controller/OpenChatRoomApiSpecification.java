@@ -56,11 +56,23 @@ public interface OpenChatRoomApiSpecification {
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long roomId);
 
-    @Operation(summary = "방장 권한 부여", description = "방장이 다른 참여자에게 방장 권한을 부여한다")
+    @Operation(summary = "방장 권한 부여", description = "방장이 다른 참여자에게 방장 권한을 부여한다. 요청자는 방장 권한을 유지한다")
     ResponseEntity<Void> grantHost(
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long roomId,
             @PathVariable Long targetUserId);
+
+    @Operation(summary = "방장 권한 삭제 (ADMIN 전용)", description = "ADMIN이 특정 참여자의 방장 권한을 제거한다. 참여자는 방에 남는다")
+    ResponseEntity<Void> revokeHostByAdmin(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId,
+            @PathVariable Long targetUserId);
+
+    @Operation(summary = "방장 위임", description = "방장이 자신의 방장 권한을 다른 참여자에게 위임한다. 위임 후 요청자는 방에 남지만 방장 권한을 잃는다")
+    ResponseEntity<Void> transferHost(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId,
+            @RequestParam Long targetUserId);
 
     @Operation(summary = "채팅방 참여자 목록 조회", description = "채팅방 참여자 목록과 방장 수를 조회한다")
     ResponseEntity<ResponseOpenChatParticipantListDto> getParticipants(

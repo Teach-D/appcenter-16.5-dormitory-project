@@ -449,6 +449,7 @@ let disclaimerCallback = null;
 
 // 방장/방 상태
 let currentUserIsHost   = false;
+let currentUserIsAdmin  = false;
 let currentHostCount    = 0;
 let currentRoomIsOfficial = false;
 
@@ -887,9 +888,10 @@ async function showParticipants() {
     if (!res.ok) { log(`참여자 조회 실패 (${res.status})`, 'err'); return; }
     const data = await res.json();
 
-    // 방장 상태 갱신
+    // 방장/관리자 상태 갱신
     const me = (data.participants || []).find(p => p.userId === myUserId);
-    currentUserIsHost = me ? !!me.isHost : false;
+    currentUserIsHost  = me ? !!me.isHost  : false;
+    currentUserIsAdmin = me ? !!me.isAdmin : false;
     currentHostCount = data.hostCount ?? 0;
 
     // 방장이고 비공식 방이면 방 삭제 버튼 표시
@@ -908,8 +910,9 @@ function renderParticipants(participants, total, hostCount) {
   if (!participants.length) { list.innerHTML = '<p style="color:#aaa;font-size:13px;">참여자 없음</p>'; return; }
   list.innerHTML = participants.map(p => {
     const isMe = p.userId === myUserId;
-    const hostBadge = p.isHost ? '<span class="badge" style="background:#dbeafe;color:#1d4ed8;">방장</span>' : '';
-    const meBadge   = isMe    ? '<span class="badge" style="background:#f0fdf4;color:#15803d;">나</span>' : '';
+    const hostBadge  = p.isHost  ? '<span class="badge" style="background:#dbeafe;color:#1d4ed8;">방장</span>' : '';
+    const adminBadge = p.isAdmin ? '<span class="badge" style="background:#fef9c3;color:#92400e;">관리자</span>' : '';
+    const meBadge    = isMe      ? '<span class="badge" style="background:#f0fdf4;color:#15803d;">나</span>' : '';
 
     let actions = '';
     if (!isMe) {
@@ -919,9 +922,17 @@ function renderParticipants(participants, total, hostCount) {
       actions += `<button class="btn-xs btn-secondary" onclick="checkDisclosureStatus(${p.userId}, '${escHtml(p.nickname)}')">공개상태확인</button>`;
 
       // 방장 전용: 방장 추가 / 강제퇴장
-      if (currentUserIsHost) {
+      if (currentUserIsAdmin) {
+        if (p.isHost) {
+          actions += `<button class="btn-xs btn-danger" onclick="revokeHostFromUser(${p.userId}, '${escHtml(p.nickname)}')">방장권한삭제</button>`;
+        } else {
+          actions += `<button class="btn-xs btn-primary" onclick="grantHostToUser(${p.userId}, '${escHtml(p.nickname)}')">방장추가</button>`;
+        }
+        actions += `<button class="btn-xs btn-danger" onclick="kickParticipantUser(${p.userId}, '${escHtml(p.nickname)}')">강퇴</button>`;
+      } else if (currentUserIsHost && !p.isAdmin) {
         if (!p.isHost) {
           actions += `<button class="btn-xs btn-primary" onclick="grantHostToUser(${p.userId}, '${escHtml(p.nickname)}')">방장추가</button>`;
+          actions += `<button class="btn-xs btn-warning" onclick="transferHostToUser(${p.userId}, '${escHtml(p.nickname)}')">방장위임</button>`;
           actions += `<button class="btn-xs btn-danger" onclick="kickParticipantUser(${p.userId}, '${escHtml(p.nickname)}')">강제퇴장</button>`;
         }
       }
@@ -929,7 +940,7 @@ function renderParticipants(participants, total, hostCount) {
 
     return `<div class="participant-card">
       <div>
-        <div class="participant-name">${escHtml(p.nickname)} ${hostBadge} ${meBadge}</div>
+        <div class="participant-name">${escHtml(p.nickname)} ${hostBadge} ${adminBadge} ${meBadge}</div>
         <div class="participant-sub">userId: ${p.userId} · 참여: ${formatTime(p.joinedAt)}</div>
       </div>
       <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">${actions}</div>
@@ -973,6 +984,44 @@ async function grantHostToUser(targetUserId, nickname) {
       log(`방장 추가 실패 (${res.status}): ${err}`, 'err');
     }
   } catch (e) { log(`방장 추가 오류: ${e.message}`, 'err'); }
+}
+
+// ═══════════════════════════════════════════════════════
+//  방장 권한 삭제 (ADMIN 전용)
+// ═══════════════════════════════════════════════════════
+async function revokeHostFromUser(targetUserId, nickname) {
+  if (!currentRoomId) return;
+  if (!confirm(`${nickname}님의 방장 권한을 삭제하시겠습니까?\n(해당 참여자는 방에 남습니다)`)) return;
+  try {
+    const res = await authFetch(`/open-chat-rooms/${currentRoomId}/hosts/${targetUserId}`, { method: 'DELETE' });
+    if (res.status === 204 || res.ok) {
+      log(`${nickname}님 방장 권한 삭제 완료`, 'ok');
+      closeModal('modal-participants');
+      showParticipants();
+    } else {
+      const err = await res.text();
+      log(`방장 권한 삭제 실패 (${res.status}): ${err}`, 'err');
+    }
+  } catch (e) { log(`방장 권한 삭제 오류: ${e.message}`, 'err'); }
+}
+
+// ═══════════════════════════════════════════════════════
+//  방장 위임 (방장 전용 — 방에 남고 권한만 이전)
+// ═══════════════════════════════════════════════════════
+async function transferHostToUser(targetUserId, nickname) {
+  if (!currentRoomId) return;
+  if (!confirm(`${nickname}님에게 방장을 위임하시겠습니까?\n(본인은 방에 남지만 방장 권한을 잃습니다)`)) return;
+  try {
+    const res = await authFetch(`/open-chat-rooms/${currentRoomId}/hosts/me?targetUserId=${targetUserId}`, { method: 'PATCH' });
+    if (res.status === 204 || res.ok) {
+      log(`${nickname}님에게 방장 위임 완료`, 'ok');
+      closeModal('modal-participants');
+      showParticipants();
+    } else {
+      const err = await res.text();
+      log(`방장 위임 실패 (${res.status}): ${err}`, 'err');
+    }
+  } catch (e) { log(`방장 위임 오류: ${e.message}`, 'err'); }
 }
 
 // ═══════════════════════════════════════════════════════
