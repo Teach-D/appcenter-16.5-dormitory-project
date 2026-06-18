@@ -9,4 +9,5 @@ public interface OpenChatMessageQuerydslRepository {
     List<OpenChatMessage> findByRoomIdWithCursor(Long roomId, Long lastMessageId, int size);
     Optional<Long> findLatestMessageIdByRoomId(Long roomId);
     long countByRoomIdAndIdGreaterThan(Long roomId, Long lastReadMessageId);
+    List<Long> findMessageIdsAfterInRoom(Long roomId, Long afterIdExclusive, Long toIdInclusive);
 }

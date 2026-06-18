@@ -1,6 +1,7 @@
 package com.example.appcenter_project.global.config;
 
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatReadEventDto;
+import com.example.appcenter_project.domain.openChat.entity.OpenChatParticipant;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatMessageRepository;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatParticipantRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -56,10 +58,23 @@ public class OpenChatWebSocketEventListener {
 
         openChatMessageRepository.findLatestMessageIdByRoomId(roomId)
                 .ifPresent(latestId -> {
+                    Long previousLastReadId = openChatParticipantRepository
+                            .findByRoomIdAndUserId(roomId, userId)
+                            .map(OpenChatParticipant::getLastReadMessageId)
+                            .orElse(null);
+
+                    if (latestId.equals(previousLastReadId)) return;
+
                     openChatParticipantRepository.updateLastReadMessageId(roomId, userId, latestId);
-                    int unreadCount = calculateUnreadCount(roomId, latestId);
-                    messagingTemplate.convertAndSend("/sub/openchat/" + roomId + "/read",
-                            ResponseOpenChatReadEventDto.of(latestId, unreadCount));
+
+                    List<Long> affectedIds = openChatMessageRepository
+                            .findMessageIdsAfterInRoom(roomId, previousLastReadId, latestId);
+
+                    for (Long messageId : affectedIds) {
+                        int unreadCount = calculateUnreadCount(roomId, messageId);
+                        messagingTemplate.convertAndSend("/sub/openchat/" + roomId + "/read",
+                                ResponseOpenChatReadEventDto.of(messageId, unreadCount));
+                    }
                 });
     }
 
