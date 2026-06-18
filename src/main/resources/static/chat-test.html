@@ -1025,12 +1025,15 @@ async function transferHostToUser(targetUserId, nickname) {
 }
 
 // ═══════════════════════════════════════════════════════
-//  §9 파생 톡방 초대 (현재 방이 파생 톡방이어야 함)
+//  §9 파생 톡방 초대 (roomId는 파생 톡방 ID 직접 입력)
 // ═══════════════════════════════════════════════════════
 async function inviteToRoom(inviteeUserId, nickname) {
-  if (!currentRoomId) return;
+  const derivedRoomIdStr = prompt(`${nickname}을 초대할 파생 톡방 ID를 입력하세요:`);
+  if (!derivedRoomIdStr) return;
+  const derivedRoomId = parseInt(derivedRoomIdStr, 10);
+  if (isNaN(derivedRoomId)) { log('올바른 파생 톡방 ID를 입력하세요.', 'err'); return; }
   try {
-    const res = await authFetch(`/open-chat-rooms/${currentRoomId}/invitations`, {
+    const res = await authFetch(`/open-chat-rooms/${derivedRoomId}/invitations`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ inviteeUserId })
@@ -1143,7 +1146,7 @@ async function acceptDisclosure() {
   try {
     const res = await authFetch(`/student-id-disclosures/${id}/accept`, { method: 'POST' });
     if (res.ok) { const d = await res.json(); log(`학번 공개 수락 완료: ${JSON.stringify(d)}`, 'ok'); }
-    else { log(`수락 실패 (${res.status})`, 'err'); }
+    else { const err = await res.text(); log(`수락 실패 (${res.status}): ${err}`, 'err'); }
   } catch (e) { log(`수락 오류: ${e.message}`, 'err'); }
 }
 
@@ -1153,7 +1156,7 @@ async function rejectDisclosure() {
   try {
     const res = await authFetch(`/student-id-disclosures/${id}/reject`, { method: 'POST' });
     if (res.status === 204 || res.ok) { log(`학번 공개 거절 완료`, 'ok'); }
-    else { log(`거절 실패 (${res.status})`, 'err'); }
+    else { const err = await res.text(); log(`거절 실패 (${res.status}): ${err}`, 'err'); }
   } catch (e) { log(`거절 오류: ${e.message}`, 'err'); }
 }
 
@@ -1163,7 +1166,7 @@ async function cancelDisclosure() {
   try {
     const res = await authFetch(`/student-id-disclosures/${id}`, { method: 'DELETE' });
     if (res.status === 204 || res.ok) { log(`학번 공개 요청 취소 완료`, 'ok'); }
-    else { log(`취소 실패 (${res.status})`, 'err'); }
+    else { const err = await res.text(); log(`취소 실패 (${res.status}): ${err}`, 'err'); }
   } catch (e) { log(`취소 오류: ${e.message}`, 'err'); }
 }
 
