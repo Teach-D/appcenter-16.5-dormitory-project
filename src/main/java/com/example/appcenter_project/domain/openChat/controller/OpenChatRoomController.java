@@ -2,6 +2,7 @@ package com.example.appcenter_project.domain.openChat.controller;
 
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateOpenChatRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseLeaveOpenChatRoomDto;
+import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatParticipantListDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDetailDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDto;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomTab;
@@ -61,17 +62,71 @@ public class OpenChatRoomController implements OpenChatRoomApiSpecification {
     @DeleteMapping("/{roomId}/participants/me")
     public ResponseEntity<ResponseLeaveOpenChatRoomDto> leaveRoom(
             @AuthenticationPrincipal CustomUserDetails user,
-            @PathVariable Long roomId) {
-        ResponseLeaveOpenChatRoomDto result = openChatRoomService.leaveRoom(user.getId(), roomId);
+            @PathVariable Long roomId,
+            @RequestParam(required = false) Long newHostUserId) {
+        ResponseLeaveOpenChatRoomDto result = openChatRoomService.leaveRoom(roomId, user.getId(), newHostUserId);
         return ResponseEntity.ok(result);
+    }
+
+    @PatchMapping("/{roomId}/participants/me/notification")
+    public ResponseEntity<Void> updateNotification(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId,
+            @RequestParam boolean enabled) {
+        openChatRoomService.updateNotification(user.getId(), roomId, enabled);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{roomId}/participants/{targetUserId}")
+    public ResponseEntity<Void> kickParticipant(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId,
+            @PathVariable Long targetUserId) {
+        openChatRoomService.kickParticipant(user.getId(), roomId, targetUserId);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{roomId}")
     public ResponseEntity<Void> deleteRoom(
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long roomId) {
-        openChatRoomService.deleteRoom(user.getId(), roomId);
+        openChatRoomService.deleteRoom(roomId, user.getId());
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{roomId}/hosts/{targetUserId}")
+    public ResponseEntity<Void> grantHost(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId,
+            @PathVariable Long targetUserId) {
+        openChatRoomService.grantHost(roomId, user.getId(), targetUserId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{roomId}/hosts/{targetUserId}")
+    public ResponseEntity<Void> revokeHostByAdmin(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId,
+            @PathVariable Long targetUserId) {
+        openChatRoomService.revokeHostByAdmin(roomId, user.getId(), targetUserId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{roomId}/hosts/me")
+    public ResponseEntity<Void> transferHost(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId,
+            @RequestParam Long targetUserId) {
+        openChatRoomService.transferHost(roomId, user.getId(), targetUserId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{roomId}/participants")
+    public ResponseEntity<ResponseOpenChatParticipantListDto> getParticipants(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId) {
+        ResponseOpenChatParticipantListDto result = openChatRoomService.getParticipants(roomId, user.getId());
+        return ResponseEntity.ok(result);
     }
 
     private String getDormType(CustomUserDetails user) {

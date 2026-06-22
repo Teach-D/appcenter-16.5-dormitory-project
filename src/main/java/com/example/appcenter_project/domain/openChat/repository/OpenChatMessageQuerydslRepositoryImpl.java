@@ -67,6 +67,19 @@ public class OpenChatMessageQuerydslRepositoryImpl implements OpenChatMessageQue
         return count != null ? count : 0L;
     }
 
+    @Override
+    public List<Long> findMessageIdsAfterInRoom(Long roomId, Long afterIdExclusive, Long toIdInclusive) {
+        return queryFactory
+                .select(openChatMessage.id)
+                .from(openChatMessage)
+                .where(
+                        openChatMessage.roomId.eq(roomId),
+                        afterIdExclusive != null ? openChatMessage.id.gt(afterIdExclusive) : null,
+                        openChatMessage.id.loe(toIdInclusive)
+                )
+                .fetch();
+    }
+
     private BooleanExpression idLessThan(Long lastMessageId) {
         return lastMessageId != null ? openChatMessage.id.lt(lastMessageId) : null;
     }

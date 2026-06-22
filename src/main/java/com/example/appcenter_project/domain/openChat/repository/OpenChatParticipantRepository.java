@@ -1,8 +1,10 @@
 package com.example.appcenter_project.domain.openChat.repository;
 
 import com.example.appcenter_project.domain.openChat.entity.OpenChatParticipant;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,28 +12,25 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface OpenChatParticipantRepository extends JpaRepository<OpenChatParticipant, Long>, OpenChatParticipantQuerydslRepository {
 
-    @Query("SELECT p FROM OpenChatParticipant p WHERE p.roomId = :roomId AND p.userId <> :excludeUserId ORDER BY p.joinedAt ASC")
-    List<OpenChatParticipant> findOldestParticipantExcludingList(
-            @Param("roomId") Long roomId,
-            @Param("excludeUserId") Long excludeUserId,
-            Pageable pageable);
-
-    default Optional<OpenChatParticipant> findOldestParticipantExcluding(Long roomId, Long excludeUserId) {
-        List<OpenChatParticipant> result = findOldestParticipantExcludingList(
-                roomId, excludeUserId, org.springframework.data.domain.PageRequest.of(0, 1));
-        return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
-    }
-
     boolean existsByRoomIdAndUserId(Long roomId, Long userId);
+
+    boolean existsByRoomIdAndUserIdAndIsHost(Long roomId, Long userId, boolean isHost);
 
     long countByRoomId(Long roomId);
 
+    long countByRoomIdAndIsHost(Long roomId, boolean isHost);
+
     Optional<OpenChatParticipant> findByRoomIdAndUserId(Long roomId, Long userId);
 
-    List<OpenChatParticipant> findByRoomId(Long roomId);
+    List<OpenChatParticipant> findAllByRoomId(Long roomId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM OpenChatParticipant p WHERE p.roomId = :roomId")
+    List<OpenChatParticipant> findAllByRoomIdWithLock(@Param("roomId") Long roomId);
 
     @Modifying
     @Transactional
@@ -42,4 +41,9 @@ public interface OpenChatParticipantRepository extends JpaRepository<OpenChatPar
     @Transactional
     @Query("UPDATE OpenChatParticipant p SET p.lastReadMessageId = :messageId WHERE p.roomId = :roomId AND p.userId = :userId")
     void updateLastReadMessageId(@Param("roomId") Long roomId, @Param("userId") Long userId, @Param("messageId") Long messageId);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE OpenChatParticipant p SET p.lastReadMessageId = :messageId WHERE p.roomId = :roomId AND p.userId IN :userIds")
+    void updateLastReadMessageIdByRoomIdAndUserIdIn(@Param("roomId") Long roomId, @Param("userIds") Set<Long> userIds, @Param("messageId") Long messageId);
 }

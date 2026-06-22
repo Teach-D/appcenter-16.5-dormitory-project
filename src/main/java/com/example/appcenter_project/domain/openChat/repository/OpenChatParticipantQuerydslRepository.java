@@ -1,5 +1,7 @@
 package com.example.appcenter_project.domain.openChat.repository;
 
+import com.example.appcenter_project.domain.openChat.dto.UnreadNotificationInfo;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -9,4 +11,5 @@ public interface OpenChatParticipantQuerydslRepository {
     Set<Long> findJoinedRoomIds(Long userId, List<Long> roomIds);
     Map<Long, Long> findLastReadMessageIdsByUserId(Long userId, List<Long> roomIds);
     long countReadByRoomIdAndMessageId(Long roomId, Long messageId);
+    List<UnreadNotificationInfo> findUnreadCountsForNotification();
 }

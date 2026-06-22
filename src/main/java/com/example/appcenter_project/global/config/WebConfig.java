@@ -15,12 +15,12 @@ public class WebConfig implements WebMvcConfigurer {
 
      @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // /images/** 요청을 /app/images/ 폴더에서 찾게 설정
+        String baseDir = System.getProperty("user.dir");
         registry.addResourceHandler("/images/**")
-                .addResourceLocations("file:/app/images/")  // 로컬 파일 시스템 경로
+                .addResourceLocations("file:" + baseDir + "/images/")
                 .setCachePeriod(3600);
-         registry.addResourceHandler("/files/**")
-                 .addResourceLocations("file:/app/files/")  // 로컬 파일 시스템 경로
-                 .setCachePeriod(3600);
+        registry.addResourceHandler("/files/**")
+                .addResourceLocations("file:" + baseDir + "/files/")
+                .setCachePeriod(3600);
     }
 }

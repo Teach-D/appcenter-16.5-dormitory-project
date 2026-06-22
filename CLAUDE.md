@@ -60,36 +60,52 @@
 4. **AI 기여도 기록** — PR 완료 시 `.claude/ai-metrics.md`에 보완비율·clarification 횟수 기록
 
 ## 세션 실패 기록
-### 2026-06-08 01:53 UTC (세션: 1b6c14b9)
+### 2026-06-17 22:30 UTC (세션: d1dd051a)
 
-- `Bash(gh auth status 2>&1)` → `Exit code 127`
-- `Bash(git -C "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-pr)` → `<tool_use_error>Cancelled: parallel tool call Bash(gh auth status 2>&1) errored</tool_use_error>`
-- `mcp__github__create_issue(Teach-D)` → `MCP error -32603: Failed to create issue: Bad credentials`
-
-### 2026-06-08 01:53 UTC (세션: 94d7daeb)
-
+- `Write(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>`
+- `Bash(Test-Path "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory)` → `Exit code 127`
+- `Bash(ls "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 2`
 - `Bash(gh auth status 2>&1)` → `Exit code 127`
 - `Bash(git status --porcelain 2>&1)` → `<tool_use_error>Cancelled: parallel tool call Bash(gh auth status 2>&1) errored</tool_use_error>`
-- `Glob(docs/*)` → `<tool_use_error>Cancelled: parallel tool call Bash(gh auth status) errored</tool_use_error>`
-- `mcp__github__create_issue(Teach-D)` → `MCP error -32603: Failed to create issue: Bad credentials`
-- `Bash(powershell.exe -Command "Get-Command gh -ErrorAction SilentlyContinue | Select-O)` → `Exit code 1`
+- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 127`
+- `Bash(where gh 2>&1; powershell -Command "where.exe gh 2>&1")` → `Exit code 1`
 
-### 2026-06-08 01:52 UTC (세션: f654db82)
+### 2026-06-17 11:06 UTC (세션: adc029a1)
 
-- `Bash(git push)` → `Exit code 128`
-- `Bash($env:GITHUB_TOKEN)` → `Exit code 127`
-- `Bash(powershell -Command "
-\$stream = [System.IO.MemoryStream]::new([System.Text.Enco)` → `Exit code 2`
+- `Bash(dir /b "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-pr)` → `Exit code 2`
+- `Edit(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\sr)` → `<tool_use_error>String to replace not found in file.`
+- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 1`
+- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 128`
+- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 1`
+- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 2`
+- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 1`
+- `Write(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\sr)` → `<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>`
 
-### 2026-06-07 05:01 UTC (세션: 1b6c14b9)
+### 2026-06-17 07:05 UTC (세션: adc029a1)
 
+- `Bash(dir /b "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-pr)` → `Exit code 2`
+- `Edit(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\sr)` → `<tool_use_error>String to replace not found in file.`
+- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 1`
+- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 128`
+- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 1`
+- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 2`
+- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 1`
+- `Write(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\sr)` → `<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>`
+
+### 2026-06-17 05:52 UTC (세션: adc029a1)
+
+- `Bash(dir /b "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-pr)` → `Exit code 2`
+
+### 2026-06-16 13:17 UTC (세션: 5cd535ff)
+
+- `Bash(ls "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 2`
 - `Bash(gh auth status 2>&1)` → `Exit code 127`
-- `Bash(git -C "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-pr)` → `<tool_use_error>Cancelled: parallel tool call Bash(gh auth status 2>&1) errored</tool_use_error>`
-- `mcp__github__create_issue(Teach-D)` → `MCP error -32603: Failed to create issue: Bad credentials`
-
-### 2026-06-07 05:00 UTC (세션: 1b6c14b9)
-
-- `Bash(gh auth status 2>&1)` → `Exit code 127`
-- `Bash(git -C "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-pr)` → `<tool_use_error>Cancelled: parallel tool call Bash(gh auth status 2>&1) errored</tool_use_error>`
-- `mcp__github__create_issue(Teach-D)` → `MCP error -32603: Failed to create issue: Bad credentials`
-
+- `Read(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\.c)` → `<tool_use_error>Cancelled: parallel tool call Bash(gh auth status 2>&1) errored</tool_use_error>`
+- `Bash(powershell -Command "gh auth status 2>&1")` → `Exit code 1`
+- `Read(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\.c)` → `<tool_use_error>Cancelled: parallel tool call Bash(powershell -Command "gh auth status 2>&1…) errored</tool_use_error>`
+- `Write(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>`
+- `Write(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `PreToolUse:Write hook error: [bash .claude/hooks/check-checkout.sh]: No stderr output`
+- `Edit(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `PreToolUse:Edit hook error: [bash .claude/hooks/check-checkout.sh]: No stderr output`
+- `Read(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `File does not exist. Note: your current working directory is C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project.`
+- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 127`
+- `Bash(where gh 2>&1 || powershell -Command "where.exe gh 2>&1")` → `Exit code 1`

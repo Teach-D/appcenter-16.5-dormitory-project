@@ -1,7 +1,7 @@
 # 도메인 모델
 
 > 기반 요구사항: `docs/requirements.md`
-> 기능: 상호 동의 학번 공개
+> 기능: 오픈채팅 읽음 처리 (Read Receipt)
 
 ---
 
@@ -9,93 +9,118 @@
 
 | 용어 | 정의 |
 |------|------|
-| 학번 공개 요청 (Disclosure Request) | 특정 채팅방 안에서 A가 B에게 학번(`studentNumber`)을 서로 공개하자고 보내는 요청 |
-| 요청자 (Requester) | 학번 공개 요청을 발송한 사용자 |
-| 대상자 (Target) | 학번 공개 요청을 수신한 사용자 |
-| 공개 관계 (Disclosed Pair) | 수락 상태(ACCEPTED)인 (requester, target, roomId) 3-tuple — 해당 방 안에서만 유효 |
-| 닉네임 모드 | 공개 관계가 없는 상태 — 채팅방에서 상대방 이름 대신 닉네임이 표시됨 |
-| 학번 모드 | 공개 관계가 ACCEPTED인 상태 — 채팅방에서 상대방의 `studentNumber`가 표시됨 |
+| 읽음 처리 (Mark as Read) | 특정 참여자의 `lastReadMessageId`를 메시지 ID로 갱신하는 행위 |
+| 미읽음 수 (unreadCount) | 전체 참여자 중 해당 메시지를 아직 읽지 않은 참여자 수. `전체 참여자 수 - lastReadMessageId >= messageId 인 참여자 수` |
+| READ 이벤트 | `/sub/openchat/{roomId}/read` 토픽으로 전파되는 `{messageId, unreadCount}` 페이로드 |
+| 구독자 (Subscriber) | 현재 WebSocket `/sub/openchat/{roomId}`를 구독 중인 사용자. 메시지 수신 즉시 자동 읽음 처리됨 |
+| 세션 레지스트리 (SessionRegistry) | `roomId → Set<userId>` 를 in-memory로 유지하는 단일 서버 컴포넌트 |
+| 오프라인 읽음 | WebSocket 미연결 상태에서 `getMessages()` API 호출로 발생하는 읽음 처리 |
 
 ---
 
 ## 2. 바운디드 컨텍스트
 
-단일 신규 컨텍스트: `studentIdDisclosure`
-- `openChat` 컨텍스트와 협력 (참여 여부 검증, 퇴장 이벤트 연동)
-- `User` 컨텍스트 의존: `studentNumber` 필드 조회
+단일 컨텍스트: `openChat`
+
+외부 컨텍스트 의존:
+- `user` — userId → 사용자 존재 확인 (기존 의존 유지)
+- WebSocket 인프라 (`SimpMessagingTemplate`) — READ 이벤트 전파
 
 ---
 
 ## 3. 애그리거트
 
-### Aggregate: StudentIdDisclosureRequest
+### Aggregate: OpenChatRoom (기존, 수정 없음)
+
+읽음 처리 기능에서 `OpenChatRoom` 엔티티 자체에는 변경이 없습니다. `lastMessage`, `lastMessageAt` 갱신은 기존과 동일합니다.
+
+---
+
+### Aggregate: OpenChatParticipant (기존, DB 스키마 변경 없음)
 
 #### 책임
-요청의 발송·수락·거절·취소 상태 전이를 보호하고, 한 쌍(pair)에 중복 활성 요청이 없음을 보장한다.
+각 참여자의 읽음 커서(`lastReadMessageId`)를 보호하여 `unreadCount` 계산의 정확성을 보장한다.
 
 #### 애그리거트 루트
-`StudentIdDisclosureRequest`
+`OpenChatParticipant`
 
 #### 엔티티 & 값 객체
 
 | 구분 | 이름 | 핵심 속성 | 설명 |
 |------|------|-----------|------|
-| Entity (Root) | `StudentIdDisclosureRequest` | id, requesterId, targetId, roomId, status, createdAt, updatedAt | 요청 단건 |
+| Entity (Root) | `OpenChatParticipant` | id, roomId, userId, **lastReadMessageId**, isHost, notificationEnabled, joinedAt | `lastReadMessageId`: 마지막으로 읽은 메시지 ID. NULL = 한 번도 읽지 않음 |
 
 #### 비즈니스 불변식 (Invariants)
 
-- **INV-01**: 동일 (requesterId, targetId, roomId) 쌍에 레코드는 최대 1개 존재한다.
-  - DB UNIQUE 제약 `(requester_id, target_id, room_id)` 로 보장
-  - 재요청 시 기존 REJECTED/CANCELED 레코드를 먼저 삭제 후 신규 삽입
-- **INV-02**: requesterId ≠ targetId (자기 자신에게 요청 불가).
-  - 위반 시: 400 BAD_REQUEST (CANNOT_REQUEST_SELF)
-- **INV-03**: PENDING 상태 전이는 cancel(요청자) 또는 accept/reject(대상자)만 가능.
-  - 위반 시: 403 FORBIDDEN
-- **INV-04**: ACCEPTED/REJECTED/CANCELED 상태의 요청은 상태 재전이 불가.
-  - 위반 시: 400 BAD_REQUEST
+- **INV-01**: `lastReadMessageId`는 한 번 갱신되면 이전 값으로 되돌릴 수 없다 (단조 증가)
+  - 위반 시: 무시 (서비스 레이어에서 `messageId <= lastReadMessageId` 이면 업데이트 생략)
 
-#### 라이프사이클 & 상태 머신
-
-```
-[없음]   -[요청자 발송]→         PENDING
-PENDING  -[대상자 수락]→         ACCEPTED
-PENDING  -[대상자 거절]→         REJECTED
-PENDING  -[요청자 취소]→         CANCELED
-ACCEPTED -[어느 한쪽 퇴장/방 삭제]→ [hard delete]
-REJECTED -[요청자 재요청]→       [기존 삭제 후 신규 PENDING]
-CANCELED -[요청자 재요청]→       [기존 삭제 후 신규 PENDING]
-```
+- **INV-02**: 구독 중인 사용자의 `lastReadMessageId`는 해당 방의 최신 메시지 ID보다 작을 수 없다
+  - 보장 방법: 메시지 저장 완료 직후 구독자 전원을 일괄 업데이트
 
 #### 트랜잭션 경계
-- 요청 발송: `StudentIdDisclosureRequestService` 단일 트랜잭션
-  1. 자기 자신 여부 검증
-  2. 두 유저가 동일 방에 있는지 확인 (`OpenChatParticipantRepository` 조회)
-  3. 기존 활성 레코드(PENDING/ACCEPTED) 존재 시 409 예외
-  4. 기존 비활성 레코드(REJECTED/CANCELED) 존재 시 삭제
-  5. 신규 PENDING 레코드 저장
-- 수락/거절/취소: 단건 상태 전이, 단일 트랜잭션
+
+| 유스케이스 | 트랜잭션 범위 |
+|-----------|-------------|
+| 메시지 전송 | 메시지 저장 + 구독자 `lastReadMessageId` bulk update + READ 이벤트 전파 (단일 트랜잭션, WebSocket 전파는 트랜잭션 내 허용) |
+| `getMessages()` 호출 | 최신 메시지 id로 `lastReadMessageId` 단건 update + READ 이벤트 전파 (단일 트랜잭션) |
+| WebSocket subscribe | 최신 메시지 id로 `lastReadMessageId` 단건 update + READ 이벤트 전파 (단일 트랜잭션) |
 
 #### 동시성 고려사항
-- 동일 쌍의 동시 발송: DB UNIQUE 제약이 최후 방어선
-  - 애플리케이션 레벨 선검증(existsByRequesterIdAndTargetIdAndRoomId) 후 저장
-  - 충돌 시 `DataIntegrityViolationException` → 409 CONFLICT 변환
+
+- **구독자 일괄 업데이트**: `UPDATE ... WHERE roomId = :roomId AND userId IN :userIds` JPQL bulk update 사용
+  - 영속성 컨텍스트를 우회하지만, 업데이트 직후 재조회하지 않으므로 무해
+- **SessionRegistry**: `ConcurrentHashMap<Long, Set<Long>>` 기반으로 thread-safe 보장
+  - Set은 `ConcurrentHashMap.newKeySet()`으로 생성
 
 #### 도메인 이벤트
-- `DisclosureRequestCreated`: 요청 발송 완료 시 → FCM 알림 트리거 (대상자에게)
-- `DisclosureRequestAccepted`: 수락 완료 시 → FCM 알림 트리거 (요청자에게)
-- `DisclosureRequestRejected`: 거절 완료 시 → FCM 알림 트리거 (요청자에게)
+
+- `OpenChatReadUpdated`: 읽음 상태 변경 시 발행 → `/sub/openchat/{roomId}/read` 토픽으로 전파
+
+---
+
+### Non-Entity Component: OpenChatSessionRegistry
+
+#### 책임
+현재 WebSocket으로 특정 채팅방을 구독 중인 사용자 집합을 in-memory로 유지한다. DB 저장 없음.
+
+#### 상태 구조
+
+```
+sessionRoomMap:  Map<String sessionId, Long roomId>
+sessionUserMap:  Map<String sessionId, Long userId>
+roomSubscribers: Map<Long roomId, Set<Long userId>>   ← 신규
+```
+
+#### 오퍼레이션
+
+| 메서드 | 설명 |
+|--------|------|
+| `subscribe(sessionId, roomId, userId)` | 세 맵 동시 등록 |
+| `unsubscribe(sessionId)` | 세 맵에서 sessionId 제거 |
+| `getSubscriberUserIds(roomId): Set<Long>` | 해당 방 구독자 userId 집합 반환 (defensive copy) |
+
+#### 라이프사이클
+
+```
+[서버 시작] → registry 초기화 (empty)
+[SessionSubscribeEvent] → subscribe(sessionId, roomId, userId)
+[SessionDisconnectEvent] → unsubscribe(sessionId)
+[서버 재시작] → 모든 상태 초기화 → 클라이언트 재연결 시 re-subscribe
+```
 
 ---
 
 ## 4. 애그리거트 관계도
 
 ```
-User (requester)  --N:1-- StudentIdDisclosureRequest
-User (target)     --N:1-- StudentIdDisclosureRequest
-OpenChatRoom      --N:1-- StudentIdDisclosureRequest (roomId 참조, ID만)
+OpenChatRoom --1:N--> OpenChatMessage (roomId)
+OpenChatRoom --1:N--> OpenChatParticipant (roomId)
+OpenChatParticipant.lastReadMessageId --> OpenChatMessage.id (soft reference)
 
-StudentIdDisclosureRequest는 OpenChatParticipant와 직접 연관 없음
-  → 서비스 레이어에서 OpenChatParticipantRepository로 참여 여부 검증
+[인프라]
+OpenChatSessionRegistry (in-memory) -- roomId --> Set<userId>
+OpenChatReadUpdated --발행→ SimpMessagingTemplate (/sub/openchat/{roomId}/read)
 ```
 
 ---
@@ -104,55 +129,52 @@ StudentIdDisclosureRequest는 OpenChatParticipant와 직접 연관 없음
 
 | 이벤트명 | 발행 주체 | 발행 시점 | 구독 주체 | 처리 내용 |
 |----------|-----------|-----------|-----------|-----------|
-| `DisclosureRequestCreated` | StudentIdDisclosureRequest | 요청 저장 완료 | FcmService | 대상자에게 CHAT 타입 FCM 알림 전송 |
-| `DisclosureRequestAccepted` | StudentIdDisclosureRequest | 수락 상태 전이 완료 | FcmService | 요청자에게 CHAT 타입 FCM 알림 전송 |
-| `DisclosureRequestRejected` | StudentIdDisclosureRequest | 거절 상태 전이 완료 | FcmService | 요청자에게 CHAT 타입 FCM 알림 전송 |
-
-> `NotificationType.CHAT`이 이미 존재하므로 별도 타입 추가 불필요
+| `OpenChatReadUpdated` | OpenChatMessageService | 읽음 상태 변경 후 | WebSocket 인프라 | `/sub/openchat/{roomId}/read`로 `{messageId, unreadCount}` 전파 |
 
 ---
 
 ## 6. 도메인 서비스
 
-단일 서비스 `StudentIdDisclosureRequestService`로 통합 (로직이 단순하여 별도 도메인 서비스 불필요).
+### ReadEventPublishService (또는 OpenChatMessageService 내 private 메서드)
 
-크로스-도메인 협력은 서비스 레이어에서 리포지토리 직접 참조로 처리:
-- `OpenChatParticipantRepository.existsByRoomIdAndUserId()` — 동일 방 참여 여부 검증
+- **책임**: 읽음 상태 변경 후 unreadCount 재계산 + READ 이벤트 WebSocket 전파
+- **관여 컴포넌트**: `OpenChatParticipantRepository`, `SimpMessagingTemplate`
+- **로직 요약**:
+  1. `calculateUnreadCount(roomId, messageId)` 호출
+  2. `messagingTemplate.convertAndSend("/sub/openchat/{roomId}/read", {messageId, unreadCount})`
+- **트랜잭션 전략**: 호출자(sendMessage, getMessages, handleSubscribe) 트랜잭션에 합류
 
 ---
 
 ## 7. 크로스-애그리거트 상호작용
 
-| 상황 | 관여 컨텍스트 | 일관성 전략 | 처리 위치 |
-|------|--------------|-------------|-----------|
-| 요청 발송 시 동일 방 검증 | studentIdDisclosure → openChat | 단일 트랜잭션 (읽기만) | `DisclosureRequestService` |
-| 채팅방 퇴장 시 공개 관계 삭제 | openChat → studentIdDisclosure | 순차 호출 (Controller) | `OpenChatRoomController.leave()` → `DisclosureRequestService.deleteByRoomAndUser()` 순차 호출 |
-| 채팅방 삭제 시 공개 관계 삭제 | openChat → studentIdDisclosure | DB Cascade 또는 순차 호출 | `OpenChatRoomService.deleteRoom()` 내에서 순차 삭제 |
+| 상황 | 관여 | 일관성 전략 | 이유 |
+|------|------|------------|------|
+| 메시지 전송 → 구독자 읽음 처리 | OpenChatMessage ← OpenChatParticipant | 강한 일관성 (단일 트랜잭션) | 메시지 저장과 읽음 처리가 원자적으로 완료돼야 unreadCount 오염 없음 |
+| getMessages → READ 이벤트 전파 | OpenChatParticipant → WebSocket | 강한 일관성 (트랜잭션 내 전파) | 기존 sendMessage 방식과 일관성 유지 |
 
 ---
 
 ## 8. 레포지토리 인터페이스
 
-### StudentIdDisclosureRequestRepository
+### OpenChatParticipantRepository (신규 추가 메서드)
 
 ```
-// 활성 요청(PENDING/ACCEPTED) 존재 여부
-existsByRequesterIdAndTargetIdAndRoomIdAndStatusIn(
-    requesterId, targetId, roomId, statuses): boolean
+// 구독자 userId 목록으로 lastReadMessageId 일괄 업데이트 (JPQL bulk update)
+updateLastReadMessageIdByRoomIdAndUserIdIn(roomId, userIds, messageId): void
 
-// 요청 단건 조회 (수락/거절/취소 처리용)
-findByIdAndRequesterId(id, requesterId): Optional<StudentIdDisclosureRequest>
-findByIdAndTargetId(id, targetId): Optional<StudentIdDisclosureRequest>
+// roomId의 최신 구독자 읽음 수 조회 (기존 유지)
+countReadByRoomIdAndMessageId(roomId, messageId): long
 
-// 재요청 전 기존 비활성 레코드 삭제
-deleteByRequesterIdAndTargetIdAndRoomId(requesterId, targetId, roomId): void
+// roomId 참여자 수 조회 (기존 유지)
+countByRoomId(roomId): long
+```
 
-// 채팅방 퇴장/삭제 시 해당 방의 특정 유저 관련 레코드 삭제
-deleteByRoomIdAndRequesterIdOrRoomIdAndTargetId(roomId, userId): void
+### OpenChatMessageRepository (기존 유지)
 
-// 학번 공개 상태 조회 (특정 방에서 두 유저 간 ACCEPTED 여부)
-findByRoomIdAndRequesterIdAndTargetIdAndStatus(
-    roomId, userAId, userBId, ACCEPTED): Optional<StudentIdDisclosureRequest>
+```
+// 채팅방 최신 메시지 ID 조회 (기존 유지)
+findLatestMessageIdByRoomId(roomId): Optional<Long>
 ```
 
 ---
@@ -162,55 +184,65 @@ findByRoomIdAndRequesterIdAndTargetIdAndStatus(
 ```
 com.example.appcenter_project
 └── domain/
-    └── studentIdDisclosure/
+    └── openChat/
         ├── entity/
-        │   └── StudentIdDisclosureRequest.java
-        ├── enums/
-        │   └── DisclosureRequestStatus.java   (PENDING, ACCEPTED, REJECTED, CANCELED)
+        │   └── OpenChatParticipant.java        (변경 없음, lastReadMessageId 기존 필드)
         ├── dto/
-        │   ├── request/
-        │   │   └── RequestCreateDisclosureDto.java   (targetId, roomId)
         │   └── response/
-        │       └── ResponseDisclosureStatusDto.java  (status, targetStudentNumber?)
+        │       └── ResponseOpenChatReadEventDto.java  (신규: {messageId, unreadCount})
         ├── service/
-        │   └── StudentIdDisclosureRequestService.java
-        ├── controller/
-        │   ├── StudentIdDisclosureController.java
-        │   └── StudentIdDisclosureApiSpecification.java
+        │   └── OpenChatMessageService.java     (수정: 구독자 bulk 읽음 처리 + READ 이벤트)
         └── repository/
-            └── StudentIdDisclosureRequestRepository.java
+            └── OpenChatParticipantRepository.java     (신규 메서드 추가)
+            └── OpenChatParticipantQuerydslRepositoryImpl.java  (bulk update 구현)
+
+global/
+└── config/
+    ├── OpenChatSessionRegistry.java            (신규: in-memory 구독자 관리)
+    └── OpenChatWebSocketEventListener.java     (수정: SessionRegistry 사용 + READ 이벤트)
 ```
 
 ---
 
 ## 10. 설계 결정 사항 (ADR)
 
-### ADR-01: 재요청 시 기존 레코드 삭제 후 신규 삽입
-- **결정**: REJECTED/CANCELED 레코드를 삭제하고 새 PENDING 레코드를 삽입
-- **이유**: `(requesterId, targetId, roomId)` UNIQUE 제약으로 중복 활성 요청을 DB 레벨에서 원천 차단, 쿼리 단순화
-- **trade-off**: 요청 이력이 사라지나, 이력 조회 요구사항이 없으므로 허용
+### ADR-01: DB 스키마 변경 없이 기존 `lastReadMessageId` 컬럼 활용
+- **결정**: `open_chat_participant.last_read_message_id` 컬럼은 이미 존재. Flyway 마이그레이션 불필요
+- **이유**: 기존 필드가 읽음 커서 목적으로 설계됨
+- **trade-off**: `lastReadMessageId`가 NULL인 경우(한 번도 읽지 않음)를 `unreadCount` 계산에서 반드시 처리해야 함 (현재 `countReadByRoomIdAndMessageId`에서 `isNotNull()` 조건으로 이미 처리 중)
 
-### ADR-02: 채팅방 퇴장 연동을 Controller 순차 호출로 처리
-- **결정**: `openChat` 도메인 서비스에 `studentIdDisclosure` 의존성을 추가하지 않고, Controller에서 leave → deleteByRoomAndUser 순서로 호출
-- **이유**: 도메인 간 결합 제거, 두 작업 모두 실패해도 재시도 가능(멱등)
-- **trade-off**: 퇴장 성공 후 삭제 실패 시 고아 레코드 발생 가능 — ACCEPTED 레코드가 남아있어도 방 참여자가 아니면 실제 노출되지 않으므로 허용
+### ADR-02: 구독자 일괄 업데이트에 JPQL bulk update 사용
+- **결정**: `UPDATE OpenChatParticipant SET lastReadMessageId = :messageId WHERE roomId = :roomId AND userId IN :userIds`
+- **이유**: 구독자 수에 비례한 N+1 쿼리 방지. 단일 쿼리로 처리
+- **trade-off**: 영속성 컨텍스트 우회. 단, bulk update 후 같은 트랜잭션에서 해당 엔티티를 재조회하지 않으므로 1차 캐시 불일치 무해
 
-### ADR-03: FCM 알림에 기존 NotificationType.CHAT 재사용
-- **결정**: 별도 `STUDENT_ID_DISCLOSURE` 타입 추가 없이 기존 `CHAT` 타입 사용
-- **이유**: 이미 `CHAT` 타입이 존재하며, 사용자 알림 수신 설정 UI를 변경하지 않아도 됨
-- **trade-off**: 알림 종류를 세분화할 수 없으나, 현재 요구사항에서 불필요
+### ADR-03: OpenChatSessionRegistry를 별도 Spring 컴포넌트로 분리
+- **결정**: 기존 `OpenChatWebSocketEventListener`의 static map을 `OpenChatSessionRegistry` 빈으로 추출
+- **이유**: `OpenChatMessageService`가 구독자 목록에 접근해야 하므로, static 접근보다 DI 방식이 테스트 가능성·교체 가능성에서 우수
+- **trade-off**: 클래스 하나 추가. 멀티 서버 전환 시 인터페이스화 권장 (현재 범위 외)
+
+### ADR-04: READ 이벤트를 별도 토픽 `/sub/openchat/{roomId}/read`로 분리
+- **결정**: 기존 `/sub/openchat/{roomId}` 메시지 토픽과 READ 이벤트 토픽을 분리
+- **이유**: 메시지 토픽 구독자가 READ 이벤트를 필터링하지 않아도 됨. 역할 명확 분리
+- **trade-off**: 클라이언트가 두 토픽을 구독해야 함
 
 ---
 
 ## 11. 아키텍처 위험 요소
 
-- **위험 1 — 고아 레코드**: 채팅방 퇴장 후 `deleteByRoomAndUser` 실패 시 ACCEPTED 레코드가 잔존. 방 참여자 여부를 함께 검증하는 조회 쿼리로 방어 가능.
-- **위험 2 — 방향성 중복**: A→B와 B→A는 별개 레코드. "공개 관계" 조회 시 두 방향을 모두 검색해야 함 (`(requesterId=A AND targetId=B) OR (requesterId=B AND targetId=A)`). 조회 쿼리 설계 시 반드시 고려.
-- **위험 3 — N+1**: 채팅방 참여자 목록 조회 시 각 참여자마다 학번 공개 여부를 단건 조회하면 N+1 발생. 조회 API는 roomId + currentUserId 기준으로 ACCEPTED 레코드를 한 번에 조회 후 매핑 필요.
+- **위험 1 — SessionRegistry 메모리 누수**: `SessionDisconnectEvent`가 정상 발생하지 않는 비정상 종료 시 구독자 정보가 registry에 잔류
+  - 권고: `SimpUserRegistry` 또는 Spring WebSocket의 연결 감시 활용. 또는 heartbeat 기반 주기적 정리 고려
+
+- **위험 2 — getMessages() 호출 후 READ 이벤트 전파 시 트랜잭션 충돌**: `@Transactional` 내부에서 `messagingTemplate.convertAndSend`를 호출하면 트랜잭션 커밋 전 이벤트가 전파될 수 있음
+  - 권고: 기존 `sendMessage()`도 동일 방식으로 동작 중이므로 일관성 유지. 만약 커밋 후 전파가 필요하다면 `TransactionSynchronizationManager.registerSynchronization()` 적용
+
+- **위험 3 — 대규모 방에서 구독자 목록 조회 성능**: `getSubscriberUserIds(roomId)` 가 `Set<Long>`을 defensive copy로 반환 시 대규모 구독자 방에서 오버헤드 가능
+  - 권고: 오픈채팅 방 최대 참여 인원(`maxParticipants`) 범위 내에서는 허용 가능. 필요 시 unmodifiableSet으로 대체
 
 ---
 
 ## 12. TBD
 
-- [ ] 채팅 메시지에서 학번 표시 시점: 수락 이후 메시지부터만 표시할지, 이전 메시지에도 소급 적용할지
-- [ ] 채팅방 삭제 시 연쇄 삭제 방식: DB Cascade vs. 서비스 레이어 순차 삭제
+- [ ] `OpenChatSessionRegistry`를 인터페이스로 분리하여 멀티 서버 전환 시 Redis 구현체로 교체 가능하도록 할지 (현재 범위 외)
+- [ ] 이미지 메시지 전송 HTTP API(`POST /openchat/message/image`) 호출 시 READ 이벤트 전파 여부 (이 API는 WebSocket 경유하지 않으므로 `sendImageMessage` 내에서도 동일 처리 필요)
+- [ ] 한 사용자가 여러 기기로 동시 접속 시 userId 단위 중복 처리 확인 (현재 `Set<userId>` 구조로 자연 중복 제거)
