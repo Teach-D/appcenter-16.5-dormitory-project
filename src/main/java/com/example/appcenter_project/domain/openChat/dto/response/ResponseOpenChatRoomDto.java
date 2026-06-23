@@ -2,6 +2,7 @@ package com.example.appcenter_project.domain.openChat.dto.response;
 
 import com.example.appcenter_project.domain.openChat.entity.OpenChatRoom;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomScope;
+import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomType;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -15,6 +16,9 @@ public class ResponseOpenChatRoomDto {
     private String name;
     private String description;
     private OpenChatRoomScope scope;
+    private OpenChatRoomType roomType;
+    private boolean isPublic;
+    private boolean hasPassword;
     private int currentParticipants;
     private int maxParticipants;
     private boolean isJoined;
@@ -28,6 +32,9 @@ public class ResponseOpenChatRoomDto {
                 .name(room.getName())
                 .description(room.getDescription())
                 .scope(room.getScope())
+                .roomType(room.getRoomType())
+                .isPublic(room.isPublic())
+                .hasPassword(room.getPassword() != null)
                 .currentParticipants(currentParticipants)
                 .maxParticipants(room.getMaxParticipants())
                 .isJoined(joined)
@@ -43,6 +50,9 @@ public class ResponseOpenChatRoomDto {
                 .name(room.getName())
                 .description(room.getDescription())
                 .scope(room.getScope())
+                .roomType(room.getRoomType())
+                .isPublic(room.isPublic())
+                .hasPassword(room.getPassword() != null)
                 .currentParticipants(currentParticipants)
                 .maxParticipants(room.getMaxParticipants())
                 .isJoined(joined)
