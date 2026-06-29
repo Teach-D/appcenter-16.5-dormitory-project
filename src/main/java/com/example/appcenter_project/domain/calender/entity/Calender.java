@@ -3,7 +3,6 @@ package com.example.appcenter_project.domain.calender.entity;
 import com.example.appcenter_project.domain.calender.dto.request.RequestCalenderDto;
 import com.example.appcenter_project.common.BaseTimeEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,7 +21,12 @@ public class Calender extends BaseTimeEntity {
     private LocalDate startDate;
     private LocalDate endDate;
     private String title;
+
+    @Column(columnDefinition = "TEXT")
     private String link;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
     @Column(name = "source_announcement_id")
     private Long sourceAnnouncementId;
@@ -31,11 +35,12 @@ public class Calender extends BaseTimeEntity {
     private boolean aiGenerated = false;
 
     @Builder
-    public Calender(LocalDate startDate, LocalDate endDate, String title, String link) {
+    public Calender(LocalDate startDate, LocalDate endDate, String title, String link, String description) {
         this.startDate = startDate;
         this.endDate = endDate;
         this.title = title;
         this.link = link;
+        this.description = description;
     }
 
     public void update(RequestCalenderDto dto) {
@@ -55,12 +60,14 @@ public class Calender extends BaseTimeEntity {
     }
 
     public static Calender ofAiGenerated(LocalDate startDate, LocalDate endDate,
-                                         String title, String link, Long sourceAnnouncementId) {
+                                         String title, String link, String description,
+                                         Long sourceAnnouncementId) {
         Calender calender = Calender.builder()
                 .startDate(startDate)
                 .endDate(endDate)
                 .title(title)
                 .link(link)
+                .description(description)
                 .build();
         calender.sourceAnnouncementId = sourceAnnouncementId;
         calender.aiGenerated = true;

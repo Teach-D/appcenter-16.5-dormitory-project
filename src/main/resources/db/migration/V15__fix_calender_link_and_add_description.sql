@@ -1,0 +1,2 @@
+ALTER TABLE calender MODIFY COLUMN link TEXT;
+ALTER TABLE calender ADD COLUMN description TEXT NULL;
