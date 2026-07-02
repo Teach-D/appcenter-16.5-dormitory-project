@@ -3,6 +3,7 @@ package com.example.appcenter_project.domain.groupOrder.service;
 import com.example.appcenter_project.common.image.entity.Image;
 import com.example.appcenter_project.common.image.enums.ImageType;
 import com.example.appcenter_project.common.image.repository.ImageRepository;
+import com.example.appcenter_project.domain.groupOrder.dto.response.GroupOrderListProjection;
 import com.example.appcenter_project.domain.groupOrder.entity.GroupOrder;
 import com.example.appcenter_project.domain.groupOrder.enums.GroupOrderSort;
 import com.example.appcenter_project.domain.groupOrder.enums.GroupOrderType;
@@ -79,7 +80,7 @@ class GroupOrderN1IntegrationTest {
         em.clear();
 
         // when: page=0, size=10
-        List<GroupOrder> result = groupOrderRepository.findGroupOrdersComplex(
+        List<GroupOrderListProjection> result = groupOrderRepository.findGroupOrdersComplex(
                 GroupOrderSort.LATEST, GroupOrderType.ALL, null, PageRequest.of(0, 10));
 
         // then: SQL LIMIT 10 적용 → 10개만 반환
@@ -95,14 +96,14 @@ class GroupOrderN1IntegrationTest {
         em.clear();
 
         // when
-        List<GroupOrder> page0 = groupOrderRepository.findGroupOrdersComplex(
+        List<GroupOrderListProjection> page0 = groupOrderRepository.findGroupOrdersComplex(
                 GroupOrderSort.LATEST, GroupOrderType.ALL, null, PageRequest.of(0, 10));
-        List<GroupOrder> page1 = groupOrderRepository.findGroupOrdersComplex(
+        List<GroupOrderListProjection> page1 = groupOrderRepository.findGroupOrdersComplex(
                 GroupOrderSort.LATEST, GroupOrderType.ALL, null, PageRequest.of(1, 10));
 
         // then: 두 페이지 결과가 겹치지 않음 (OFFSET 적용)
-        List<Long> page0Ids = page0.stream().map(GroupOrder::getId).toList();
-        List<Long> page1Ids = page1.stream().map(GroupOrder::getId).toList();
+        List<Long> page0Ids = page0.stream().map(GroupOrderListProjection::getId).toList();
+        List<Long> page1Ids = page1.stream().map(GroupOrderListProjection::getId).toList();
         assertThat(page0Ids).doesNotContainAnyElementsOf(page1Ids);
     }
 
@@ -115,11 +116,11 @@ class GroupOrderN1IntegrationTest {
         em.clear();
 
         // when
-        List<GroupOrder> page0 = groupOrderRepository.findGroupOrdersComplex(
+        List<GroupOrderListProjection> page0 = groupOrderRepository.findGroupOrdersComplex(
                 GroupOrderSort.LATEST, GroupOrderType.ALL, null, PageRequest.of(0, 10));
-        List<GroupOrder> page1 = groupOrderRepository.findGroupOrdersComplex(
+        List<GroupOrderListProjection> page1 = groupOrderRepository.findGroupOrdersComplex(
                 GroupOrderSort.LATEST, GroupOrderType.ALL, null, PageRequest.of(1, 10));
-        List<GroupOrder> page2 = groupOrderRepository.findGroupOrdersComplex(
+        List<GroupOrderListProjection> page2 = groupOrderRepository.findGroupOrdersComplex(
                 GroupOrderSort.LATEST, GroupOrderType.ALL, null, PageRequest.of(2, 10));
 
         // then
@@ -209,11 +210,11 @@ class GroupOrderN1IntegrationTest {
         stats.clear();
 
         // when: ① 페이징 목록 조회
-        List<GroupOrder> page = groupOrderRepository.findGroupOrdersComplex(
+        List<GroupOrderListProjection> page = groupOrderRepository.findGroupOrdersComplex(
                 GroupOrderSort.LATEST, GroupOrderType.ALL, null, PageRequest.of(0, 20));
 
         // ② 해당 페이지의 이미지만 batch 조회
-        List<Long> pageIds = page.stream().map(GroupOrder::getId).toList();
+        List<Long> pageIds = page.stream().map(GroupOrderListProjection::getId).toList();
         imageRepository.findGroupOrderImagesByEntityIds(pageIds);
 
         long totalQueryCount = stats.getQueryExecutionCount();

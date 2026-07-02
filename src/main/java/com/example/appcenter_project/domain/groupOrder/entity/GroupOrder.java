@@ -2,6 +2,7 @@ package com.example.appcenter_project.domain.groupOrder.entity;
 
 import com.example.appcenter_project.domain.groupOrder.dto.request.RequestGroupOrderDto;
 import com.example.appcenter_project.common.BaseTimeEntity;
+import com.example.appcenter_project.domain.place.entity.Place;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.groupOrder.enums.GroupOrderType;
 import jakarta.persistence.*;
@@ -43,6 +44,13 @@ public class GroupOrder extends BaseTimeEntity {
     private String description;
 
     private boolean recruitmentComplete = false;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "place_id")
+    private Place place;
+
+    @Column(name = "raw_place_name", length = 100)
+    private String rawPlaceName;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_order_chat_room_id")
@@ -106,5 +114,10 @@ public class GroupOrder extends BaseTimeEntity {
     public boolean isLikedBy(User user) {
         return groupOrderLikeList.stream()
                 .anyMatch(groupOrderLike -> groupOrderLike.getUser().equals(user));
+    }
+
+    public void assignPlace(Place place, String rawName) {
+        this.place = place;
+        this.rawPlaceName = rawName;
     }
 }

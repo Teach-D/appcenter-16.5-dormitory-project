@@ -22,7 +22,7 @@ public interface ImageRepository extends JpaRepository<Image, Long> {
     List<Image> findTipImagesByEntityIds(@Param("boardIds") List<Long> boardIds);
 
     // GroupOrder 이미지 관련 메서드 추가
-    @Query("SELECT i FROM Image i WHERE i.imageType = 'GROUP_ORDER' AND i.entityId IN :boardIds")
+    @Query("SELECT i FROM Image i WHERE i.imageType = 'GROUP_ORDER' AND i.entityId IN :boardIds AND i.isDefault = true")
     List<Image> findGroupOrderImagesByEntityIds(@Param("boardIds") List<Long> boardIds);
 
     List<Image> findByImageTypeAndEntityId(ImageType imageType, Long entityId);

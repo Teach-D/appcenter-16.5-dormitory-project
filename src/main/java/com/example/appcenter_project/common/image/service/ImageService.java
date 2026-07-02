@@ -52,7 +52,7 @@ public class ImageService {
     public void saveImage(ImageType imageType, Long entityId, MultipartFile image) {
         if (isImageNotEmpty(image)) {
             String directoryPath = createDirectory(imageType);
-            createAndSaveImage(directoryPath, image, entityId, imageType);
+            createAndSaveImage(directoryPath, image, entityId, imageType, true);
         }
     }
 
@@ -237,17 +237,17 @@ public class ImageService {
     }
 
     private void createAndSaveImages(String directoryPath, List<MultipartFile> images, Long entityId, ImageType imageType) {
-        for (MultipartFile imageFile : images) {
-           createAndSaveImage(directoryPath, imageFile, entityId, imageType);
+        for (int i = 0; i < images.size(); i++) {
+            createAndSaveImage(directoryPath, images.get(i), entityId, imageType, i == 0);
         }
     }
 
-    private void createAndSaveImage(String directoryPath, MultipartFile image, Long entityId, ImageType imageType) {
+    private void createAndSaveImage(String directoryPath, MultipartFile image, Long entityId, ImageType imageType, boolean isDefault) {
         try {
             // HEIC 파일인 경우 처리
             MultipartFile processedImage = image;
             String imageName;
-            
+
             if (isHeicFile(image)) {
                 log.warn("HEIC 파일 감지: {}. 변환을 시도합니다.", image.getOriginalFilename());
                 try {
@@ -261,9 +261,9 @@ public class ImageService {
             } else {
                 imageName = createImageName(entityId, image, imageType);
             }
-            
+
             File savedImageInDirectory = saveImageToDirectory(directoryPath, processedImage, imageName);
-            saveImageToDB(entityId, imageType, savedImageInDirectory, imageName);
+            saveImageToDB(entityId, imageType, savedImageInDirectory, imageName, isDefault);
         } catch (IOException e) {
             log.error("{} 타입의 entityId : {} 이미지가 저장 실패했습니다 ", imageType, entityId, e);
             throw new CustomException(IMAGE_SAVE_FAIL);
@@ -334,8 +334,14 @@ public class ImageService {
         return destinationFile;
     }
 
-    private void saveImageToDB(Long entityId, ImageType imageType, File destinationFile, String imageName) {
-        Image image = Image.of(destinationFile.getAbsolutePath(), imageName, imageType, entityId);
+    private void saveImageToDB(Long entityId, ImageType imageType, File destinationFile, String imageName, boolean isDefault) {
+        Image image = Image.builder()
+                .filePath(destinationFile.getAbsolutePath())
+                .fileName(imageName)
+                .imageType(imageType)
+                .entityId(entityId)
+                .isDefault(isDefault)
+                .build();
         imageRepository.save(image);
     }
 

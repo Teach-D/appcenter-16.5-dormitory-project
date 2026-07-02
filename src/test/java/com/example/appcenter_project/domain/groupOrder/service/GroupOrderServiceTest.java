@@ -5,6 +5,7 @@ import com.example.appcenter_project.common.image.enums.ImageType;
 import com.example.appcenter_project.common.image.repository.ImageRepository;
 import com.example.appcenter_project.common.image.service.ImageService;
 import com.example.appcenter_project.domain.groupOrder.dto.request.RequestGroupOrderDto;
+import com.example.appcenter_project.domain.groupOrder.dto.response.GroupOrderListProjection;
 import com.example.appcenter_project.domain.groupOrder.dto.response.ResponseGroupOrderDetailDto;
 import com.example.appcenter_project.domain.groupOrder.dto.response.ResponseGroupOrderDto;
 import com.example.appcenter_project.domain.groupOrder.dto.response.ResponseGroupOrderPopularSearch;
@@ -15,11 +16,13 @@ import com.example.appcenter_project.domain.groupOrder.entity.GroupOrderPopularS
 import com.example.appcenter_project.domain.groupOrder.enums.GroupOrderSort;
 import com.example.appcenter_project.domain.groupOrder.enums.GroupOrderType;
 import com.example.appcenter_project.domain.groupOrder.repository.*;
+import com.example.appcenter_project.domain.place.service.PlaceResolver;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.global.scheduler.MealTimeChecker;
 import jakarta.servlet.http.HttpServletRequest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -58,19 +61,30 @@ class GroupOrderServiceTest {
     @Mock private AsyncViewCountService asyncViewCountService;
     @Mock private MealTimeChecker mealTimeChecker;
     @Mock private GroupOrderNotificationService groupOrderNotificationService;
+    @Mock private GroupOrderCreateService groupOrderCreateService;
     @Mock private HttpServletRequest httpServletRequest;
 
     @InjectMocks
     private GroupOrderService groupOrderService;
+
+    @BeforeEach
+    void setUp() {
+        groupOrderService = new GroupOrderService(
+                groupOrderRepository, userRepository, groupOrderLikeRepository,
+                groupOrderCommentRepository, imageRepository,
+                groupOrderPopularSearchKeywordRepository, imageService,
+                asyncViewCountService, mealTimeChecker, groupOrderNotificationService,
+                null, groupOrderCreateService);
+    }
 
     // ===== findGroupOrders - N+1 해소 검증 =====
 
     @Test
     @DisplayName("목록 조회 - 이미지 batch IN 쿼리 1회만 호출 (N+1 해소)")
     void findGroupOrders_이미지_batch_조회_1회() {
-        GroupOrder g1 = mock(GroupOrder.class);
-        GroupOrder g2 = mock(GroupOrder.class);
-        GroupOrder g3 = mock(GroupOrder.class);
+        GroupOrderListProjection g1 = mock(GroupOrderListProjection.class);
+        GroupOrderListProjection g2 = mock(GroupOrderListProjection.class);
+        GroupOrderListProjection g3 = mock(GroupOrderListProjection.class);
         when(g1.getId()).thenReturn(1L);
         when(g2.getId()).thenReturn(2L);
         when(g3.getId()).thenReturn(3L);
@@ -98,8 +112,8 @@ class GroupOrderServiceTest {
     @Test
     @DisplayName("목록 조회 - 이미지 Map으로 게시글별 올바르게 매핑")
     void findGroupOrders_이미지_Map_매핑_정확() {
-        GroupOrder g1 = mock(GroupOrder.class);
-        GroupOrder g2 = mock(GroupOrder.class);
+        GroupOrderListProjection g1 = mock(GroupOrderListProjection.class);
+        GroupOrderListProjection g2 = mock(GroupOrderListProjection.class);
         when(g1.getId()).thenReturn(1L);
         when(g2.getId()).thenReturn(2L);
         when(g1.isRecruitmentComplete()).thenReturn(false);
@@ -187,25 +201,18 @@ class GroupOrderServiceTest {
     @Test
     @DisplayName("공동구매 저장 - 정상 저장 및 알림 발송")
     void saveGroupOrder_정상_저장() {
-        User mockUser = mock(User.class);
-        GroupOrder mockGroupOrder = mock(GroupOrder.class);
-        when(mockGroupOrder.getId()).thenReturn(1L);
-        when(mockGroupOrder.getUser()).thenReturn(mockUser);
-
         RequestGroupOrderDto requestDto = mock(RequestGroupOrderDto.class);
-        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
-        when(groupOrderRepository.save(any(GroupOrder.class))).thenReturn(mockGroupOrder);
 
         groupOrderService.saveGroupOrder(1L, requestDto, null);
 
-        verify(groupOrderRepository).save(any(GroupOrder.class));
-        verify(groupOrderNotificationService).sendNotifications(any(GroupOrder.class));
+        verify(groupOrderCreateService).createAndPersist(eq(1L), eq(requestDto), any(), any(), any());
     }
 
     @Test
     @DisplayName("공동구매 저장 - 유저 없으면 예외")
     void saveGroupOrder_유저_없으면_예외() {
-        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+        doThrow(new CustomException(USER_NOT_FOUND))
+                .when(groupOrderCreateService).createAndPersist(eq(99L), any(), any(), any(), any());
 
         assertThatThrownBy(() -> groupOrderService.saveGroupOrder(99L, mock(RequestGroupOrderDto.class), null))
                 .isInstanceOf(CustomException.class)

@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 public enum GroupOrderType {
 
     ALL("전체"),
+    FOOD("음식점"),
     DELIVERY("배달"),
     GROCERY("식자재"),
     LIFE_ITEM("생활용품"),
