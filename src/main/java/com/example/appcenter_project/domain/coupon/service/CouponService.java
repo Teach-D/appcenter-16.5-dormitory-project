@@ -18,10 +18,12 @@ import com.example.appcenter_project.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
+import java.util.List;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -34,6 +36,15 @@ public class CouponService {
 
     private static final String REDIS_KEY = "coupon_date_time";
     private static final String REDIS_STOCK_KEY = "coupon_stock";
+    private static final DefaultRedisScript<Long> DECR_SCRIPT = new DefaultRedisScript<>(
+            "local current = redis.call('DECR', KEYS[1]) " +
+            "if current < 0 then " +
+            "  redis.call('INCR', KEYS[1]) " +
+            "  return -1 " +
+            "end " +
+            "return current",
+            Long.class
+    );
 
     private final CouponRepository couponRepository;
     private final NotificationRepository notificationRepository;
@@ -155,10 +166,9 @@ public class CouponService {
 
     private boolean decrementStockCache() {
         try {
-            Long newStock = redisTemplate.opsForValue().decrement(REDIS_STOCK_KEY);
-            if (newStock != null && newStock < 0) {
-                redisTemplate.opsForValue().increment(REDIS_STOCK_KEY);
-                log.warn("Redis 재고 음수 감지, INCR 롤백 - newStock: {}", newStock);
+            Long result = redisTemplate.execute(DECR_SCRIPT, List.of(REDIS_STOCK_KEY));
+            if (result != null && result < 0) {
+                log.warn("Redis 재고 음수 감지, Lua 롤백 완료");
                 return false;
             }
             return true;
