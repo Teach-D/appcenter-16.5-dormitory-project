@@ -5,6 +5,7 @@ import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.groupOrder.enums.GroupOrderType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
@@ -30,6 +31,12 @@ public class RequestGroupOrderDto {
     private LocalDateTime deadline;
 
     private String description;
+
+    @Size(max = 30, message = "placeId는 최대 30자까지 입력 가능합니다.")
+    private String placeId;
+
+    @Size(max = 100, message = "rawPlaceName은 최대 100자까지 입력 가능합니다.")
+    private String rawPlaceName;
 
     public static GroupOrder of(RequestGroupOrderDto dto, User user) {
         return GroupOrder.builder()

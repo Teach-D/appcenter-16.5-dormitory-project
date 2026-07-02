@@ -179,6 +179,12 @@ public class SecurityConfig {
                         /** 학번 공개 **/
                         .requestMatchers("/student-id-disclosures/**").authenticated()
 
+                        /** 장소 검색 **/
+                        .requestMatchers(GET, "/places/search").authenticated()
+
+                        /** 어드민 장소 관리 **/
+                        .requestMatchers("/admin/places/**").hasRole("ADMIN")
+
                         /** 나머지 **/
                         .anyRequest().authenticated()
                 )

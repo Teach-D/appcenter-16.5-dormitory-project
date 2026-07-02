@@ -24,7 +24,8 @@ public class ResponseSurveyDetailDto {
     private SurveyStatus status;
     private LocalDateTime createdDate;
     private Integer totalResponses;
-    private boolean hasSubmitted = false;  // 사용자 제출 여부
+    @Builder.Default
+    private boolean hasSubmitted = false;
     private int recruitmentCount;
 
     @Builder.Default

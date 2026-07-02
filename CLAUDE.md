@@ -60,52 +60,44 @@
 4. **AI 기여도 기록** — PR 완료 시 `.claude/ai-metrics.md`에 보완비율·clarification 횟수 기록
 
 ## 세션 실패 기록
-### 2026-06-17 22:30 UTC (세션: d1dd051a)
+### 2026-07-02 04:10 UTC (세션: 9bce22fb)
 
-- `Write(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>`
-- `Bash(Test-Path "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory)` → `Exit code 127`
-- `Bash(ls "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 2`
-- `Bash(gh auth status 2>&1)` → `Exit code 127`
-- `Bash(git status --porcelain 2>&1)` → `<tool_use_error>Cancelled: parallel tool call Bash(gh auth status 2>&1) errored</tool_use_error>`
-- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 127`
-- `Bash(where gh 2>&1; powershell -Command "where.exe gh 2>&1")` → `Exit code 1`
+- `ExitPlanMode(# 플랜: userId 기반 매크로 차단
 
-### 2026-06-17 11:06 UTC (세션: adc029a1)
+## Context
 
-- `Bash(dir /b "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-pr)` → `Exit code 2`
-- `Edit(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\sr)` → `<tool_use_error>String to replace not found in file.`
-- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 1`
-- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 128`
-- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 1`
-- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 2`
-- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 1`
-- `Write(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\sr)` → `<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>`
+이전 대화에서 "매크로 전용 차단 레이어가 없다"고 답했으나, 코드 탐색 결과 )` → `The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to`
 
-### 2026-06-17 07:05 UTC (세션: adc029a1)
+### 2026-06-30 08:08 UTC (세션: dfa844c1)
 
-- `Bash(dir /b "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-pr)` → `Exit code 2`
-- `Edit(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\sr)` → `<tool_use_error>String to replace not found in file.`
-- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 1`
-- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 128`
-- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 1`
-- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 2`
-- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 1`
-- `Write(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\sr)` → `<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>`
-
-### 2026-06-17 05:52 UTC (세션: adc029a1)
-
-- `Bash(dir /b "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-pr)` → `Exit code 2`
-
-### 2026-06-16 13:17 UTC (세션: 5cd535ff)
-
-- `Bash(ls "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 2`
-- `Bash(gh auth status 2>&1)` → `Exit code 127`
-- `Read(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\.c)` → `<tool_use_error>Cancelled: parallel tool call Bash(gh auth status 2>&1) errored</tool_use_error>`
-- `Bash(powershell -Command "gh auth status 2>&1")` → `Exit code 1`
-- `Read(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\.c)` → `<tool_use_error>Cancelled: parallel tool call Bash(powershell -Command "gh auth status 2>&1…) errored</tool_use_error>`
-- `Write(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>`
-- `Write(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `PreToolUse:Write hook error: [bash .claude/hooks/check-checkout.sh]: No stderr output`
 - `Edit(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `PreToolUse:Edit hook error: [bash .claude/hooks/check-checkout.sh]: No stderr output`
+
+### 2026-06-30 05:24 UTC (세션: dafd86e1)
+
 - `Read(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `File does not exist. Note: your current working directory is C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project.`
-- `Bash(cd "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-projec)` → `Exit code 127`
-- `Bash(where gh 2>&1 || powershell -Command "where.exe gh 2>&1")` → `Exit code 1`
+
+### 2026-06-30 05:24 UTC (세션: 5840f021)
+
+- `Write(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>`
+- `Bash(gh auth status 2>&1)` → `Exit code 127`
+- `Bash(git status --porcelain)` → `<tool_use_error>Cancelled: parallel tool call Bash(gh auth status 2>&1) errored</tool_use_error>`
+- `Bash(powershell -NoProfile -Command "gh auth status" 2>&1)` → `Exit code 1`
+- `Bash(git status --porcelain)` → `<tool_use_error>Cancelled: parallel tool call Bash(powershell -NoProfile -Command "gh auth …) errored</tool_use_error>`
+- `mcp__github__create_issue(Teach-D)` → `MCP error -32603: Failed to create issue: Bad credentials`
+- `Edit(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\.c)` → `<tool_use_error>Claude Code settings.json validation failed after edit:`
+- `Glob(.mcp.json)` → `Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific pat`
+- `Bash(git -C "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-pr)` → `Exit code 1`
+- `mcp__github__get_issue(Teach-D)` → `MCP error -32603: Authentication Failed: Bad credentials`
+
+### 2026-06-30 05:24 UTC (세션: 5840f021)
+
+- `Write(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>`
+- `Bash(gh auth status 2>&1)` → `Exit code 127`
+- `Bash(git status --porcelain)` → `<tool_use_error>Cancelled: parallel tool call Bash(gh auth status 2>&1) errored</tool_use_error>`
+- `Bash(powershell -NoProfile -Command "gh auth status" 2>&1)` → `Exit code 1`
+- `Bash(git status --porcelain)` → `<tool_use_error>Cancelled: parallel tool call Bash(powershell -NoProfile -Command "gh auth …) errored</tool_use_error>`
+- `mcp__github__create_issue(Teach-D)` → `MCP error -32603: Failed to create issue: Bad credentials`
+- `Edit(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\.c)` → `<tool_use_error>Claude Code settings.json validation failed after edit:`
+- `Glob(.mcp.json)` → `Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific pat`
+- `Bash(git -C "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-pr)` → `Exit code 1`
+- `mcp__github__get_issue(Teach-D)` → `MCP error -32603: Authentication Failed: Bad credentials`
