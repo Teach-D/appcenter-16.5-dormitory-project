@@ -1,6 +1,8 @@
 package com.example.appcenter_project.domain.openChat.service;
 
+import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateDerivedRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateOpenChatRoomDto;
+import com.example.appcenter_project.domain.openChat.dto.response.ResponseDerivedRoomCreatedDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseLeaveOpenChatRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatParticipantDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatParticipantListDto;
@@ -10,6 +12,7 @@ import com.example.appcenter_project.domain.openChat.entity.OpenChatParticipant;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatRoom;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomScope;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomTab;
+import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomType;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatMessageRepository;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatParticipantRepository;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatRoomRepository;
@@ -54,6 +57,21 @@ public class OpenChatRoomService {
         this.openChatMessageRepository = openChatMessageRepository;
         this.userRepository = userRepository;
         this.openChatMessageService = openChatMessageService;
+    }
+
+    @Transactional
+    public ResponseDerivedRoomCreatedDto createDerivedRoom(Long userId, RequestCreateDerivedRoomDto request) {
+        OpenChatRoom derivedRoom = OpenChatRoom.createDerived(
+                request.getName(),
+                request.getDescription(),
+                request.getMaxParticipants(),
+                userId,
+                request.getPassword(),
+                request.getIsPublic()
+        );
+        OpenChatRoom savedRoom = openChatRoomRepository.save(derivedRoom);
+        openChatParticipantRepository.save(OpenChatParticipant.create(savedRoom.getId(), userId, true));
+        return ResponseDerivedRoomCreatedDto.of(savedRoom.getId());
     }
 
     @Transactional
@@ -104,7 +122,7 @@ public class OpenChatRoomService {
     }
 
     @Transactional
-    public ResponseOpenChatRoomDetailDto joinRoom(Long userId, Long roomId) {
+    public ResponseOpenChatRoomDetailDto joinRoom(Long userId, Long roomId, String password) {
         OpenChatRoom room = openChatRoomRepository.findByIdWithLock(roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND));
 
@@ -115,7 +133,11 @@ public class OpenChatRoomService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        if (room.getScope() == OpenChatRoomScope.DORMITORY) {
+        if (room.getRoomType() == OpenChatRoomType.DERIVED) {
+            if (!room.matchesPassword(password)) {
+                throw new CustomException(ErrorCode.OPEN_CHAT_ROOM_FORBIDDEN);
+            }
+        } else if (room.getScope() == OpenChatRoomScope.DORMITORY) {
             String userDorm = user.getDormType() != null ? user.getDormType().name() : null;
             String roomDorm = room.getCreatorDormitory();
             if (roomDorm == null || !roomDorm.equals(userDorm)) {

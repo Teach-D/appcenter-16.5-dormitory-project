@@ -54,8 +54,9 @@ public class OpenChatRoomController implements OpenChatRoomApiSpecification {
     @PostMapping("/{roomId}/participants/me")
     public ResponseEntity<ResponseOpenChatRoomDetailDto> joinRoom(
             @AuthenticationPrincipal CustomUserDetails user,
-            @PathVariable Long roomId) {
-        ResponseOpenChatRoomDetailDto result = openChatRoomService.joinRoom(user.getId(), roomId);
+            @PathVariable Long roomId,
+            @RequestParam(required = false) String password) {
+        ResponseOpenChatRoomDetailDto result = openChatRoomService.joinRoom(user.getId(), roomId, password);
         return ResponseEntity.ok(result);
     }
 

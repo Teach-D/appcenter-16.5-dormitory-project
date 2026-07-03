@@ -2,7 +2,7 @@ package com.example.appcenter_project.domain.openChat.controller;
 
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateDerivedRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseDerivedRoomCreatedDto;
-import com.example.appcenter_project.domain.openChat.service.OpenChatInvitationService;
+import com.example.appcenter_project.domain.openChat.service.OpenChatRoomService;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,13 +20,13 @@ import static org.springframework.http.HttpStatus.CREATED;
 @RequestMapping("/open-chat-rooms")
 public class OpenChatDerivedRoomController {
 
-    private final OpenChatInvitationService openChatInvitationService;
+    private final OpenChatRoomService openChatRoomService;
 
     @PostMapping("/derived")
     public ResponseEntity<ResponseDerivedRoomCreatedDto> createDerivedRoom(
             @AuthenticationPrincipal CustomUserDetails user,
             @RequestBody @Valid RequestCreateDerivedRoomDto request) {
-        ResponseDerivedRoomCreatedDto result = openChatInvitationService.createDerivedRoom(user.getId(), request);
+        ResponseDerivedRoomCreatedDto result = openChatRoomService.createDerivedRoom(user.getId(), request);
         return ResponseEntity.status(CREATED).body(result);
     }
 }

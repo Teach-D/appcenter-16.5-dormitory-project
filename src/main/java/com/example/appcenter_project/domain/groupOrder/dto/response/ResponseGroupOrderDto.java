@@ -42,8 +42,6 @@ public class ResponseGroupOrderDto extends ResponseBoardDto {
     }
 
     public static ResponseGroupOrderDto of(GroupOrder groupOrder, String imagePath) {
-
-        // groupOrderType이 null인 경우 기본값 설정
         String groupOrderTypeStr = groupOrder.getGroupOrderType() != null
                 ? groupOrder.getGroupOrderType().name()
                 : GroupOrderType.ETC.name();
@@ -59,6 +57,25 @@ public class ResponseGroupOrderDto extends ResponseBoardDto {
                 .viewCount(groupOrder.getGroupOrderViewCount())
                 .groupOrderType(groupOrderTypeStr)
                 .isRecruitmentComplete(groupOrder.isRecruitmentComplete())
+                .build();
+    }
+
+    public static ResponseGroupOrderDto ofProjection(GroupOrderListProjection p, String imagePath) {
+        String groupOrderTypeStr = p.getGroupOrderType() != null
+                ? p.getGroupOrderType().name()
+                : GroupOrderType.ETC.name();
+
+        return ResponseGroupOrderDto.builder()
+                .id(p.getId())
+                .title(p.getTitle())
+                .type("GROUP_ORDER")
+                .deadline(String.valueOf(p.getDeadline()))
+                .price(p.getPrice())
+                .createTime(p.getCreatedDate())
+                .imagePath(imagePath)
+                .viewCount(p.getViewCount())
+                .groupOrderType(groupOrderTypeStr)
+                .isRecruitmentComplete(p.isRecruitmentComplete())
                 .build();
     }
 }

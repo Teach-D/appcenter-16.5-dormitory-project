@@ -1,11 +1,15 @@
 package com.example.appcenter_project.domain.groupOrder.service;
 
+import com.example.appcenter_project.domain.groupOrder.dto.response.GroupOrderListProjection;
 import com.example.appcenter_project.domain.groupOrder.dto.response.ResponseGroupOrderCommentDto;
 import com.example.appcenter_project.domain.groupOrder.dto.response.ResponseGroupOrderDetailDto;
 import com.example.appcenter_project.domain.groupOrder.dto.response.ResponseGroupOrderDto;
 import com.example.appcenter_project.domain.groupOrder.dto.response.ResponseGroupOrderPopularSearch;
 import com.example.appcenter_project.domain.groupOrder.entity.*;
 import com.example.appcenter_project.domain.groupOrder.repository.*;
+import com.example.appcenter_project.domain.place.enums.NormalizationOutcome;
+import com.example.appcenter_project.domain.place.service.PlaceResolveResult;
+import com.example.appcenter_project.domain.place.service.PlaceResolver;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.common.image.dto.ImageLinkDto;
 import com.example.appcenter_project.domain.groupOrder.dto.request.RequestGroupOrderDto;
@@ -53,19 +57,32 @@ public class GroupOrderService {
     private final AsyncViewCountService asyncViewCountService;
     private final MealTimeChecker mealTimeChecker;
     private final GroupOrderNotificationService groupOrderNotificationService;
+    private final PlaceResolver placeResolver;
+    private final GroupOrderCreateService groupOrderCreateService;
 
     private static final int TOP_SEARCH_KEYWORD_COUNT = 10;
 
     // ========== Public Methods ========== //
 
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
     public void saveGroupOrder(Long userId, RequestGroupOrderDto requestGroupOrderDto, List<MultipartFile> images) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        GroupOrderType groupOrderType = requestGroupOrderDto.getGroupOrderType();
+        String placeId = requestGroupOrderDto.getPlaceId();
+        String rawPlaceName = requestGroupOrderDto.getRawPlaceName();
 
-        GroupOrder groupOrder = createGroupOrder(requestGroupOrderDto, user);
-        imageService.saveImages(ImageType.GROUP_ORDER, groupOrder.getId(), images);
+        boolean hasPlaceInput = (placeId != null && !placeId.isBlank())
+                || (rawPlaceName != null && !rawPlaceName.isBlank());
 
-        groupOrderNotificationService.sendNotifications(groupOrder);
+        if (hasPlaceInput && groupOrderType != GroupOrderType.FOOD) {
+            throw new CustomException(INVALID_PLACE_FOR_TYPE);
+        }
+
+        PlaceResolveResult resolveResult = null;
+        if (groupOrderType == GroupOrderType.FOOD && hasPlaceInput) {
+            resolveResult = placeResolver.resolve(placeId, rawPlaceName, groupOrderType);
+        }
+
+        groupOrderCreateService.createAndPersist(userId, requestGroupOrderDto, images, resolveResult, rawPlaceName);
     }
 
     public void addRating(Long groupOrderId, Float ratingScore) {
@@ -110,21 +127,33 @@ public class GroupOrderService {
     public List<ResponseGroupOrderDto> findGroupOrders(CustomUserDetails currentUser, GroupOrderSort sort, GroupOrderType type, String search, int page, int size, HttpServletRequest request) {
         addUserSearchLog(currentUser, search);
 
-        List<GroupOrder> groupOrders = groupOrderRepository.findGroupOrdersComplex(sort, type, search, PageRequest.of(page, size));
-        if (groupOrders.isEmpty()) {
+        List<GroupOrderListProjection> projections = groupOrderRepository.findGroupOrdersComplex(sort, type, search, PageRequest.of(page, size));
+        if (projections.isEmpty()) {
             return Collections.emptyList();
         }
 
-        List<Long> ids = groupOrders.stream().map(GroupOrder::getId).toList();
-        Map<Long, Image> representativeImageMap = buildRepresentativeImageMap(ids);
+        List<Long> ids = projections.stream().map(GroupOrderListProjection::getId).toList();
 
         LocalDateTime now = LocalDateTime.now();
+        List<Long> expiredIds = projections.stream()
+                .filter(p -> !p.isRecruitmentComplete() && now.isAfter(p.getDeadline()))
+                .map(GroupOrderListProjection::getId)
+                .toList();
+        if (!expiredIds.isEmpty()) {
+            groupOrderRepository.bulkMarkExpired(expiredIds);
+        }
+
+        Map<Long, Image> imageMap = imageRepository.findGroupOrderImagesByEntityIds(ids).stream()
+                .collect(Collectors.toMap(
+                        Image::getEntityId,
+                        image -> image,
+                        (existing, replacement) -> existing));
+
         List<ResponseGroupOrderDto> result = new ArrayList<>();
-        for (GroupOrder groupOrder : groupOrders) {
-            updateExpiredGroupOrder(groupOrder, now);
-            Image image = representativeImageMap.get(groupOrder.getId());
+        for (GroupOrderListProjection p : projections) {
+            Image image = imageMap.get(p.getId());
             String imagePath = image != null ? imageService.getImageUrl(ImageType.GROUP_ORDER, image, request) : null;
-            result.add(ResponseGroupOrderDto.of(groupOrder, imagePath));
+            result.add(ResponseGroupOrderDto.ofProjection(p, imagePath));
         }
         return result;
     }
@@ -209,6 +238,17 @@ public class GroupOrderService {
 
     private GroupOrder createGroupOrder(RequestGroupOrderDto requestGroupOrderDto, User user) {
         GroupOrder groupOrder = RequestGroupOrderDto.of(requestGroupOrderDto, user);
+        groupOrderRepository.save(groupOrder);
+        return groupOrder;
+    }
+
+    private GroupOrder createGroupOrderWithPlace(RequestGroupOrderDto requestGroupOrderDto, User user,
+                                                  PlaceResolveResult resolveResult, String rawPlaceName) {
+        GroupOrder groupOrder = RequestGroupOrderDto.of(requestGroupOrderDto, user);
+        if (resolveResult != null) {
+            String normalizedRaw = rawPlaceName != null && !rawPlaceName.isBlank() ? rawPlaceName : null;
+            groupOrder.assignPlace(resolveResult.getPlace(), normalizedRaw);
+        }
         groupOrderRepository.save(groupOrder);
         return groupOrder;
     }
@@ -362,11 +402,7 @@ public class GroupOrderService {
 
     private Map<Long, Image> buildRepresentativeImageMap(List<Long> groupOrderIds) {
         return imageRepository.findGroupOrderImagesByEntityIds(groupOrderIds).stream()
-                .collect(Collectors.toMap(
-                        Image::getEntityId,
-                        image -> image,
-                        (existing, replacement) -> existing
-                ));
+                .collect(Collectors.toMap(Image::getEntityId, image -> image));
     }
 
     private Map<Long, String> buildUserImageUrlMap(List<Long> userIds, HttpServletRequest request) {

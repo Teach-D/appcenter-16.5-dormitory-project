@@ -34,10 +34,11 @@ public interface OpenChatRoomApiSpecification {
             @RequestParam OpenChatRoomTab tab,
             Pageable pageable);
 
-    @Operation(summary = "채팅방 입장", description = "지정한 채팅방에 입장한다")
+    @Operation(summary = "채팅방 입장", description = "지정한 채팅방에 입장한다. 파생톡방에 비밀번호가 설정된 경우 password 파라미터 필요")
     ResponseEntity<ResponseOpenChatRoomDetailDto> joinRoom(
             @AuthenticationPrincipal CustomUserDetails user,
-            @PathVariable Long roomId);
+            @PathVariable Long roomId,
+            @RequestParam(required = false) String password);
 
     @Operation(summary = "채팅방 나가기", description = "채팅방에서 나간다")
     ResponseEntity<ResponseLeaveOpenChatRoomDto> leaveRoom(

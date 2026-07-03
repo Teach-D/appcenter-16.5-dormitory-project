@@ -27,6 +27,9 @@ public class ResponseCalenderDto {
     @Schema(description = "관련 링크", example = "https://example.com")
     private String link;
 
+    @Schema(description = "AI 추출 설명 (AI 생성 일정만 값 있음)", example = "기숙사 퇴실일")
+    private String description;
+
     @Schema(description = "원본 공지사항 ID (AI 생성 일정만 값 있음)", example = "42")
     private Long sourceAnnouncementId;
 
@@ -37,6 +40,7 @@ public class ResponseCalenderDto {
                 .endDate(calender.getEndDate())
                 .title(calender.getTitle())
                 .link(calender.getLink())
+                .description(calender.getDescription())
                 .sourceAnnouncementId(calender.getSourceAnnouncementId())
                 .build();
     }

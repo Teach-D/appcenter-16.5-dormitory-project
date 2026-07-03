@@ -24,9 +24,11 @@ public class ResponseGroupOrderDetailDto {
     private String description;
     private String link;
     private String openChatLink;
+    @Builder.Default
     private boolean isMyPost = false;
     private String authorImagePath;
     private String username;
+    @Builder.Default
     private boolean isCheckLikeCurrentUser = false;
     private boolean isRecruitmentComplete;
 

@@ -17,6 +17,7 @@ public class ResponseTipDetailDto {
     private String content;
     private Integer tipLikeCount;
     private String name;
+    @Builder.Default
     private boolean isCheckLikeCurrentUser = false;
     private String writerImageFile;
 

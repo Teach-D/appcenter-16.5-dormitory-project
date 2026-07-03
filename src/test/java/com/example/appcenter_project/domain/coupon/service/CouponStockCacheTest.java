@@ -22,6 +22,8 @@ import org.springframework.data.redis.core.ValueOperations;
 
 import java.util.Optional;
 
+import org.springframework.data.redis.core.script.RedisScript;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
@@ -43,7 +45,7 @@ class CouponStockCacheTest {
 
     @BeforeEach
     void setUp() {
-        given(redisTemplate.opsForValue()).willReturn(valueOperations);
+        lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
     }
 
     @Test
@@ -115,6 +117,6 @@ class CouponStockCacheTest {
 
         couponService.issuanceCoupon(1L, 1L);
 
-        verify(valueOperations).decrement("coupon_stock");
+        verify(redisTemplate).execute(any(RedisScript.class), anyList());
     }
 }

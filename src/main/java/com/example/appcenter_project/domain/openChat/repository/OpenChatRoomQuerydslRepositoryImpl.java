@@ -4,6 +4,7 @@ import com.example.appcenter_project.domain.openChat.entity.OpenChatRoom;
 import com.example.appcenter_project.domain.openChat.entity.QOpenChatParticipant;
 import com.example.appcenter_project.domain.openChat.entity.QOpenChatRoom;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomScope;
+import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomType;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
@@ -51,7 +52,14 @@ public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslR
     public List<OpenChatRoom> findAllPublicRooms() {
         return queryFactory
                 .selectFrom(openChatRoom)
-                .where(scopeEq(OpenChatRoomScope.ALL))
+                .where(
+                        openChatRoom.roomType.eq(OpenChatRoomType.OPEN)
+                                .and(openChatRoom.scope.eq(OpenChatRoomScope.ALL))
+                        .or(
+                                openChatRoom.roomType.eq(OpenChatRoomType.DERIVED)
+                                        .and(openChatRoom.isPublic.isTrue())
+                        )
+                )
                 .fetch();
     }
 

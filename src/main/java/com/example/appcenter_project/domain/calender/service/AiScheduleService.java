@@ -109,7 +109,7 @@ public class AiScheduleService {
             String key = title + "|" + start + "|" + end;
             if (!seen.add(key)) continue;
 
-            result.add(Calender.ofAiGenerated(start, end, title, link, id));
+            result.add(Calender.ofAiGenerated(start, end, title, link, item.getDescription(), id));
         }
 
         return result;

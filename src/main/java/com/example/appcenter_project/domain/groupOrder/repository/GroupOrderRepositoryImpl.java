@@ -1,5 +1,7 @@
 package com.example.appcenter_project.domain.groupOrder.repository;
 
+import com.example.appcenter_project.domain.groupOrder.dto.response.GroupOrderListProjection;
+import com.example.appcenter_project.domain.groupOrder.dto.response.QGroupOrderListProjection;
 import com.example.appcenter_project.domain.groupOrder.entity.GroupOrder;
 import com.example.appcenter_project.domain.groupOrder.enums.GroupOrderSort;
 import com.example.appcenter_project.domain.groupOrder.enums.GroupOrderType;
@@ -10,6 +12,7 @@ import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
@@ -30,9 +33,17 @@ public class GroupOrderRepositoryImpl implements GroupOrderQuerydslRepository {
     }
 
     @Override
-    public List<GroupOrder> findGroupOrdersComplex(GroupOrderSort sort, GroupOrderType type, String search, Pageable pageable) {
+    public List<GroupOrderListProjection> findGroupOrdersComplex(GroupOrderSort sort, GroupOrderType type, String search, Pageable pageable) {
         return queryFactory
-                .select(groupOrder)
+                .select(new QGroupOrderListProjection(
+                        groupOrder.id,
+                        groupOrder.title,
+                        groupOrder.groupOrderType,
+                        groupOrder.price,
+                        groupOrder.deadline,
+                        groupOrder.recruitmentComplete,
+                        groupOrder.groupOrderViewCount,
+                        groupOrder.createdDate))
                 .from(groupOrder)
                 .where(
                         groupOrderEqType(type),
@@ -42,6 +53,16 @@ public class GroupOrderRepositoryImpl implements GroupOrderQuerydslRepository {
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
+    }
+
+    @Override
+    @Transactional
+    public void bulkMarkExpired(List<Long> ids) {
+        queryFactory
+                .update(groupOrder)
+                .set(groupOrder.recruitmentComplete, true)
+                .where(groupOrder.id.in(ids))
+                .execute();
     }
 
     private OrderSpecifier[] groupOrderObSort(GroupOrderSort sort) {
@@ -88,5 +109,66 @@ public class GroupOrderRepositoryImpl implements GroupOrderQuerydslRepository {
         } else {
             return groupOrder.groupOrderType.eq(type);
         }
+    }
+
+    @Override
+    public List<GroupOrder> findUnnormalizedFoodOrders(int pageSize, Long lastId) {
+        return queryFactory
+                .selectFrom(groupOrder)
+                .where(
+                        groupOrder.groupOrderType.eq(GroupOrderType.FOOD),
+                        groupOrder.place.isNull(),
+                        lastId != null && lastId > 0 ? groupOrder.id.gt(lastId) : null
+                )
+                .orderBy(groupOrder.id.asc())
+                .limit(pageSize)
+                .fetch();
+    }
+
+    @Override
+    public long countDistinctRawPlaceName() {
+        Long result = queryFactory
+                .select(groupOrder.rawPlaceName.lower().trim().countDistinct())
+                .from(groupOrder)
+                .where(groupOrder.rawPlaceName.isNotNull())
+                .fetchOne();
+        return result == null ? 0L : result;
+    }
+
+    @Override
+    public long countDistinctPlaceId() {
+        Long result = queryFactory
+                .select(groupOrder.place.placeId.countDistinct())
+                .from(groupOrder)
+                .where(groupOrder.place.isNotNull())
+                .fetchOne();
+        return result == null ? 0L : result;
+    }
+
+    @Override
+    public long countByCreatedAtAfter(LocalDateTime since) {
+        Long result = queryFactory
+                .select(groupOrder.count())
+                .from(groupOrder)
+                .where(
+                        groupOrder.groupOrderType.eq(GroupOrderType.FOOD),
+                        groupOrder.createdDate.after(since)
+                )
+                .fetchOne();
+        return result == null ? 0L : result;
+    }
+
+    @Override
+    public long countByCreatedAtAfterAndPlaceIsNull(LocalDateTime since) {
+        Long result = queryFactory
+                .select(groupOrder.count())
+                .from(groupOrder)
+                .where(
+                        groupOrder.groupOrderType.eq(GroupOrderType.FOOD),
+                        groupOrder.place.isNull(),
+                        groupOrder.createdDate.after(since)
+                )
+                .fetchOne();
+        return result == null ? 0L : result;
     }
 }

@@ -189,6 +189,14 @@ public enum ErrorCode {
     DISCLOSURE_NOT_IN_SAME_ROOM(BAD_REQUEST, 23005, "[StudentIdDisclosure] 같은 채팅방에 있는 사용자에게만 요청할 수 있습니다."),
     DISCLOSURE_INVALID_STATUS(BAD_REQUEST, 23006, "[StudentIdDisclosure] 현재 상태에서 허용되지 않는 요청입니다."),
 
+    // PLACE (Kakao Local API)
+    KAKAO_API_ERROR(BAD_GATEWAY, 24001, "[Place] 외부 장소 검색 서비스에 일시적인 문제가 있습니다."),
+    KAKAO_QUOTA_EXCEEDED(SERVICE_UNAVAILABLE, 24002, "[Place] 일일 외부 API 호출 한도에 도달했습니다."),
+    KEYWORD_TOO_SHORT(BAD_REQUEST, 24003, "[Place] 검색 키워드는 2자 이상이어야 합니다."),
+    INVALID_PLACE_FOR_TYPE(BAD_REQUEST, 24004, "[Place] FOOD 타입에만 음식점 정보를 입력할 수 있습니다."),
+    PLACE_ID_INVALID(BAD_REQUEST, 24005, "[Place] 유효하지 않은 음식점 ID입니다."),
+    PLACE_MIGRATION_ALREADY_RUNNING(CONFLICT, 24006, "[Place] 마이그레이션이 이미 실행 중입니다."),
+
     // RATE LIMIT
     RATE_LIMIT_EXCEEDED(TOO_MANY_REQUESTS, 20001, "[RateLimit] 요청 횟수를 초과했습니다. 잠시 후 다시 시도해주세요."),
 

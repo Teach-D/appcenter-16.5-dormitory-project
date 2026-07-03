@@ -102,7 +102,7 @@ class OpenChatMultiHostServiceTest {
     @Test
     @DisplayName("방장 부여 성공 — 파생 방(DERIVED)에서도 방장 부여 정상 처리 (BR-12)")
     void should_grant_host_in_derived_room() {
-        OpenChatRoom derivedRoom = OpenChatRoom.createDerived("파생방", "설명", 50, HOST_USER_ID, ROOM_ID);
+        OpenChatRoom derivedRoom = OpenChatRoom.createDerived("파생방", "설명", 50, HOST_USER_ID, null, true);
         OpenChatParticipant target = createParticipant();
         User requester = mockUser(HOST_USER_ID);
 

@@ -40,6 +40,7 @@ public class ResponseAnnouncementDto {
     @Schema(description = "긴급", example = "true")
     private boolean isEmergency;
 
+    @Builder.Default
     private int viewCount = 0;
 
 

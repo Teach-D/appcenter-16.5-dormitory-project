@@ -49,7 +49,15 @@ public class OpenChatRoom extends BaseTimeEntity {
     @Column(nullable = false)
     private OpenChatRoomType roomType;
 
-    private Long parentRoomId;
+    @Column(length = 50)
+    private String password;
+
+    @Column(nullable = false)
+    private boolean isPublic = true;
+
+    public boolean matchesPassword(String input) {
+        return this.password == null || this.password.equals(input);
+    }
 
     public static OpenChatRoom create(String name, String description, OpenChatRoomScope scope,
                                        int maxParticipants, Long createdBy,
@@ -82,7 +90,7 @@ public class OpenChatRoom extends BaseTimeEntity {
     }
 
     public static OpenChatRoom createDerived(String name, String description, int maxParticipants,
-                                              Long createdBy, Long parentRoomId) {
+                                              Long createdBy, String password, boolean isPublic) {
         OpenChatRoom room = new OpenChatRoom();
         room.name = name;
         room.description = description;
@@ -92,7 +100,8 @@ public class OpenChatRoom extends BaseTimeEntity {
         room.isOfficial = false;
         room.createdBy = createdBy;
         room.roomType = OpenChatRoomType.DERIVED;
-        room.parentRoomId = parentRoomId;
+        room.password = password;
+        room.isPublic = isPublic;
         return room;
     }
 
