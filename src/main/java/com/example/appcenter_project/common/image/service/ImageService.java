@@ -437,13 +437,21 @@ public class ImageService {
         String forwardedProto = request.getHeader("X-Forwarded-Proto");
         String scheme = (forwardedProto != null && !forwardedProto.isBlank()) ? forwardedProto : request.getScheme();
         String serverName = request.getServerName();
-        int serverPort = request.getServerPort();
         String contextPath = request.getContextPath();
+
+        String forwardedPort = request.getHeader("X-Forwarded-Port");
+        int serverPort;
+        if (forwardedPort != null && !forwardedPort.isBlank()) {
+            serverPort = Integer.parseInt(forwardedPort.trim());
+        } else if (forwardedProto != null && !forwardedProto.isBlank()) {
+            serverPort = scheme.equals("https") ? 443 : 80;
+        } else {
+            serverPort = request.getServerPort();
+        }
 
         StringBuilder baseUrl = new StringBuilder();
         baseUrl.append(scheme).append("://").append(serverName);
 
-        // 기본 포트가 아닌 경우에만 포트 추가
         if ((scheme.equals("http") && serverPort != 80) ||
                 (scheme.equals("https") && serverPort != 443)) {
             baseUrl.append(":").append(serverPort);
