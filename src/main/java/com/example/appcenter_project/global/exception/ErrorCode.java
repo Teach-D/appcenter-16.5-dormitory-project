@@ -180,6 +180,7 @@ public enum ErrorCode {
     OPEN_CHAT_ALREADY_HOST(BAD_REQUEST, 22015, "[OpenChat] 이미 방장인 사용자입니다."),
     OPEN_CHAT_SOLE_HOST_CANNOT_LEAVE(BAD_REQUEST, 22016, "[OpenChat] 단독 방장은 방 삭제 또는 방장 위임 후 나갈 수 있습니다."),
     OPEN_CHAT_KICK_FORBIDDEN(FORBIDDEN, 22017, "[OpenChat] 강제퇴장 권한이 없습니다."),
+    OPEN_CHAT_NEW_HOST_REQUIRED(BAD_REQUEST, 22018, "[OpenChat] 방장 강퇴 시 새 방장을 지정해야 합니다."),
 
     // STUDENT_ID_DISCLOSURE
     DISCLOSURE_REQUEST_NOT_FOUND(NOT_FOUND, 23001, "[StudentIdDisclosure] 학번 공개 요청을 찾을 수 없습니다."),

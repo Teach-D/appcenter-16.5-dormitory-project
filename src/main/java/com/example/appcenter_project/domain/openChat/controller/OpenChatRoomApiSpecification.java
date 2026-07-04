@@ -5,6 +5,7 @@ import com.example.appcenter_project.domain.openChat.dto.response.ResponseLeaveO
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatParticipantListDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDetailDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDto;
+import com.example.appcenter_project.domain.openChat.enums.KickReason;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomTab;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -84,5 +85,7 @@ public interface OpenChatRoomApiSpecification {
     ResponseEntity<Void> kickParticipant(
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long roomId,
-            @PathVariable Long targetUserId);
+            @PathVariable Long targetUserId,
+            @RequestParam KickReason reason,
+            @RequestParam(required = false) Long newHostUserId);
 }
