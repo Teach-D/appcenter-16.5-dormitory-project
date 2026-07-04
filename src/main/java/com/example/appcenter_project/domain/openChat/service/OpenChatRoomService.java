@@ -10,6 +10,7 @@ import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenCh
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDto;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatParticipant;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatRoom;
+import com.example.appcenter_project.domain.openChat.enums.KickReason;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomScope;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomTab;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomType;
@@ -21,6 +22,7 @@ import com.example.appcenter_project.domain.user.enums.Role;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.global.exception.ErrorCode;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
@@ -29,6 +31,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -36,6 +39,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class OpenChatRoomService {
 
@@ -187,12 +191,25 @@ public class OpenChatRoomService {
                     .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
             openChatMessageService.sendSystemMessage(roomId, user.getName() + "님이 퇴장했습니다.");
 
+            log.info("[OpenChat-Exit] exitType=VOLUNTARY roomId={} targetUserId={} actorId={} processedAt={}",
+                    roomId, userId, userId, Instant.now());
             return ResponseLeaveOpenChatRoomDto.builder().roomDeleted(false).build();
         }
 
         if (self.isHost()) {
             long hostCount = lockedParticipants.stream().filter(OpenChatParticipant::isHost).count();
             if (hostCount == 1) {
+                if (lockedParticipants.size() == 1) {
+                    OpenChatRoom room = openChatRoomRepository.findByIdWithLock(roomId)
+                            .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND));
+                    if (!room.isOfficial()) {
+                        openChatParticipantRepository.deleteAll(lockedParticipants);
+                        openChatRoomRepository.delete(room);
+                        log.info("[OpenChat-Exit] exitType=VOLUNTARY roomId={} targetUserId={} actorId={} processedAt={}",
+                                roomId, userId, userId, Instant.now());
+                        return ResponseLeaveOpenChatRoomDto.builder().roomDeleted(true).build();
+                    }
+                }
                 throw new CustomException(ErrorCode.OPEN_CHAT_SOLE_HOST_CANNOT_LEAVE);
             }
         }
@@ -203,6 +220,8 @@ public class OpenChatRoomService {
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         openChatMessageService.sendSystemMessage(roomId, user.getName() + "님이 퇴장했습니다.");
 
+        log.info("[OpenChat-Exit] exitType=VOLUNTARY roomId={} targetUserId={} actorId={} processedAt={}",
+                roomId, userId, userId, Instant.now());
         return ResponseLeaveOpenChatRoomDto.builder().roomDeleted(false).build();
     }
 
@@ -215,8 +234,8 @@ public class OpenChatRoomService {
     }
 
     @Transactional
-    public void kickParticipant(Long actorId, Long roomId, Long targetUserId) {
-        openChatRoomRepository.findByIdWithLock(roomId)
+    public void kickParticipant(Long actorId, Long roomId, Long targetUserId, KickReason reason, Long newHostUserId) {
+        OpenChatRoom room = openChatRoomRepository.findByIdWithLock(roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND));
 
         if (actorId.equals(targetUserId)) {
@@ -227,6 +246,10 @@ public class OpenChatRoomService {
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         boolean isAdmin = actor.getRole() == Role.ROLE_ADMIN;
 
+        OpenChatParticipant targetParticipant = openChatParticipantRepository
+                .findByRoomIdAndUserId(roomId, targetUserId)
+                .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_PARTICIPANT_NOT_FOUND));
+
         if (!isAdmin) {
             boolean actorIsHost = openChatParticipantRepository
                     .existsByRoomIdAndUserIdAndIsHost(roomId, actorId, true);
@@ -234,18 +257,10 @@ public class OpenChatRoomService {
                 throw new CustomException(ErrorCode.OPEN_CHAT_KICK_FORBIDDEN);
             }
 
-            OpenChatParticipant targetParticipant = openChatParticipantRepository
-                    .findByRoomIdAndUserId(roomId, targetUserId)
-                    .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_PARTICIPANT_NOT_FOUND));
-
             if (targetParticipant.isHost()) {
                 throw new CustomException(ErrorCode.OPEN_CHAT_KICK_FORBIDDEN);
             }
         }
-
-        OpenChatParticipant targetParticipant = openChatParticipantRepository
-                .findByRoomIdAndUserId(roomId, targetUserId)
-                .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_PARTICIPANT_NOT_FOUND));
 
         User targetUser = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
@@ -254,8 +269,34 @@ public class OpenChatRoomService {
             throw new CustomException(ErrorCode.OPEN_CHAT_KICK_FORBIDDEN);
         }
 
-        openChatParticipantRepository.delete(targetParticipant);
-        openChatMessageService.sendSystemMessage(roomId, targetUser.getName() + "님이 강제퇴장되었습니다.");
+        if (isAdmin && targetParticipant.isHost()) {
+            List<OpenChatParticipant> allParticipants = openChatParticipantRepository.findAllByRoomId(roomId);
+            boolean othersExist = allParticipants.size() > 1;
+            if (othersExist) {
+                if (newHostUserId == null) {
+                    throw new CustomException(ErrorCode.OPEN_CHAT_NEW_HOST_REQUIRED);
+                }
+                OpenChatParticipant newHost = openChatParticipantRepository
+                        .findByRoomIdAndUserId(roomId, newHostUserId)
+                        .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_PARTICIPANT_NOT_FOUND));
+                if (newHost.isHost()) {
+                    throw new CustomException(ErrorCode.OPEN_CHAT_ALREADY_HOST);
+                }
+                newHost.grantHost();
+            }
+            openChatParticipantRepository.delete(targetParticipant);
+            if (!othersExist) {
+                openChatRoomRepository.delete(room);
+            } else {
+                openChatMessageService.sendSystemMessage(roomId, targetUser.getName() + "님이 강제퇴장되었습니다.");
+            }
+        } else {
+            openChatParticipantRepository.delete(targetParticipant);
+            openChatMessageService.sendSystemMessage(roomId, targetUser.getName() + "님이 강제퇴장되었습니다.");
+        }
+
+        log.info("[OpenChat-Exit] exitType={} roomId={} targetUserId={} actorId={} reason={} processedAt={}",
+                isAdmin ? "ADMIN_KICK" : "HOST_KICK", roomId, targetUserId, actorId, reason, Instant.now());
     }
 
     @Transactional

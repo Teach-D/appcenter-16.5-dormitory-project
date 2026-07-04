@@ -5,6 +5,7 @@ import com.example.appcenter_project.domain.openChat.dto.response.ResponseLeaveO
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatParticipantListDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDetailDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDto;
+import com.example.appcenter_project.domain.openChat.enums.KickReason;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomTab;
 import com.example.appcenter_project.domain.openChat.service.OpenChatRoomService;
 import com.example.appcenter_project.domain.user.entity.User;
@@ -82,8 +83,10 @@ public class OpenChatRoomController implements OpenChatRoomApiSpecification {
     public ResponseEntity<Void> kickParticipant(
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long roomId,
-            @PathVariable Long targetUserId) {
-        openChatRoomService.kickParticipant(user.getId(), roomId, targetUserId);
+            @PathVariable Long targetUserId,
+            @RequestParam KickReason reason,
+            @RequestParam(required = false) Long newHostUserId) {
+        openChatRoomService.kickParticipant(user.getId(), roomId, targetUserId, reason, newHostUserId);
         return ResponseEntity.noContent().build();
     }
 
