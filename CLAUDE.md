@@ -1,103 +1,81 @@
 # UniDorm — CLAUDE.md
 
-## 참조 문서
+인천대학교 기숙사 통합 앱/웹 서비스(UniDorm) 백엔드 프로젝트.
+Claude Code가 이 저장소에서 작업할 때 반드시 이 문서를 먼저 확인한다.
 
-| 파일 | 읽는 시점 |
-|------|----------|
-| `docs/api-spec.md` | API 추가/수정, DTO 설계, 권한 확인 |
-| `docs/db-schema.md` | 테이블 구조, FK, 컬럼 제약조건, 마이그레이션 작성 |
-| `docs/architecture.md` | 기능 흐름, 외부 시스템 연동, 스케줄러/비동기 패턴 확인 (§14 작업 체크리스트) |
-| `docs/github.md` | PR/이슈 작성, 브랜치 네이밍, 커밋 메시지 |
-| `docs/domain-dependencies.json` | X 변경 시 영향받는 도메인 확인 |
+---
 
-## 코딩 규칙
+## 절대 규칙 (위반 금지)
 
-코드 작성 전 항상 확인:
-- `.claude/rules/antipatterns.md` — Spring 아키텍처, Lombok/엔티티, API/예외
-- `.claude/rules/antipatterns-jpa.md` — JPA, N+1, 트랜잭션, QueryDSL
+1. **코딩 전에 먼저 생각한다**
+   - 가정은 숨기지 않고 명시한다. 불확실하면 코드보다 질문이 먼저다.
+   - 해석이 여럿이면 조용히 하나 고르지 말고 둘 다 제시하고 고르게 한다.
+   - 더 단순한 방법이 보이면 말하고, 필요하면 반대 의견을 낸다.
+   - 무엇이 헷갈리는지 이름 붙여 묻는다. "잘 모르겠습니다"는 금지.
 
-## 명령어
+2. **최소 코드 원칙** — 지금 실패하는 테스트를 통과시키는 데 필요한 최소한만 작성한다.
+   - 요청하지 않은 방어 로직·추상화·유틸·설정 가능성·유연성 미리 만들기 금지.
+   - "나중에 쓸 것 같아서" 금지. 필요해지는 순간 그 테스트와 함께 추가한다.
+   - single-use 코드에 추상화 금지. 200줄인데 50줄로 될 것 같으면 다시 쓴다.
+   - 판단 기준: "시니어 엔지니어가 과하다고 할까?" → 그렇다면 단순화.
 
-```bash
-./gradlew build              # 빌드
-./gradlew test               # 테스트
-./gradlew compileJava        # QueryDSL Q클래스 생성
-./gradlew clean compileJava  # Q클래스 초기화
-./gradlew flywayInfo         # 마이그레이션 상태 확인
+3. **비목표 우선**: 모든 기능 작업은 목표뿐 아니라 "하지 않을 것(Non-goals)"을 먼저 확인한다.
+   범위 밖 파일/엔드포인트/기능을 만들지 않는다.
+
+4. **외과적 변경** — UniDorm은 운영 중인 실서비스다. 기존 코드를 건드릴 때 특히 적용.
+   - 건드려야 하는 것만 건드린다. 인접 코드·주석·포맷을 "개선"하지 않는다.
+   - 안 깨진 걸 리팩터하지 않는다. 내 스타일과 달라도 기존 스타일을 따른다.
+   - 관련 없는 죽은 코드를 발견하면 삭제하지 말고 언급만 한다.
+   - 내 변경으로 안 쓰이게 된 import/변수/함수만 정리한다.
+   - `/implement`로 명세 기반 새 코드를 작성하는 경우에는 이 조항이 방해하지 않는다.
+
+5. **명세가 진실의 원천**: `specs/BR-xxx/` 아래 문서와 코드가 어긋나면 명세를 먼저 고치고 코드를 맞춘다.
+
+6. **추적성**: 커밋·PR·이슈·테스트에 관련 BR 번호(BR-xxx)를 명시한다.
+
+---
+
+## 기술 스택
+
+Java 17, Spring Boot 3.4.4, Spring Security + JWT, JPA + QueryDSL, MySQL, Redis, WebSocket(STOMP), FCM, Selenium, JUnit 5 + Mockito + Testcontainers.
+
+---
+
+## 프로젝트 폴더 구조
+
+```
+src/main/java/com/example/appcenter_project/
+├─ common/          # BaseTimeEntity, 공용 file/image/like
+├─ domain/          # 16개 도메인 (핵심 비즈니스)
+│  └─ {도메인}/
+│     ├─ controller/   # {Domain}Controller + {Domain}ApiSpecification
+│     ├─ service/      # {Domain}Service
+│     ├─ repository/   # {Entity}Repository + QueryDSL Impl
+│     ├─ entity/       # JPA 엔티티
+│     ├─ dto/          # request/ + response/
+│     └─ enums/
+├─ global/          # exception, security, config, scheduler, aspect
+└─ shared/          # 공용 유틸/enum
 ```
 
-## 네이밍 규칙
+**의존 방향**: `controller → service → repository → entity`. 도메인 간 호출은 service 레벨에서만.
+**주입**: 필드 주입 금지, 모두 생성자 주입(`@RequiredArgsConstructor` + `final`).
 
-`{Domain}Controller` + `{Domain}ApiSpecification` (Swagger 인터페이스 분리) · `{Domain}Service` · `{Entity}Repository` · `Request{Action}{Entity}Dto` / `Response{Entity}Dto` · `{Name}Type` / `{Name}Status` · DB 컬럼 snake_case
+---
 
-## 인증/보안
+## 워크플로우
+- 새 기능: `/specify` → `/design` → `/api-spec` → `/issue` → `/tdd` → `/implement` → (reviewer 검증)
+- 버그 수정 등 소규모: `/quickfix` (전체 파이프라인 생략)
 
-- 권한 3가지: `USER`, `ADMIN`, `DORMITORY`
-- 새 공개 경로 추가 시 `SecurityConfig.java`의 `permitAll()` 목록에 반드시 추가
-- Oracle DB: `@OracleRepository` qualifier — `global/config/OracleConfig.java`
+## 테스트
+- 작업을 검증 가능한 목표로 바꾼다: "버그 수정" → "재현 테스트를 쓰고 통과시킨다", "검증 추가" → "잘못된 입력 테스트를 쓰고 통과시킨다".
+- 구현 전 실패 테스트 먼저(RED). 통과(GREEN) 후 리팩터.
+- "일단 되게 해"는 금지. 강한 성공 기준 없이 에이전트 루프를 돌리지 않는다.
+- 실행: `./gradlew test`
 
-## 도메인별 함정 (non-obvious)
+## 규칙 참조
 
-| 도메인 | 함정 |
-|--------|------|
-| `calender` | 오탈자 아님 — DB·엔티티·패키지 모두 `calender`(e 하나). `calendar`로 쓰면 불일치 |
-| `fcm` | `@Async` 메서드에 `@Transactional` 필수 (별도 스레드 → 컨텍스트 없음 → LazyInit 예외). `@Modifying`에도 `@Transactional` 필수 |
-| `coupon` | 재고 차감 시 반드시 `findByIdWithLock`(비관적 락). ADMIN에게 발급 금지 로직 필수 |
-| `roommate` | `RoommateCheckList` → `RoommateBoard` 순서로 생성. `MyRoommate`는 양방향(user_id·roommate_id 각각 UQ) → 두 row 동시 생성 |
-| `survey` | 응답 시 상태(OPEN) + 날짜 범위(start_date ≤ now ≤ end_date) 이중 검증 필수 |
-| `notification` | 발송 전 `User.receiveNotificationTypes` 필터링 필수. DORMITORY 타입만 공지 수신 |
-| `announcement` | FCM 전체 발송 시 `bulkEnqueueOutbox` 패턴 사용 (N+1 방지) |
-| `complaint` | 답변 첨부파일은 `crawled_announcement_file` 테이블 공유 |
-| `tip` | 댓글 soft-delete(`is_deleted=true`). `deleteById()` 금지 |
-| `report` | `ResponseReportDto` 금지 → `ResponseEntity<Void>` + HTTP 201 |
-| `feature` | 미등록 key → 예외 아닌 `false` 반환 (`orElseThrow` 금지) |
+엔티티·서비스·쿼리 작성 시, 또는 코드 리뷰·버그 수정 전 아래 파일을 확인한다.
 
-## 완료 체크리스트
-
-1. **컴파일** — PostToolUse 훅이 `.java` 수정 시 자동 실행 (실패 시 즉시 수정)
-2. **테스트** — asyncRewake 훅이 백그라운드 자동 실행 (실패 시 Claude에 알림)
-3. **antipatterns 자가 검토** — `.claude/rules/antipatterns.md`, `antipatterns-jpa.md` 확인
-4. **AI 기여도 기록** — PR 완료 시 `.claude/ai-metrics.md`에 보완비율·clarification 횟수 기록
-
-## 세션 실패 기록
-### 2026-07-02 04:10 UTC (세션: 9bce22fb)
-
-- `ExitPlanMode(# 플랜: userId 기반 매크로 차단
-
-## Context
-
-이전 대화에서 "매크로 전용 차단 레이어가 없다"고 답했으나, 코드 탐색 결과 )` → `The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to`
-
-### 2026-06-30 08:08 UTC (세션: dfa844c1)
-
-- `Edit(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `PreToolUse:Edit hook error: [bash .claude/hooks/check-checkout.sh]: No stderr output`
-
-### 2026-06-30 05:24 UTC (세션: dafd86e1)
-
-- `Read(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `File does not exist. Note: your current working directory is C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project.`
-
-### 2026-06-30 05:24 UTC (세션: 5840f021)
-
-- `Write(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>`
-- `Bash(gh auth status 2>&1)` → `Exit code 127`
-- `Bash(git status --porcelain)` → `<tool_use_error>Cancelled: parallel tool call Bash(gh auth status 2>&1) errored</tool_use_error>`
-- `Bash(powershell -NoProfile -Command "gh auth status" 2>&1)` → `Exit code 1`
-- `Bash(git status --porcelain)` → `<tool_use_error>Cancelled: parallel tool call Bash(powershell -NoProfile -Command "gh auth …) errored</tool_use_error>`
-- `mcp__github__create_issue(Teach-D)` → `MCP error -32603: Failed to create issue: Bad credentials`
-- `Edit(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\.c)` → `<tool_use_error>Claude Code settings.json validation failed after edit:`
-- `Glob(.mcp.json)` → `Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific pat`
-- `Bash(git -C "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-pr)` → `Exit code 1`
-- `mcp__github__get_issue(Teach-D)` → `MCP error -32603: Authentication Failed: Bad credentials`
-
-### 2026-06-30 05:24 UTC (세션: 5840f021)
-
-- `Write(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\do)` → `<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>`
-- `Bash(gh auth status 2>&1)` → `Exit code 127`
-- `Bash(git status --porcelain)` → `<tool_use_error>Cancelled: parallel tool call Bash(gh auth status 2>&1) errored</tool_use_error>`
-- `Bash(powershell -NoProfile -Command "gh auth status" 2>&1)` → `Exit code 1`
-- `Bash(git status --porcelain)` → `<tool_use_error>Cancelled: parallel tool call Bash(powershell -NoProfile -Command "gh auth …) errored</tool_use_error>`
-- `mcp__github__create_issue(Teach-D)` → `MCP error -32603: Failed to create issue: Bad credentials`
-- `Edit(C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-project\.c)` → `<tool_use_error>Claude Code settings.json validation failed after edit:`
-- `Glob(.mcp.json)` → `Ripgrep search timed out after 20 seconds. The search may have matched files but did not complete in time. Try searching a more specific pat`
-- `Bash(git -C "C:\Users\wkadh\OneDrive\바탕 화면\coding\project\appcenter-16.5-dormitory-pr)` → `Exit code 1`
-- `mcp__github__get_issue(Teach-D)` → `MCP error -32603: Authentication Failed: Bad credentials`
+- `.claude/rules/antipatterns.md` — Spring 아키텍처, Lombok/엔티티 패턴, API/예외 처리 안티패턴
+- `.claude/rules/antipatterns-jpa.md` — N+1, 트랜잭션, QueryDSL 안티패턴
