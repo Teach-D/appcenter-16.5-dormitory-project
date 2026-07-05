@@ -204,6 +204,10 @@ public enum ErrorCode {
     // DISTRIBUTED LOCK
     GROUP_ORDER_VIEW_COUNT_LOCK_FAILED(SERVICE_UNAVAILABLE, 21001, "[GroupOrder] 조회수 업데이트 락 획득에 실패했습니다. 잠시 후 재시도됩니다."),
 
+    // WEATHER
+    WEATHER_API_ERROR(INTERNAL_SERVER_ERROR, 25001, "[Weather] 기상청 API 호출 중 오류가 발생했습니다."),
+    WEATHER_INVALID_LOCATION(BAD_REQUEST, 25002, "[Weather] 대한민국 범위를 벗어난 위경도입니다."),
+
     // SERVER
     UNHANDLED_EXCEPTION(INTERNAL_SERVER_ERROR, 99999, "[Server] 서버 내부 오류가 발생했습니다.");
 
