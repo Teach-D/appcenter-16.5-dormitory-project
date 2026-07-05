@@ -61,7 +61,21 @@ public class RoommateChattingRoom extends BaseTimeEntity {
         this.hostChecklist = hostChecklist;
     }
 
+    public static RoommateChattingRoom create(User host, User guest) {
+        RoommateChattingRoom room = new RoommateChattingRoom();
+        room.host = host;
+        room.guest = guest;
+        if (host != null && host.getId() != null && guest != null && guest.getId() != null) {
+            room.id = host.getId() * 1000L + guest.getId();
+        }
+        return room;
+    }
+
     public void leaveAsHost() {
+        this.hostLeft = true;
+    }
+
+    public void hostLeave() {
         this.hostLeft = true;
     }
 

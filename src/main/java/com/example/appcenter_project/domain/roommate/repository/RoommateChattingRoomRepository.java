@@ -21,6 +21,14 @@ public interface RoommateChattingRoomRepository extends JpaRepository<RoommateCh
 
     Optional<RoommateChattingRoom> findByGuestAndHost(User guest, User host);
 
+    @Query("""
+            SELECT r FROM RoommateChattingRoom r
+            JOIN FETCH r.host JOIN FETCH r.guest
+            WHERE (r.host.id = :userId AND r.hostLeft = false)
+               OR (r.guest.id = :userId AND r.guestLeft = false)
+            """)
+    List<RoommateChattingRoom> findActiveRoomsByUserId(@Param("userId") Long userId);
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE RoommateChattingRoom r SET r.roommateBoard = null WHERE r.roommateBoard.id = :boardId")
     void detachBoard(@Param("boardId") Long boardId);

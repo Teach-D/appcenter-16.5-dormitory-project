@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.openChat.controller;
 
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateOpenChatRoomDto;
+import com.example.appcenter_project.domain.openChat.dto.response.ResponseChatRoomListDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseLeaveOpenChatRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatParticipantListDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDetailDto;
@@ -12,7 +13,6 @@ import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -38,17 +38,13 @@ public class OpenChatRoomController implements OpenChatRoomApiSpecification {
     }
 
     @GetMapping
-    public ResponseEntity<Page<ResponseOpenChatRoomDto>> getRooms(
+    public ResponseEntity<ResponseChatRoomListDto> getRooms(
             @AuthenticationPrincipal CustomUserDetails user,
             @RequestParam OpenChatRoomTab tab,
+            @RequestParam(required = false) String keyword,
             Pageable pageable) {
-        Page<ResponseOpenChatRoomDto> result;
-        if (tab == OpenChatRoomTab.DORMITORY) {
-            String dormType = getDormType(user);
-            result = openChatRoomService.getRoomsForDormitory(user.getId(), dormType, pageable);
-        } else {
-            result = openChatRoomService.getRooms(user.getId(), tab, pageable);
-        }
+        Long userId = user != null ? user.getId() : null;
+        ResponseChatRoomListDto result = openChatRoomService.getRooms(userId, tab, keyword, pageable);
         return ResponseEntity.ok(result);
     }
 

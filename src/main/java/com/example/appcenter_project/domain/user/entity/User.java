@@ -178,6 +178,14 @@ public class User extends BaseTimeEntity {
         return user;
     }
 
+    public static User createForTest(Long id, String name) {
+        User user = new User();
+        user.id = id;
+        user.name = name;
+        user.studentNumber = "test-" + id;
+        return user;
+    }
+
     public boolean hasUnreadNotifications() {
         return userNotifications.stream()
                 .anyMatch(userNotification -> !userNotification.isRead());

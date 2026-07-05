@@ -251,6 +251,13 @@ public class {Domain}QuerydslRepositoryImpl implements {Domain}QuerydslRepositor
 ./gradlew test --tests "com.example.appcenter_project.domain.{domain}.*" --rerun-tasks 2>&1 | tail -100
 ```
 
+**`--info` 플래그 절대 금지.** `--info`는 수만 줄의 로그를 쏟아내 컨텍스트 윈도우를 소모한다.
+Spring 컨텍스트 로드 실패 등 원인 불명의 오류가 발생하면, `--info` 대신 아래 grep으로 원인만 추출한다:
+
+```bash
+./gradlew test --tests "..." --rerun-tasks 2>&1 | grep -E "Caused by|Error creating bean|UnsatisfiedDependency|NoSuchBean" | head -20
+```
+
 **명령어 변형 금지.** 코드를 수정한 후에만 재실행한다 (재시도 1회 = 코드 수정 1회 + 실행 1회).
 
 출력으로 판단이 어려우면 XML 리포트를 Read로 읽는다 (1회만):
@@ -270,6 +277,7 @@ build/test-results/test/TEST-com.example.appcenter_project.domain.{domain}.contr
 | `LazyInitializationException` | `@Transactional` 추가 또는 fetch join → 재실행 |
 | `TransactionRequiredException` | `@Modifying`에 `@Transactional` 추가 → 재실행 |
 | ErrorCode 누락 | `ErrorCode` 열거형에 추가 → 재실행 |
+| `@WebMvcTest` 컨텍스트 로드 실패 (`IllegalStateException`) | grep으로 원인 추출. `NoSuchBean SlackErrorNotifier` → 테스트에 `@MockBean SlackErrorNotifier` 추가. `JPA metamodel must not be empty` → 테스트에 `@MockBean JpaMetamodelMappingContext` 추가. |
 
 5회 초과 시 즉시 중단하고 보고한다:
 > 실패 테스트명 / 오류 메시지 / 시도한 수정 내용 / 막힌 이유

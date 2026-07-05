@@ -30,6 +30,12 @@ public class OpenChatRoomFixture {
         return OpenChatRoom.create("꽉 찬 방", "설명", OpenChatRoomScope.ALL, 2, 1L, null, false);
     }
 
+    public static OpenChatRoom createRoomWithLastMessageAt(LocalDateTime lastMessageAt) {
+        OpenChatRoom room = OpenChatRoom.create("테스트 채팅방", "설명", OpenChatRoomScope.ALL, 10, 1L, null, false);
+        room.updateLastMessage("마지막 메시지", lastMessageAt);
+        return room;
+    }
+
     public static OpenChatParticipant createParticipant(Long userId) {
         return OpenChatParticipant.create(1L, userId, LocalDateTime.now());
     }
