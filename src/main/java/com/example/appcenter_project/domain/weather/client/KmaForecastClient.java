@@ -27,7 +27,7 @@ public class KmaForecastClient {
     private static final String BASE_URL = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst";
     private static final int[] BASE_HOURS = {2, 5, 8, 11, 14, 17, 20, 23};
 
-    @Value("${weather.api.service-key}")
+    @Value("abcdedfg")
     private String serviceKey;
 
     private RestClient restClient;
