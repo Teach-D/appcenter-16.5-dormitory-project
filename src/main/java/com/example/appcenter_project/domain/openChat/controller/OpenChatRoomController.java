@@ -1,7 +1,9 @@
 package com.example.appcenter_project.domain.openChat.controller;
 
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateOpenChatRoomDto;
+import com.example.appcenter_project.domain.openChat.dto.request.RequestCreatePersonalRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseChatRoomListDto;
+import com.example.appcenter_project.domain.openChat.dto.response.ResponsePersonalRoomCreatedDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseLeaveOpenChatRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatParticipantListDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDetailDto;
@@ -35,6 +37,14 @@ public class OpenChatRoomController implements OpenChatRoomApiSpecification {
             @RequestBody @Valid RequestCreateOpenChatRoomDto request) {
         Long roomId = openChatRoomService.createRoom(request, user.getId());
         return ResponseEntity.status(CREATED).body(Map.of("roomId", roomId));
+    }
+
+    @PostMapping("/personal")
+    public ResponseEntity<ResponsePersonalRoomCreatedDto> createPersonalRoom(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestBody @Valid RequestCreatePersonalRoomDto request) {
+        ResponsePersonalRoomCreatedDto result = openChatRoomService.createPersonalRoom(user.getId(), request);
+        return ResponseEntity.status(CREATED).body(result);
     }
 
     @GetMapping

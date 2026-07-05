@@ -1,12 +1,16 @@
 package com.example.appcenter_project.domain.openChat.fixture;
 
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateOpenChatRoomDto;
+import com.example.appcenter_project.domain.openChat.dto.request.RequestCreatePersonalRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseLeaveOpenChatRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDetailDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDto;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatParticipant;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatRoom;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomScope;
+import com.example.appcenter_project.domain.user.entity.User;
+import com.example.appcenter_project.domain.user.enums.DormType;
+import org.mockito.Mockito;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,6 +40,26 @@ public class OpenChatRoomFixture {
         return room;
     }
 
+    public static OpenChatRoom createPrivateRoomWithPassword() {
+        return OpenChatRoom.create("비공개 채팅방", "설명", OpenChatRoomScope.ALL, 10, 1L, null, false, "1234", false);
+    }
+
+    public static OpenChatRoom createRoomWithId(Long id) {
+        OpenChatRoom room = Mockito.mock(OpenChatRoom.class);
+        Mockito.when(room.getId()).thenReturn(id);
+        return room;
+    }
+
+    public static OpenChatRoom createPersonalRoomWithId(Long id) {
+        OpenChatRoom room = Mockito.mock(OpenChatRoom.class);
+        Mockito.when(room.getId()).thenReturn(id);
+        return room;
+    }
+
+    public static OpenChatRoom createPersonalRoomWithPassword(String password) {
+        return OpenChatRoom.createPersonal("개인 채팅방", 1L, password);
+    }
+
     public static OpenChatParticipant createParticipant(Long userId) {
         return OpenChatParticipant.create(1L, userId, LocalDateTime.now());
     }
@@ -50,6 +74,27 @@ public class OpenChatRoomFixture {
                 .description("설명")
                 .scope(OpenChatRoomScope.ALL)
                 .maxParticipants(10)
+                .build();
+    }
+
+    public static RequestCreateOpenChatRoomDto createRequestWithPasswordAndPrivate() {
+        return RequestCreateOpenChatRoomDto.builder()
+                .name("테스트 채팅방")
+                .description("설명")
+                .scope(OpenChatRoomScope.ALL)
+                .maxParticipants(10)
+                .password("1234")
+                .isPublic(false)
+                .build();
+    }
+
+    public static RequestCreateOpenChatRoomDto createRequestWithBlankPassword() {
+        return RequestCreateOpenChatRoomDto.builder()
+                .name("테스트 채팅방")
+                .description("설명")
+                .scope(OpenChatRoomScope.ALL)
+                .maxParticipants(10)
+                .password("")
                 .build();
     }
 
@@ -114,6 +159,25 @@ public class OpenChatRoomFixture {
                 .scope(null)
                 .maxParticipants(10)
                 .build();
+    }
+
+    public static RequestCreatePersonalRoomDto createPersonalRoomRequest(Long targetUserId) {
+        return RequestCreatePersonalRoomDto.builder()
+                .name("개인 채팅방")
+                .targetUserId(targetUserId)
+                .build();
+    }
+
+    public static RequestCreatePersonalRoomDto createPersonalRoomRequestWithPassword(Long targetUserId, String password) {
+        return RequestCreatePersonalRoomDto.builder()
+                .name("비밀 채팅방")
+                .targetUserId(targetUserId)
+                .password(password)
+                .build();
+    }
+
+    public static User createUserWithId(Long id) {
+        return User.createForTest(id, "user-" + id, DormType.DORM_1);
     }
 
     public static ResponseOpenChatRoomDetailDto createDetailResponse() {

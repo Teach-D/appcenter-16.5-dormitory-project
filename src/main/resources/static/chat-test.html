@@ -330,9 +330,9 @@
         <div id="room-list"><span style="color:#aaa;font-size:12px;">로그인 후 새로고침하세요</span></div>
       </div>
 
-      <!-- ③ 채팅방 생성 (§6) -->
+      <!-- ③ 채팅방 생성 (§6 · BR-668) -->
       <div class="panel-section">
-        <h2>③ 채팅방 생성 (§6)</h2>
+        <h2>③ 단체 채팅방 생성 (§6 · BR-668)</h2>
         <div class="form-row">
           <label>방 이름 (최대 30자)</label>
           <input type="text" id="room-name" placeholder="방 이름" maxlength="30">
@@ -361,7 +361,15 @@
             </select>
           </div>
         </div>
-        <button class="btn-success" style="margin-top:6px;width:100%" onclick="openCreateRoomModal()">채팅방 생성</button>
+        <div class="inline-row" style="align-items:center;margin-top:4px;">
+          <label style="font-size:12px;font-weight:600;color:#555;flex:0 0 auto;">목록 공개 (isPublic)</label>
+          <input type="checkbox" id="room-is-public" checked style="width:auto;margin-left:6px;">
+        </div>
+        <div class="form-row" style="margin-top:6px;">
+          <label>입장 비밀번호 (선택, 최대 50자) — 비워두면 비밀번호 없음</label>
+          <input type="text" id="room-password" placeholder="비밀번호 없음" maxlength="50">
+        </div>
+        <button class="btn-success" style="margin-top:6px;width:100%" onclick="openCreateRoomModal()">단체 채팅방 생성</button>
       </div>
 
       <!-- ④ 초기 방 일괄 생성 (§4) -->
@@ -378,6 +386,10 @@
         <div class="form-row">
           <label>Room ID</label>
           <input type="number" id="join-room-id" placeholder="roomId 입력">
+        </div>
+        <div class="form-row">
+          <label>비밀번호 (비밀번호 방인 경우)</label>
+          <input type="text" id="join-password" placeholder="없으면 비워두세요">
         </div>
         <div class="inline-row">
           <button class="btn-primary" onclick="joinRoomById()">입장 + WS 연결</button>
@@ -416,6 +428,25 @@
           <button class="btn-danger btn-sm" onclick="rejectDisclosure()">거절</button>
           <button class="btn-secondary btn-sm" onclick="cancelDisclosure()">취소</button>
         </div>
+      </div>
+
+      <!-- ⑧ 개인 채팅방 생성 (BR-668) -->
+      <div class="panel-section">
+        <h2>⑧ 개인 채팅방 생성 (BR-668)</h2>
+        <p style="font-size:11px;color:#888;margin-bottom:8px;">최대 2명·항상 비공개. 생성 즉시 나 + 상대방이 입장됩니다.</p>
+        <div class="form-row">
+          <label>방 이름 (최대 30자)</label>
+          <input type="text" id="personal-room-name" placeholder="우리끼리 방" maxlength="30">
+        </div>
+        <div class="form-row">
+          <label>상대방 userId</label>
+          <input type="number" id="personal-target-user-id" placeholder="targetUserId">
+        </div>
+        <div class="form-row">
+          <label>입장 비밀번호 (선택, 최대 50자)</label>
+          <input type="text" id="personal-room-password" placeholder="비밀번호 없음" maxlength="50">
+        </div>
+        <button class="btn-success" style="width:100%" onclick="doCreatePersonalRoom()">개인 채팅방 생성</button>
       </div>
 
     </div>
@@ -692,12 +723,23 @@ function openRoommateChat(roomId, partnerName) {
 // ═══════════════════════════════════════════════════════
 //  채팅방 입장
 // ═══════════════════════════════════════════════════════
-async function enterRoom(roomId, name, description) {
+async function enterRoom(roomId, name, description, password = null) {
   if (!token) { log('먼저 로그인하세요.', 'err'); return; }
   document.getElementById('join-room-id').value = roomId;
 
   try {
-    const res = await authFetch(`/open-chat-rooms/${roomId}/participants/me`, { method: 'POST' });
+    const url = password
+      ? `/open-chat-rooms/${roomId}/participants/me?password=${encodeURIComponent(password)}`
+      : `/open-chat-rooms/${roomId}/participants/me`;
+    const res = await authFetch(url, { method: 'POST' });
+
+    if (res.status === 403) {
+      const pw = prompt(`"${name}" 방은 비밀번호가 필요합니다.\n비밀번호를 입력하세요:`);
+      if (pw === null) { log('입장 취소', 'info'); return; }
+      await enterRoom(roomId, name, description, pw);
+      return;
+    }
+
     if (!res.ok && res.status !== 409) {
       const err = await res.text();
       log(`방 입장 실패 (${res.status}): ${err}`, 'err');
@@ -721,8 +763,9 @@ async function enterRoom(roomId, name, description) {
 
 async function joinRoomById() {
   const roomId = parseInt(document.getElementById('join-room-id').value, 10);
+  const password = document.getElementById('join-password').value.trim() || null;
   if (!roomId) { log('roomId를 입력하세요.', 'err'); return; }
-  await enterRoom(roomId, `채팅방 #${roomId}`, '');
+  await enterRoom(roomId, `채팅방 #${roomId}`, '', password);
 }
 
 function openChat(roomId, name, description) {
@@ -768,21 +811,49 @@ async function doCreateRoom() {
   const description = document.getElementById('room-desc').value.trim();
   const scope = document.getElementById('room-scope').value;
   const maxParticipants = parseInt(document.getElementById('room-max').value, 10);
+  const isPublic = document.getElementById('room-is-public').checked;
+  const password = document.getElementById('room-password').value.trim() || null;
   if (!name) { log('방 이름을 입력하세요.', 'err'); return; }
 
   try {
     const res = await authFetch('/open-chat-rooms', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, description, scope, maxParticipants })
+      body: JSON.stringify({ name, description, scope, maxParticipants, isPublic, password })
     });
     if (!res.ok) { const err = await res.text(); log(`방 생성 실패 (${res.status}): ${err}`, 'err'); return; }
     const data = await res.json();
-    log(`방 생성 완료! roomId: ${data.roomId}`, 'ok');
+    log(`단체 방 생성 완료! roomId: ${data.roomId} | isPublic: ${isPublic} | 비밀번호: ${password ? '있음' : '없음'}`, 'ok');
     document.getElementById('join-room-id').value = data.roomId;
     loadRooms();
     await enterRoom(data.roomId, name, description);
   } catch (e) { log(`방 생성 오류: ${e.message}`, 'err'); }
+}
+
+// ═══════════════════════════════════════════════════════
+//  BR-668 개인 채팅방 생성
+// ═══════════════════════════════════════════════════════
+async function doCreatePersonalRoom() {
+  if (!token) { log('먼저 로그인하세요.', 'err'); return; }
+  const name = document.getElementById('personal-room-name').value.trim();
+  const targetUserId = parseInt(document.getElementById('personal-target-user-id').value, 10);
+  const password = document.getElementById('personal-room-password').value.trim() || null;
+  if (!name) { log('방 이름을 입력하세요.', 'err'); return; }
+  if (!targetUserId) { log('상대방 userId를 입력하세요.', 'err'); return; }
+
+  try {
+    const res = await authFetch('/open-chat-rooms/personal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, targetUserId, password })
+    });
+    if (!res.ok) { const err = await res.text(); log(`개인 채팅방 생성 실패 (${res.status}): ${err}`, 'err'); return; }
+    const data = await res.json();
+    log(`개인 채팅방 생성 완료! roomId: ${data.roomId} | 상대: userId=${targetUserId} | 비밀번호: ${password ? '있음' : '없음'}`, 'ok');
+    document.getElementById('join-room-id').value = data.roomId;
+    loadRooms();
+    await enterRoom(data.roomId, name, '');
+  } catch (e) { log(`개인 채팅방 생성 오류: ${e.message}`, 'err'); }
 }
 
 // ═══════════════════════════════════════════════════════

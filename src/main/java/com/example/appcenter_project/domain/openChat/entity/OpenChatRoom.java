@@ -71,6 +71,38 @@ public class OpenChatRoom extends BaseTimeEntity {
         room.isOfficial = isOfficial;
         room.createdBy = createdBy;
         room.roomType = OpenChatRoomType.OPEN;
+        room.isPublic = true;
+        return room;
+    }
+
+    public static OpenChatRoom create(String name, String description, OpenChatRoomScope scope,
+                                       int maxParticipants, Long createdBy,
+                                       String creatorDormitory, boolean isOfficial,
+                                       String password, boolean isPublic) {
+        OpenChatRoom room = new OpenChatRoom();
+        room.name = name;
+        room.description = description;
+        room.scope = scope;
+        room.maxParticipants = maxParticipants;
+        room.creatorDormitory = creatorDormitory;
+        room.isOfficial = isOfficial;
+        room.createdBy = createdBy;
+        room.roomType = OpenChatRoomType.OPEN;
+        room.password = password;
+        room.isPublic = isPublic;
+        return room;
+    }
+
+    public static OpenChatRoom createPersonal(String name, Long createdBy, String password) {
+        OpenChatRoom room = new OpenChatRoom();
+        room.name = name;
+        room.scope = OpenChatRoomScope.ALL;
+        room.maxParticipants = 2;
+        room.isOfficial = false;
+        room.createdBy = createdBy;
+        room.roomType = OpenChatRoomType.PERSONAL;
+        room.isPublic = false;
+        room.password = (password != null && !password.isBlank()) ? password : null;
         return room;
     }
 
