@@ -186,6 +186,15 @@ public class User extends BaseTimeEntity {
         return user;
     }
 
+    public static User createForTest(Long id, String name, DormType dormType) {
+        User user = new User();
+        user.id = id;
+        user.name = name;
+        user.studentNumber = "test-" + id;
+        user.dormType = dormType;
+        return user;
+    }
+
     public boolean hasUnreadNotifications() {
         return userNotifications.stream()
                 .anyMatch(userNotification -> !userNotification.isRead());

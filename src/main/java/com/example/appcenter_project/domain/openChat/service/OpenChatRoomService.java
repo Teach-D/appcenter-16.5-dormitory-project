@@ -2,6 +2,7 @@ package com.example.appcenter_project.domain.openChat.service;
 
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateDerivedRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateOpenChatRoomDto;
+import com.example.appcenter_project.domain.openChat.dto.request.RequestCreatePersonalRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseChatRoomListDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseDerivedRoomCreatedDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseLeaveOpenChatRoomDto;
@@ -9,6 +10,7 @@ import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenCh
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatParticipantListDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDetailDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDto;
+import com.example.appcenter_project.domain.openChat.dto.response.ResponsePersonalRoomCreatedDto;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatParticipant;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatRoom;
 import com.example.appcenter_project.domain.openChat.enums.KickReason;
@@ -106,6 +108,10 @@ public class OpenChatRoomService {
             creatorDormitory = user.getDormType() != null ? user.getDormType().name() : null;
         }
 
+        boolean pub = !Boolean.FALSE.equals(request.getIsPublic());
+        String pwd = (request.getPassword() != null && !request.getPassword().isBlank())
+                ? request.getPassword() : null;
+
         OpenChatRoom room = OpenChatRoom.create(
                 request.getName(),
                 request.getDescription(),
@@ -113,7 +119,9 @@ public class OpenChatRoomService {
                 request.getMaxParticipants(),
                 userId,
                 creatorDormitory,
-                false
+                false,
+                pwd,
+                pub
         );
         OpenChatRoom savedRoom = openChatRoomRepository.save(room);
 
@@ -121,6 +129,21 @@ public class OpenChatRoomService {
         openChatParticipantRepository.save(participant);
 
         return savedRoom.getId();
+    }
+
+    @Transactional
+    public ResponsePersonalRoomCreatedDto createPersonalRoom(Long userId, RequestCreatePersonalRoomDto request) {
+        if (userId.equals(request.getTargetUserId())) {
+            throw new CustomException(ErrorCode.OPEN_CHAT_SELF_PERSONAL_FORBIDDEN);
+        }
+        userRepository.findById(request.getTargetUserId())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        OpenChatRoom room = OpenChatRoom.createPersonal(request.getName(), userId, request.getPassword());
+        OpenChatRoom savedRoom = openChatRoomRepository.save(room);
+        openChatParticipantRepository.save(OpenChatParticipant.create(savedRoom.getId(), userId, true));
+        openChatParticipantRepository.save(OpenChatParticipant.create(savedRoom.getId(), request.getTargetUserId(), false));
+        return ResponsePersonalRoomCreatedDto.of(savedRoom.getId());
     }
 
     @Transactional(readOnly = true)
@@ -218,11 +241,13 @@ public class OpenChatRoomService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        if (room.getRoomType() == OpenChatRoomType.DERIVED) {
+        if (room.getRoomType() != OpenChatRoomType.PERSONAL) {
             if (!room.matchesPassword(password)) {
                 throw new CustomException(ErrorCode.OPEN_CHAT_ROOM_FORBIDDEN);
             }
-        } else if (room.getScope() == OpenChatRoomScope.DORMITORY) {
+        }
+
+        if (room.getScope() == OpenChatRoomScope.DORMITORY) {
             String userDorm = user.getDormType() != null ? user.getDormType().name() : null;
             String roomDorm = room.getCreatorDormitory();
             if (roomDorm == null || !roomDorm.equals(userDorm)) {

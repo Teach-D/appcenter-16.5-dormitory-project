@@ -27,4 +27,9 @@ public class RequestCreateOpenChatRoomDto {
     @Min(2)
     @Max(100)
     private Integer maxParticipants;
+
+    private Boolean isPublic;
+
+    @Size(max = 50)
+    private String password;
 }
