@@ -23,13 +23,14 @@ public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslR
     private static final QOpenChatParticipant openChatParticipant = QOpenChatParticipant.openChatParticipant;
 
     @Override
-    public List<OpenChatRoom> findMyRooms(Long userId) {
+    public List<OpenChatRoom> findMyRooms(Long userId, String keyword) {
         return queryFactory
                 .selectFrom(openChatRoom)
                 .join(openChatParticipant).on(
                         openChatRoom.id.eq(openChatParticipant.roomId),
                         openChatParticipant.userId.eq(userId)
                 )
+                .where(keywordContains(keyword))
                 .orderBy(
                         openChatRoom.lastMessageAt.desc().nullsLast(),
                         openChatRoom.createdDate.desc()
@@ -38,18 +39,19 @@ public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslR
     }
 
     @Override
-    public List<OpenChatRoom> findByDormitory(String dormType) {
+    public List<OpenChatRoom> findByDormitory(String dormType, String keyword) {
         return queryFactory
                 .selectFrom(openChatRoom)
                 .where(
                         scopeEq(OpenChatRoomScope.DORMITORY),
-                        creatorDormitoryEq(dormType)
+                        creatorDormitoryEq(dormType),
+                        keywordContains(keyword)
                 )
                 .fetch();
     }
 
     @Override
-    public List<OpenChatRoom> findAllPublicRooms() {
+    public List<OpenChatRoom> findAllPublicRooms(String keyword) {
         return queryFactory
                 .selectFrom(openChatRoom)
                 .where(
@@ -58,7 +60,8 @@ public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslR
                         .or(
                                 openChatRoom.roomType.eq(OpenChatRoomType.DERIVED)
                                         .and(openChatRoom.isPublic.isTrue())
-                        )
+                        ),
+                        keywordContains(keyword)
                 )
                 .fetch();
     }
@@ -69,5 +72,11 @@ public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslR
 
     private BooleanExpression creatorDormitoryEq(String dormType) {
         return dormType != null ? openChatRoom.creatorDormitory.eq(dormType) : null;
+    }
+
+    private BooleanExpression keywordContains(String keyword) {
+        if (keyword == null || keyword.isBlank()) return null;
+        return openChatRoom.name.containsIgnoreCase(keyword)
+                .or(openChatRoom.description.containsIgnoreCase(keyword));
     }
 }

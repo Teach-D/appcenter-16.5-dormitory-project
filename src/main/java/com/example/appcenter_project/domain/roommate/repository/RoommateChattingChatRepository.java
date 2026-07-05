@@ -7,7 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface RoommateChattingChatRepository extends JpaRepository<RoommateChattingChat, Long> {
+public interface RoommateChattingChatRepository extends JpaRepository<RoommateChattingChat, Long>,
+        RoommateChattingChatQuerydslRepository {
     List<RoommateChattingChat> findAllByRoommateChattingRoom_Id(Long roomId);
     List<RoommateChattingChat> findByRoommateChattingRoom(RoommateChattingRoom chatRoom);
 

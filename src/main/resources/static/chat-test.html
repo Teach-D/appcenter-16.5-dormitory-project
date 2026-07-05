@@ -106,7 +106,10 @@
     .badge-all { background: #dbeafe; color: #1d4ed8; }
     .badge-dorm { background: #dcfce7; color: #15803d; }
     .badge-joined { background: #fef9c3; color: #92400e; }
+    .badge-roommate { background: #f3e8ff; color: #7c3aed; }
+    .badge-openchat { background: #e0f2fe; color: #0369a1; }
     .unread-dot { background: #ef4444; color: #fff; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; margin-left: auto; flex-shrink: 0; }
+    .total-unread-bar { font-size: 12px; color: #dc2626; font-weight: 600; padding: 4px 0; display: none; }
 
     /* ── 로그 ── */
     #log-area { font-size: 11px; color: #555; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px; max-height: 80px; overflow-y: auto; margin-top: 6px; font-family: monospace; }
@@ -307,17 +310,22 @@
         <div id="log-area"></div>
       </div>
 
-      <!-- ② 채팅방 목록 (§5) -->
+      <!-- ② 채팅방 목록 (§5 + BR-665) -->
       <div class="panel-section">
-        <h2>② 채팅방 목록 (§5)</h2>
+        <h2>② 채팅방 목록 (§5 · BR-665)</h2>
         <div class="tab-bar" style="margin-bottom:8px;">
           <button class="tab-btn active" id="tab-MY" onclick="switchTab('MY')">내 채팅방</button>
           <button class="tab-btn" id="tab-DORMITORY" onclick="switchTab('DORMITORY')">내 기숙사</button>
           <button class="tab-btn" id="tab-ALL" onclick="switchTab('ALL')">전체</button>
         </div>
         <div style="margin-bottom:6px;font-size:11px;color:#888;" id="tab-hint">
-          내 채팅방: 방 이름 + 최근 메시지
+          내 채팅방: 오픈채팅 + 룸메이트 채팅 통합 목록
         </div>
+        <div class="inline-row" style="margin-bottom:6px;">
+          <input type="text" id="keyword-input" placeholder="방 이름 검색 (BR-665)" oninput="onKeywordChange()">
+          <button class="btn-secondary btn-sm" onclick="clearKeyword()">초기화</button>
+        </div>
+        <div class="total-unread-bar" id="total-unread-bar">🔴 전체 안읽음: <span id="total-unread-count">0</span>개</div>
         <button class="btn-secondary btn-sm" style="margin-bottom:8px;width:100%" onclick="loadRooms()">새로고침</button>
         <div id="room-list"><span style="color:#aaa;font-size:12px;">로그인 후 새로고침하세요</span></div>
       </div>
@@ -598,21 +606,48 @@ function authFetch(url, options = {}) {
 function switchTab(tab) {
   currentTab = tab;
   ['MY','DORMITORY','ALL'].forEach(t => document.getElementById(`tab-${t}`).classList.toggle('active', t === tab));
-  const hints = { MY: '내 채팅방: 방 이름 + 최근 메시지', DORMITORY: '내 기숙사: 방 이름 + 설명 + 공개범위 + 인원', ALL: '전체: 방 이름 + 설명 + 공개범위 + 인원' };
+  const hints = {
+    MY: '내 채팅방: 오픈채팅 + 룸메이트 채팅 통합 목록 (BR-665)',
+    DORMITORY: '내 기숙사: 방 이름 + 설명 + 공개범위 + 인원',
+    ALL: '전체: 방 이름 + 설명 + 공개범위 + 인원'
+  };
   document.getElementById('tab-hint').textContent = hints[tab];
+  document.getElementById('keyword-input').value = '';
+  loadRooms();
+}
+
+function onKeywordChange() {
+  clearTimeout(window._keywordTimer);
+  window._keywordTimer = setTimeout(() => loadRooms(), 300);
+}
+
+function clearKeyword() {
+  document.getElementById('keyword-input').value = '';
   loadRooms();
 }
 
 // ═══════════════════════════════════════════════════════
-//  채팅방 목록 (§5)
+//  채팅방 목록 (§5 + BR-665)
 // ═══════════════════════════════════════════════════════
 async function loadRooms() {
   if (!token) { log('먼저 로그인하세요.', 'err'); return; }
   try {
-    const res = await authFetch(`/open-chat-rooms?tab=${currentTab}&size=20`);
+    const keyword = (document.getElementById('keyword-input')?.value || '').trim();
+    const params = new URLSearchParams({ tab: currentTab, size: 20 });
+    if (keyword) params.set('keyword', keyword);
+    const res = await authFetch(`/open-chat-rooms?${params}`);
     if (!res.ok) { log(`방 목록 조회 실패 (${res.status})`, 'err'); return; }
     const data = await res.json();
     renderRoomList(data.content || []);
+    // BR-665: totalUnreadCount 표시 (MY 탭만)
+    const unreadBar = document.getElementById('total-unread-bar');
+    const unreadCount = data.totalUnreadCount ?? 0;
+    if (currentTab === 'MY' && unreadCount > 0) {
+      document.getElementById('total-unread-count').textContent = unreadCount;
+      unreadBar.style.display = 'block';
+    } else {
+      unreadBar.style.display = 'none';
+    }
   } catch (e) { log(`방 목록 오류: ${e.message}`, 'err'); }
 }
 
@@ -620,25 +655,38 @@ function renderRoomList(rooms) {
   const list = document.getElementById('room-list');
   if (!rooms.length) { list.innerHTML = '<span style="color:#aaa;font-size:12px;">방이 없습니다</span>'; return; }
   list.innerHTML = rooms.map(r => {
-    const scopeBadge = r.scope === 'ALL'
-      ? '<span class="badge badge-all">전체공개</span>'
-      : '<span class="badge badge-dorm">기숙사공개</span>';
+    const isRoommate = r.chatCategory === 'ROOMMATE';
+    const categoryBadge = isRoommate
+      ? '<span class="badge badge-roommate">룸메이트</span>'
+      : '<span class="badge badge-openchat">오픈채팅</span>';
+    const scopeBadge = !isRoommate && r.scope
+      ? (r.scope === 'ALL' ? '<span class="badge badge-all">전체공개</span>' : '<span class="badge badge-dorm">기숙사공개</span>')
+      : '';
     const joinedBadge = r.isJoined ? '<span class="badge badge-joined">참여중</span>' : '';
     const unreadBadge = r.unreadCount > 0 ? `<span class="unread-dot">${r.unreadCount}</span>` : '';
+    const clickHandler = isRoommate
+      ? `openRoommateChat(${r.roomId}, '${escHtml(r.name)}')`
+      : `enterRoom(${r.roomId}, '${escHtml(r.name)}', '${escHtml(r.description || '')}')`;
 
     if (currentTab === 'MY') {
-      return `<div class="room-card ${r.roomId === currentRoomId ? 'active' : ''}" onclick="enterRoom(${r.roomId}, '${escHtml(r.name)}', '${escHtml(r.description || '')}')">
-        <div class="room-card-name">${escHtml(r.name)} ${joinedBadge} ${unreadBadge}</div>
+      return `<div class="room-card ${r.roomId === currentRoomId ? 'active' : ''}" onclick="${clickHandler}">
+        <div class="room-card-name">${escHtml(r.name)} ${categoryBadge} ${joinedBadge} ${unreadBadge}</div>
+        <div class="room-card-meta">${r.currentParticipants}/${r.maxParticipants}명 &nbsp;<span style="color:#aaa;font-size:10px;">${r.lastMessageAt ? formatTime(r.lastMessageAt) : ''}</span></div>
         <div class="room-card-last">${escHtml(r.lastMessage || '메시지 없음')}</div>
       </div>`;
     } else {
-      return `<div class="room-card ${r.roomId === currentRoomId ? 'active' : ''}" onclick="enterRoom(${r.roomId}, '${escHtml(r.name)}', '${escHtml(r.description || '')}')">
-        <div class="room-card-name">${escHtml(r.name)} ${joinedBadge} ${unreadBadge}</div>
+      return `<div class="room-card ${r.roomId === currentRoomId ? 'active' : ''}" onclick="${clickHandler}">
+        <div class="room-card-name">${escHtml(r.name)} ${categoryBadge} ${joinedBadge} ${unreadBadge}</div>
         <div class="room-card-meta">${scopeBadge} &nbsp;${r.currentParticipants}/${r.maxParticipants}명</div>
         <div class="room-card-desc">${escHtml(r.description || '')}</div>
       </div>`;
     }
   }).join('');
+}
+
+function openRoommateChat(roomId, partnerName) {
+  log(`룸메이트 채팅방 "${partnerName}" (id: ${roomId}) — 룸메이트 채팅은 별도 WebSocket 엔드포인트를 사용합니다.`, 'info');
+  alert(`룸메이트 채팅방: ${partnerName}\nroomId: ${roomId}\n\n룸메이트 채팅방은 /roommate 엔드포인트로 관리됩니다.`);
 }
 
 // ═══════════════════════════════════════════════════════

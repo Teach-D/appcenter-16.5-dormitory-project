@@ -38,6 +38,25 @@ public class RoommateChattingChat extends BaseTimeEntity {
         this.readByReceiver = readByReceiver;
     }
 
+    public static RoommateChattingChat create(RoommateChattingRoom room, User sender, String content) {
+        RoommateChattingChat chat = new RoommateChattingChat();
+        chat.roommateChattingRoom = room;
+        chat.member = sender;
+        chat.content = content;
+        chat.readByReceiver = false;
+        return chat;
+    }
+
+    public static RoommateChattingChat create(
+            RoommateChattingRoom room, User sender, String content, java.time.LocalDateTime createdDate) {
+        RoommateChattingChat chat = new RoommateChattingChat();
+        chat.roommateChattingRoom = room;
+        chat.member = sender;
+        chat.content = content;
+        chat.readByReceiver = false;
+        chat.createdDate = createdDate;
+        return chat;
+    }
 
     public void markAsRead() {
         this.readByReceiver = true;

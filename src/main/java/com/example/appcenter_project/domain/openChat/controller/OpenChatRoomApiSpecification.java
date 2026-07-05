@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.openChat.controller;
 
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateOpenChatRoomDto;
+import com.example.appcenter_project.domain.openChat.dto.response.ResponseChatRoomListDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseLeaveOpenChatRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatParticipantListDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDetailDto;
@@ -10,7 +11,6 @@ import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomTab;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -30,9 +30,10 @@ public interface OpenChatRoomApiSpecification {
             @RequestBody @Valid RequestCreateOpenChatRoomDto request);
 
     @Operation(summary = "채팅방 목록 조회", description = "탭 파라미터에 따라 MY/DORMITORY/ALL 목록 조회")
-    ResponseEntity<Page<ResponseOpenChatRoomDto>> getRooms(
+    ResponseEntity<ResponseChatRoomListDto> getRooms(
             @AuthenticationPrincipal CustomUserDetails user,
             @RequestParam OpenChatRoomTab tab,
+            @RequestParam(required = false) String keyword,
             Pageable pageable);
 
     @Operation(summary = "채팅방 입장", description = "지정한 채팅방에 입장한다. 파생톡방에 비밀번호가 설정된 경우 password 파라미터 필요")

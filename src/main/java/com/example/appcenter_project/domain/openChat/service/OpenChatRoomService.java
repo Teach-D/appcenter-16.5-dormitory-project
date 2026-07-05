@@ -2,6 +2,7 @@ package com.example.appcenter_project.domain.openChat.service;
 
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateDerivedRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateOpenChatRoomDto;
+import com.example.appcenter_project.domain.openChat.dto.response.ResponseChatRoomListDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseDerivedRoomCreatedDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseLeaveOpenChatRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatParticipantDto;
@@ -16,7 +17,13 @@ import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomTab;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomType;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatMessageRepository;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatParticipantRepository;
+import com.example.appcenter_project.domain.openChat.repository.OpenChatRoomQuerydslRepository;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatRoomRepository;
+import org.springframework.beans.factory.annotation.Qualifier;
+import com.example.appcenter_project.domain.roommate.entity.RoommateChattingChat;
+import com.example.appcenter_project.domain.roommate.entity.RoommateChattingRoom;
+import com.example.appcenter_project.domain.roommate.repository.RoommateChattingChatRepository;
+import com.example.appcenter_project.domain.roommate.repository.RoommateChattingRoomRepository;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.user.enums.Role;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
@@ -33,9 +40,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -48,6 +58,9 @@ public class OpenChatRoomService {
     private final OpenChatMessageRepository openChatMessageRepository;
     private final UserRepository userRepository;
     private final OpenChatMessageService openChatMessageService;
+    private final OpenChatRoomQuerydslRepository openChatRoomQuerydslRepository;
+    private final RoommateChattingRoomRepository roommateChattingRoomRepository;
+    private final RoommateChattingChatRepository roommateChattingChatRepository;
 
     @Autowired
     public OpenChatRoomService(
@@ -55,12 +68,18 @@ public class OpenChatRoomService {
             OpenChatParticipantRepository openChatParticipantRepository,
             OpenChatMessageRepository openChatMessageRepository,
             UserRepository userRepository,
-            @Lazy OpenChatMessageService openChatMessageService) {
+            @Lazy OpenChatMessageService openChatMessageService,
+            @Qualifier("openChatRoomQuerydslRepositoryImpl") OpenChatRoomQuerydslRepository openChatRoomQuerydslRepository,
+            RoommateChattingRoomRepository roommateChattingRoomRepository,
+            RoommateChattingChatRepository roommateChattingChatRepository) {
         this.openChatRoomRepository = openChatRoomRepository;
         this.openChatParticipantRepository = openChatParticipantRepository;
         this.openChatMessageRepository = openChatMessageRepository;
         this.userRepository = userRepository;
         this.openChatMessageService = openChatMessageService;
+        this.openChatRoomQuerydslRepository = openChatRoomQuerydslRepository;
+        this.roommateChattingRoomRepository = roommateChattingRoomRepository;
+        this.roommateChattingChatRepository = roommateChattingChatRepository;
     }
 
     @Transactional
@@ -105,15 +124,24 @@ public class OpenChatRoomService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ResponseOpenChatRoomDto> getRooms(Long userId, OpenChatRoomTab tab, Pageable pageable) {
+    public ResponseChatRoomListDto getRooms(Long userId, OpenChatRoomTab tab, String keyword, Pageable pageable) {
+        String k = (keyword == null || keyword.isBlank()) ? null : keyword;
+
         if (tab == OpenChatRoomTab.MY) {
-            List<OpenChatRoom> rooms = openChatRoomRepository.findMyRooms(userId);
-            return toPageDtoWithUnread(rooms, userId, pageable);
+            return getMyRooms(userId, k, pageable);
         } else if (tab == OpenChatRoomTab.ALL) {
-            List<OpenChatRoom> rooms = openChatRoomRepository.findAllPublicRooms();
-            return toPageDto(rooms, userId, pageable);
+            List<OpenChatRoom> rooms = openChatRoomQuerydslRepository.findAllPublicRooms(k);
+            List<ResponseOpenChatRoomDto> dtos = buildOpenChatDtos(rooms, userId, false);
+            return ResponseChatRoomListDto.of(dtos, pageable, 0);
+        } else {
+            String dormType = Optional.ofNullable(userRepository)
+                    .flatMap(r -> r.findById(userId))
+                    .map(u -> u.getDormType() != null ? u.getDormType().name() : "NONE")
+                    .orElse("NONE");
+            List<OpenChatRoom> rooms = openChatRoomQuerydslRepository.findByDormitory(dormType, k);
+            List<ResponseOpenChatRoomDto> dtos = buildOpenChatDtos(rooms, userId, false);
+            return ResponseChatRoomListDto.of(dtos, pageable, 0);
         }
-        return new PageImpl<>(Collections.emptyList(), pageable, 0);
     }
 
     @Transactional(readOnly = true)
@@ -121,8 +149,61 @@ public class OpenChatRoomService {
         if ("NONE".equals(dormType)) {
             return new PageImpl<>(Collections.emptyList(), pageable, 0);
         }
-        List<OpenChatRoom> rooms = openChatRoomRepository.findByDormitory(dormType);
+        List<OpenChatRoom> rooms = openChatRoomQuerydslRepository.findByDormitory(dormType, null);
         return toPageDto(rooms, userId, pageable);
+    }
+
+    private ResponseChatRoomListDto getMyRooms(Long userId, String keyword, Pageable pageable) {
+        List<OpenChatRoom> openChatRooms = openChatRoomQuerydslRepository.findMyRooms(userId, keyword);
+
+        List<RoommateChattingRoom> roommateRooms = roommateChattingRoomRepository.findActiveRoomsByUserId(userId);
+        if (keyword != null) {
+            String lowerKeyword = keyword.toLowerCase();
+            roommateRooms = roommateRooms.stream()
+                    .filter(r -> getOpponentName(r, userId).toLowerCase().contains(lowerKeyword))
+                    .toList();
+        }
+
+        List<Long> roommateRoomIds = roommateRooms.stream().map(RoommateChattingRoom::getId).toList();
+        Map<Long, RoommateChattingChat> lastMsgMap = roommateRoomIds.isEmpty()
+                ? Map.of()
+                : roommateChattingChatRepository.findLastMessagesByRoomIds(roommateRoomIds);
+        Map<Long, Long> unreadMap = roommateRoomIds.isEmpty()
+                ? Map.of()
+                : roommateChattingChatRepository.countUnreadByRoomIdsAndUserId(roommateRoomIds, userId);
+
+        List<ResponseOpenChatRoomDto> openChatDtos = buildOpenChatDtosWithUnread(openChatRooms, userId);
+        List<ResponseOpenChatRoomDto> roommateDtos = roommateRooms.stream()
+                .map(r -> {
+                    RoommateChattingChat lastChat = lastMsgMap.get(r.getId());
+                    int unread = unreadMap.getOrDefault(r.getId(), 0L).intValue();
+                    return ResponseOpenChatRoomDto.fromRoommate(
+                            r.getId(),
+                            getOpponentName(r, userId),
+                            lastChat != null ? lastChat.getCreatedDate() : null,
+                            lastChat != null ? lastChat.getContent() : null,
+                            unread);
+                })
+                .toList();
+
+        List<ResponseOpenChatRoomDto> merged = new ArrayList<>();
+        merged.addAll(openChatDtos);
+        merged.addAll(roommateDtos);
+        merged.sort(Comparator.comparing(
+                ResponseOpenChatRoomDto::getLastMessageAt,
+                Comparator.nullsLast(Comparator.reverseOrder())));
+
+        int openChatUnread = openChatDtos.stream().mapToInt(ResponseOpenChatRoomDto::getUnreadCount).sum();
+        int roommateUnread = (int) unreadMap.values().stream().mapToLong(Long::longValue).sum();
+
+        return ResponseChatRoomListDto.of(merged, pageable, openChatUnread + roommateUnread);
+    }
+
+    private String getOpponentName(RoommateChattingRoom room, Long userId) {
+        if (room.getHost().getId().equals(userId)) {
+            return room.getGuest().getName();
+        }
+        return room.getHost().getName();
     }
 
     @Transactional
@@ -428,6 +509,42 @@ public class OpenChatRoomService {
         return ResponseOpenChatParticipantListDto.of(roomId, dtos, hostCount);
     }
 
+    private List<ResponseOpenChatRoomDto> buildOpenChatDtos(List<OpenChatRoom> rooms, Long userId, boolean withUnread) {
+        if (rooms.isEmpty()) return Collections.emptyList();
+        List<Long> roomIds = rooms.stream().map(OpenChatRoom::getId).toList();
+
+        Map<Long, Long> countMap = openChatParticipantRepository != null
+                ? openChatParticipantRepository.countByRoomIds(roomIds)
+                : Collections.emptyMap();
+        Set<Long> joinedRoomIds = openChatParticipantRepository != null
+                ? openChatParticipantRepository.findJoinedRoomIds(userId, roomIds)
+                : Collections.emptySet();
+
+        if (withUnread && openChatParticipantRepository != null && openChatMessageRepository != null) {
+            Map<Long, Long> lastReadMap = openChatParticipantRepository.findLastReadMessageIdsByUserId(userId, roomIds);
+            return rooms.stream()
+                    .map(room -> {
+                        Long lastReadMessageId = lastReadMap.get(room.getId());
+                        int unread = (int) openChatMessageRepository.countByRoomIdAndIdGreaterThan(room.getId(), lastReadMessageId);
+                        return ResponseOpenChatRoomDto.from(room,
+                                countMap.getOrDefault(room.getId(), 0L).intValue(),
+                                joinedRoomIds.contains(room.getId()),
+                                unread);
+                    }).toList();
+        }
+
+        return rooms.stream()
+                .map(room -> ResponseOpenChatRoomDto.from(
+                        room,
+                        countMap.getOrDefault(room.getId(), 0L).intValue(),
+                        joinedRoomIds.contains(room.getId())))
+                .toList();
+    }
+
+    private List<ResponseOpenChatRoomDto> buildOpenChatDtosWithUnread(List<OpenChatRoom> rooms, Long userId) {
+        return buildOpenChatDtos(rooms, userId, true);
+    }
+
     private Page<ResponseOpenChatRoomDto> toPageDto(List<OpenChatRoom> rooms, Long userId, Pageable pageable) {
         if (rooms.isEmpty()) {
             return new PageImpl<>(Collections.emptyList(), pageable, 0);
@@ -440,28 +557,6 @@ public class OpenChatRoomService {
                         room,
                         countMap.getOrDefault(room.getId(), 0L).intValue(),
                         joinedRoomIds.contains(room.getId())))
-                .toList();
-        return new PageImpl<>(dtos, pageable, dtos.size());
-    }
-
-    private Page<ResponseOpenChatRoomDto> toPageDtoWithUnread(List<OpenChatRoom> rooms, Long userId, Pageable pageable) {
-        if (rooms.isEmpty()) {
-            return new PageImpl<>(Collections.emptyList(), pageable, 0);
-        }
-        List<Long> roomIds = rooms.stream().map(OpenChatRoom::getId).toList();
-        Map<Long, Long> countMap = openChatParticipantRepository.countByRoomIds(roomIds);
-        Set<Long> joinedRoomIds = openChatParticipantRepository.findJoinedRoomIds(userId, roomIds);
-        Map<Long, Long> lastReadMap = openChatParticipantRepository.findLastReadMessageIdsByUserId(userId, roomIds);
-        List<ResponseOpenChatRoomDto> dtos = rooms.stream()
-                .map(room -> {
-                    Long lastReadMessageId = lastReadMap.get(room.getId());
-                    int unreadCount = (int) openChatMessageRepository.countByRoomIdAndIdGreaterThan(room.getId(), lastReadMessageId);
-                    return ResponseOpenChatRoomDto.from(
-                            room,
-                            countMap.getOrDefault(room.getId(), 0L).intValue(),
-                            joinedRoomIds.contains(room.getId()),
-                            unreadCount);
-                })
                 .toList();
         return new PageImpl<>(dtos, pageable, dtos.size());
     }
