@@ -11,7 +11,7 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 
 @Slf4j
@@ -30,6 +30,7 @@ public class AiScheduleExtractClient {
     private String apiKey;
 
     private RestClient restClient;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @PostConstruct
     public void init() {
@@ -46,13 +47,15 @@ public class AiScheduleExtractClient {
                 && apiKey != null && !apiKey.isBlank();
     }
 
-    public AiScheduleExtractResponse extract(String textBody) {
-        log.debug("AI 서버 일정 추출 요청 (본문 길이: {}자)", textBody.length());
+    public AiScheduleExtractResponse extract(Long announcementId, String textBody) {
+        log.info("[AI-EXTRACT][{}] 요청 전송 — 본문 {}자", announcementId, textBody.length());
 
         RuntimeException lastError = null;
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             try {
-                return restClient.post()
+                long startMs = System.currentTimeMillis();
+
+                String rawJson = restClient.post()
                         .uri(baseUrl + "/shared/extract-schedule")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
                         .contentType(MediaType.TEXT_PLAIN)
@@ -62,18 +65,33 @@ public class AiScheduleExtractClient {
                         .onStatus(HttpStatusCode::isError, (req, res) -> {
                             throw new IllegalStateException("AI 서버 오류: HTTP " + res.getStatusCode());
                         })
-                        .body(AiScheduleExtractResponse.class);
+                        .body(String.class);
+
+                long elapsed = System.currentTimeMillis() - startMs;
+                log.info("[AI-EXTRACT][{}] 응답 수신 — {}ms, raw={}",
+                        announcementId, elapsed, abbreviate(rawJson, 2000));
+
+                return objectMapper.readValue(rawJson, AiScheduleExtractResponse.class);
+
             } catch (ResourceAccessException e) {
                 throw e;
-            } catch (RuntimeException e) {
-                lastError = e;
-                log.warn("AI 일정 추출 실패 (시도 {}/{}): {}", attempt, MAX_ATTEMPTS, e.getMessage());
+            } catch (Exception e) {
+                lastError = e instanceof RuntimeException re
+                        ? re
+                        : new IllegalStateException("AI 응답 파싱 실패: " + e.getMessage(), e);
+                log.warn("[AI-EXTRACT][{}] 실패 (시도 {}/{}): {}",
+                        announcementId, attempt, MAX_ATTEMPTS, e.getMessage());
                 if (attempt < MAX_ATTEMPTS) {
                     sleep(RETRY_BACKOFF_MS * attempt);
                 }
             }
         }
         throw lastError;
+    }
+
+    private String abbreviate(String s, int max) {
+        if (s == null) return "null";
+        return s.length() <= max ? s : s.substring(0, max) + "...(총 " + s.length() + "자)";
     }
 
     private void sleep(long millis) {
