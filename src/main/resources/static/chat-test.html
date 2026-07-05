@@ -173,6 +173,17 @@
   </div>
 </div>
 
+<!-- ───────────── 모달: 단순 참여자 목록 (BR-670) ───────────── -->
+<div id="modal-simple-participants" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-title">👤 단순 참여자 목록 <span style="font-size:12px;color:#888;">BR-670 · /participants/simple</span></div>
+    <div id="simple-participant-list"></div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-simple-participants')">닫기</button>
+    </div>
+  </div>
+</div>
+
 <!-- ───────────── 모달: 참여자 목록 ───────────── -->
 <div id="modal-participants" class="modal-overlay" style="display:none">
   <div class="modal-box">
@@ -464,6 +475,7 @@
       <div id="room-menu" style="display:none">
         <button class="menu-btn" id="btn-notification" onclick="toggleNotification()" title="§8 알림 끄기/켜기">🔔 알림끄기</button>
         <button class="menu-btn" onclick="showParticipants()" title="§9 참여자 보기 및 초대">👥 참여자</button>
+        <button class="menu-btn" onclick="showSimpleParticipants()" title="BR-670 참여자 단순 목록">👤 단순참여자</button>
         <button class="menu-btn" onclick="openDerivedModal()" title="§9 파생 톡방 만들기">+ 파생톡방</button>
         <button class="menu-btn" id="btn-load-history" onclick="loadHistory()" style="display:none">이전 메시지</button>
         <button class="menu-btn" id="btn-delete-room" onclick="deleteCurrentRoom()" style="display:none;background:#fef2f2;border-color:#fca5a5;color:#b91c1c;" title="방 삭제 (방장 전용)">🗑️ 방삭제</button>
@@ -1093,6 +1105,28 @@ function renderParticipants(participants, total, hostCount) {
 }
 
 // ═══════════════════════════════════════════════════════
+//  BR-670 단순 참여자 목록 (GET /participants/simple)
+// ═══════════════════════════════════════════════════════
+async function showSimpleParticipants() {
+  if (!currentRoomId) return;
+  try {
+    const res = await authFetch(`/open-chat-rooms/${currentRoomId}/participants/simple`);
+    if (!res.ok) { log(`단순 참여자 조회 실패 (${res.status})`, 'err'); return; }
+    const data = await res.json();
+    const list = document.getElementById('simple-participant-list');
+    list.innerHTML = (data.participants || []).map(p =>
+      `<div class="participant-card">
+        <div>
+          <div class="participant-name">${escHtml(p.name)}</div>
+          <div class="participant-sub">userId: ${p.userId}</div>
+        </div>
+      </div>`
+    ).join('') || '<p style="color:#aaa;font-size:13px;">참여자 없음</p>';
+    showModal('modal-simple-participants');
+  } catch (e) { log(`단순 참여자 오류: ${e.message}`, 'err'); }
+}
+
+// ═══════════════════════════════════════════════════════
 //  강제퇴장 (방장/ADMIN 전용) — BR-659: reason 필수, newHostUserId 옵션
 // ═══════════════════════════════════════════════════════
 let kickTargetUserId = null;
@@ -1458,7 +1492,11 @@ async function sendImage() {
     });
     if (!res.ok) { const err = await res.text(); log(`이미지 전송 실패 (${res.status}): ${err}`, 'err'); return; }
     const data = await res.json();
-    log(`이미지 전송 완료 (messageId: ${data.messageId})`, 'ok');
+    if (Array.isArray(data)) {
+      log(`이미지 전송 완료 (${data.length}장, messageIds: ${data.map(m => m.messageId).join(', ')})`, 'ok');
+    } else {
+      log(`이미지 전송 완료 (messageId: ${data.messageId})`, 'ok');
+    }
     document.getElementById('image-input').value = '';
     document.getElementById('image-previews').innerHTML = '';
   } catch (e) { log(`이미지 오류: ${e.message}`, 'err'); }

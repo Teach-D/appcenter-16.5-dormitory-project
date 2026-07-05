@@ -91,13 +91,13 @@ class OpenChatImageMessageServiceTest {
         given(openChatParticipantRepository.countByRoomId(ROOM_ID)).willReturn(3L);
         given(openChatParticipantRepository.countReadByRoomIdAndMessageId(eq(ROOM_ID), any())).willReturn(1L);
 
-        ResponseOpenChatMessageDto result = openChatMessageService.sendImageMessage(USER_ID, ROOM_ID, images, httpServletRequest);
+        List<ResponseOpenChatMessageDto> results = openChatMessageService.sendImageMessage(USER_ID, ROOM_ID, images, httpServletRequest);
 
-        assertThat(result).isNotNull();
-        assertThat(result.getType()).isEqualTo(OpenChatMessageType.IMAGE);
-        assertThat(result.getImageUrls()).isNotEmpty();
+        assertThat(results).isNotNull();
+        assertThat(results.get(0).getType()).isEqualTo(OpenChatMessageType.IMAGE);
+        assertThat(results.get(0).getImageUrls()).isNotEmpty();
         then(openChatMessageRepository).should(times(1)).save(any());
-        then(imageService).should(times(1)).saveImages(eq(ImageType.OPEN_CHAT_MESSAGE), any(), eq(images));
+        then(imageService).should(times(1)).saveImages(eq(ImageType.OPEN_CHAT_MESSAGE), any(), any());
     }
 
     @Test
@@ -118,9 +118,9 @@ class OpenChatImageMessageServiceTest {
         given(openChatParticipantRepository.countByRoomId(ROOM_ID)).willReturn(3L);
         given(openChatParticipantRepository.countReadByRoomIdAndMessageId(eq(ROOM_ID), any())).willReturn(1L);
 
-        ResponseOpenChatMessageDto result = openChatMessageService.sendImageMessage(USER_ID, ROOM_ID, images, httpServletRequest);
+        List<ResponseOpenChatMessageDto> results = openChatMessageService.sendImageMessage(USER_ID, ROOM_ID, images, httpServletRequest);
 
-        assertThat(result.getImageUrls()).hasSize(2);
+        assertThat(results).hasSize(2);
     }
 
     @Test
@@ -141,9 +141,9 @@ class OpenChatImageMessageServiceTest {
         given(openChatParticipantRepository.countByRoomId(ROOM_ID)).willReturn(2L);
         given(openChatParticipantRepository.countReadByRoomIdAndMessageId(eq(ROOM_ID), any())).willReturn(1L);
 
-        ResponseOpenChatMessageDto result = openChatMessageService.sendImageMessage(USER_ID, ROOM_ID, images, httpServletRequest);
+        List<ResponseOpenChatMessageDto> results = openChatMessageService.sendImageMessage(USER_ID, ROOM_ID, images, httpServletRequest);
 
-        assertThat(result.getContent()).isEqualTo("");
+        assertThat(results.get(0).getContent()).isEqualTo("");
     }
 
     @Test
@@ -210,9 +210,9 @@ class OpenChatImageMessageServiceTest {
         given(openChatParticipantRepository.countByRoomId(ROOM_ID)).willReturn(2L);
         given(openChatParticipantRepository.countReadByRoomIdAndMessageId(eq(ROOM_ID), any())).willReturn(1L);
 
-        ResponseOpenChatMessageDto result = openChatMessageService.sendImageMessage(USER_ID, ROOM_ID, images, httpServletRequest);
+        List<ResponseOpenChatMessageDto> results = openChatMessageService.sendImageMessage(USER_ID, ROOM_ID, images, httpServletRequest);
 
-        assertThat(result).isNotNull();
+        assertThat(results.get(0)).isNotNull();
     }
 
     @Test
@@ -233,9 +233,9 @@ class OpenChatImageMessageServiceTest {
         given(openChatParticipantRepository.countByRoomId(ROOM_ID)).willReturn(2L);
         given(openChatParticipantRepository.countReadByRoomIdAndMessageId(eq(ROOM_ID), any())).willReturn(1L);
 
-        ResponseOpenChatMessageDto result = openChatMessageService.sendImageMessage(USER_ID, ROOM_ID, images, httpServletRequest);
+        List<ResponseOpenChatMessageDto> results = openChatMessageService.sendImageMessage(USER_ID, ROOM_ID, images, httpServletRequest);
 
-        assertThat(result).isNotNull();
+        assertThat(results.get(0)).isNotNull();
     }
 
     @Test
@@ -256,9 +256,9 @@ class OpenChatImageMessageServiceTest {
         given(openChatParticipantRepository.countByRoomId(ROOM_ID)).willReturn(2L);
         given(openChatParticipantRepository.countReadByRoomIdAndMessageId(eq(ROOM_ID), any())).willReturn(1L);
 
-        ResponseOpenChatMessageDto result = openChatMessageService.sendImageMessage(USER_ID, ROOM_ID, images, httpServletRequest);
+        List<ResponseOpenChatMessageDto> results = openChatMessageService.sendImageMessage(USER_ID, ROOM_ID, images, httpServletRequest);
 
-        assertThat(result).isNotNull();
+        assertThat(results.get(0)).isNotNull();
     }
 
     @Test
@@ -375,9 +375,9 @@ class OpenChatImageMessageServiceTest {
         given(openChatParticipantRepository.countByRoomId(ROOM_ID)).willReturn(5L);
         given(openChatParticipantRepository.countReadByRoomIdAndMessageId(eq(ROOM_ID), any())).willReturn(2L);
 
-        ResponseOpenChatMessageDto result = openChatMessageService.sendImageMessage(USER_ID, ROOM_ID, images, httpServletRequest);
+        List<ResponseOpenChatMessageDto> results = openChatMessageService.sendImageMessage(USER_ID, ROOM_ID, images, httpServletRequest);
 
-        assertThat(result.getUnreadCount()).isEqualTo(3);
+        assertThat(results.get(0).getUnreadCount()).isEqualTo(3);
     }
 
     @Test
@@ -421,8 +421,8 @@ class OpenChatImageMessageServiceTest {
         given(openChatParticipantRepository.countByRoomId(ROOM_ID)).willReturn(2L);
         given(openChatParticipantRepository.countReadByRoomIdAndMessageId(eq(ROOM_ID), any())).willReturn(1L);
 
-        ResponseOpenChatMessageDto result = openChatMessageService.sendImageMessage(USER_ID, ROOM_ID, images, httpServletRequest);
+        List<ResponseOpenChatMessageDto> results = openChatMessageService.sendImageMessage(USER_ID, ROOM_ID, images, httpServletRequest);
 
-        assertThat(result.getRoomId()).isEqualTo(ROOM_ID);
+        assertThat(results.get(0).getRoomId()).isEqualTo(ROOM_ID);
     }
 }

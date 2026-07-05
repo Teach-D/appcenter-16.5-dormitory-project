@@ -8,6 +8,7 @@ import com.example.appcenter_project.domain.openChat.dto.response.ResponseLeaveO
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatParticipantListDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDetailDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDto;
+import com.example.appcenter_project.domain.openChat.dto.response.ResponseSimpleParticipantListDto;
 import com.example.appcenter_project.domain.openChat.enums.KickReason;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomTab;
 import com.example.appcenter_project.domain.openChat.service.OpenChatRoomService;
@@ -136,6 +137,14 @@ public class OpenChatRoomController implements OpenChatRoomApiSpecification {
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long roomId) {
         ResponseOpenChatParticipantListDto result = openChatRoomService.getParticipants(roomId, user.getId());
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/{roomId}/participants/simple")
+    public ResponseEntity<ResponseSimpleParticipantListDto> getSimpleParticipants(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId) {
+        ResponseSimpleParticipantListDto result = openChatRoomService.getSimpleParticipants(roomId, user.getId());
         return ResponseEntity.ok(result);
     }
 
