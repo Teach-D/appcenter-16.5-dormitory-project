@@ -180,6 +180,7 @@ public enum ErrorCode {
     OPEN_CHAT_ALREADY_HOST(BAD_REQUEST, 22015, "[OpenChat] 이미 방장인 사용자입니다."),
     OPEN_CHAT_SOLE_HOST_CANNOT_LEAVE(BAD_REQUEST, 22016, "[OpenChat] 단독 방장은 방 삭제 또는 방장 위임 후 나갈 수 있습니다."),
     OPEN_CHAT_KICK_FORBIDDEN(FORBIDDEN, 22017, "[OpenChat] 강제퇴장 권한이 없습니다."),
+    OPEN_CHAT_NEW_HOST_REQUIRED(BAD_REQUEST, 22018, "[OpenChat] 방장 강퇴 시 새 방장을 지정해야 합니다."),
 
     // STUDENT_ID_DISCLOSURE
     DISCLOSURE_REQUEST_NOT_FOUND(NOT_FOUND, 23001, "[StudentIdDisclosure] 학번 공개 요청을 찾을 수 없습니다."),
@@ -202,6 +203,10 @@ public enum ErrorCode {
 
     // DISTRIBUTED LOCK
     GROUP_ORDER_VIEW_COUNT_LOCK_FAILED(SERVICE_UNAVAILABLE, 21001, "[GroupOrder] 조회수 업데이트 락 획득에 실패했습니다. 잠시 후 재시도됩니다."),
+
+    // WEATHER
+    WEATHER_API_ERROR(INTERNAL_SERVER_ERROR, 25001, "[Weather] 기상청 API 호출 중 오류가 발생했습니다."),
+    WEATHER_INVALID_LOCATION(BAD_REQUEST, 25002, "[Weather] 대한민국 범위를 벗어난 위경도입니다."),
 
     // SERVER
     UNHANDLED_EXCEPTION(INTERNAL_SERVER_ERROR, 99999, "[Server] 서버 내부 오류가 발생했습니다.");
