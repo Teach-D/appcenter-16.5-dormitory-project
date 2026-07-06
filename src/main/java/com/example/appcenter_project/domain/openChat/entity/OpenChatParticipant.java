@@ -27,7 +27,7 @@ public class OpenChatParticipant {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ChatNotificationMode notificationMode = ChatNotificationMode.EVERY;
+    private ChatNotificationMode notificationMode = ChatNotificationMode.BUNDLED;
 
     @Column(nullable = false)
     private LocalDateTime joinedAt;
@@ -42,7 +42,7 @@ public class OpenChatParticipant {
         participant.roomId = roomId;
         participant.userId = userId;
         participant.joinedAt = joinedAt;
-        participant.notificationMode = ChatNotificationMode.EVERY;
+        participant.notificationMode = ChatNotificationMode.BUNDLED;
         participant.isHost = false;
         return participant;
     }
@@ -52,7 +52,7 @@ public class OpenChatParticipant {
         participant.roomId = roomId;
         participant.userId = userId;
         participant.joinedAt = LocalDateTime.now();
-        participant.notificationMode = ChatNotificationMode.EVERY;
+        participant.notificationMode = ChatNotificationMode.BUNDLED;
         participant.isHost = isHost;
         return participant;
     }
