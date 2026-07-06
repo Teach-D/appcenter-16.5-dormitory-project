@@ -140,6 +140,14 @@
     /* ── 방장 위임 선택 ── */
     .transfer-card { padding: 8px 10px; border: 1px solid #e5e7eb; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
     .transfer-card-name { font-size: 13px; font-weight: 600; }
+
+    /* ── BR-674 ROOM_LINK 메시지 카드 ── */
+    .room-link-card { background: #eff6ff; border: 1.5px solid #93c5fd; border-radius: 10px; padding: 10px 12px; cursor: pointer; display: block; text-decoration: none; margin-top: 2px; }
+    .room-link-card:hover { background: #dbeafe; }
+    .room-link-card-label { font-size: 10px; font-weight: 700; color: #3b82f6; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+    .room-link-card-title { font-weight: 700; font-size: 13px; color: #1d4ed8; }
+    .room-link-card-desc { font-size: 11px; color: #6b7280; margin-top: 3px; }
+    .room-link-card-meta { font-size: 11px; color: #3b82f6; margin-top: 5px; }
   </style>
 </head>
 <body>
@@ -225,6 +233,14 @@
         <option value="20">20명</option>
         <option value="100">제한 없음 (100)</option>
       </select>
+    </div>
+    <div class="inline-row" style="align-items:center;margin-top:4px;">
+      <label style="font-size:12px;font-weight:600;color:#555;flex:0 0 auto;">목록 공개 (isPublic)</label>
+      <input type="checkbox" id="derived-is-public" checked style="width:auto;margin-left:6px;">
+    </div>
+    <div class="form-row" style="margin-top:6px;">
+      <label>입장 비밀번호 (선택, 최대 50자)</label>
+      <input type="text" id="derived-password" placeholder="비밀번호 없음" maxlength="50">
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModal('modal-derived')">취소</button>
@@ -1087,6 +1103,7 @@ function renderParticipants(participants, total, hostCount) {
     let actions = '';
     if (!isMe) {
       // 초대 / 학번 공개 요청 (항상 표시)
+      actions += `<button class="btn-xs btn-success" onclick="startPersonalRoomWith(${p.userId}, '${escHtml(p.nickname)}')">개인채팅</button>`;
       actions += `<button class="btn-xs btn-secondary" onclick="inviteToRoom(${p.userId}, '${escHtml(p.nickname)}')">파생톡방 초대</button>`;
       actions += `<button class="btn-xs btn-warning" onclick="requestDisclosure(${p.userId}, '${escHtml(p.nickname)}')">학번공개요청</button>`;
       actions += `<button class="btn-xs btn-secondary" onclick="checkDisclosureStatus(${p.userId}, '${escHtml(p.nickname)}')">공개상태확인</button>`;
@@ -1116,6 +1133,28 @@ function renderParticipants(participants, total, hostCount) {
       <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">${actions}</div>
     </div>`;
   }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+//  참여자 목록 → 개인 채팅방 만들기 (BR-668)
+// ═══════════════════════════════════════════════════════
+async function startPersonalRoomWith(targetUserId, nickname) {
+  const roomName = prompt(`${nickname}님과의 개인 채팅방 이름을 입력하세요:`, `${nickname}님과의 채팅`);
+  if (roomName === null) return;
+  const name = roomName.trim() || `${nickname}님과의 채팅`;
+  closeModal('modal-participants');
+  try {
+    const res = await authFetch('/open-chat-rooms/personal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, targetUserId, password: null })
+    });
+    if (!res.ok) { const err = await res.text(); log(`개인 채팅방 생성 실패 (${res.status}): ${err}`, 'err'); return; }
+    const data = await res.json();
+    log(`개인 채팅방 생성 완료! roomId: ${data.roomId} | 상대: ${nickname}(userId=${targetUserId})`, 'ok');
+    loadRooms();
+    await enterRoom(data.roomId, name, '');
+  } catch (e) { log(`개인 채팅방 생성 오류: ${e.message}`, 'err'); }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1279,24 +1318,27 @@ function openDerivedModal() {
 }
 
 async function doCreateDerivedRoom() {
-  const parentRoomId   = parseInt(document.getElementById('derived-parent-id').value, 10);
-  const name           = document.getElementById('derived-name').value.trim();
-  const description    = document.getElementById('derived-desc').value.trim();
+  const originRoomId    = parseInt(document.getElementById('derived-parent-id').value, 10);
+  const name            = document.getElementById('derived-name').value.trim();
+  const description     = document.getElementById('derived-desc').value.trim() || null;
   const maxParticipants = parseInt(document.getElementById('derived-max').value, 10);
+  const isPublic        = document.getElementById('derived-is-public').checked;
+  const password        = document.getElementById('derived-password').value.trim() || null;
   if (!name) { log('톡방 이름을 입력하세요.', 'err'); return; }
 
   try {
     const res = await authFetch('/open-chat-rooms/derived', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ parentRoomId, name, description, maxParticipants })
+      body: JSON.stringify({ originRoomId, name, description, maxParticipants, isPublic, password })
     });
     if (res.status === 201) {
       const data = await res.json();
-      log(`파생 톡방 생성 완료! 새 roomId: ${data.roomId ?? JSON.stringify(data)}`, 'ok');
+      log(`파생 톡방 생성 완료! 새 roomId: ${data.roomId} — 원본 방(#${originRoomId})에 ROOM_LINK 메시지 전송됨 (BR-674)`, 'ok');
       closeModal('modal-derived');
       document.getElementById('derived-name').value = '';
       document.getElementById('derived-desc').value = '';
+      document.getElementById('derived-password').value = '';
       loadRooms();
     } else { const err = await res.text(); log(`파생 톡방 생성 실패 (${res.status}): ${err}`, 'err'); }
   } catch (e) { log(`파생 톡방 오류: ${e.message}`, 'err'); }
@@ -1586,6 +1628,31 @@ function appendMessage(msg, scrollBottom = true, prepend = false) {
       img.onerror = () => { img.alt = '[이미지 로드 실패]'; };
       bubble.appendChild(img);
     });
+  } else if (msg.type === 'ROOM_LINK') {
+    // BR-674: ROOM_LINK 메시지는 카드 형태로 렌더링
+    let linkData = {};
+    try {
+      // linkedRoomId 등 필드가 DTO에 직접 있거나, content JSON에서 파싱
+      if (msg.linkedRoomId) {
+        linkData = { derivedRoomId: msg.linkedRoomId, roomName: msg.linkedRoomName, description: msg.linkedRoomDescription, maxParticipants: msg.linkedRoomMaxParticipants };
+      } else {
+        linkData = JSON.parse(msg.content || '{}');
+      }
+    } catch (_) { linkData = {}; }
+    const card = document.createElement('a');
+    card.className = 'room-link-card';
+    card.href = '#';
+    card.innerHTML = `
+      <div class="room-link-card-label">파생 톡방 링크 (BR-674)</div>
+      <div class="room-link-card-title">${escHtml(linkData.roomName || '파생 톡방')}</div>
+      ${linkData.description ? `<div class="room-link-card-desc">${escHtml(linkData.description)}</div>` : ''}
+      <div class="room-link-card-meta">최대 ${linkData.maxParticipants || '?'}명 &nbsp;·&nbsp; roomId: ${linkData.derivedRoomId || '?'} &nbsp;·&nbsp; 클릭하여 입장</div>
+    `;
+    card.addEventListener('click', e => {
+      e.preventDefault();
+      if (linkData.derivedRoomId) enterRoom(linkData.derivedRoomId, linkData.roomName || '파생 톡방', linkData.description || '');
+    });
+    bubble.appendChild(card);
   } else { bubble.textContent = msg.content || ''; }
   row.appendChild(bubble);
 
