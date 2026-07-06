@@ -7,6 +7,7 @@ import com.example.appcenter_project.domain.openChat.dto.response.ResponseLeaveO
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatParticipantListDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDetailDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDto;
+import com.example.appcenter_project.domain.openChat.dto.response.ResponseSimpleParticipantListDto;
 import com.example.appcenter_project.domain.openChat.enums.KickReason;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomTab;
 import com.example.appcenter_project.global.security.CustomUserDetails;
@@ -90,4 +91,9 @@ public interface OpenChatRoomApiSpecification {
             @PathVariable Long targetUserId,
             @RequestParam KickReason reason,
             @RequestParam(required = false) Long newHostUserId);
+
+    @Operation(summary = "참여자 단순 목록 조회", description = "채팅방 참여자의 userId와 이름만 반환한다")
+    ResponseEntity<ResponseSimpleParticipantListDto> getSimpleParticipants(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId);
 }

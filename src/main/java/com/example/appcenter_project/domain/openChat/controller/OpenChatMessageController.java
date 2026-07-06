@@ -54,7 +54,7 @@ public class OpenChatMessageController implements OpenChatMessageApiSpecificatio
     }
 
     @PostMapping(value = "/{roomId}/messages/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ResponseOpenChatMessageDto> sendImageMessage(
+    public ResponseEntity<List<ResponseOpenChatMessageDto>> sendImageMessage(
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long roomId,
             @RequestPart(value = "images", required = false) List<MultipartFile> images,

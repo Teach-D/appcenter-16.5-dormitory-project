@@ -88,7 +88,7 @@ class OpenChatImageMessageControllerTest {
                 2,
                 List.of("https://host/images/open_chat_message/img.jpg")
         );
-        given(openChatMessageService.sendImageMessage(any(), eq(ROOM_ID), any(), any())).willReturn(response);
+        given(openChatMessageService.sendImageMessage(any(), eq(ROOM_ID), any(), any())).willReturn(List.of(response));
 
         MockMultipartFile image = new MockMultipartFile("images", "test.jpg", "image/jpeg", "content".getBytes());
 
@@ -108,7 +108,7 @@ class OpenChatImageMessageControllerTest {
                 2,
                 List.of("https://host/images/open_chat_message/img.jpg")
         );
-        given(openChatMessageService.sendImageMessage(any(), eq(ROOM_ID), any(), any())).willReturn(response);
+        given(openChatMessageService.sendImageMessage(any(), eq(ROOM_ID), any(), any())).willReturn(List.of(response));
 
         MockMultipartFile image = new MockMultipartFile("images", "test.jpg", "image/jpeg", "content".getBytes());
 
@@ -117,7 +117,7 @@ class OpenChatImageMessageControllerTest {
                 .contentType(MediaType.MULTIPART_FORM_DATA));
 
         result.andExpect(status().isCreated())
-                .andExpect(jsonPath("$.type").value(OpenChatMessageType.IMAGE.name()));
+                .andExpect(jsonPath("$[0].type").value(OpenChatMessageType.IMAGE.name()));
     }
 
     @Test
@@ -129,7 +129,7 @@ class OpenChatImageMessageControllerTest {
                 2,
                 List.of("https://host/images/open_chat_message/img.jpg")
         );
-        given(openChatMessageService.sendImageMessage(any(), eq(ROOM_ID), any(), any())).willReturn(response);
+        given(openChatMessageService.sendImageMessage(any(), eq(ROOM_ID), any(), any())).willReturn(List.of(response));
 
         MockMultipartFile image = new MockMultipartFile("images", "test.jpg", "image/jpeg", "content".getBytes());
 
@@ -138,8 +138,8 @@ class OpenChatImageMessageControllerTest {
                 .contentType(MediaType.MULTIPART_FORM_DATA));
 
         result.andExpect(status().isCreated())
-                .andExpect(jsonPath("$.imageUrls").isArray())
-                .andExpect(jsonPath("$.imageUrls[0]").value("https://host/images/open_chat_message/img.jpg"));
+                .andExpect(jsonPath("$[0].imageUrls").isArray())
+                .andExpect(jsonPath("$[0].imageUrls[0]").value("https://host/images/open_chat_message/img.jpg"));
     }
 
     @Test
@@ -151,7 +151,7 @@ class OpenChatImageMessageControllerTest {
                 2,
                 List.of("https://host/images/open_chat_message/img.jpg")
         );
-        given(openChatMessageService.sendImageMessage(any(), eq(ROOM_ID), any(), any())).willReturn(response);
+        given(openChatMessageService.sendImageMessage(any(), eq(ROOM_ID), any(), any())).willReturn(List.of(response));
 
         MockMultipartFile image = new MockMultipartFile("images", "test.jpg", "image/jpeg", "content".getBytes());
 
@@ -160,7 +160,7 @@ class OpenChatImageMessageControllerTest {
                 .contentType(MediaType.MULTIPART_FORM_DATA));
 
         result.andExpect(status().isCreated())
-                .andExpect(jsonPath("$.content").value(""));
+                .andExpect(jsonPath("$[0].content").value(""));
     }
 
     @Test
@@ -226,16 +226,19 @@ class OpenChatImageMessageControllerTest {
     @Test
     @DisplayName("이미지 메시지 전송 성공 — 여러 파일 업로드 시 201")
     void should_return_201_when_multiple_images_sent() throws Exception {
-        ResponseOpenChatMessageDto response = ResponseOpenChatMessageDto.from(
+        ResponseOpenChatMessageDto response1 = ResponseOpenChatMessageDto.from(
                 OpenChatImageMessageFixture.createImageMessage(ROOM_ID, USER_ID),
                 "홍길동",
                 2,
-                List.of(
-                        "https://host/images/open_chat_message/img1.jpg",
-                        "https://host/images/open_chat_message/img2.png"
-                )
+                List.of("https://host/images/open_chat_message/img1.jpg")
         );
-        given(openChatMessageService.sendImageMessage(any(), eq(ROOM_ID), any(), any())).willReturn(response);
+        ResponseOpenChatMessageDto response2 = ResponseOpenChatMessageDto.from(
+                OpenChatImageMessageFixture.createImageMessage(ROOM_ID, USER_ID),
+                "홍길동",
+                2,
+                List.of("https://host/images/open_chat_message/img2.png")
+        );
+        given(openChatMessageService.sendImageMessage(any(), eq(ROOM_ID), any(), any())).willReturn(List.of(response1, response2));
 
         MockMultipartFile image1 = new MockMultipartFile("images", "test1.jpg", "image/jpeg", "content".getBytes());
         MockMultipartFile image2 = new MockMultipartFile("images", "test2.png", "image/png", "content".getBytes());
@@ -246,8 +249,7 @@ class OpenChatImageMessageControllerTest {
                 .contentType(MediaType.MULTIPART_FORM_DATA));
 
         result.andExpect(status().isCreated())
-                .andExpect(jsonPath("$.imageUrls").isArray())
-                .andExpect(jsonPath("$.imageUrls.length()").value(2));
+                .andExpect(jsonPath("$.length()").value(2));
     }
 
     @Test
@@ -259,7 +261,7 @@ class OpenChatImageMessageControllerTest {
                 2,
                 List.of("https://host/images/open_chat_message/img.jpg")
         );
-        given(openChatMessageService.sendImageMessage(any(), eq(ROOM_ID), any(), any())).willReturn(response);
+        given(openChatMessageService.sendImageMessage(any(), eq(ROOM_ID), any(), any())).willReturn(List.of(response));
 
         MockMultipartFile image = new MockMultipartFile("images", "test.jpg", "image/jpeg", "content".getBytes());
 
@@ -268,6 +270,6 @@ class OpenChatImageMessageControllerTest {
                 .contentType(MediaType.MULTIPART_FORM_DATA));
 
         result.andExpect(status().isCreated())
-                .andExpect(jsonPath("$.roomId").value(ROOM_ID));
+                .andExpect(jsonPath("$[0].roomId").value(ROOM_ID));
     }
 }

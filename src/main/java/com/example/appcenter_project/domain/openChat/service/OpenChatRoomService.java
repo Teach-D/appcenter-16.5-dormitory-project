@@ -12,6 +12,8 @@ import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenCh
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDetailDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponsePersonalRoomCreatedDto;
+import com.example.appcenter_project.domain.openChat.dto.response.ResponseSimpleParticipantDto;
+import com.example.appcenter_project.domain.openChat.dto.response.ResponseSimpleParticipantListDto;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatParticipant;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatRoom;
 import com.example.appcenter_project.domain.openChat.enums.KickReason;
@@ -533,6 +535,32 @@ public class OpenChatRoomService {
 
         int hostCount = (int) participants.stream().filter(OpenChatParticipant::isHost).count();
         return ResponseOpenChatParticipantListDto.of(roomId, dtos, hostCount);
+    }
+
+    @Transactional(readOnly = true)
+    public ResponseSimpleParticipantListDto getSimpleParticipants(Long roomId, Long requesterId) {
+        openChatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND));
+
+        if (!openChatParticipantRepository.existsByRoomIdAndUserId(roomId, requesterId)) {
+            throw new CustomException(ErrorCode.OPEN_CHAT_ROOM_FORBIDDEN);
+        }
+
+        List<OpenChatParticipant> participants = openChatParticipantRepository.findAllByRoomId(roomId);
+
+        List<Long> userIds = participants.stream().map(OpenChatParticipant::getUserId).toList();
+        List<User> users = userRepository.findAllById(userIds);
+        Map<Long, String> nameMap = users.stream()
+                .collect(Collectors.toMap(User::getId, u -> {
+                    if (u.getRole() == Role.ROLE_ADMIN) return "관리자";
+                    return u.getName() != null ? u.getName() : "";
+                }));
+
+        List<ResponseSimpleParticipantDto> dtos = participants.stream()
+                .map(p -> ResponseSimpleParticipantDto.of(p.getUserId(), nameMap.getOrDefault(p.getUserId(), "")))
+                .toList();
+
+        return ResponseSimpleParticipantListDto.of(roomId, dtos);
     }
 
     private List<ResponseOpenChatRoomDto> buildOpenChatDtos(List<OpenChatRoom> rooms, Long userId, boolean withUnread) {

@@ -84,7 +84,7 @@ public class OpenChatMessageService {
         }
     }
 
-    public ResponseOpenChatMessageDto sendImageMessage(Long userId, Long roomId, List<MultipartFile> images, HttpServletRequest httpServletRequest) {
+    public List<ResponseOpenChatMessageDto> sendImageMessage(Long userId, Long roomId, List<MultipartFile> images, HttpServletRequest httpServletRequest) {
         OpenChatRoom room = openChatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND));
 
@@ -96,31 +96,39 @@ public class OpenChatMessageService {
         User sender = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        OpenChatMessage message = OpenChatMessage.create(roomId, userId, "", OpenChatMessageType.IMAGE);
-        openChatMessageRepository.save(message);
+        List<ResponseOpenChatMessageDto> results = new java.util.ArrayList<>();
 
-        imageService.saveImages(ImageType.OPEN_CHAT_MESSAGE, message.getId(), images);
+        for (MultipartFile image : images) {
+            OpenChatMessage message = OpenChatMessage.create(roomId, userId, "", OpenChatMessageType.IMAGE);
+            openChatMessageRepository.save(message);
 
-        List<String> imageUrls = imageService.findStaticImageUrls(ImageType.OPEN_CHAT_MESSAGE, message.getId(), httpServletRequest);
+            imageService.saveImages(ImageType.OPEN_CHAT_MESSAGE, message.getId(), List.of(image));
 
-        room.updateLastMessage("[이미지]", message.getCreatedDate());
+            List<String> imageUrls = imageService.findStaticImageUrls(ImageType.OPEN_CHAT_MESSAGE, message.getId(), httpServletRequest);
 
-        Set<Long> usersToRead = new HashSet<>(sessionRegistry.getSubscriberUserIds(roomId));
-        usersToRead.add(userId);
-        openChatParticipantRepository.updateLastReadMessageIdByRoomIdAndUserIdIn(roomId, usersToRead, message.getId());
+            Set<Long> usersToRead = new HashSet<>(sessionRegistry.getSubscriberUserIds(roomId));
+            usersToRead.add(userId);
+            openChatParticipantRepository.updateLastReadMessageIdByRoomIdAndUserIdIn(roomId, usersToRead, message.getId());
 
-        int unreadCount = calculateUnreadCount(roomId, message.getId());
+            int unreadCount = calculateUnreadCount(roomId, message.getId());
 
-        ResponseOpenChatMessageDto response = ResponseOpenChatMessageDto.from(message, sender.getName(), unreadCount, imageUrls);
-        messagingTemplate.convertAndSend("/sub/openchat/" + roomId, response);
-        messagingTemplate.convertAndSend("/sub/openchat/" + roomId + "/read",
-                ResponseOpenChatReadEventDto.of(message.getId(), unreadCount));
+            ResponseOpenChatMessageDto response = ResponseOpenChatMessageDto.from(message, sender.getName(), unreadCount, imageUrls);
+            messagingTemplate.convertAndSend("/sub/openchat/" + roomId, response);
+            messagingTemplate.convertAndSend("/sub/openchat/" + roomId + "/read",
+                    ResponseOpenChatReadEventDto.of(message.getId(), unreadCount));
 
-        if (openChatNotificationService != null) {
-            openChatNotificationService.sendImmediateNotifications(roomId, usersToRead, room.getName(), "[이미지]");
+            if (openChatNotificationService != null) {
+                openChatNotificationService.sendImmediateNotifications(roomId, usersToRead, room.getName(), "[이미지]");
+            }
+
+            results.add(response);
         }
 
-        return response;
+        if (!results.isEmpty()) {
+            room.updateLastMessage("[이미지]", results.get(results.size() - 1).getCreatedAt());
+        }
+
+        return results;
     }
 
     public void sendSystemMessage(Long roomId, String content) {
