@@ -51,6 +51,7 @@ public class OpenChatMessageService {
     private final ImageService imageService;
     private final ImageRepository imageRepository;
     private final OpenChatSessionRegistry sessionRegistry;
+    private final OpenChatNotificationService openChatNotificationService;
 
     public void sendMessage(Long userId, RequestOpenChatMessageDto request) {
         OpenChatRoom room = openChatRoomRepository.findById(request.getRoomId()).orElse(null);
@@ -76,6 +77,11 @@ public class OpenChatMessageService {
         messagingTemplate.convertAndSend("/sub/openchat/" + request.getRoomId(), response);
         messagingTemplate.convertAndSend("/sub/openchat/" + request.getRoomId() + "/read",
                 ResponseOpenChatReadEventDto.of(message.getId(), unreadCount));
+
+        if (openChatNotificationService != null) {
+            openChatNotificationService.sendImmediateNotifications(
+                    request.getRoomId(), usersToRead, room.getName(), request.getContent());
+        }
     }
 
     public ResponseOpenChatMessageDto sendImageMessage(Long userId, Long roomId, List<MultipartFile> images, HttpServletRequest httpServletRequest) {
@@ -109,6 +115,10 @@ public class OpenChatMessageService {
         messagingTemplate.convertAndSend("/sub/openchat/" + roomId, response);
         messagingTemplate.convertAndSend("/sub/openchat/" + roomId + "/read",
                 ResponseOpenChatReadEventDto.of(message.getId(), unreadCount));
+
+        if (openChatNotificationService != null) {
+            openChatNotificationService.sendImmediateNotifications(roomId, usersToRead, room.getName(), "[이미지]");
+        }
 
         return response;
     }

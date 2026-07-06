@@ -2,6 +2,7 @@ package com.example.appcenter_project.domain.openChat.controller;
 
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateOpenChatRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreatePersonalRoomDto;
+import com.example.appcenter_project.domain.openChat.dto.request.RequestUpdateNotificationModeDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseChatRoomListDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponsePersonalRoomCreatedDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseLeaveOpenChatRoomDto;
@@ -80,8 +81,8 @@ public class OpenChatRoomController implements OpenChatRoomApiSpecification {
     public ResponseEntity<Void> updateNotification(
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long roomId,
-            @RequestParam boolean enabled) {
-        openChatRoomService.updateNotification(user.getId(), roomId, enabled);
+            @RequestBody @Valid RequestUpdateNotificationModeDto dto) {
+        openChatRoomService.updateNotificationMode(user.getId(), roomId, dto.getMode());
         return ResponseEntity.noContent().build();
     }
 

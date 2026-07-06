@@ -462,7 +462,7 @@
         <div id="chat-room-id" style="font-size:11px;color:#888;"></div>
       </div>
       <div id="room-menu" style="display:none">
-        <button class="menu-btn" id="btn-notification" onclick="toggleNotification()" title="§8 알림 끄기/켜기">🔔 알림끄기</button>
+        <button class="menu-btn" id="btn-notification" onclick="cycleNotificationMode()" title="BR-672 알림 모드: EVERY → BUNDLED → OFF 순환">🔔 EVERY</button>
         <button class="menu-btn" onclick="showParticipants()" title="§9 참여자 보기 및 초대">👥 참여자</button>
         <button class="menu-btn" onclick="openDerivedModal()" title="§9 파생 톡방 만들기">+ 파생톡방</button>
         <button class="menu-btn" id="btn-load-history" onclick="loadHistory()" style="display:none">이전 메시지</button>
@@ -508,7 +508,7 @@ let currentTab  = 'MY';
 let stompClient = null;
 let nextCursor  = null;
 let hasNext     = false;
-let notifEnabled = true;
+let notifMode = 'EVERY';
 let pendingDisclosureTarget = null;
 let disclaimerCallback = null;
 
@@ -771,7 +771,7 @@ async function joinRoomById() {
 function openChat(roomId, name, description) {
   currentRoomId = roomId;
   currentRoomName = name;
-  notifEnabled = true;
+  notifMode = 'EVERY';
   currentUserIsHost = false;
   currentHostCount = 0;
 
@@ -981,24 +981,38 @@ async function doTransferAndLeave(newHostUserId, nickname) {
 }
 
 // ═══════════════════════════════════════════════════════
-//  §8 알림 끄기/켜기
+//  BR-672 알림 모드: EVERY → BUNDLED → OFF 순환
 // ═══════════════════════════════════════════════════════
-async function toggleNotification() {
+const NOTIF_CYCLE = { EVERY: 'BUNDLED', BUNDLED: 'OFF', OFF: 'EVERY' };
+
+async function cycleNotificationMode() {
   if (!currentRoomId) return;
-  notifEnabled = !notifEnabled;
+  const prev = notifMode;
+  const next = NOTIF_CYCLE[prev];
   try {
-    const res = await authFetch(`/open-chat-rooms/${currentRoomId}/participants/me/notification?enabled=${notifEnabled}`, { method: 'PATCH' });
+    const res = await authFetch(`/open-chat-rooms/${currentRoomId}/participants/me/notification`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: next })
+    });
     if (res.status === 204) {
-      log(`알림 ${notifEnabled ? '켜짐' : '꺼짐'}`, 'ok');
+      notifMode = next;
+      log(`알림 모드: ${prev} → ${next}`, 'ok');
       updateNotifBtn();
-    } else { log(`알림 변경 실패 (${res.status})`, 'err'); notifEnabled = !notifEnabled; }
-  } catch (e) { log(`알림 오류: ${e.message}`, 'err'); notifEnabled = !notifEnabled; }
+    } else {
+      const err = await res.json().catch(() => ({}));
+      log(`알림 모드 변경 실패 (${res.status}) ${err.message || ''}`, 'err');
+    }
+  } catch (e) { log(`알림 오류: ${e.message}`, 'err'); }
 }
 
 function updateNotifBtn() {
   const btn = document.getElementById('btn-notification');
-  if (notifEnabled) { btn.textContent = '🔔 알림끄기'; btn.classList.remove('active'); }
-  else              { btn.textContent = '🔕 알림켜기'; btn.classList.add('active'); }
+  const labels = { EVERY: '🔔 EVERY', BUNDLED: '🕐 BUNDLED', OFF: '🔕 OFF' };
+  btn.textContent = labels[notifMode] || '🔔 EVERY';
+  btn.classList.toggle('active', notifMode === 'OFF');
+  btn.style.background = notifMode === 'BUNDLED' ? '#fef3c7' : '';
+  btn.style.borderColor = notifMode === 'BUNDLED' ? '#f59e0b' : '';
 }
 
 // ═══════════════════════════════════════════════════════

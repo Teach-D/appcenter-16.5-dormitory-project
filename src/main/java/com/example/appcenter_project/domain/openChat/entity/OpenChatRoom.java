@@ -137,6 +137,18 @@ public class OpenChatRoom extends BaseTimeEntity {
         return room;
     }
 
+    public static OpenChatRoom createForTest(Long id, String name) {
+        OpenChatRoom room = new OpenChatRoom();
+        room.id = id;
+        room.name = name;
+        room.scope = OpenChatRoomScope.ALL;
+        room.maxParticipants = 10;
+        room.isOfficial = false;
+        room.roomType = OpenChatRoomType.OPEN;
+        room.isPublic = true;
+        return room;
+    }
+
     public void updateLastMessage(String content, LocalDateTime at) {
         this.lastMessage = content != null && content.length() > 500 ? content.substring(0, 500) : content;
         this.lastMessageAt = at;
