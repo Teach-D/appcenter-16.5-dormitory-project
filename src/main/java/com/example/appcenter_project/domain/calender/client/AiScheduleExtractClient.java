@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 @Slf4j
@@ -58,7 +60,7 @@ public class AiScheduleExtractClient {
                 String rawJson = restClient.post()
                         .uri(baseUrl + "/shared/extract-schedule")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
-                        .contentType(MediaType.TEXT_PLAIN)
+                        .contentType(new MediaType(MediaType.TEXT_PLAIN, StandardCharsets.UTF_8))
                         .accept(MediaType.APPLICATION_JSON)
                         .body(textBody)
                         .retrieve()
