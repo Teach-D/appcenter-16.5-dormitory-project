@@ -29,7 +29,7 @@ import static org.mockito.BDDMockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(OpenChatDerivedRoomController.class)
+@WebMvcTest(OpenChatRoomController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class OpenChatDerivedRoomLinkControllerTest {
 

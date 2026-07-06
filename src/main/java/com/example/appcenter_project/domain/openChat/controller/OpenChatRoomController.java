@@ -1,14 +1,16 @@
 package com.example.appcenter_project.domain.openChat.controller;
 
+import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateDerivedRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateOpenChatRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreatePersonalRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestUpdateNotificationModeDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseChatRoomListDto;
-import com.example.appcenter_project.domain.openChat.dto.response.ResponsePersonalRoomCreatedDto;
+import com.example.appcenter_project.domain.openChat.dto.response.ResponseDerivedRoomCreatedDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseLeaveOpenChatRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatParticipantListDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDetailDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDto;
+import com.example.appcenter_project.domain.openChat.dto.response.ResponsePersonalRoomCreatedDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseSimpleParticipantListDto;
 import com.example.appcenter_project.domain.openChat.enums.KickReason;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomTab;
@@ -32,6 +34,14 @@ import static org.springframework.http.HttpStatus.*;
 public class OpenChatRoomController implements OpenChatRoomApiSpecification {
 
     private final OpenChatRoomService openChatRoomService;
+
+    @PostMapping("/derived")
+    public ResponseEntity<ResponseDerivedRoomCreatedDto> createDerivedRoom(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestBody @Valid RequestCreateDerivedRoomDto request) {
+        ResponseDerivedRoomCreatedDto result = openChatRoomService.createDerivedRoom(user.getId(), request);
+        return ResponseEntity.status(CREATED).body(result);
+    }
 
     @PostMapping
     public ResponseEntity<Map<String, Long>> createRoom(
