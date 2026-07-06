@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.openChat.repository;
 
 import com.example.appcenter_project.domain.openChat.entity.OpenChatParticipant;
+import com.example.appcenter_project.domain.openChat.enums.ChatNotificationMode;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -27,6 +28,8 @@ public interface OpenChatParticipantRepository extends JpaRepository<OpenChatPar
     Optional<OpenChatParticipant> findByRoomIdAndUserId(Long roomId, Long userId);
 
     List<OpenChatParticipant> findAllByRoomId(Long roomId);
+
+    List<OpenChatParticipant> findAllByRoomIdAndNotificationMode(Long roomId, ChatNotificationMode mode);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM OpenChatParticipant p WHERE p.roomId = :roomId")

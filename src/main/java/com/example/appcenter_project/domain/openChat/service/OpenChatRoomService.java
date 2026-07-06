@@ -3,6 +3,7 @@ package com.example.appcenter_project.domain.openChat.service;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateDerivedRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateOpenChatRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreatePersonalRoomDto;
+import com.example.appcenter_project.domain.openChat.enums.ChatNotificationMode;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseChatRoomListDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseDerivedRoomCreatedDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseLeaveOpenChatRoomDto;
@@ -334,11 +335,11 @@ public class OpenChatRoomService {
     }
 
     @Transactional
-    public void updateNotification(Long userId, Long roomId, boolean enabled) {
+    public void updateNotificationMode(Long userId, Long roomId, ChatNotificationMode mode) {
         OpenChatParticipant participant = openChatParticipantRepository
                 .findByRoomIdAndUserId(roomId, userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_PARTICIPANT_NOT_FOUND));
-        participant.updateNotificationEnabled(enabled);
+        participant.updateNotificationMode(mode);
     }
 
     @Transactional

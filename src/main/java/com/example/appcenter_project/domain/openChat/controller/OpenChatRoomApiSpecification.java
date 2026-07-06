@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.openChat.controller;
 
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateOpenChatRoomDto;
+import com.example.appcenter_project.domain.openChat.dto.request.RequestUpdateNotificationModeDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseChatRoomListDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseLeaveOpenChatRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatParticipantListDto;
@@ -49,11 +50,11 @@ public interface OpenChatRoomApiSpecification {
             @PathVariable Long roomId,
             @RequestParam(required = false) Long newHostUserId);
 
-    @Operation(summary = "알림 설정 변경", description = "해당 채팅방의 알림 수신 여부를 변경한다 (enabled=true/false)")
+    @Operation(summary = "알림 모드 변경", description = "해당 채팅방의 FCM 알림 모드를 변경한다 (EVERY/BUNDLED/OFF)")
     ResponseEntity<Void> updateNotification(
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long roomId,
-            @RequestParam boolean enabled);
+            @RequestBody @Valid RequestUpdateNotificationModeDto dto);
 
     @Operation(summary = "채팅방 삭제", description = "채팅방을 강제 삭제한다")
     ResponseEntity<Void> deleteRoom(

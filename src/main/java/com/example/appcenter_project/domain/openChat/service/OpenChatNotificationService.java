@@ -4,7 +4,9 @@ import com.example.appcenter_project.domain.fcm.entity.FcmOutbox;
 import com.example.appcenter_project.domain.fcm.entity.FcmToken;
 import com.example.appcenter_project.domain.fcm.repository.FcmOutboxRepository;
 import com.example.appcenter_project.domain.openChat.dto.UnreadNotificationInfo;
+import com.example.appcenter_project.domain.openChat.entity.OpenChatParticipant;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatRoom;
+import com.example.appcenter_project.domain.openChat.enums.ChatNotificationMode;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatParticipantRepository;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatRoomRepository;
 import com.example.appcenter_project.domain.user.repository.FcmTokenRepository;
@@ -67,6 +69,37 @@ public class OpenChatNotificationService {
         if (!outboxes.isEmpty()) {
             fcmOutboxRepository.saveAll(outboxes);
             log.info("오픈채팅 시간별 알림 배치 완료: {}건 발송 예약", outboxes.size());
+        }
+    }
+
+    @Transactional
+    public void sendImmediateNotifications(Long roomId, Set<Long> onlineUserIds, String title, String body) {
+        List<OpenChatParticipant> everyParticipants =
+                participantRepository.findAllByRoomIdAndNotificationMode(roomId, ChatNotificationMode.EVERY);
+
+        List<Long> targetUserIds = everyParticipants.stream()
+                .map(OpenChatParticipant::getUserId)
+                .filter(userId -> !onlineUserIds.contains(userId))
+                .toList();
+
+        if (targetUserIds.isEmpty()) {
+            return;
+        }
+
+        Map<Long, String> tokenMap = fcmTokenRepository.findAllByUserIdIn(targetUserIds).stream()
+                .collect(Collectors.toMap(
+                        token -> token.getUser().getId(),
+                        FcmToken::getToken,
+                        (existing, replacement) -> existing
+                ));
+
+        List<FcmOutbox> outboxes = targetUserIds.stream()
+                .filter(tokenMap::containsKey)
+                .map(userId -> FcmOutbox.create(tokenMap.get(userId), title, body))
+                .toList();
+
+        if (!outboxes.isEmpty()) {
+            fcmOutboxRepository.saveAll(outboxes);
         }
     }
 }
