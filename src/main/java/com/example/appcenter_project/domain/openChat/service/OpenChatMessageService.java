@@ -19,6 +19,8 @@ import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.global.config.OpenChatSessionRegistry;
 import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.global.exception.ErrorCode;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -27,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +55,7 @@ public class OpenChatMessageService {
     private final ImageRepository imageRepository;
     private final OpenChatSessionRegistry sessionRegistry;
     private final OpenChatNotificationService openChatNotificationService;
+    private final ObjectMapper objectMapper;
 
     public void sendMessage(Long userId, RequestOpenChatMessageDto request) {
         OpenChatRoom room = openChatRoomRepository.findById(request.getRoomId()).orElse(null);
@@ -150,6 +154,44 @@ public class OpenChatMessageService {
         ResponseOpenChatMessageDto response = ResponseOpenChatMessageDto.from(message, null, unreadCount);
         messagingTemplate.convertAndSend("/sub/openchat/" + roomId, response);
         messagingTemplate.convertAndSend("/sub/openchat/" + roomId + "/read",
+                ResponseOpenChatReadEventDto.of(message.getId(), unreadCount));
+    }
+
+    public void sendRoomLinkMessage(long originRoomId, long senderId, long derivedRoomId, String name, String description, int maxParticipants) {
+        User sender = userRepository.findById(senderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        OpenChatRoom originRoom = openChatRoomRepository.findById(originRoomId)
+                .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND));
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("derivedRoomId", derivedRoomId);
+        payload.put("roomName", name);
+        payload.put("description", description);
+        payload.put("maxParticipants", maxParticipants);
+
+        String content;
+        try {
+            content = objectMapper.writeValueAsString(payload);
+        } catch (JsonProcessingException e) {
+            throw new CustomException(ErrorCode.UNHANDLED_EXCEPTION);
+        }
+
+        OpenChatMessage message = OpenChatMessage.create(originRoomId, senderId, content, OpenChatMessageType.ROOM_LINK);
+        openChatMessageRepository.save(message);
+
+        originRoom.updateLastMessage(content, message.getCreatedDate());
+
+        Set<Long> usersToRead = new HashSet<>(sessionRegistry.getSubscriberUserIds(originRoomId));
+        usersToRead.add(senderId);
+        openChatParticipantRepository.updateLastReadMessageIdByRoomIdAndUserIdIn(originRoomId, usersToRead, message.getId());
+
+        int unreadCount = calculateUnreadCount(originRoomId, message.getId());
+
+        ResponseOpenChatMessageDto response = ResponseOpenChatMessageDto.fromRoomLink(
+                message, sender.getName(), unreadCount,
+                derivedRoomId, name, description, maxParticipants);
+        messagingTemplate.convertAndSend("/sub/openchat/" + originRoomId, response);
+        messagingTemplate.convertAndSend("/sub/openchat/" + originRoomId + "/read",
                 ResponseOpenChatReadEventDto.of(message.getId(), unreadCount));
     }
 

@@ -12,6 +12,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class RequestCreateDerivedRoomDto {
 
+    @NotNull
+    private Long originRoomId;
+
     @NotBlank
     @Size(min = 1, max = 30)
     private String name;

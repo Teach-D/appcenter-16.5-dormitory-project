@@ -89,6 +89,13 @@ public class OpenChatRoomService {
 
     @Transactional
     public ResponseDerivedRoomCreatedDto createDerivedRoom(Long userId, RequestCreateDerivedRoomDto request) {
+        openChatRoomRepository.findById(request.getOriginRoomId())
+                .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND));
+
+        if (!openChatParticipantRepository.existsByRoomIdAndUserId(request.getOriginRoomId(), userId)) {
+            throw new CustomException(ErrorCode.OPEN_CHAT_PARTICIPANT_NOT_FOUND);
+        }
+
         OpenChatRoom derivedRoom = OpenChatRoom.createDerived(
                 request.getName(),
                 request.getDescription(),
@@ -99,6 +106,11 @@ public class OpenChatRoomService {
         );
         OpenChatRoom savedRoom = openChatRoomRepository.save(derivedRoom);
         openChatParticipantRepository.save(OpenChatParticipant.create(savedRoom.getId(), userId, true));
+
+        openChatMessageService.sendRoomLinkMessage(
+                request.getOriginRoomId(), userId,
+                savedRoom.getId(), request.getName(), request.getDescription(), request.getMaxParticipants());
+
         return ResponseDerivedRoomCreatedDto.of(savedRoom.getId());
     }
 

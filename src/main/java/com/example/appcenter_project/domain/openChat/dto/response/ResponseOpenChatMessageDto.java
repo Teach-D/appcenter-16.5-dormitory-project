@@ -20,6 +20,10 @@ public class ResponseOpenChatMessageDto {
     private List<String> imageUrls;
     private int unreadCount;
     private LocalDateTime createdAt;
+    private Long linkedRoomId;
+    private String linkedRoomName;
+    private String linkedRoomDescription;
+    private Integer linkedRoomMaxParticipants;
 
     public static ResponseOpenChatMessageDto from(OpenChatMessage message, String senderNickname, int unreadCount) {
         return from(message, senderNickname, unreadCount, List.of());
@@ -36,6 +40,26 @@ public class ResponseOpenChatMessageDto {
                 .imageUrls(imageUrls != null ? imageUrls : List.of())
                 .unreadCount(unreadCount)
                 .createdAt(message.getCreatedDate())
+                .build();
+    }
+
+    public static ResponseOpenChatMessageDto fromRoomLink(
+            OpenChatMessage message, String senderNickname, int unreadCount,
+            Long linkedRoomId, String linkedRoomName, String linkedRoomDescription, Integer linkedRoomMaxParticipants) {
+        return ResponseOpenChatMessageDto.builder()
+                .messageId(message.getId())
+                .roomId(message.getRoomId())
+                .senderId(message.getSenderId())
+                .senderNickname(senderNickname)
+                .content(message.getContent())
+                .type(message.getType())
+                .imageUrls(List.of())
+                .unreadCount(unreadCount)
+                .createdAt(message.getCreatedDate())
+                .linkedRoomId(linkedRoomId)
+                .linkedRoomName(linkedRoomName)
+                .linkedRoomDescription(linkedRoomDescription)
+                .linkedRoomMaxParticipants(linkedRoomMaxParticipants)
                 .build();
     }
 }
