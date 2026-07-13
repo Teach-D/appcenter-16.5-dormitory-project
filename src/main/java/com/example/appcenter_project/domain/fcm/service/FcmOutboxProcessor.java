@@ -96,7 +96,8 @@ public class FcmOutboxProcessor {
             if (chunk.isEmpty()) break;
 
             Map<String, List<FcmOutbox>> groups = chunk.stream()
-                    .collect(Collectors.groupingBy(o -> o.getTitle() + "\0" + o.getBody()));
+                    .collect(Collectors.groupingBy(o -> o.getTitle() + "\0" + o.getBody()
+                            + "\0" + o.getRoutingType() + "\0" + o.getRoutingId()));
 
             List<CompletableFuture<int[]>> futures = new ArrayList<>();
             for (List<FcmOutbox> group : groups.values()) {
@@ -151,7 +152,9 @@ public class FcmOutboxProcessor {
     }
 
     private long getRedisLong(String key) {
-        Object val = redisTemplate.opsForValue().get(key);
+        var ops = redisTemplate.opsForValue();
+        if (ops == null) return 0L;
+        Object val = ops.get(key);
         if (val == null) return 0L;
         return Long.parseLong(val.toString());
     }

@@ -1,9 +1,14 @@
 package com.example.appcenter_project.domain.fcm.service;
 
 import com.example.appcenter_project.domain.fcm.entity.FcmOutbox;
+import com.example.appcenter_project.domain.fcm.enums.FcmRoutingType;
 import com.example.appcenter_project.domain.fcm.enums.OutboxStatus;
 import com.example.appcenter_project.domain.fcm.repository.FcmOutboxRepository;
 import com.example.appcenter_project.domain.user.repository.FcmTokenRepository;
+import com.google.firebase.messaging.AndroidConfig;
+import com.google.firebase.messaging.AndroidNotification;
+import com.google.firebase.messaging.ApnsConfig;
+import com.google.firebase.messaging.Aps;
 import com.google.firebase.messaging.BatchResponse;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
@@ -51,6 +56,7 @@ public class FcmAsyncSender {
     private final FcmTokenRepository fcmTokenRepository;
     private final FcmOutboxRepository fcmOutboxRepository;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final FirebaseMessaging firebaseMessaging;
 
     public record RetryKey(int retryCount, String errorCode) {}
 
@@ -72,7 +78,7 @@ public class FcmAsyncSender {
                 .build();
 
         try {
-            BatchResponse batchResponse = FirebaseMessaging.getInstance().sendEachForMulticast(message);
+            BatchResponse batchResponse = firebaseMessaging.sendEachForMulticast(message);
             log.info("FCM 배치 전송: 성공={}, 실패={}", batchResponse.getSuccessCount(), batchResponse.getFailureCount());
 
             List<SendResponse> responses = batchResponse.getResponses();
@@ -120,7 +126,7 @@ public class FcmAsyncSender {
                 .build();
 
         try {
-            String response = FirebaseMessaging.getInstance().send(message);
+            String response = firebaseMessaging.send(message);
             log.info("FCM 전송 성공: {}", response);
             recordSuccess();
         } catch (Exception e) {
@@ -136,13 +142,35 @@ public class FcmAsyncSender {
     public CompletableFuture<int[]> sendOutboxBatch(List<FcmOutbox> batch, String title, String body) {
         List<String> tokens = batch.stream().map(FcmOutbox::getToken).toList();
 
-        MulticastMessage message = MulticastMessage.builder()
+        FcmOutbox rep = batch.get(0);
+        FcmRoutingType rt = rep.getRoutingType();
+        Long rid = rep.getRoutingId();
+
+        MulticastMessage.Builder builder = MulticastMessage.builder()
                 .addAllTokens(tokens)
-                .setNotification(Notification.builder().setTitle(title).setBody(body).build())
-                .build();
+                .setNotification(Notification.builder().setTitle(title).setBody(body).build());
+
+        if (rt != null && rid != null) {
+            String groupKey = rt.threadId(rid);
+            builder
+                    .setApnsConfig(ApnsConfig.builder()
+                            .setAps(Aps.builder().setSound("default").setThreadId(groupKey).build())
+                            .build())
+                    .setAndroidConfig(AndroidConfig.builder()
+                            .setNotification(AndroidNotification.builder()
+                                    .setSound("default").setTag(groupKey).build())
+                            .build())
+                    .putData("type", rt.dataType())
+                    .putData(rt.dataKey(), String.valueOf(rid));
+        }
+
+        MulticastMessage message = builder.build();
 
         try {
-            BatchResponse batchResponse = FirebaseMessaging.getInstance().sendEachForMulticast(message);
+            BatchResponse batchResponse = firebaseMessaging.sendEachForMulticast(message);
+            if (batchResponse == null) {
+                return CompletableFuture.completedFuture(new int[]{0, 0, 0});
+            }
             List<SendResponse> responses = batchResponse.getResponses();
 
             List<Long> sentIds = new ArrayList<>();

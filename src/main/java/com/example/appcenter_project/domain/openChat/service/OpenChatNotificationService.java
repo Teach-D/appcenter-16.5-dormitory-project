@@ -2,6 +2,7 @@ package com.example.appcenter_project.domain.openChat.service;
 
 import com.example.appcenter_project.domain.fcm.entity.FcmOutbox;
 import com.example.appcenter_project.domain.fcm.entity.FcmToken;
+import com.example.appcenter_project.domain.fcm.enums.FcmRoutingType;
 import com.example.appcenter_project.domain.fcm.repository.FcmOutboxRepository;
 import com.example.appcenter_project.domain.openChat.dto.UnreadNotificationInfo;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatParticipant;
@@ -62,7 +63,7 @@ public class OpenChatNotificationService {
                     String token = userTokenMap.get(info.userId());
                     String roomName = roomNameMap.getOrDefault(info.roomId(), "오픈채팅");
                     String body = "새 메시지 " + info.unreadCount() + "개";
-                    return FcmOutbox.create(token, roomName, body);
+                    return FcmOutbox.create(token, roomName, body, FcmRoutingType.CHAT, info.roomId());
                 })
                 .toList();
 
@@ -95,7 +96,7 @@ public class OpenChatNotificationService {
 
         List<FcmOutbox> outboxes = targetUserIds.stream()
                 .filter(tokenMap::containsKey)
-                .map(userId -> FcmOutbox.create(tokenMap.get(userId), title, body))
+                .map(userId -> FcmOutbox.create(tokenMap.get(userId), title, body, FcmRoutingType.CHAT, roomId))
                 .toList();
 
         if (!outboxes.isEmpty()) {

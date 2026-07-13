@@ -67,7 +67,7 @@ class OpenChatNotificationModeServiceTest {
     @DisplayName("BUNDLED 성공 — AC-3: 1시간 내 안읽은 메시지 n개 있을 때 FcmOutbox 적재됨")
     void should_save_fcm_outbox_when_AC3_bundled_has_unread_messages() {
         // given
-        UnreadNotificationInfo unreadInfo = new UnreadNotificationInfo(ROOM_ID, USER_A, 5L);
+        UnreadNotificationInfo unreadInfo = new UnreadNotificationInfo(USER_A, ROOM_ID,5L);
         User userA = ChatNotificationModeFixture.createUser(USER_A);
         FcmToken token = ChatNotificationModeFixture.createFcmToken(userA, "token-A");
         OpenChatRoom room = ChatNotificationModeFixture.createRoom(ROOM_ID, "스터디방");
@@ -87,7 +87,7 @@ class OpenChatNotificationModeServiceTest {
     @DisplayName("BUNDLED 성공 — AC-3: FcmOutbox body 형식이 '새 메시지 n개' 형식임")
     void should_set_body_format_as_new_message_count_when_bundled() {
         // given
-        UnreadNotificationInfo unreadInfo = new UnreadNotificationInfo(ROOM_ID, USER_A, 3L);
+        UnreadNotificationInfo unreadInfo = new UnreadNotificationInfo(USER_A, ROOM_ID,3L);
         User userA = ChatNotificationModeFixture.createUser(USER_A);
         FcmToken token = ChatNotificationModeFixture.createFcmToken(userA, "token-A");
         OpenChatRoom room = ChatNotificationModeFixture.createRoom(ROOM_ID, "스터디방");
@@ -111,7 +111,7 @@ class OpenChatNotificationModeServiceTest {
     @DisplayName("BUNDLED 성공 — AC-3: FcmOutbox title이 채팅방 이름으로 설정됨")
     void should_set_title_as_room_name_when_bundled() {
         // given
-        UnreadNotificationInfo unreadInfo = new UnreadNotificationInfo(ROOM_ID, USER_A, 2L);
+        UnreadNotificationInfo unreadInfo = new UnreadNotificationInfo(USER_A, ROOM_ID,2L);
         User userA = ChatNotificationModeFixture.createUser(USER_A);
         FcmToken token = ChatNotificationModeFixture.createFcmToken(userA, "token-A");
         OpenChatRoom room = ChatNotificationModeFixture.createRoom(ROOM_ID, "스터디방");
@@ -151,7 +151,7 @@ class OpenChatNotificationModeServiceTest {
     @DisplayName("BUNDLED — FCM 토큰 없는 사용자는 FcmOutbox 미적재")
     void should_skip_user_without_fcm_token_in_bundled() {
         // given
-        UnreadNotificationInfo unreadInfo = new UnreadNotificationInfo(ROOM_ID, USER_A, 5L);
+        UnreadNotificationInfo unreadInfo = new UnreadNotificationInfo(USER_A, ROOM_ID,5L);
         OpenChatRoom room = ChatNotificationModeFixture.createRoom(ROOM_ID, "스터디방");
 
         given(participantRepository.findUnreadCountsForNotification()).willReturn(List.of(unreadInfo));

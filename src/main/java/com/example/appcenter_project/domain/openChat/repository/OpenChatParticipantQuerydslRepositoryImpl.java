@@ -112,8 +112,8 @@ public class OpenChatParticipantQuerydslRepositoryImpl implements OpenChatPartic
 
         return results.stream()
                 .map(t -> new UnreadNotificationInfo(
-                        t.get(openChatParticipant.roomId),
                         t.get(openChatParticipant.userId),
+                        t.get(openChatParticipant.roomId),
                         t.get(message.id.count()) != null ? t.get(message.id.count()) : 0L
                 ))
                 .toList();
