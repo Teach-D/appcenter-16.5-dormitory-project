@@ -3,7 +3,7 @@ package com.example.appcenter_project.domain.notification.service;
 import com.example.appcenter_project.domain.fcm.enums.FcmRoutingType;
 import com.example.appcenter_project.domain.notification.dto.response.ResponseNotificationReadDto;
 import com.example.appcenter_project.domain.notification.entity.UserNotification;
-import com.example.appcenter_project.domain.notification.repository.UserNotificationQuerydslRepository;
+import com.example.appcenter_project.domain.notification.repository.UserNotificationRepository;
 import com.example.appcenter_project.domain.openChat.service.OpenChatMessageService;
 import com.example.appcenter_project.shared.enums.ApiType;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NotificationReadService {
 
-    private final UserNotificationQuerydslRepository userNotificationQuerydslRepository;
+    private final UserNotificationRepository userNotificationQuerydslRepository;
     private final OpenChatMessageService openChatMessageService;
 
     @Transactional

@@ -4,7 +4,7 @@ import com.example.appcenter_project.domain.fcm.enums.FcmRoutingType;
 import com.example.appcenter_project.domain.notification.dto.response.ResponseNotificationReadDto;
 import com.example.appcenter_project.domain.notification.entity.Notification;
 import com.example.appcenter_project.domain.notification.entity.UserNotification;
-import com.example.appcenter_project.domain.notification.repository.UserNotificationQuerydslRepository;
+import com.example.appcenter_project.domain.notification.repository.UserNotificationRepository;
 import com.example.appcenter_project.domain.openChat.service.OpenChatMessageService;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.global.exception.CustomException;
@@ -32,7 +32,7 @@ import static org.mockito.Mockito.times;
 class NotificationReadServiceTest {
 
     @Mock
-    private UserNotificationQuerydslRepository userNotificationQuerydslRepository;
+    private UserNotificationRepository userNotificationQuerydslRepository;
 
     @Mock
     private OpenChatMessageService openChatMessageService;
