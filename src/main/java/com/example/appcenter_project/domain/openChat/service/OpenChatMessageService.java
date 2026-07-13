@@ -261,6 +261,14 @@ public class OpenChatMessageService {
                 .build();
     }
 
+    public void markChatRoomAsRead(Long roomId, Long userId) {
+        openChatParticipantRepository.findByRoomIdAndUserId(roomId, userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_NOT_PARTICIPANT));
+
+        openChatMessageRepository.findLatestMessageIdByRoomId(roomId).ifPresent(latestId ->
+                openChatParticipantRepository.updateLastReadMessageId(roomId, userId, latestId));
+    }
+
     public int calculateUnreadCount(Long roomId, Long messageId) {
         long total = openChatParticipantRepository.countByRoomId(roomId);
         long readCount = openChatParticipantRepository.countReadByRoomIdAndMessageId(roomId, messageId);

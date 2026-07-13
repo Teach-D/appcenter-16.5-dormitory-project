@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.notification.repository;
 
 import com.example.appcenter_project.domain.notification.entity.UserNotification;
+import com.example.appcenter_project.shared.enums.ApiType;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
@@ -36,6 +37,19 @@ public class UserNotificationRepositoryImpl implements UserNotificationQuerydslR
                 )
                 .orderBy(userNotification.id.desc())
                 .limit(pageable.getPageSize())
+                .fetch();
+    }
+
+    @Override
+    public List<UserNotification> findByUserIdAndBoardIdAndApiType(Long userId, Long boardId, ApiType apiType) {
+        return queryFactory
+                .selectFrom(userNotification)
+                .join(userNotification.notification, notification).fetchJoin()
+                .where(
+                        userNotification.user.id.eq(userId),
+                        notification.boardId.eq(boardId),
+                        notification.apiType.eq(apiType)
+                )
                 .fetch();
     }
 

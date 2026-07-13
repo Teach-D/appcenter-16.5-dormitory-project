@@ -1,8 +1,10 @@
 package com.example.appcenter_project.domain.notification.controller;
 
 import com.example.appcenter_project.domain.notification.dto.request.RequestNotificationDto;
+import com.example.appcenter_project.domain.notification.dto.request.RequestNotificationReadDto;
 import com.example.appcenter_project.domain.notification.dto.request.RequestSendDirectNotificationDto;
 import com.example.appcenter_project.domain.notification.dto.response.ResponseNotificationDto;
+import com.example.appcenter_project.domain.notification.dto.response.ResponseNotificationReadDto;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -21,6 +23,19 @@ import java.util.List;
 
 @Tag(name = "Notification API", description = "알림 관련 API")
 public interface NotificationApiSpecification {
+
+    @Operation(
+            summary = "알림 읽음 처리",
+            description = "공지사항 또는 채팅방 진입 시 해당 알림의 읽음 상태를 서버에 동기화합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "읽음 처리 성공"),
+                    @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+                    @ApiResponse(responseCode = "403", description = "채팅방 참여자가 아님")
+            }
+    )
+    ResponseEntity<ResponseNotificationReadDto> markAsRead(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestBody RequestNotificationReadDto dto);
 
     @Operation(
             summary = "알림 생성",
