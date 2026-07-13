@@ -136,6 +136,8 @@ public class SecurityConfig {
                         /** 알림 **/
                         // 특정 유저 1:1 직접 알림 전송(ADMIN 전용)
                         .requestMatchers(POST, "/notifications/admin/direct").hasRole("ADMIN")
+                        // 알림 읽음 처리(로그인한 사용자)
+                        .requestMatchers(PATCH, "/notifications/read").authenticated()
                         // 알림 조회(로그인한 사용자)
                         .requestMatchers(GET, "/notifications/**").permitAll()
                         // 알림 등록, 수정, 삭제(관리자)
