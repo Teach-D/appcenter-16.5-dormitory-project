@@ -9,55 +9,81 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FcmOutboxTest {
 
     @Test
-    @DisplayName("routingType = NOTICE 저장 — AC-1: 공지사항 routing 저장")
-    void should_set_routingType_NOTICE_when_notice_routing_provided() {
+    @DisplayName("routingType = ANNOUNCEMENT 저장 — AC-3: 공지사항 routing 저장")
+    void should_set_routingType_ANNOUNCEMENT_when_announcement_routing_provided() {
         // given
-        Long announcementId = 5678L;
+        Long announcementId = 7L;
 
         // when
-        FcmOutbox outbox = FcmOutbox.create("token", "제목", "내용", FcmRoutingType.NOTICE, announcementId);
+        FcmOutbox outbox = FcmOutbox.create("token", "제목", "내용", FcmRoutingType.ANNOUNCEMENT, announcementId);
 
         // then
-        assertThat(outbox.getRoutingType()).isEqualTo(FcmRoutingType.NOTICE);
+        assertThat(outbox.getRoutingType()).isEqualTo(FcmRoutingType.ANNOUNCEMENT);
     }
 
     @Test
-    @DisplayName("routingId = 5678 저장 — AC-1: 공지사항 announcementId 저장")
-    void should_set_routingId_when_notice_routing_provided() {
+    @DisplayName("routingId = 7 저장 — AC-3: 공지사항 announcementId 저장")
+    void should_set_routingId_when_announcement_routing_provided() {
         // given
-        Long announcementId = 5678L;
+        Long announcementId = 7L;
 
         // when
-        FcmOutbox outbox = FcmOutbox.create("token", "제목", "내용", FcmRoutingType.NOTICE, announcementId);
+        FcmOutbox outbox = FcmOutbox.create("token", "제목", "내용", FcmRoutingType.ANNOUNCEMENT, announcementId);
 
         // then
-        assertThat(outbox.getRoutingId()).isEqualTo(5678L);
+        assertThat(outbox.getRoutingId()).isEqualTo(7L);
     }
 
     @Test
-    @DisplayName("routingType = CHAT 저장 — AC-2: 채팅 즉시 알림 routing 저장")
-    void should_set_routingType_CHAT_when_chat_routing_provided() {
+    @DisplayName("routingType = CHAT_OPEN 저장 — AC-1: 오픈채팅 즉시 알림 routing 저장")
+    void should_set_routingType_CHAT_OPEN_when_chat_open_routing_provided() {
         // given
         Long roomId = 1234L;
 
         // when
-        FcmOutbox outbox = FcmOutbox.create("token", "채팅 제목", "채팅 내용", FcmRoutingType.CHAT, roomId);
+        FcmOutbox outbox = FcmOutbox.create("token", "채팅 제목", "채팅 내용", FcmRoutingType.CHAT_OPEN, roomId);
 
         // then
-        assertThat(outbox.getRoutingType()).isEqualTo(FcmRoutingType.CHAT);
+        assertThat(outbox.getRoutingType()).isEqualTo(FcmRoutingType.CHAT_OPEN);
     }
 
     @Test
-    @DisplayName("routingId = 1234 저장 — AC-2: 채팅 즉시 알림 roomId 저장")
-    void should_set_routingId_when_chat_routing_provided() {
+    @DisplayName("routingType = CHAT_PERSONAL 저장 — AC-2: 개인채팅 즉시 알림 routing 저장")
+    void should_set_routingType_CHAT_PERSONAL_when_chat_personal_routing_provided() {
         // given
-        Long roomId = 1234L;
+        Long roomId = 99L;
 
         // when
-        FcmOutbox outbox = FcmOutbox.create("token", "채팅 제목", "채팅 내용", FcmRoutingType.CHAT, roomId);
+        FcmOutbox outbox = FcmOutbox.create("token", "채팅 제목", "채팅 내용", FcmRoutingType.CHAT_PERSONAL, roomId);
 
         // then
-        assertThat(outbox.getRoutingId()).isEqualTo(1234L);
+        assertThat(outbox.getRoutingType()).isEqualTo(FcmRoutingType.CHAT_PERSONAL);
+    }
+
+    @Test
+    @DisplayName("routingType = COMPLAINT 저장 — AC-4: 민원 routing 저장")
+    void should_set_routingType_COMPLAINT_when_complaint_routing_provided() {
+        // given
+        Long complaintId = 5L;
+
+        // when
+        FcmOutbox outbox = FcmOutbox.create("token", "민원 제목", "민원 내용", FcmRoutingType.COMPLAINT, complaintId);
+
+        // then
+        assertThat(outbox.getRoutingType()).isEqualTo(FcmRoutingType.COMPLAINT);
+    }
+
+    @Test
+    @DisplayName("routingType = ROOMMATE_POST 저장 — AC-5: 룸메이트 게시글 routing 저장")
+    void should_set_routingType_ROOMMATE_POST_when_roommate_post_routing_provided() {
+        // given
+        Long postId = 3L;
+
+        // when
+        FcmOutbox outbox = FcmOutbox.create("token", "룸메이트 제목", "룸메이트 내용", FcmRoutingType.ROOMMATE_POST, postId);
+
+        // then
+        assertThat(outbox.getRoutingType()).isEqualTo(FcmRoutingType.ROOMMATE_POST);
     }
 
     @Test

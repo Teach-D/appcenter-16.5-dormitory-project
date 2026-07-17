@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.fcm.entity;
 
 import com.example.appcenter_project.common.BaseTimeEntity;
+import com.example.appcenter_project.domain.fcm.converter.FcmRoutingTypeConverter;
 import com.example.appcenter_project.domain.fcm.enums.FcmRoutingType;
 import com.example.appcenter_project.domain.fcm.enums.OutboxStatus;
 import jakarta.persistence.*;
@@ -49,7 +50,7 @@ public class FcmOutbox extends BaseTimeEntity {
 
     private LocalDateTime expiredAt;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = FcmRoutingTypeConverter.class)
     @Column(length = 20)
     private FcmRoutingType routingType;
 

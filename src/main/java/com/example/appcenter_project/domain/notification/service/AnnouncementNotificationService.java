@@ -108,7 +108,7 @@ public class AnnouncementNotificationService {
 
     private void bulkEnqueueOutbox(List<User> users, String title, String body, Long announcementId) {
         List<FcmOutbox> outboxes = fcmTokenRepository.findAllByUserIn(users).stream()
-                .map(token -> FcmOutbox.create(token.getToken(), title, body, FcmRoutingType.NOTICE, announcementId))
+                .map(token -> FcmOutbox.create(token.getToken(), title, body, FcmRoutingType.ANNOUNCEMENT, announcementId))
                 .toList();
         if (!outboxes.isEmpty()) {
             fcmOutboxRepository.saveAll(outboxes);

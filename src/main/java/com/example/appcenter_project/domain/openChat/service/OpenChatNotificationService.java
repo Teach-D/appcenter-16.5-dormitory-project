@@ -8,6 +8,7 @@ import com.example.appcenter_project.domain.openChat.dto.UnreadNotificationInfo;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatParticipant;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatRoom;
 import com.example.appcenter_project.domain.openChat.enums.ChatNotificationMode;
+import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomType;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatParticipantRepository;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatRoomRepository;
 import com.example.appcenter_project.domain.user.repository.FcmTokenRepository;
@@ -47,8 +48,11 @@ public class OpenChatNotificationService {
                 .map(UnreadNotificationInfo::userId)
                 .collect(Collectors.toSet());
 
-        Map<Long, String> roomNameMap = openChatRoomRepository.findAllById(roomIds).stream()
+        List<OpenChatRoom> rooms = openChatRoomRepository.findAllById(roomIds);
+        Map<Long, String> roomNameMap = rooms.stream()
                 .collect(Collectors.toMap(OpenChatRoom::getId, OpenChatRoom::getName));
+        Map<Long, OpenChatRoomType> roomTypeMap = rooms.stream()
+                .collect(Collectors.toMap(OpenChatRoom::getId, OpenChatRoom::getRoomType));
 
         Map<Long, String> userTokenMap = fcmTokenRepository.findAllByUserIdIn(new ArrayList<>(userIds)).stream()
                 .collect(Collectors.toMap(
@@ -63,7 +67,10 @@ public class OpenChatNotificationService {
                     String token = userTokenMap.get(info.userId());
                     String roomName = roomNameMap.getOrDefault(info.roomId(), "오픈채팅");
                     String body = "새 메시지 " + info.unreadCount() + "개";
-                    return FcmOutbox.create(token, roomName, body, FcmRoutingType.CHAT, info.roomId());
+                    OpenChatRoomType roomType = roomTypeMap.getOrDefault(info.roomId(), OpenChatRoomType.OPEN);
+                    FcmRoutingType routingType = (roomType == OpenChatRoomType.PERSONAL)
+                            ? FcmRoutingType.CHAT_PERSONAL : FcmRoutingType.CHAT_OPEN;
+                    return FcmOutbox.create(token, roomName, body, routingType, info.roomId());
                 })
                 .toList();
 
@@ -74,7 +81,7 @@ public class OpenChatNotificationService {
     }
 
     @Transactional
-    public void sendImmediateNotifications(Long roomId, Set<Long> onlineUserIds, String title, String body) {
+    public void sendImmediateNotifications(Long roomId, OpenChatRoomType roomType, Set<Long> onlineUserIds, String title, String body) {
         List<OpenChatParticipant> everyParticipants =
                 participantRepository.findAllByRoomIdAndNotificationMode(roomId, ChatNotificationMode.EVERY);
 
@@ -94,9 +101,12 @@ public class OpenChatNotificationService {
                         (existing, replacement) -> existing
                 ));
 
+        FcmRoutingType routingType = (roomType == OpenChatRoomType.PERSONAL)
+                ? FcmRoutingType.CHAT_PERSONAL : FcmRoutingType.CHAT_OPEN;
+
         List<FcmOutbox> outboxes = targetUserIds.stream()
                 .filter(tokenMap::containsKey)
-                .map(userId -> FcmOutbox.create(tokenMap.get(userId), title, body, FcmRoutingType.CHAT, roomId))
+                .map(userId -> FcmOutbox.create(tokenMap.get(userId), title, body, routingType, roomId))
                 .toList();
 
         if (!outboxes.isEmpty()) {

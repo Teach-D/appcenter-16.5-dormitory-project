@@ -21,7 +21,7 @@ public class NotificationReadService {
 
     @Transactional
     public ResponseNotificationReadDto markAsRead(Long userId, FcmRoutingType type, Long targetId) {
-        if (type == FcmRoutingType.NOTICE) {
+        if (type == FcmRoutingType.ANNOUNCEMENT || type == FcmRoutingType.NOTICE) {
             List<UserNotification> userNotifications =
                     userNotificationQuerydslRepository.findByUserIdAndBoardIdAndApiType(userId, targetId, ApiType.ANNOUNCEMENT);
             userNotifications.forEach(un -> un.changeReadStatus(true));

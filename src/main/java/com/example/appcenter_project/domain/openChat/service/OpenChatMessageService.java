@@ -84,7 +84,7 @@ public class OpenChatMessageService {
 
         if (openChatNotificationService != null) {
             openChatNotificationService.sendImmediateNotifications(
-                    request.getRoomId(), usersToRead, room.getName(), request.getContent());
+                    request.getRoomId(), room.getRoomType(), usersToRead, room.getName(), request.getContent());
         }
     }
 
@@ -122,7 +122,7 @@ public class OpenChatMessageService {
                     ResponseOpenChatReadEventDto.of(message.getId(), unreadCount));
 
             if (openChatNotificationService != null) {
-                openChatNotificationService.sendImmediateNotifications(roomId, usersToRead, room.getName(), "[이미지]");
+                openChatNotificationService.sendImmediateNotifications(roomId, room.getRoomType(), usersToRead, room.getName(), "[이미지]");
             }
 
             results.add(response);
