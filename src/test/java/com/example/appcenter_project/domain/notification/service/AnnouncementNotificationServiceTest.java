@@ -46,8 +46,8 @@ class AnnouncementNotificationServiceTest {
     AnnouncementNotificationService announcementNotificationService;
 
     @Test
-    @DisplayName("FcmOutbox routingType = NOTICE 저장 — AC-1: 공지사항 bulkEnqueueOutbox routing 저장")
-    void should_save_outbox_with_routingType_NOTICE_when_announcement_notification_sent() {
+    @DisplayName("FcmOutbox routingType = ANNOUNCEMENT 저장 — AC-1: 공지사항 bulkEnqueueOutbox routing 저장")
+    void should_save_outbox_with_routingType_ANNOUNCEMENT_when_announcement_notification_sent() {
         // given
         Announcement announcement = mock(Announcement.class);
         given(announcement.getId()).willReturn(5678L);
@@ -72,7 +72,7 @@ class AnnouncementNotificationServiceTest {
         // then
         then(fcmOutboxRepository).should().saveAll(captor.capture());
         List<FcmOutbox> saved = captor.getValue();
-        assertThat(saved).allMatch(o -> o.getRoutingType() == FcmRoutingType.NOTICE);
+        assertThat(saved).allMatch(o -> o.getRoutingType() == FcmRoutingType.ANNOUNCEMENT);
     }
 
     @Test

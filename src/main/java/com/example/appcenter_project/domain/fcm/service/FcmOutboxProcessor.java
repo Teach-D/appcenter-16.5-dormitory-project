@@ -75,7 +75,7 @@ public class FcmOutboxProcessor {
         });
     }
 
-    @Scheduled(fixedDelay = 30_000)
+    @Scheduled(fixedDelay = 5_000)
     public void process() {
         LocalDateTime now = LocalDateTime.now();
 

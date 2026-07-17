@@ -15,6 +15,7 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static org.mockito.BDDMockito.*;
 
@@ -48,16 +49,16 @@ class FcmOutboxProcessorTest {
     }
 
     @Test
-    @DisplayName("sendOutboxBatch 2회 호출 — AC-7: routing 다른 메시지 별도 그룹으로 분리")
+    @DisplayName("sendOutboxBatch 2회 호출 — routing 다른 메시지 별도 그룹으로 분리")
     void should_call_sendOutboxBatch_twice_when_different_routing_types_exist() {
         // given
-        FcmOutbox notice1 = FcmOutboxFixture.createWithNoticeRouting(1L);
-        FcmOutbox notice2 = FcmOutboxFixture.createWithNoticeRouting(1L);
-        FcmOutbox chat1 = FcmOutboxFixture.createWithChatRouting(2L);
+        FcmOutbox announcement1 = FcmOutboxFixture.createWithAnnouncementRouting(1L);
+        FcmOutbox announcement2 = FcmOutboxFixture.createWithAnnouncementRouting(1L);
+        FcmOutbox chatOpen1 = FcmOutboxFixture.createWithChatOpenRouting(2L);
 
-        stubTransactionTemplateToReturnChunk(List.of(notice1, notice2, chat1));
+        stubTransactionTemplateToReturnChunk(List.of(announcement1, announcement2, chatOpen1));
         given(fcmAsyncSender.sendOutboxBatch(anyList(), anyString(), anyString()))
-                .willReturn(java.util.concurrent.CompletableFuture.completedFuture(new int[]{0, 0}));
+                .willReturn(CompletableFuture.completedFuture(new int[]{0, 0}));
 
         // when
         fcmOutboxProcessor.process();
@@ -67,15 +68,15 @@ class FcmOutboxProcessorTest {
     }
 
     @Test
-    @DisplayName("routing null 그룹 분리 — AC-7: routing 없는 메시지는 별도 그룹")
-    void should_separate_null_routing_from_notice_routing() {
+    @DisplayName("routing null 그룹 분리 — routing 없는 메시지는 별도 그룹")
+    void should_separate_null_routing_from_announcement_routing() {
         // given
-        FcmOutbox notice = FcmOutboxFixture.createWithNoticeRouting(1L);
+        FcmOutbox announcement = FcmOutboxFixture.createWithAnnouncementRouting(1L);
         FcmOutbox generic = FcmOutboxFixture.createWithoutRouting();
 
-        stubTransactionTemplateToReturnChunk(List.of(notice, generic));
+        stubTransactionTemplateToReturnChunk(List.of(announcement, generic));
         given(fcmAsyncSender.sendOutboxBatch(anyList(), anyString(), anyString()))
-                .willReturn(java.util.concurrent.CompletableFuture.completedFuture(new int[]{0, 0}));
+                .willReturn(CompletableFuture.completedFuture(new int[]{0, 0}));
 
         // when
         fcmOutboxProcessor.process();
@@ -85,15 +86,15 @@ class FcmOutboxProcessorTest {
     }
 
     @Test
-    @DisplayName("동일 routing 그룹 단일 batch — AC-7: 동일 routingType+routingId는 하나로 묶임")
+    @DisplayName("동일 routing 그룹 단일 batch — 동일 routingType+routingId는 하나로 묶임")
     void should_call_sendOutboxBatch_once_when_same_routing() {
         // given
-        FcmOutbox notice1 = FcmOutboxFixture.createWithNoticeRouting(5678L);
-        FcmOutbox notice2 = FcmOutboxFixture.createWithNoticeRouting(5678L);
+        FcmOutbox announcement1 = FcmOutboxFixture.createWithAnnouncementRouting(7L);
+        FcmOutbox announcement2 = FcmOutboxFixture.createWithAnnouncementRouting(7L);
 
-        stubTransactionTemplateToReturnChunk(List.of(notice1, notice2));
+        stubTransactionTemplateToReturnChunk(List.of(announcement1, announcement2));
         given(fcmAsyncSender.sendOutboxBatch(anyList(), anyString(), anyString()))
-                .willReturn(java.util.concurrent.CompletableFuture.completedFuture(new int[]{0, 0}));
+                .willReturn(CompletableFuture.completedFuture(new int[]{0, 0}));
 
         // when
         fcmOutboxProcessor.process();
@@ -103,15 +104,15 @@ class FcmOutboxProcessorTest {
     }
 
     @Test
-    @DisplayName("같은 제목 다른 routing은 별도 그룹 — AC-7: routingType+routingId 복합 키 그룹화")
+    @DisplayName("같은 제목 다른 routing은 별도 그룹 — routingType+routingId 복합 키 그룹화")
     void should_separate_groups_when_same_title_but_different_routing() {
         // given
-        FcmOutbox noticeRoom1 = FcmOutbox.create("token-a", "공지", "내용", FcmRoutingType.NOTICE, 1L);
-        FcmOutbox chatRoom2 = FcmOutbox.create("token-b", "공지", "내용", FcmRoutingType.CHAT, 2L);
+        FcmOutbox announcementRoom1 = FcmOutbox.create("token-a", "공지", "내용", FcmRoutingType.ANNOUNCEMENT, 1L);
+        FcmOutbox chatOpenRoom2 = FcmOutbox.create("token-b", "공지", "내용", FcmRoutingType.CHAT_OPEN, 2L);
 
-        stubTransactionTemplateToReturnChunk(List.of(noticeRoom1, chatRoom2));
+        stubTransactionTemplateToReturnChunk(List.of(announcementRoom1, chatOpenRoom2));
         given(fcmAsyncSender.sendOutboxBatch(anyList(), anyString(), anyString()))
-                .willReturn(java.util.concurrent.CompletableFuture.completedFuture(new int[]{0, 0}));
+                .willReturn(CompletableFuture.completedFuture(new int[]{0, 0}));
 
         // when
         fcmOutboxProcessor.process();

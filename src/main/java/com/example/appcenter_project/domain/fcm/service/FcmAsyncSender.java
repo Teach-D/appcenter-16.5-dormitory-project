@@ -160,6 +160,7 @@ public class FcmAsyncSender {
                             .setNotification(AndroidNotification.builder()
                                     .setSound("default").setTag(groupKey).build())
                             .build())
+                    .putData("path", rt.path(rid))
                     .putData("type", rt.dataType())
                     .putData(rt.dataKey(), String.valueOf(rid));
         }
