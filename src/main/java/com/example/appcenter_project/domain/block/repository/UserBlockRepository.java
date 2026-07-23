@@ -1,0 +1,13 @@
+package com.example.appcenter_project.domain.block.repository;
+
+import com.example.appcenter_project.domain.block.entity.UserBlock;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Collection;
+
+public interface UserBlockRepository extends JpaRepository<UserBlock, Long> {
+
+    boolean existsByBlockerIdAndBlockedId(Long blockerId, Long blockedId);
+
+    boolean existsByBlockerIdInAndBlockedId(Collection<Long> blockerIds, Long blockedId);
+}

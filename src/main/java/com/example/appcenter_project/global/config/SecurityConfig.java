@@ -187,6 +187,9 @@ public class SecurityConfig {
                         /** 어드민 장소 관리 **/
                         .requestMatchers("/admin/places/**").hasRole("ADMIN")
 
+                        /** 차단 **/
+                        .requestMatchers("/block/**").authenticated()
+
                         /** 날씨 **/
                         .requestMatchers(GET, "/weather").permitAll()
 
