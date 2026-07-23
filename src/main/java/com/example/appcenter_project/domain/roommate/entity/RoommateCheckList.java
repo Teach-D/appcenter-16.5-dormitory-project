@@ -80,6 +80,11 @@ public class RoommateCheckList {
 
     private String comment;
 
+    @Column(name = "registration_year")
+    private Integer year;
+
+    private Integer semester;
+
     @OneToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name="user_id")
     private User user;
@@ -88,7 +93,8 @@ public class RoommateCheckList {
     public RoommateCheckList(Set<DormDay> dormPeriod, DormType dormType, College college, ReligionType religion, String mbti,
                              SmokingType smoking, SnoringType snoring, TeethGrindingType toothGrind,
                              SleepSensitivityType sleeper, ShowerTimeType showerHour, ShowerDurationType showerTime,
-                             BedTimeType bedTime, CleanlinessType arrangement, String comment, String title, User user) {
+                             BedTimeType bedTime, CleanlinessType arrangement, String comment, String title, User user,
+                             Integer year, Integer semester) {
         this.dormPeriod = dormPeriod;
         this.dormType = dormType;
         this.college = college;
@@ -104,7 +110,9 @@ public class RoommateCheckList {
         this.arrangement = arrangement;
         this.comment = comment;
         this.title = title;
-        this.user = user; // 꼭 추가
+        this.user = user;
+        this.year = year;
+        this.semester = semester;
     }
 
     public void update(RequestRoommateFormDto dto) {

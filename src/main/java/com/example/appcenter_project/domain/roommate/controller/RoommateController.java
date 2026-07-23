@@ -26,10 +26,10 @@ public class RoommateController implements RoommateApiSpecification{
     @Override
     @PostMapping
     public ResponseEntity<ResponseRoommatePostDto> createRoommatePost(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @AuthenticationPrincipal(errorOnInvalidType = false) CustomUserDetails userDetails,
             @RequestBody RequestRoommateFormDto requestDto
     ) {
-        Long userId = userDetails.getId(); // 인증된 사용자 ID 가져오기
+        Long userId = userDetails != null ? userDetails.getId() : 0L;
         ResponseRoommatePostDto responseDto = roommateService.createRoommateCheckListandBoard(requestDto, userId);
         return ResponseEntity.status(201).body(responseDto);
     }
