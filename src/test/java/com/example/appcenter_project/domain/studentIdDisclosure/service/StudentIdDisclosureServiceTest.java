@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.studentIdDisclosure.service;
 
 import com.example.appcenter_project.domain.fcm.service.FcmMessageService;
+import com.example.appcenter_project.domain.openChat.service.OpenChatMessageService;
 import com.example.appcenter_project.domain.studentIdDisclosure.dto.request.RequestCreateDisclosureDto;
 import com.example.appcenter_project.domain.studentIdDisclosure.dto.response.ResponseDisclosureAcceptDto;
 import com.example.appcenter_project.domain.studentIdDisclosure.dto.response.ResponseDisclosureSendDto;
@@ -52,6 +53,9 @@ class StudentIdDisclosureServiceTest {
     @Mock
     private FcmMessageService fcmMessageService;
 
+    @Mock
+    private OpenChatMessageService openChatMessageService;
+
     @InjectMocks
     private StudentIdDisclosureRequestService disclosureService;
 
@@ -89,7 +93,7 @@ class StudentIdDisclosureServiceTest {
                 .requesterStudentNumber(REQUESTER_STUDENT_NUMBER)
                 .build();
         StudentIdDisclosureTransactionService.AcceptResult acceptResult =
-                new StudentIdDisclosureTransactionService.AcceptResult(dto, REQUESTER_ID);
+                new StudentIdDisclosureTransactionService.AcceptResult(dto, REQUESTER_ID, ROOM_ID);
         given(transactionService.acceptRequest(TARGET_ID, REQUEST_ID)).willReturn(acceptResult);
         given(userRepository.findById(REQUESTER_ID)).willReturn(Optional.empty());
 
@@ -101,7 +105,8 @@ class StudentIdDisclosureServiceTest {
     @Test
     @DisplayName("요청 거절 성공 — PENDING 상태 전이 → REJECTED")
     void should_transition_to_REJECTED_when_reject_valid() {
-        given(transactionService.rejectRequest(TARGET_ID, REQUEST_ID)).willReturn(REQUESTER_ID);
+        given(transactionService.rejectRequest(TARGET_ID, REQUEST_ID))
+                .willReturn(new StudentIdDisclosureTransactionService.RejectResult(REQUESTER_ID, ROOM_ID));
         given(userRepository.findById(REQUESTER_ID)).willReturn(Optional.empty());
 
         disclosureService.reject(TARGET_ID, REQUEST_ID);

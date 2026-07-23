@@ -92,13 +92,13 @@ public class StudentIdDisclosureTransactionService {
                 .requesterStudentNumber(requester.getStudentNumber())
                 .build();
 
-        return new AcceptResult(dto, requester.getId());
+        return new AcceptResult(dto, requester.getId(), request.getRoomId());
     }
 
-    public record AcceptResult(ResponseDisclosureAcceptDto dto, Long requesterId) {}
+    public record AcceptResult(ResponseDisclosureAcceptDto dto, Long requesterId, Long roomId) {}
 
     @Transactional
-    public Long rejectRequest(Long targetId, Long requestId) {
+    public RejectResult rejectRequest(Long targetId, Long requestId) {
         StudentIdDisclosureRequest request = disclosureRequestRepository.findById(requestId)
                 .orElseThrow(() -> new CustomException(ErrorCode.DISCLOSURE_REQUEST_NOT_FOUND));
 
@@ -108,8 +108,10 @@ public class StudentIdDisclosureTransactionService {
 
         request.reject();
 
-        return request.getRequesterId();
+        return new RejectResult(request.getRequesterId(), request.getRoomId());
     }
+
+    public record RejectResult(Long requesterId, Long roomId) {}
 
     @Transactional
     public void deleteByRoomAndUser(Long roomId, Long userId) {

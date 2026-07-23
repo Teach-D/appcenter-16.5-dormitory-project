@@ -195,6 +195,41 @@ public class OpenChatMessageService {
                 ResponseOpenChatReadEventDto.of(message.getId(), unreadCount));
     }
 
+    public void sendStudentIdRequestMessage(long roomId, long requesterId, long requestId) {
+        User sender = userRepository.findById(requesterId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("requestId", requestId);
+        payload.put("requesterId", requesterId);
+        payload.put("requesterNickname", sender.getName());
+
+        String content;
+        try {
+            content = objectMapper.writeValueAsString(payload);
+        } catch (JsonProcessingException e) {
+            throw new CustomException(ErrorCode.UNHANDLED_EXCEPTION);
+        }
+
+        OpenChatMessage message = OpenChatMessage.create(roomId, requesterId, content, OpenChatMessageType.STUDENT_ID_REQUEST);
+        openChatMessageRepository.save(message);
+
+        openChatRoomRepository.findById(roomId).ifPresent(room ->
+                room.updateLastMessage(content, message.getCreatedDate()));
+
+        Set<Long> usersToRead = new HashSet<>(sessionRegistry.getSubscriberUserIds(roomId));
+        usersToRead.add(requesterId);
+        openChatParticipantRepository.updateLastReadMessageIdByRoomIdAndUserIdIn(roomId, usersToRead, message.getId());
+
+        int unreadCount = calculateUnreadCount(roomId, message.getId());
+
+        ResponseOpenChatMessageDto response = ResponseOpenChatMessageDto.fromStudentIdRequest(
+                message, sender.getName(), unreadCount, requestId);
+        messagingTemplate.convertAndSend("/sub/openchat/" + roomId, response);
+        messagingTemplate.convertAndSend("/sub/openchat/" + roomId + "/read",
+                ResponseOpenChatReadEventDto.of(message.getId(), unreadCount));
+    }
+
     public ResponseOpenChatMessageListDto getMessages(Long userId, Long roomId, Long lastMessageId, int size, HttpServletRequest request) {
         openChatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND));
@@ -245,6 +280,12 @@ public class OpenChatMessageService {
                             ? null
                             : nicknameByUserId.get(msg.getSenderId());
                     int unreadCount = calculateUnreadCount(roomId, msg.getId());
+                    if (msg.getType() == OpenChatMessageType.ROOM_LINK) {
+                        return toRoomLinkDto(msg, nickname, unreadCount);
+                    }
+                    if (msg.getType() == OpenChatMessageType.STUDENT_ID_REQUEST) {
+                        return toStudentIdRequestDto(msg, nickname, unreadCount);
+                    }
                     List<String> imageUrls = msg.getType() == OpenChatMessageType.IMAGE
                             ? imageUrlsMap.getOrDefault(msg.getId(), List.of())
                             : List.of();
@@ -273,6 +314,31 @@ public class OpenChatMessageService {
         long total = openChatParticipantRepository.countByRoomId(roomId);
         long readCount = openChatParticipantRepository.countReadByRoomIdAndMessageId(roomId, messageId);
         return (int) (total - readCount);
+    }
+
+    private ResponseOpenChatMessageDto toRoomLinkDto(OpenChatMessage msg, String nickname, int unreadCount) {
+        try {
+            Map<?, ?> parsed = objectMapper.readValue(msg.getContent(), Map.class);
+            Long derivedRoomId = ((Number) parsed.get("derivedRoomId")).longValue();
+            String roomName = (String) parsed.get("roomName");
+            String description = (String) parsed.get("description");
+            Integer maxParticipants = parsed.get("maxParticipants") != null
+                    ? ((Number) parsed.get("maxParticipants")).intValue() : null;
+            return ResponseOpenChatMessageDto.fromRoomLink(msg, nickname, unreadCount,
+                    derivedRoomId, roomName, description, maxParticipants);
+        } catch (Exception e) {
+            return ResponseOpenChatMessageDto.from(msg, nickname, unreadCount, List.of());
+        }
+    }
+
+    private ResponseOpenChatMessageDto toStudentIdRequestDto(OpenChatMessage msg, String nickname, int unreadCount) {
+        try {
+            Map<?, ?> parsed = objectMapper.readValue(msg.getContent(), Map.class);
+            Long requestId = ((Number) parsed.get("requestId")).longValue();
+            return ResponseOpenChatMessageDto.fromStudentIdRequest(msg, nickname, unreadCount, requestId);
+        } catch (Exception e) {
+            return ResponseOpenChatMessageDto.from(msg, nickname, unreadCount, List.of());
+        }
     }
 
     private void validateImageFiles(List<MultipartFile> images) {

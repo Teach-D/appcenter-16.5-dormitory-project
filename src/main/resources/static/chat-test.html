@@ -148,6 +148,12 @@
     .room-link-card-title { font-weight: 700; font-size: 13px; color: #1d4ed8; }
     .room-link-card-desc { font-size: 11px; color: #6b7280; margin-top: 3px; }
     .room-link-card-meta { font-size: 11px; color: #3b82f6; margin-top: 5px; }
+
+    /* ── BR-675 STUDENT_ID_REQUEST 메시지 카드 ── */
+    .sid-card { background: #fffbeb; border: 1.5px solid #fbbf24; border-radius: 10px; padding: 10px 12px; margin-top: 2px; }
+    .sid-card-label { font-size: 10px; font-weight: 700; color: #d97706; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+    .sid-card-body { font-size: 13px; color: #1a1a1a; margin-bottom: 8px; }
+    .sid-card-actions { display: flex; gap: 6px; }
   </style>
 </head>
 <body>
@@ -1432,6 +1438,24 @@ async function cancelDisclosure() {
   } catch (e) { log(`취소 오류: ${e.message}`, 'err'); }
 }
 
+async function acceptDisclosureCard(requestId) {
+  if (!requestId) { log('requestId 없음', 'err'); return; }
+  try {
+    const res = await authFetch(`/student-id-disclosures/${requestId}/accept`, { method: 'POST' });
+    if (res.ok) { const d = await res.json(); log(`학번 공유 수락 완료 (requestId: ${requestId}): ${JSON.stringify(d)}`, 'ok'); }
+    else { const err = await res.text(); log(`수락 실패 (${res.status}): ${err}`, 'err'); }
+  } catch (e) { log(`수락 오류: ${e.message}`, 'err'); }
+}
+
+async function rejectDisclosureCard(requestId) {
+  if (!requestId) { log('requestId 없음', 'err'); return; }
+  try {
+    const res = await authFetch(`/student-id-disclosures/${requestId}/reject`, { method: 'POST' });
+    if (res.status === 204 || res.ok) { log(`학번 공유 거절 완료 (requestId: ${requestId})`, 'ok'); }
+    else { const err = await res.text(); log(`거절 실패 (${res.status}): ${err}`, 'err'); }
+  } catch (e) { log(`거절 오류: ${e.message}`, 'err'); }
+}
+
 async function checkDisclosureStatus(targetId, nickname) {
   if (!currentRoomId) return;
   try {
@@ -1653,6 +1677,26 @@ function appendMessage(msg, scrollBottom = true, prepend = false) {
       if (linkData.derivedRoomId) enterRoom(linkData.derivedRoomId, linkData.roomName || '파생 톡방', linkData.description || '');
     });
     bubble.appendChild(card);
+  } else if (msg.type === 'STUDENT_ID_REQUEST') {
+    // BR-675: 학번 공유 요청 카드
+    let reqData = {};
+    try {
+      reqData = msg.disclosureRequestId
+        ? { requestId: msg.disclosureRequestId, requesterNickname: msg.senderNickname }
+        : JSON.parse(msg.content || '{}');
+    } catch (_) { reqData = {}; }
+    const requestId = reqData.requestId || msg.disclosureRequestId;
+    const requesterNickname = reqData.requesterNickname || msg.senderNickname || '알 수 없음';
+    const sidCard = document.createElement('div');
+    sidCard.className = 'sid-card';
+    sidCard.innerHTML = `
+      <div class="sid-card-label">학번 공유 요청 (BR-675)</div>
+      <div class="sid-card-body"><strong>${escHtml(requesterNickname)}</strong>님이 학번 공유를 요청했습니다.</div>
+      <div class="sid-card-actions">
+        <button class="btn-success btn-xs" onclick="acceptDisclosureCard(${requestId})">수락</button>
+        <button class="btn-danger btn-xs" onclick="rejectDisclosureCard(${requestId})">거절</button>
+      </div>`;
+    bubble.appendChild(sidCard);
   } else { bubble.textContent = msg.content || ''; }
   row.appendChild(bubble);
 

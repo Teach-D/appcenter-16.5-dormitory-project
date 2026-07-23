@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.studentIdDisclosure.service;
 
 import com.example.appcenter_project.domain.fcm.service.FcmMessageService;
+import com.example.appcenter_project.domain.openChat.service.OpenChatMessageService;
 import com.example.appcenter_project.domain.studentIdDisclosure.dto.request.RequestCreateDisclosureDto;
 import com.example.appcenter_project.domain.studentIdDisclosure.dto.response.ResponseDisclosureAcceptDto;
 import com.example.appcenter_project.domain.studentIdDisclosure.dto.response.ResponseDisclosureSendDto;
@@ -27,6 +28,7 @@ public class StudentIdDisclosureRequestService {
     private final StudentIdDisclosureRequestRepository disclosureRequestRepository;
     private final UserRepository userRepository;
     private final FcmMessageService fcmMessageService;
+    private final OpenChatMessageService openChatMessageService;
 
     public ResponseDisclosureSendDto sendRequest(Long requesterId, RequestCreateDisclosureDto dto) {
         Long savedId = transactionService.saveRequest(requesterId, dto);
@@ -36,6 +38,8 @@ public class StudentIdDisclosureRequestService {
                 fcmMessageService.sendNotification(targetUser, "학번 공개 요청", "새로운 학번 공개 요청이 도착했습니다.");
             }
         });
+
+        openChatMessageService.sendStudentIdRequestMessage(dto.getRoomId(), requesterId, savedId);
 
         return ResponseDisclosureSendDto.builder()
                 .requestId(savedId)
@@ -55,17 +59,21 @@ public class StudentIdDisclosureRequestService {
             }
         });
 
+        openChatMessageService.sendSystemMessage(result.roomId(), "학번 공유가 수락되었습니다.");
+
         return result.dto();
     }
 
     public void reject(Long targetId, Long requestId) {
-        Long requesterId = transactionService.rejectRequest(targetId, requestId);
+        StudentIdDisclosureTransactionService.RejectResult result = transactionService.rejectRequest(targetId, requestId);
 
-        userRepository.findById(requesterId).ifPresent(requester -> {
+        userRepository.findById(result.requesterId()).ifPresent(requester -> {
             if (requester.getReceiveNotificationTypes().contains(NotificationType.CHAT)) {
                 fcmMessageService.sendNotification(requester, "학번 공개 거절", "학번 공개 요청이 거절되었습니다.");
             }
         });
+
+        openChatMessageService.sendSystemMessage(result.roomId(), "학번 공유가 거절되었습니다.");
     }
 
     @Transactional(readOnly = true)

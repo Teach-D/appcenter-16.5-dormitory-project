@@ -24,6 +24,7 @@ public class ResponseOpenChatMessageDto {
     private String linkedRoomName;
     private String linkedRoomDescription;
     private Integer linkedRoomMaxParticipants;
+    private Long disclosureRequestId;
 
     public static ResponseOpenChatMessageDto from(OpenChatMessage message, String senderNickname, int unreadCount) {
         return from(message, senderNickname, unreadCount, List.of());
@@ -40,6 +41,22 @@ public class ResponseOpenChatMessageDto {
                 .imageUrls(imageUrls != null ? imageUrls : List.of())
                 .unreadCount(unreadCount)
                 .createdAt(message.getCreatedDate())
+                .build();
+    }
+
+    public static ResponseOpenChatMessageDto fromStudentIdRequest(
+            OpenChatMessage message, String senderNickname, int unreadCount, Long disclosureRequestId) {
+        return ResponseOpenChatMessageDto.builder()
+                .messageId(message.getId())
+                .roomId(message.getRoomId())
+                .senderId(message.getSenderId())
+                .senderNickname(senderNickname)
+                .content(message.getContent())
+                .type(message.getType())
+                .imageUrls(List.of())
+                .unreadCount(unreadCount)
+                .createdAt(message.getCreatedDate())
+                .disclosureRequestId(disclosureRequestId)
                 .build();
     }
 
