@@ -35,6 +35,8 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
     private String userName;
     private boolean isMatched;
     private String userProfileImageUrl;
+    private Integer year;
+    private Integer semester;
 
     @Builder
     public ResponseRoommatePostDto(Long id, String title, String type, LocalDateTime createDate, String filePath,
@@ -43,7 +45,7 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
                                    SleepSensitivityType sleeper, ShowerTimeType showerHour, ShowerDurationType showerTime,
                                    BedTimeType bedTime, CleanlinessType arrangement, String comment,
                                    int roommateBoardLike, Long userId, String userName, boolean isMatched,
-                                   String userProfileImageUrl) {
+                                   String userProfileImageUrl, Integer year, Integer semester) {
         super(id, title, type, createDate, filePath);
         this.dormPeriod = dormPeriod;
         this.dormType = dormType;
@@ -64,6 +66,8 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
         this.userName = userName;
         this.isMatched = isMatched;
         this.userProfileImageUrl = userProfileImageUrl;
+        this.year = year;
+        this.semester = semester;
     }
 
     public static ResponseRoommatePostDto entityToDto(RoommateBoard board, boolean isMatched, String userProfileImageUrl) {
@@ -95,6 +99,8 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
                 .userName(user.getName())
                 .isMatched(isMatched)
                 .userProfileImageUrl(userProfileImageUrl)
+                .year(board.getYear())
+                .semester(board.getSemester())
                 .build();
     }
 }

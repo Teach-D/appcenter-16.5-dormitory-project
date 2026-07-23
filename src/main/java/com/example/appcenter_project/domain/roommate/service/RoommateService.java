@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -54,13 +55,28 @@ public class RoommateService {
     private final MixpanelService mixpanelService;
 
 
+    public Integer[] resolveSemester(int month) {
+        if (month == 1 || month == 2) {
+            return new Integer[]{LocalDate.now().getYear(), 1};
+        } else if (month == 7 || month == 8) {
+            return new Integer[]{LocalDate.now().getYear(), 2};
+        } else {
+            return new Integer[]{null, null};
+        }
+    }
+
     @Transactional
     public ResponseRoommatePostDto createRoommateCheckListandBoard(RequestRoommateFormDto requestDto, Long userId) {
         // 1. 유저 확인
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
 
-        // 2. 체크리스트 생성 + user 설정
+        // 2. 학기 계산
+        Integer[] yearSemester = resolveSemester(LocalDate.now().getMonthValue());
+        Integer year = yearSemester[0];
+        Integer semester = yearSemester[1];
+
+        // 3. 체크리스트 생성 + user 설정
         RoommateCheckList roommateCheckList = RoommateCheckList.builder()
                 .title(requestDto.getTitle())
                 .dormPeriod(requestDto.getDormPeriod())
@@ -77,25 +93,29 @@ public class RoommateService {
                 .bedTime(requestDto.getBedTime())
                 .arrangement(requestDto.getArrangement())
                 .comment(requestDto.getComment())
-                .user(user) // 필수!
+                .user(user)
+                .year(year)
+                .semester(semester)
                 .build();
 
         RoommateCheckList savedCheckList = roommateCheckListRepository.save(roommateCheckList);
 
-        // 3. 게시글 생성 및 저장
+        // 4. 게시글 생성 및 저장
         RoommateBoard roommateBoard = RoommateBoard.builder()
                 .title(requestDto.getTitle())
                 .user(user)
                 .roommateBoardLike(0)
                 .roommateCheckList(savedCheckList)
+                .year(year)
+                .semester(semester)
                 .build();
 
         RoommateBoard savedBoard = roommateBoardRepository.save(roommateBoard);
 
-        // 4. 알림 전송
+        // 5. 알림 전송
         roommateNotificationService.sendFilteredNotifications(savedBoard);
 
-        // 5. 응답
+        // 6. 응답
         return ResponseRoommatePostDto.builder()
                 .id(roommateBoard.getId())
                 .title(savedCheckList.getTitle())
@@ -117,6 +137,8 @@ public class RoommateService {
                 .userName(user.getName())
                 .createDate(roommateBoard.getCreatedDate())
                 .isMatched(false)
+                .year(year)
+                .semester(semester)
                 .build();
     }
 

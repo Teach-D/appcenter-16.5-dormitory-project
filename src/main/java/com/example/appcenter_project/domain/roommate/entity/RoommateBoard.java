@@ -37,6 +37,11 @@ public class RoommateBoard extends BaseTimeEntity {
 
     private boolean isMatched = false;
 
+    @Column(name = "registration_year")
+    private Integer year;
+
+    private Integer semester;
+
     public Integer plusLike(){
         this.roommateBoardLike +=1;
         return this.getRoommateBoardLike();
@@ -48,11 +53,13 @@ public class RoommateBoard extends BaseTimeEntity {
     }
 
     @Builder
-    public RoommateBoard(String title, User user, int roommateBoardLike, RoommateCheckList roommateCheckList) {
+    public RoommateBoard(String title, User user, int roommateBoardLike, RoommateCheckList roommateCheckList, Integer year, Integer semester) {
         this.title = title;
         this.user = user;
         this.roommateBoardLike = roommateBoardLike;
         this.roommateCheckList = roommateCheckList;
+        this.year = year;
+        this.semester = semester;
     }
 
     public void updateTitle(String title){
