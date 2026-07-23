@@ -25,6 +25,7 @@ import com.example.appcenter_project.domain.openChat.repository.OpenChatParticip
 import com.example.appcenter_project.domain.openChat.repository.OpenChatRoomQuerydslRepository;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatRoomRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
+import com.example.appcenter_project.domain.block.service.BlockService;
 import com.example.appcenter_project.domain.roommate.entity.RoommateChattingChat;
 import com.example.appcenter_project.domain.roommate.entity.RoommateChattingRoom;
 import com.example.appcenter_project.domain.roommate.repository.RoommateChattingChatRepository;
@@ -66,6 +67,7 @@ public class OpenChatRoomService {
     private final OpenChatRoomQuerydslRepository openChatRoomQuerydslRepository;
     private final RoommateChattingRoomRepository roommateChattingRoomRepository;
     private final RoommateChattingChatRepository roommateChattingChatRepository;
+    private final BlockService blockService;
 
     @Autowired
     public OpenChatRoomService(
@@ -76,7 +78,8 @@ public class OpenChatRoomService {
             @Lazy OpenChatMessageService openChatMessageService,
             @Qualifier("openChatRoomQuerydslRepositoryImpl") OpenChatRoomQuerydslRepository openChatRoomQuerydslRepository,
             RoommateChattingRoomRepository roommateChattingRoomRepository,
-            RoommateChattingChatRepository roommateChattingChatRepository) {
+            RoommateChattingChatRepository roommateChattingChatRepository,
+            BlockService blockService) {
         this.openChatRoomRepository = openChatRoomRepository;
         this.openChatParticipantRepository = openChatParticipantRepository;
         this.openChatMessageRepository = openChatMessageRepository;
@@ -85,6 +88,7 @@ public class OpenChatRoomService {
         this.openChatRoomQuerydslRepository = openChatRoomQuerydslRepository;
         this.roommateChattingRoomRepository = roommateChattingRoomRepository;
         this.roommateChattingChatRepository = roommateChattingChatRepository;
+        this.blockService = blockService;
     }
 
     @Transactional
@@ -153,6 +157,9 @@ public class OpenChatRoomService {
         }
         userRepository.findById(request.getTargetUserId())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        if (blockService.isBlockedBy(request.getTargetUserId(), userId)) {
+            throw new CustomException(ErrorCode.USER_BLOCKED_BY_TARGET);
+        }
 
         OpenChatRoom room = OpenChatRoom.createPersonal(request.getName(), userId, request.getPassword());
         OpenChatRoom savedRoom = openChatRoomRepository.save(room);
@@ -529,10 +536,7 @@ public class OpenChatRoomService {
         List<Long> userIds = participants.stream().map(OpenChatParticipant::getUserId).toList();
         List<User> users = userRepository.findAllById(userIds);
         Map<Long, String> nicknameMap = users.stream()
-                .collect(Collectors.toMap(User::getId, u -> {
-                    if (u.getRole() == Role.ROLE_ADMIN) return "관리자";
-                    return u.getName() != null ? u.getName() : "";
-                }));
+                .collect(Collectors.toMap(User::getId, u -> u.getName() != null ? u.getName() : ""));
         Map<Long, Boolean> adminMap = users.stream()
                 .collect(Collectors.toMap(User::getId, u -> u.getRole() == Role.ROLE_ADMIN));
 
@@ -563,10 +567,7 @@ public class OpenChatRoomService {
         List<Long> userIds = participants.stream().map(OpenChatParticipant::getUserId).toList();
         List<User> users = userRepository.findAllById(userIds);
         Map<Long, String> nameMap = users.stream()
-                .collect(Collectors.toMap(User::getId, u -> {
-                    if (u.getRole() == Role.ROLE_ADMIN) return "관리자";
-                    return u.getName() != null ? u.getName() : "";
-                }));
+                .collect(Collectors.toMap(User::getId, u -> u.getName() != null ? u.getName() : ""));
 
         List<ResponseSimpleParticipantDto> dtos = participants.stream()
                 .map(p -> ResponseSimpleParticipantDto.of(p.getUserId(), nameMap.getOrDefault(p.getUserId(), "")))
