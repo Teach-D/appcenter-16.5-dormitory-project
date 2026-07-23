@@ -66,6 +66,13 @@ public class RoommateChattingChatService {
             throw new CustomException(ROOMMATE_CHAT_ROOM_FORBIDDEN); // 해당 채팅방 소속이 아님
         }
 
+        // 수신자가 방을 나간 상태면 메시지 수신 시 자동 재진입 (채팅 목록에 다시 표시)
+        if (room.getHost().getId().equals(receiver.getId()) && room.isHostLeft()) {
+            room.rejoinAsHost();
+        } else if (room.getGuest().getId().equals(receiver.getId()) && room.isGuestLeft()) {
+            room.rejoinAsGuest();
+        }
+
         log.info("👥 [채팅방 참여자] 발신자: {} ({}), 수신자: {} ({})",
                 sender.getId(), sender.getStudentNumber(),
                 receiver.getId(), receiver.getStudentNumber());

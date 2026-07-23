@@ -314,6 +314,45 @@ class RoommateChattingChatServiceTest {
     }
 
     @Test
+    @DisplayName("채팅 전송 - 수신자(host)가 나간 상태면 자동 재진입")
+    void sendChat_수신자가_나간_상태면_자동_재진입() {
+        User guest = buildMockUser(2L);
+        User host = buildMockUser(1L);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(guest));
+
+        RoommateChattingRoom room = mock(RoommateChattingRoom.class);
+        when(room.getId()).thenReturn(100L);
+        when(room.getGuest()).thenReturn(guest);
+        when(room.getHost()).thenReturn(host);
+        when(room.isHostLeft()).thenReturn(true);
+        when(room.isGuestLeft()).thenReturn(false);
+        when(chatRoomRepository.findById(100L)).thenReturn(Optional.of(room));
+
+        RoommateChattingChat savedChat = mock(RoommateChattingChat.class);
+        when(savedChat.getId()).thenReturn(1L);
+        when(savedChat.getMember()).thenReturn(guest);
+        when(savedChat.getContent()).thenReturn("안녕하세요!");
+        when(savedChat.isReadByReceiver()).thenReturn(false);
+        when(savedChat.getCreatedDate()).thenReturn(LocalDateTime.now());
+        when(savedChat.getRoommateChattingRoom()).thenReturn(room);
+        when(chatRepository.save(any(RoommateChattingChat.class))).thenReturn(savedChat);
+
+        Notification mockNotification = mock(Notification.class);
+        when(mockNotification.getTitle()).thenReturn("채팅 알림");
+        when(mockNotification.getBody()).thenReturn("안녕하세요!");
+        when(notificationService.createChatNotification(anyString(), anyLong(), anyString()))
+                .thenReturn(mockNotification);
+
+        RequestRoommateChatDto dto = mock(RequestRoommateChatDto.class);
+        when(dto.getRoommateChattingRoomId()).thenReturn(100L);
+        when(dto.getContent()).thenReturn("안녕하세요!");
+
+        roommateChattingChatService.sendChat(2L, dto);
+
+        verify(room).rejoinAsHost();
+    }
+
+    @Test
     @DisplayName("채팅 목록 조회 - 정상 반환")
     void getChatList_정상_반환() {
         User guest = buildMockUser(2L);

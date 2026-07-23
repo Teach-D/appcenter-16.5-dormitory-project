@@ -86,4 +86,12 @@ public class RoommateChattingRoom extends BaseTimeEntity {
     public boolean isBothLeft() {
         return this.hostLeft && this.guestLeft;
     }
+
+    public void rejoinAsHost() {
+        this.hostLeft = false;
+    }
+
+    public void rejoinAsGuest() {
+        this.guestLeft = false;
+    }
 }
