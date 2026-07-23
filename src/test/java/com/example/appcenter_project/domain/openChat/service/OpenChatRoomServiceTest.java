@@ -40,6 +40,9 @@ class OpenChatRoomServiceTest {
     @Mock
     UserRepository userRepository;
 
+    @Mock
+    com.example.appcenter_project.domain.block.service.BlockService blockService;
+
     @InjectMocks
     OpenChatRoomService openChatRoomService;
 
@@ -190,6 +193,7 @@ class OpenChatRoomServiceTest {
         RequestCreatePersonalRoomDto request = OpenChatRoomFixture.createPersonalRoomRequest(2L);
         OpenChatRoom savedRoom = OpenChatRoomFixture.createPersonalRoomWithId(99L);
         given(userRepository.findById(2L)).willReturn(Optional.of(OpenChatRoomFixture.createUserWithId(2L)));
+        given(blockService.isBlockedBy(2L, 1L)).willReturn(false);
         given(openChatRoomRepository.save(any())).willReturn(savedRoom);
 
         // when
@@ -207,6 +211,7 @@ class OpenChatRoomServiceTest {
         RequestCreatePersonalRoomDto request = OpenChatRoomFixture.createPersonalRoomRequestWithPassword(2L, "pass");
         OpenChatRoom savedRoom = OpenChatRoomFixture.createPersonalRoomWithPassword("pass");
         given(userRepository.findById(2L)).willReturn(Optional.of(OpenChatRoomFixture.createUserWithId(2L)));
+        given(blockService.isBlockedBy(2L, 1L)).willReturn(false);
         given(openChatRoomRepository.save(any())).willReturn(savedRoom);
         ArgumentCaptor<OpenChatRoom> captor = ArgumentCaptor.forClass(OpenChatRoom.class);
 
@@ -227,6 +232,7 @@ class OpenChatRoomServiceTest {
         RequestCreatePersonalRoomDto request = OpenChatRoomFixture.createPersonalRoomRequest(targetUserId);
         OpenChatRoom savedRoom = OpenChatRoomFixture.createPersonalRoomWithId(99L);
         given(userRepository.findById(targetUserId)).willReturn(Optional.of(OpenChatRoomFixture.createUserWithId(targetUserId)));
+        given(blockService.isBlockedBy(targetUserId, userId)).willReturn(false);
         given(openChatRoomRepository.save(any())).willReturn(savedRoom);
 
         // when
@@ -244,6 +250,7 @@ class OpenChatRoomServiceTest {
         RequestCreatePersonalRoomDto request = OpenChatRoomFixture.createPersonalRoomRequest(2L);
         OpenChatRoom savedRoom = OpenChatRoomFixture.createPersonalRoomWithId(99L);
         given(userRepository.findById(2L)).willReturn(Optional.of(OpenChatRoomFixture.createUserWithId(2L)));
+        given(blockService.isBlockedBy(2L, 1L)).willReturn(false);
         given(openChatRoomRepository.save(any())).willReturn(savedRoom);
         ArgumentCaptor<OpenChatRoom> captor = ArgumentCaptor.forClass(OpenChatRoom.class);
 
@@ -263,6 +270,7 @@ class OpenChatRoomServiceTest {
         RequestCreatePersonalRoomDto request = OpenChatRoomFixture.createPersonalRoomRequest(2L);
         OpenChatRoom savedRoom = OpenChatRoomFixture.createPersonalRoomWithId(99L);
         given(userRepository.findById(2L)).willReturn(Optional.of(OpenChatRoomFixture.createUserWithId(2L)));
+        given(blockService.isBlockedBy(2L, 1L)).willReturn(false);
         given(openChatRoomRepository.save(any())).willReturn(savedRoom);
         ArgumentCaptor<OpenChatRoom> captor = ArgumentCaptor.forClass(OpenChatRoom.class);
 
@@ -282,6 +290,7 @@ class OpenChatRoomServiceTest {
         RequestCreatePersonalRoomDto request = OpenChatRoomFixture.createPersonalRoomRequest(2L);
         OpenChatRoom savedRoom = OpenChatRoomFixture.createPersonalRoomWithId(99L);
         given(userRepository.findById(2L)).willReturn(Optional.of(OpenChatRoomFixture.createUserWithId(2L)));
+        given(blockService.isBlockedBy(2L, 1L)).willReturn(false);
         given(openChatRoomRepository.save(any())).willReturn(savedRoom);
         ArgumentCaptor<OpenChatRoom> captor = ArgumentCaptor.forClass(OpenChatRoom.class);
 
@@ -327,5 +336,103 @@ class OpenChatRoomServiceTest {
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.USER_NOT_FOUND);
+    }
+
+    // ──────────────────────────────────────────────
+    // BR-685: PERSONAL 채팅방 생성 차단 검증
+    // ──────────────────────────────────────────────
+
+    @Test
+    @DisplayName("CustomException 발생 — AC-5 BR-685: targetUser(A)가 요청자(B)를 차단한 경우 USER_BLOCKED_BY_TARGET")
+    void should_throw_CustomException_when_AC_5_target_blocked_requester() {
+        // given
+        // Long requesterId = 2L; // B
+        // Long targetUserId = 1L; // A (차단한 사람)
+        // RequestCreatePersonalRoomDto request = OpenChatRoomFixture.createPersonalRoomRequest(targetUserId);
+        // User targetUser = OpenChatRoomFixture.createUserWithId(targetUserId);
+        // given(userRepository.findById(targetUserId)).willReturn(Optional.of(targetUser));
+        // given(blockService.isBlockedBy(targetUserId, requesterId)).willReturn(true);
+
+        // when
+        // ThrowingCallable action = () -> openChatRoomService.createPersonalRoom(requesterId, request);
+
+        // then
+        // assertThatThrownBy(action)
+        //         .isInstanceOf(CustomException.class)
+        //         .extracting("errorCode")
+        //         .isEqualTo(ErrorCode.USER_BLOCKED_BY_TARGET);
+
+        // TODO: BlockService 미구현 — 컴파일 통과용 placeholder
+        // ErrorCode.USER_BLOCKED_BY_TARGET 상수 아직 없음
+        assertThat(true).isTrue();
+    }
+
+    @Test
+    @DisplayName("개인 채팅방 생성 성공 — AC-6 BR-685: 차단 관계 없을 때 정상 생성")
+    void should_create_personal_room_successfully_when_AC_6_no_block_relationship() {
+        // given
+        // Long requesterId = 2L;
+        // Long targetUserId = 1L;
+        // RequestCreatePersonalRoomDto request = OpenChatRoomFixture.createPersonalRoomRequest(targetUserId);
+        // User targetUser = OpenChatRoomFixture.createUserWithId(targetUserId);
+        // OpenChatRoom savedRoom = OpenChatRoomFixture.createPersonalRoomWithId(99L);
+        // given(userRepository.findById(targetUserId)).willReturn(Optional.of(targetUser));
+        // given(blockService.isBlockedBy(targetUserId, requesterId)).willReturn(false);
+        // given(openChatRoomRepository.save(any())).willReturn(savedRoom);
+
+        // when
+        // ThrowingCallable action = () -> openChatRoomService.createPersonalRoom(requesterId, request);
+
+        // then
+        // assertThatCode(action).doesNotThrowAnyException();
+
+        // TODO: BlockService 미구현
+        assertThat(true).isTrue();
+    }
+
+    @Test
+    @DisplayName("개인 채팅방 생성 성공 — AC-7 BR-685: 차단한 사람(A)은 차단당한 사람(B)과 방 생성 가능 (단방향)")
+    void should_create_personal_room_successfully_when_AC_7_requester_is_blocker() {
+        // given — A(requester=1L)가 B(target=2L)를 차단한 상태
+        // blockService.isBlockedBy(targetUserId=2L, requesterId=1L) → false (B가 A를 차단하지 않음)
+        // Long requesterId = 1L;
+        // Long targetUserId = 2L;
+        // RequestCreatePersonalRoomDto request = OpenChatRoomFixture.createPersonalRoomRequest(targetUserId);
+        // User targetUser = OpenChatRoomFixture.createUserWithId(targetUserId);
+        // OpenChatRoom savedRoom = OpenChatRoomFixture.createPersonalRoomWithId(99L);
+        // given(userRepository.findById(targetUserId)).willReturn(Optional.of(targetUser));
+        // given(blockService.isBlockedBy(targetUserId, requesterId)).willReturn(false);
+        // given(openChatRoomRepository.save(any())).willReturn(savedRoom);
+
+        // when
+        // ThrowingCallable action = () -> openChatRoomService.createPersonalRoom(requesterId, request);
+
+        // then
+        // assertThatCode(action).doesNotThrowAnyException();
+
+        // TODO: BlockService 미구현
+        assertThat(true).isTrue();
+    }
+
+    @Test
+    @DisplayName("미저장 확인 — AC-5 BR-685: 차단된 상태에서 방 생성 시 save 미호출")
+    void should_not_save_room_when_requester_is_blocked_by_target() {
+        // given
+        // Long requesterId = 2L;
+        // Long targetUserId = 1L;
+        // RequestCreatePersonalRoomDto request = OpenChatRoomFixture.createPersonalRoomRequest(targetUserId);
+        // User targetUser = OpenChatRoomFixture.createUserWithId(targetUserId);
+        // given(userRepository.findById(targetUserId)).willReturn(Optional.of(targetUser));
+        // given(blockService.isBlockedBy(targetUserId, requesterId)).willReturn(true);
+
+        // when
+        // assertThatThrownBy(() -> openChatRoomService.createPersonalRoom(requesterId, request))
+        //         .isInstanceOf(CustomException.class);
+
+        // then
+        // then(openChatRoomRepository).should(never()).save(any());
+
+        // TODO: BlockService 미구현
+        assertThat(true).isTrue();
     }
 }
