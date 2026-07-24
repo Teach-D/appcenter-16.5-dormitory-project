@@ -120,6 +120,15 @@ public class StudentIdDisclosureRequestService {
                     .build();
         }
 
+        Optional<StudentIdDisclosureRequest> rejectedSent = disclosureRequestRepository
+                .findByRoomIdAndRequesterIdAndTargetIdAndStatus(roomId, currentUserId, targetId, DisclosureRequestStatus.REJECTED);
+        if (rejectedSent.isPresent()) {
+            return ResponseDisclosureStatusDto.builder()
+                    .status("REJECTED")
+                    .requestId(rejectedSent.get().getId())
+                    .build();
+        }
+
         return ResponseDisclosureStatusDto.builder()
                 .status("NONE")
                 .build();
