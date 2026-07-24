@@ -12,10 +12,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
@@ -39,19 +39,19 @@ class RoommateControllerSemesterTest {
     @Autowired
     ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     RoommateService roommateService;
 
-    @MockBean
+    @MockitoBean
     MyRoommateService myRoommateService;
 
-    @MockBean
+    @MockitoBean
     RoommateQueryService roommateQueryService;
 
-    @MockBean
+    @MockitoBean
     SlackErrorNotifier slackErrorNotifier;
 
-    @MockBean
+    @MockitoBean
     JpaMetamodelMappingContext jpaMetamodelMappingContext;
 
     @Test
@@ -144,7 +144,7 @@ class RoommateControllerSemesterTest {
     void should_include_year_field_in_single_board_response() throws Exception {
         // given
         ResponseRoommatePostDto response = RoommateSemesterFixture.createResponseWithSemester(2026, 1);
-        given(roommateService.getRoommateBoardDetail(anyLong(), any())).willReturn(response);
+        given(roommateService.getRoommateBoardDetail(anyLong(), any(), any())).willReturn(response);
 
         // when
         ResultActions result = mockMvc.perform(get("/roommates/1")
@@ -159,7 +159,7 @@ class RoommateControllerSemesterTest {
     void should_include_semester_field_in_single_board_response() throws Exception {
         // given
         ResponseRoommatePostDto response = RoommateSemesterFixture.createResponseWithSemester(2026, 1);
-        given(roommateService.getRoommateBoardDetail(anyLong(), any())).willReturn(response);
+        given(roommateService.getRoommateBoardDetail(anyLong(), any(), any())).willReturn(response);
 
         // when
         ResultActions result = mockMvc.perform(get("/roommates/1")
@@ -174,7 +174,7 @@ class RoommateControllerSemesterTest {
     void should_include_year_field_in_board_list_response() throws Exception {
         // given
         ResponseRoommatePostDto response = RoommateSemesterFixture.createResponseWithSemester(2026, 1);
-        given(roommateService.getRoommateBoardList(any())).willReturn(List.of(response));
+        given(roommateService.getRoommateBoardList(any(), any())).willReturn(List.of(response));
 
         // when
         ResultActions result = mockMvc.perform(get("/roommates/list")
@@ -189,7 +189,7 @@ class RoommateControllerSemesterTest {
     void should_include_semester_field_in_board_list_response() throws Exception {
         // given
         ResponseRoommatePostDto response = RoommateSemesterFixture.createResponseWithSemester(2026, 1);
-        given(roommateService.getRoommateBoardList(any())).willReturn(List.of(response));
+        given(roommateService.getRoommateBoardList(any(), any())).willReturn(List.of(response));
 
         // when
         ResultActions result = mockMvc.perform(get("/roommates/list")
