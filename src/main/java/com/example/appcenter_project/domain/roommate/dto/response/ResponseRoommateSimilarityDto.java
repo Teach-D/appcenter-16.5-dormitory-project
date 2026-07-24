@@ -38,4 +38,5 @@ public class ResponseRoommateSimilarityDto {
 
     private int roommateBoardLike;
     private Integer similarityPercentage;
+    private boolean isRead;
 }

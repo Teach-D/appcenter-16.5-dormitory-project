@@ -38,9 +38,11 @@ public class RoommateController implements RoommateApiSpecification{
     @Override
     @GetMapping("/list")
     public ResponseEntity<List<ResponseRoommatePostDto>> getRoommateBoardList(
+            @AuthenticationPrincipal(errorOnInvalidType = false) CustomUserDetails userDetails,
             jakarta.servlet.http.HttpServletRequest request
     ) {
-        return ResponseEntity.ok(roommateService.getRoommateBoardList(request));
+        Long userId = userDetails != null ? userDetails.getId() : null;
+        return ResponseEntity.ok(roommateService.getRoommateBoardList(userId, request));
     }
 
     @TrackApi
@@ -48,9 +50,11 @@ public class RoommateController implements RoommateApiSpecification{
     @GetMapping("/{boardId}")
     public ResponseEntity<ResponseRoommatePostDto> getRoommateBoardDetail(
             @PathVariable Long boardId,
+            @AuthenticationPrincipal(errorOnInvalidType = false) CustomUserDetails userDetails,
             jakarta.servlet.http.HttpServletRequest request
     ) {
-        return ResponseEntity.ok(roommateService.getRoommateBoardDetail(boardId, request));
+        Long userId = userDetails != null ? userDetails.getId() : null;
+        return ResponseEntity.ok(roommateService.getRoommateBoardDetail(boardId, userId, request));
     }
 
     @TrackApi
@@ -145,9 +149,11 @@ public class RoommateController implements RoommateApiSpecification{
     public ResponseEntity<List<ResponseRoommatePostDto>> getRoommateBoardListScroll(
             @RequestParam(required = false) Long lastId,
             @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal(errorOnInvalidType = false) CustomUserDetails userDetails,
             HttpServletRequest request
     ) {
-        return ResponseEntity.ok(roommateService.getRoommateBoardListScroll(request, lastId, size));
+        Long userId = userDetails != null ? userDetails.getId() : null;
+        return ResponseEntity.ok(roommateService.getRoommateBoardListScroll(userId, request, lastId, size));
     }
 
     @GetMapping("/list/similar/scroll/me")
@@ -169,4 +175,12 @@ public class RoommateController implements RoommateApiSpecification{
         );
     }
 
+    @PostMapping("/{boardId}/read")
+    public ResponseEntity<Void> markRoommateBoardAsRead(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long boardId
+    ) {
+        roommateService.markRoommateBoardAsRead(userDetails.getId(), boardId);
+        return ResponseEntity.ok().build();
+    }
 }

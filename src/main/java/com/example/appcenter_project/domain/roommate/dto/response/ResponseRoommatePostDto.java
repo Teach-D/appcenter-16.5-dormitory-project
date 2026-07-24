@@ -37,6 +37,7 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
     private String userProfileImageUrl;
     private Integer year;
     private Integer semester;
+    private boolean isRead;
 
     @Builder
     public ResponseRoommatePostDto(Long id, String title, String type, LocalDateTime createDate, String filePath,
@@ -45,7 +46,7 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
                                    SleepSensitivityType sleeper, ShowerTimeType showerHour, ShowerDurationType showerTime,
                                    BedTimeType bedTime, CleanlinessType arrangement, String comment,
                                    int roommateBoardLike, Long userId, String userName, boolean isMatched,
-                                   String userProfileImageUrl, Integer year, Integer semester) {
+                                   String userProfileImageUrl, Integer year, Integer semester, boolean isRead) {  // ★ isRead 추가
         super(id, title, type, createDate, filePath);
         this.dormPeriod = dormPeriod;
         this.dormType = dormType;
@@ -68,6 +69,11 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
         this.userProfileImageUrl = userProfileImageUrl;
         this.year = year;
         this.semester = semester;
+        this.isRead = isRead;
+    }
+
+    public void updateIsRead(boolean isRead) {
+        this.isRead = isRead;
     }
 
     public static ResponseRoommatePostDto entityToDto(RoommateBoard board, boolean isMatched, String userProfileImageUrl) {
@@ -101,6 +107,6 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
                 .userProfileImageUrl(userProfileImageUrl)
                 .year(board.getYear())
                 .semester(board.getSemester())
-                .build();
+                .build();   // isRead 미설정 → 기본 false, 상세에서 updateIsRead로 주입
     }
 }

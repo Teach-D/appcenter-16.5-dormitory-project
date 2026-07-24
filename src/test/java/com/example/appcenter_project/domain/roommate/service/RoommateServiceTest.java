@@ -9,6 +9,7 @@ import com.example.appcenter_project.domain.roommate.entity.RoommateBoardLike;
 import com.example.appcenter_project.domain.roommate.entity.RoommateCheckList;
 import com.example.appcenter_project.domain.roommate.enums.MatchingStatus;
 import com.example.appcenter_project.domain.roommate.repository.RoommateBoardLikeRepository;
+import com.example.appcenter_project.domain.roommate.repository.RoommateBoardReadRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateBoardRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateCheckListRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateMatchingRepository;
@@ -60,6 +61,9 @@ class RoommateServiceTest {
 
     @Mock
     RoommateNotificationService roommateNotificationService;
+
+    @Mock
+    RoommateBoardReadRepository roommateBoardReadRepository;
 
     @InjectMocks
     RoommateService roommateService;
@@ -140,7 +144,7 @@ class RoommateServiceTest {
         when(roommateMatchingRepository.existsByReceiverAndStatus(any(User.class), eq(MatchingStatus.COMPLETED)))
                 .thenReturn(false);
 
-        List<ResponseRoommatePostDto> result = roommateService.getRoommateBoardList(null);
+        List<ResponseRoommatePostDto> result = roommateService.getRoommateBoardList(null, null);
 
         assertThat(result).hasSize(1);
     }
@@ -150,7 +154,7 @@ class RoommateServiceTest {
     void getRoommateBoardList_게시글없으면_예외() {
         when(roommateBoardRepository.findAllByOrderByCreatedDateDesc()).thenReturn(List.of());
 
-        assertThatThrownBy(() -> roommateService.getRoommateBoardList(null))
+        assertThatThrownBy(() -> roommateService.getRoommateBoardList(null, null))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ROOMMATE_BOARD_NOT_FOUND);
     }
@@ -167,7 +171,7 @@ class RoommateServiceTest {
         when(roommateMatchingRepository.existsByReceiverAndStatus(any(User.class), eq(MatchingStatus.COMPLETED)))
                 .thenReturn(false);
 
-        ResponseRoommatePostDto result = roommateService.getRoommateBoardDetail(1L, null);
+        ResponseRoommatePostDto result = roommateService.getRoommateBoardDetail(1L, null, null);
 
         assertThat(result).isNotNull();
     }
@@ -177,7 +181,7 @@ class RoommateServiceTest {
     void getRoommateBoardDetail_없으면_예외() {
         when(roommateBoardRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> roommateService.getRoommateBoardDetail(99L, null))
+        assertThatThrownBy(() -> roommateService.getRoommateBoardDetail(99L, null, null))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ROOMMATE_BOARD_NOT_FOUND);
     }
