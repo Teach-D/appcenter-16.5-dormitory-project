@@ -194,21 +194,36 @@ public class RoommateService {
                 .toList();
     }
 
-    //단일 조회
+    //단일 조회 (조회 시 로그인 유저 읽음 처리)
+    @Transactional
     public ResponseRoommatePostDto getRoommateBoardDetail(Long boardId, Long userId, jakarta.servlet.http.HttpServletRequest request){
         RoommateBoard board = roommateBoardRepository.findById(boardId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
         boolean isMatched = isRoommateBoardOwnerMatched(boardId);
+
+        boolean read = (userId != null) && markReadIfAbsent(userId, board);
+
         String writerImg = null;
         try {
             writerImg = imageService.findStaticImageUrl(ImageType.USER, board.getUser().getId(), request);
         } catch (Exception ignored) {}
 
         ResponseRoommatePostDto dto = ResponseRoommatePostDto.entityToDto(board, isMatched, writerImg);
-        boolean read = userId != null
-                && roommateBoardReadRepository.existsByUserIdAndRoommateBoardId(userId, boardId);
         dto.updateIsRead(read);
         return dto;
+    }
+
+    private boolean markReadIfAbsent(Long userId, RoommateBoard board) {
+        if (roommateBoardReadRepository.existsByUserIdAndRoommateBoardId(userId, board.getId())) {
+            return true; // 이미 읽음
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
+        try {
+            roommateBoardReadRepository.saveAndFlush(RoommateBoardRead.of(user, board));
+        } catch (DataIntegrityViolationException e) {
+        }
+        return true;
     }
 
     //유사도 조회
@@ -644,21 +659,6 @@ public class RoommateService {
         if (ac.getArrangement() == bc.getArrangement()) matches++;
 
         return (total == 0) ? 0.0 : (double) matches / total;
-    }
-
-    @Transactional
-    public void markRoommateBoardAsRead(Long userId, Long boardId) {
-        if (roommateBoardReadRepository.existsByUserIdAndRoommateBoardId(userId, boardId)) {
-            return;
-        }
-        RoommateBoard board = roommateBoardRepository.findById(boardId)
-                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
-        try {
-            roommateBoardReadRepository.saveAndFlush(RoommateBoardRead.of(user, board));
-        } catch (DataIntegrityViolationException e) {
-        }
     }
 
     private Set<Long> loadReadBoardIds(Long userId, List<Long> boardIds) {

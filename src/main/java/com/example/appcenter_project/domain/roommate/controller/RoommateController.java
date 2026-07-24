@@ -174,13 +174,4 @@ public class RoommateController implements RoommateApiSpecification{
                 )
         );
     }
-
-    @PostMapping("/{boardId}/read")
-    public ResponseEntity<Void> markRoommateBoardAsRead(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable Long boardId
-    ) {
-        roommateService.markRoommateBoardAsRead(userDetails.getId(), boardId);
-        return ResponseEntity.ok().build();
-    }
 }
