@@ -2,6 +2,7 @@ package com.example.appcenter_project.domain.studentIdDisclosure.service;
 
 import com.example.appcenter_project.domain.fcm.service.FcmMessageService;
 import com.example.appcenter_project.domain.openChat.service.OpenChatMessageService;
+import com.example.appcenter_project.domain.roommate.service.RoommateChattingChatService;
 import com.example.appcenter_project.domain.studentIdDisclosure.dto.request.RequestCreateDisclosureDto;
 import com.example.appcenter_project.domain.studentIdDisclosure.dto.response.ResponseDisclosureAcceptDto;
 import com.example.appcenter_project.domain.studentIdDisclosure.dto.response.ResponseDisclosureSendDto;
@@ -29,9 +30,10 @@ public class StudentIdDisclosureRequestService {
     private final UserRepository userRepository;
     private final FcmMessageService fcmMessageService;
     private final OpenChatMessageService openChatMessageService;
+    private final RoommateChattingChatService roommateChattingChatService;
 
     public ResponseDisclosureSendDto sendRequest(Long requesterId, RequestCreateDisclosureDto dto) {
-        Long savedId = transactionService.saveRequest(requesterId, dto);
+        StudentIdDisclosureTransactionService.SaveResult saved = transactionService.saveRequest(requesterId, dto);
 
         userRepository.findById(dto.getTargetId()).ifPresent(targetUser -> {
             if (targetUser.getReceiveNotificationTypes().contains(NotificationType.CHAT)) {
@@ -39,10 +41,14 @@ public class StudentIdDisclosureRequestService {
             }
         });
 
-        openChatMessageService.sendStudentIdRequestMessage(dto.getRoomId(), requesterId, savedId);
+        if (saved.isRoommateRoom()) {
+            roommateChattingChatService.sendStudentIdRequestMessage(dto.getRoomId(), requesterId, saved.savedId());
+        } else {
+            openChatMessageService.sendStudentIdRequestMessage(dto.getRoomId(), requesterId, saved.savedId());
+        }
 
         return ResponseDisclosureSendDto.builder()
-                .requestId(savedId)
+                .requestId(saved.savedId())
                 .build();
     }
 
@@ -59,7 +65,11 @@ public class StudentIdDisclosureRequestService {
             }
         });
 
-        openChatMessageService.sendSystemMessage(result.roomId(), "학번 공유가 수락되었습니다.");
+        if (result.isRoommateRoom()) {
+            roommateChattingChatService.sendSystemMessageById(result.roomId(), "학번 공유가 수락되었습니다.");
+        } else {
+            openChatMessageService.sendSystemMessage(result.roomId(), "학번 공유가 수락되었습니다.");
+        }
 
         return result.dto();
     }
@@ -73,7 +83,11 @@ public class StudentIdDisclosureRequestService {
             }
         });
 
-        openChatMessageService.sendSystemMessage(result.roomId(), "학번 공유가 거절되었습니다.");
+        if (result.isRoommateRoom()) {
+            roommateChattingChatService.sendSystemMessageById(result.roomId(), "학번 공유가 거절되었습니다.");
+        } else {
+            openChatMessageService.sendSystemMessage(result.roomId(), "학번 공유가 거절되었습니다.");
+        }
     }
 
     @Transactional(readOnly = true)

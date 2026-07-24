@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.roommate.entity;
 
 import com.example.appcenter_project.common.BaseTimeEntity;
+import com.example.appcenter_project.domain.roommate.enums.RoommateChattingMessageType;
 import com.example.appcenter_project.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -32,6 +33,13 @@ public class RoommateChattingChat extends BaseTimeEntity {
 
     @Column(nullable = false)
     private boolean isSystem = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = true)
+    private RoommateChattingMessageType messageType;
+
+    @Column(nullable = true)
+    private Long disclosureRequestId;
 
     @Builder
     public RoommateChattingChat(RoommateChattingRoom roommateChattingRoom, User member, String content, boolean readByReceiver) {
@@ -67,6 +75,19 @@ public class RoommateChattingChat extends BaseTimeEntity {
         chat.content = content;
         chat.readByReceiver = false;
         chat.createdDate = createdDate;
+        return chat;
+    }
+
+    public static RoommateChattingChat createStudentIdRequestMessage(
+            RoommateChattingRoom room, User requester, String content, Long requestId) {
+        RoommateChattingChat chat = new RoommateChattingChat();
+        chat.roommateChattingRoom = room;
+        chat.member = requester;
+        chat.content = content;
+        chat.isSystem = true;
+        chat.messageType = RoommateChattingMessageType.STUDENT_ID_REQUEST;
+        chat.disclosureRequestId = requestId;
+        chat.readByReceiver = true;
         return chat;
     }
 

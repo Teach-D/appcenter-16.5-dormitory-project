@@ -17,6 +17,7 @@ public class ResponseRoommateChatDto {
     private boolean isSystem;
     private String createdDate;
     private String userImageUrl;
+    private Long disclosureRequestId;
 
     public static ResponseRoommateChatDto entityToDto(RoommateChattingChat chat, String userImageUrl) {
         return ResponseRoommateChatDto.builder()
@@ -28,6 +29,7 @@ public class ResponseRoommateChatDto {
                 .isSystem(chat.isSystem())
                 .createdDate(chat.getCreatedDate().toString())
                 .userImageUrl(userImageUrl)
+                .disclosureRequestId(chat.getDisclosureRequestId())
                 .build();
     }
 

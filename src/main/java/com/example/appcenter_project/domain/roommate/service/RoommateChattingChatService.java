@@ -162,6 +162,28 @@ public class RoommateChattingChatService {
         messagingTemplate.convertAndSend("/sub/roommate/chat/" + room.getId(), dto);
     }
 
+    @Transactional
+    public void sendSystemMessageById(Long roomId, String content) {
+        RoommateChattingRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new CustomException(ROOMMATE_CHAT_ROOM_NOT_FOUND));
+        sendSystemMessage(room, content);
+    }
+
+    @Transactional
+    public void sendStudentIdRequestMessage(Long roomId, Long requesterId, Long requestId) {
+        RoommateChattingRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new CustomException(ROOMMATE_CHAT_ROOM_NOT_FOUND));
+        User requester = userRepository.findById(requesterId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        String content = "{\"requestId\":" + requestId + ",\"requesterId\":" + requesterId
+                + ",\"requesterNickname\":\"" + requester.getName() + "\"}";
+        RoommateChattingChat chat = RoommateChattingChat.createStudentIdRequestMessage(
+                room, requester, content, requestId);
+        chatRepository.save(chat);
+        ResponseRoommateChatDto dto = ResponseRoommateChatDto.entityToDto(chat, null);
+        messagingTemplate.convertAndSend("/sub/roommate/chat/" + roomId, dto);
+    }
+
     public Integer getUnReadCountByUserId(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));

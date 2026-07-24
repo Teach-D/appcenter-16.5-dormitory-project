@@ -2,6 +2,8 @@ package com.example.appcenter_project.domain.studentIdDisclosure.service;
 
 import com.example.appcenter_project.domain.openChat.repository.OpenChatParticipantRepository;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatRoomRepository;
+import com.example.appcenter_project.domain.roommate.entity.RoommateChattingRoom;
+import com.example.appcenter_project.domain.roommate.repository.RoommateChattingRoomRepository;
 import com.example.appcenter_project.domain.studentIdDisclosure.dto.request.RequestCreateDisclosureDto;
 import com.example.appcenter_project.domain.studentIdDisclosure.dto.response.ResponseDisclosureAcceptDto;
 import com.example.appcenter_project.domain.studentIdDisclosure.entity.StudentIdDisclosureRequest;
@@ -25,10 +27,13 @@ public class StudentIdDisclosureTransactionService {
     private final StudentIdDisclosureRequestRepository disclosureRequestRepository;
     private final OpenChatRoomRepository openChatRoomRepository;
     private final OpenChatParticipantRepository openChatParticipantRepository;
+    private final RoommateChattingRoomRepository roommateChattingRoomRepository;
     private final UserRepository userRepository;
 
+    public record SaveResult(Long savedId, boolean isRoommateRoom) {}
+
     @Transactional
-    public Long saveRequest(Long requesterId, RequestCreateDisclosureDto dto) {
+    public SaveResult saveRequest(Long requesterId, RequestCreateDisclosureDto dto) {
         Long roomId = dto.getRoomId();
         Long targetId = dto.getTargetId();
 
@@ -36,13 +41,24 @@ public class StudentIdDisclosureTransactionService {
             throw new CustomException(ErrorCode.DISCLOSURE_CANNOT_REQUEST_SELF);
         }
 
-        if (!openChatRoomRepository.existsById(roomId)) {
-            throw new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND);
-        }
-
-        if (!openChatParticipantRepository.existsByRoomIdAndUserId(roomId, requesterId)
-                || !openChatParticipantRepository.existsByRoomIdAndUserId(roomId, targetId)) {
-            throw new CustomException(ErrorCode.DISCLOSURE_NOT_IN_SAME_ROOM);
+        boolean isRoommateRoom;
+        if (openChatRoomRepository.existsById(roomId)) {
+            isRoommateRoom = false;
+            if (!openChatParticipantRepository.existsByRoomIdAndUserId(roomId, requesterId)
+                    || !openChatParticipantRepository.existsByRoomIdAndUserId(roomId, targetId)) {
+                throw new CustomException(ErrorCode.DISCLOSURE_NOT_IN_SAME_ROOM);
+            }
+        } else {
+            RoommateChattingRoom roommateRoom = roommateChattingRoomRepository.findById(roomId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND));
+            isRoommateRoom = true;
+            boolean requesterIn = roommateRoom.getHost().getId().equals(requesterId)
+                    || roommateRoom.getGuest().getId().equals(requesterId);
+            boolean targetIn = roommateRoom.getHost().getId().equals(targetId)
+                    || roommateRoom.getGuest().getId().equals(targetId);
+            if (!requesterIn || !targetIn) {
+                throw new CustomException(ErrorCode.DISCLOSURE_NOT_IN_SAME_ROOM);
+            }
         }
 
         if (disclosureRequestRepository.existsByRequesterIdAndTargetIdAndRoomIdAndStatusIn(
@@ -55,7 +71,7 @@ public class StudentIdDisclosureTransactionService {
         try {
             StudentIdDisclosureRequest saved = disclosureRequestRepository.save(
                     StudentIdDisclosureRequest.create(requesterId, targetId, roomId));
-            return saved.getId();
+            return new SaveResult(saved.getId(), isRoommateRoom);
         } catch (DataIntegrityViolationException e) {
             throw new CustomException(ErrorCode.DISCLOSURE_REQUEST_ALREADY_EXISTS);
         }
@@ -92,10 +108,11 @@ public class StudentIdDisclosureTransactionService {
                 .requesterStudentNumber(requester.getStudentNumber())
                 .build();
 
-        return new AcceptResult(dto, requester.getId(), request.getRoomId());
+        boolean isRoommateRoom = roommateChattingRoomRepository.existsById(request.getRoomId());
+        return new AcceptResult(dto, requester.getId(), request.getRoomId(), isRoommateRoom);
     }
 
-    public record AcceptResult(ResponseDisclosureAcceptDto dto, Long requesterId, Long roomId) {}
+    public record AcceptResult(ResponseDisclosureAcceptDto dto, Long requesterId, Long roomId, boolean isRoommateRoom) {}
 
     @Transactional
     public RejectResult rejectRequest(Long targetId, Long requestId) {
@@ -108,10 +125,11 @@ public class StudentIdDisclosureTransactionService {
 
         request.reject();
 
-        return new RejectResult(request.getRequesterId(), request.getRoomId());
+        boolean isRoommateRoom = roommateChattingRoomRepository.existsById(request.getRoomId());
+        return new RejectResult(request.getRequesterId(), request.getRoomId(), isRoommateRoom);
     }
 
-    public record RejectResult(Long requesterId, Long roomId) {}
+    public record RejectResult(Long requesterId, Long roomId, boolean isRoommateRoom) {}
 
     @Transactional
     public void deleteByRoomAndUser(Long roomId, Long userId) {

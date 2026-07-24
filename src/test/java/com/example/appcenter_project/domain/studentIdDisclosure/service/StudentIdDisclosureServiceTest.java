@@ -2,6 +2,7 @@ package com.example.appcenter_project.domain.studentIdDisclosure.service;
 
 import com.example.appcenter_project.domain.fcm.service.FcmMessageService;
 import com.example.appcenter_project.domain.openChat.service.OpenChatMessageService;
+import com.example.appcenter_project.domain.roommate.service.RoommateChattingChatService;
 import com.example.appcenter_project.domain.studentIdDisclosure.dto.request.RequestCreateDisclosureDto;
 import com.example.appcenter_project.domain.studentIdDisclosure.dto.response.ResponseDisclosureAcceptDto;
 import com.example.appcenter_project.domain.studentIdDisclosure.dto.response.ResponseDisclosureSendDto;
@@ -56,6 +57,9 @@ class StudentIdDisclosureServiceTest {
     @Mock
     private OpenChatMessageService openChatMessageService;
 
+    @Mock
+    private RoommateChattingChatService roommateChattingChatService;
+
     @InjectMocks
     private StudentIdDisclosureRequestService disclosureService;
 
@@ -67,7 +71,7 @@ class StudentIdDisclosureServiceTest {
     @DisplayName("요청 발송 성공 — 정상 요청 시 requestId 반환")
     void should_return_requestId_when_sendRequest_valid() {
         RequestCreateDisclosureDto dto = StudentIdDisclosureFixture.createSendRequestDto();
-        given(transactionService.saveRequest(REQUESTER_ID, dto)).willReturn(REQUEST_ID);
+        given(transactionService.saveRequest(REQUESTER_ID, dto)).willReturn(new StudentIdDisclosureTransactionService.SaveResult(REQUEST_ID, false));
         given(userRepository.findById(TARGET_ID)).willReturn(Optional.empty());
 
         ResponseDisclosureSendDto result = disclosureService.sendRequest(REQUESTER_ID, dto);
@@ -93,7 +97,7 @@ class StudentIdDisclosureServiceTest {
                 .requesterStudentNumber(REQUESTER_STUDENT_NUMBER)
                 .build();
         StudentIdDisclosureTransactionService.AcceptResult acceptResult =
-                new StudentIdDisclosureTransactionService.AcceptResult(dto, REQUESTER_ID, ROOM_ID);
+                new StudentIdDisclosureTransactionService.AcceptResult(dto, REQUESTER_ID, ROOM_ID, false);
         given(transactionService.acceptRequest(TARGET_ID, REQUEST_ID)).willReturn(acceptResult);
         given(userRepository.findById(REQUESTER_ID)).willReturn(Optional.empty());
 
@@ -106,7 +110,7 @@ class StudentIdDisclosureServiceTest {
     @DisplayName("요청 거절 성공 — PENDING 상태 전이 → REJECTED")
     void should_transition_to_REJECTED_when_reject_valid() {
         given(transactionService.rejectRequest(TARGET_ID, REQUEST_ID))
-                .willReturn(new StudentIdDisclosureTransactionService.RejectResult(REQUESTER_ID, ROOM_ID));
+                .willReturn(new StudentIdDisclosureTransactionService.RejectResult(REQUESTER_ID, ROOM_ID, false));
         given(userRepository.findById(REQUESTER_ID)).willReturn(Optional.empty());
 
         disclosureService.reject(TARGET_ID, REQUEST_ID);
@@ -288,7 +292,7 @@ class StudentIdDisclosureServiceTest {
     @DisplayName("재요청 성공 — BR-04 REJECTED 레코드 삭제 후 신규 PENDING 저장 (ADR-01)")
     void should_delete_rejected_and_save_new_pending_when_BR04_rerequest_after_rejected() {
         RequestCreateDisclosureDto dto = StudentIdDisclosureFixture.createSendRequestDto();
-        given(transactionService.saveRequest(REQUESTER_ID, dto)).willReturn(REQUEST_ID);
+        given(transactionService.saveRequest(REQUESTER_ID, dto)).willReturn(new StudentIdDisclosureTransactionService.SaveResult(REQUEST_ID, false));
         given(userRepository.findById(TARGET_ID)).willReturn(Optional.empty());
 
         ResponseDisclosureSendDto result = disclosureService.sendRequest(REQUESTER_ID, dto);
@@ -301,7 +305,7 @@ class StudentIdDisclosureServiceTest {
     @DisplayName("재요청 성공 — BR-04 CANCELED 레코드 삭제 후 신규 PENDING 저장 (ADR-01)")
     void should_delete_canceled_and_save_new_pending_when_BR04_rerequest_after_canceled() {
         RequestCreateDisclosureDto dto = StudentIdDisclosureFixture.createSendRequestDto();
-        given(transactionService.saveRequest(REQUESTER_ID, dto)).willReturn(REQUEST_ID);
+        given(transactionService.saveRequest(REQUESTER_ID, dto)).willReturn(new StudentIdDisclosureTransactionService.SaveResult(REQUEST_ID, false));
         given(userRepository.findById(TARGET_ID)).willReturn(Optional.empty());
 
         ResponseDisclosureSendDto result = disclosureService.sendRequest(REQUESTER_ID, dto);
@@ -413,7 +417,7 @@ class StudentIdDisclosureServiceTest {
     @DisplayName("재요청 성공 — REJECTED 직후 즉시 재요청 허용 (BR-04 엣지케이스)")
     void should_succeed_when_rerequest_immediately_after_rejected() {
         RequestCreateDisclosureDto dto = StudentIdDisclosureFixture.createSendRequestDto();
-        given(transactionService.saveRequest(REQUESTER_ID, dto)).willReturn(200L);
+        given(transactionService.saveRequest(REQUESTER_ID, dto)).willReturn(new StudentIdDisclosureTransactionService.SaveResult(200L, false));
         given(userRepository.findById(TARGET_ID)).willReturn(Optional.empty());
 
         ResponseDisclosureSendDto result = disclosureService.sendRequest(REQUESTER_ID, dto);
@@ -425,7 +429,7 @@ class StudentIdDisclosureServiceTest {
     @DisplayName("요청 발송 성공 — 역방향(B→A) PENDING 중에 정방향(A→B) 요청은 별개 레코드로 허용")
     void should_succeed_when_forward_request_while_reverse_pending_exists() {
         RequestCreateDisclosureDto dto = StudentIdDisclosureFixture.createSendRequestDto();
-        given(transactionService.saveRequest(REQUESTER_ID, dto)).willReturn(REQUEST_ID);
+        given(transactionService.saveRequest(REQUESTER_ID, dto)).willReturn(new StudentIdDisclosureTransactionService.SaveResult(REQUEST_ID, false));
         given(userRepository.findById(TARGET_ID)).willReturn(Optional.empty());
 
         ResponseDisclosureSendDto result = disclosureService.sendRequest(REQUESTER_ID, dto);
