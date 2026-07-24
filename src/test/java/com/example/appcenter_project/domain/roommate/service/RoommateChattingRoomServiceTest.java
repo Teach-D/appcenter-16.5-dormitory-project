@@ -2,6 +2,7 @@ package com.example.appcenter_project.domain.roommate.service;
 
 import com.example.appcenter_project.common.image.service.ImageService;
 import com.example.appcenter_project.domain.roommate.entity.RoommateBoard;
+import com.example.appcenter_project.domain.roommate.service.RoommateChattingChatService;
 import com.example.appcenter_project.domain.roommate.entity.RoommateChattingRoom;
 import com.example.appcenter_project.domain.roommate.entity.RoommateCheckList;
 import com.example.appcenter_project.domain.roommate.repository.RoommateBoardRepository;
@@ -40,6 +41,9 @@ class RoommateChattingRoomServiceTest {
 
     @Mock
     ImageService imageService;
+
+    @Mock
+    RoommateChattingChatService roommateChattingChatService;
 
     @InjectMocks
     RoommateChattingRoomService roommateChattingRoomService;

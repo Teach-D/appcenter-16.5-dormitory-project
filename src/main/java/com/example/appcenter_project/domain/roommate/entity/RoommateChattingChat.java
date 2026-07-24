@@ -21,14 +21,17 @@ public class RoommateChattingChat extends BaseTimeEntity {
     private RoommateChattingRoom roommateChattingRoom;
 
     @ManyToOne(fetch =  FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
+    @JoinColumn(name = "member_id")
     private User member;
 
     @Column(nullable = false, length = 1000)
     private String content;
 
     @Column(nullable = false)
-    private boolean readByReceiver = false; // 읽음 여부
+    private boolean readByReceiver = false;
+
+    @Column(nullable = false)
+    private boolean isSystem = false;
 
     @Builder
     public RoommateChattingChat(RoommateChattingRoom roommateChattingRoom, User member, String content, boolean readByReceiver) {
@@ -36,6 +39,15 @@ public class RoommateChattingChat extends BaseTimeEntity {
         this.member = member;
         this.content = content;
         this.readByReceiver = readByReceiver;
+    }
+
+    public static RoommateChattingChat createSystemMessage(RoommateChattingRoom room, String content) {
+        RoommateChattingChat chat = new RoommateChattingChat();
+        chat.roommateChattingRoom = room;
+        chat.content = content;
+        chat.isSystem = true;
+        chat.readByReceiver = true;
+        return chat;
     }
 
     public static RoommateChattingChat create(RoommateChattingRoom room, User sender, String content) {

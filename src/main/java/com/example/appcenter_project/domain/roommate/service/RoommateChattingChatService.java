@@ -155,6 +155,13 @@ public class RoommateChattingChatService {
         return chatRepository.findByRoommateChattingRoomAndMemberNotAndReadByReceiverFalse(room, user).size();
     }
 
+    public void sendSystemMessage(RoommateChattingRoom room, String content) {
+        RoommateChattingChat systemChat = RoommateChattingChat.createSystemMessage(room, content);
+        chatRepository.save(systemChat);
+        ResponseRoommateChatDto dto = ResponseRoommateChatDto.systemDto(room.getId(), content);
+        messagingTemplate.convertAndSend("/sub/roommate/chat/" + room.getId(), dto);
+    }
+
     public Integer getUnReadCountByUserId(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
@@ -219,7 +226,9 @@ public class RoommateChattingChatService {
 
         return chatList.stream()
                 .map(chat -> {
-                    String imageUrl = imageService.findImage(ImageType.USER, chat.getMember().getId(), request).getImageUrl();
+                    String imageUrl = chat.getMember() != null
+                            ? imageService.findImage(ImageType.USER, chat.getMember().getId(), request).getImageUrl()
+                            : null;
                     return ResponseRoommateChatDto.entityToDto(chat, imageUrl);
                 })
                 .toList();

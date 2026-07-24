@@ -37,6 +37,7 @@ public class RoommateChattingRoomService {
     private final RoommateBoardRepository roommateBoardRepository;
     private final UserRepository userRepository;
     private final ImageService imageService;
+    private final RoommateChattingChatService roommateChattingChatService;
 
 
     //채팅방 생성
@@ -106,6 +107,8 @@ public class RoommateChattingRoomService {
         } else {
             chatRoom.leaveAsGuest();
         }
+
+        roommateChattingChatService.sendSystemMessage(chatRoom, user.getName() + "님이 나갔습니다.");
 
         // 양쪽 모두 나간 경우에만 채팅방 삭제
         if (chatRoom.isBothLeft()) {
