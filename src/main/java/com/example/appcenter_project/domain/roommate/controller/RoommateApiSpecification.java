@@ -46,6 +46,7 @@ public interface RoommateApiSpecification {
             description = "작성된 룸메이트 게시글을 최신순으로 조회합니다. (작성자 프로필 이미지 URL 포함)"
     )
     ResponseEntity<List<ResponseRoommatePostDto>> getRoommateBoardList(
+            @Parameter(hidden = true) CustomUserDetails userDetails,
             @Parameter(hidden = true) HttpServletRequest request
     );
 
@@ -55,6 +56,7 @@ public interface RoommateApiSpecification {
     )
     ResponseEntity<ResponseRoommatePostDto> getRoommateBoardDetail(
             @Parameter(description = "조회할 게시글 ID", example = "1") @PathVariable Long boardId,
+            @Parameter(hidden = true) CustomUserDetails userDetails,
             @Parameter(hidden = true) HttpServletRequest request
     );
 
@@ -139,6 +141,7 @@ public interface RoommateApiSpecification {
             @RequestParam(required = false) Long lastId,
             @Parameter(description = "한 번에 가져올 데이터 개수", example = "10")
             @RequestParam(defaultValue = "10") int size,
+            @Parameter(hidden = true) CustomUserDetails userDetails,
             @Parameter(hidden = true) HttpServletRequest request
     );
 

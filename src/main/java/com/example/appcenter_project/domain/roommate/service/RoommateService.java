@@ -8,16 +8,13 @@ import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoomma
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateSimilarityDto;
 import com.example.appcenter_project.domain.roommate.entity.RoommateBoardLike;
 import com.example.appcenter_project.domain.roommate.entity.RoommateBoard;
+import com.example.appcenter_project.domain.roommate.entity.RoommateBoardRead;
 import com.example.appcenter_project.domain.roommate.entity.RoommateCheckList;
+import com.example.appcenter_project.domain.roommate.repository.*;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.roommate.enums.MatchingStatus;
 import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.global.exception.ErrorCode;
-import com.example.appcenter_project.domain.roommate.repository.RoommateBoardLikeRepository;
-import com.example.appcenter_project.domain.roommate.repository.RoommateBoardRepository;
-import com.example.appcenter_project.domain.roommate.repository.RoommateCheckListRepository;
-import com.example.appcenter_project.domain.roommate.repository.RoommateChattingRoomRepository;
-import com.example.appcenter_project.domain.roommate.repository.RoommateMatchingRepository;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.domain.notification.service.RoommateNotificationService;
 import com.example.appcenter_project.global.mixpanel.MixpanelService;
@@ -26,6 +23,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -33,8 +31,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
@@ -53,6 +53,7 @@ public class RoommateService {
     private final ImageService imageService;
     private final RoommateNotificationService roommateNotificationService;
     private final MixpanelService mixpanelService;
+    private final RoommateBoardReadRepository roommateBoardReadRepository;
 
 
     public Integer[] resolveSemester(int month) {
@@ -143,12 +144,15 @@ public class RoommateService {
     }
 
     //최신순 조회
-    public List<ResponseRoommatePostDto> getRoommateBoardList(jakarta.servlet.http.HttpServletRequest request) {
+    public List<ResponseRoommatePostDto> getRoommateBoardList(Long userId, jakarta.servlet.http.HttpServletRequest request) {
         List<RoommateBoard> boards = roommateBoardRepository.findAllByOrderByCreatedDateDesc();
 
         if (boards.isEmpty()){
             throw new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND);
         }
+
+        List<Long> boardIds = boards.stream().map(RoommateBoard::getId).toList();
+        Set<Long> readBoardIds = loadReadBoardIds(userId, boardIds);
 
         return boards.stream()
                 .map(board -> {
@@ -184,13 +188,14 @@ public class RoommateService {
                             .createDate(board.getCreatedDate())
                             .isMatched(isMatched)
                             .userProfileImageUrl(writerImg)
+                            .isRead(readBoardIds.contains(board.getId()))
                             .build();
                 })
                 .toList();
     }
 
     //단일 조회
-    public ResponseRoommatePostDto getRoommateBoardDetail(Long boardId, jakarta.servlet.http.HttpServletRequest request){
+    public ResponseRoommatePostDto getRoommateBoardDetail(Long boardId, Long userId, jakarta.servlet.http.HttpServletRequest request){
         RoommateBoard board = roommateBoardRepository.findById(boardId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
         boolean isMatched = isRoommateBoardOwnerMatched(boardId);
@@ -199,7 +204,11 @@ public class RoommateService {
             writerImg = imageService.findStaticImageUrl(ImageType.USER, board.getUser().getId(), request);
         } catch (Exception ignored) {}
 
-        return ResponseRoommatePostDto.entityToDto(board, isMatched, writerImg);
+        ResponseRoommatePostDto dto = ResponseRoommatePostDto.entityToDto(board, isMatched, writerImg);
+        boolean read = userId != null
+                && roommateBoardReadRepository.existsByUserIdAndRoommateBoardId(userId, boardId);
+        dto.updateIsRead(read);
+        return dto;
     }
 
     //유사도 조회
@@ -439,21 +448,22 @@ public class RoommateService {
     }
 
     @Transactional(readOnly = true)
-    public List<ResponseRoommatePostDto> getRoommateBoardListScroll(HttpServletRequest request, Long lastId, int size) {
+    public List<ResponseRoommatePostDto> getRoommateBoardListScroll(Long userId, HttpServletRequest request, Long lastId, int size) {
         Pageable pageable = PageRequest.of(0, size);
         List<RoommateBoard> boards;
 
         if (lastId == null) {
-            // 첫 로딩: 최신순 size개
             boards = roommateBoardRepository.findAllByOrderByIdDesc(pageable);
         } else {
-            // 이후 로딩: lastId보다 작은 데이터
             boards = roommateBoardRepository.findByIdLessThanOrderByIdDesc(lastId, pageable);
         }
 
         if (boards.isEmpty()) {
             return List.of(); // 마지막 페이지
         }
+
+        List<Long> boardIds = boards.stream().map(RoommateBoard::getId).toList();
+        Set<Long> readBoardIds = loadReadBoardIds(userId, boardIds);
 
         return boards.stream().map(board -> {
             RoommateCheckList cl = board.getRoommateCheckList();
@@ -488,6 +498,7 @@ public class RoommateService {
                     .createDate(board.getCreatedDate())
                     .isMatched(isMatched)
                     .userProfileImageUrl(writerImg)
+                    .isRead(readBoardIds.contains(board.getId()))
                     .build();
         }).toList();
     }
@@ -531,6 +542,9 @@ public class RoommateService {
         // 페이지 사이즈만큼 가져오기
         List<Map.Entry<RoommateBoard, Integer>> page = stream.limit(size).toList();
 
+        List<Long> boardIds = page.stream().map(e -> e.getKey().getId()).toList();
+        Set<Long> readBoardIds = loadReadBoardIds(userId, boardIds);
+
         // DTO 변환
         return page.stream().map(entry -> {
             RoommateBoard board = entry.getKey();
@@ -568,10 +582,10 @@ public class RoommateService {
                     .createdDate(board.getCreatedDate())
                     .isMatched(isMatched)
                     .userProfileImageUrl(img)
+                    .isRead(readBoardIds.contains(board.getId()))
                     .build();
         }).toList();
     }
-
 
     @Transactional
     public void deleteRoommateBoard(Long userId) {
@@ -593,6 +607,9 @@ public class RoommateService {
             roommateChattingRoomRepository.detachGuestChecklist(checkList.getId());
             roommateChattingRoomRepository.detachHostChecklist(checkList.getId());
         }
+
+        // 읽음 기록 삭제 (FK 정합성)
+        roommateBoardReadRepository.deleteAllByRoommateBoardId(board.getId());
 
         // 게시글 삭제 (좋아요는 orphanRemoval로 자동 삭제)
         roommateBoardRepository.delete(board);
@@ -629,6 +646,26 @@ public class RoommateService {
         return (total == 0) ? 0.0 : (double) matches / total;
     }
 
+    @Transactional
+    public void markRoommateBoardAsRead(Long userId, Long boardId) {
+        if (roommateBoardReadRepository.existsByUserIdAndRoommateBoardId(userId, boardId)) {
+            return;
+        }
+        RoommateBoard board = roommateBoardRepository.findById(boardId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
+        try {
+            roommateBoardReadRepository.saveAndFlush(RoommateBoardRead.of(user, board));
+        } catch (DataIntegrityViolationException e) {
+        }
+    }
 
+    private Set<Long> loadReadBoardIds(Long userId, List<Long> boardIds) {
+        if (userId == null || boardIds.isEmpty()) {
+            return Set.of();
+        }
+        return new HashSet<>(roommateBoardReadRepository.findReadBoardIds(userId, boardIds));
+    }
 
 }
