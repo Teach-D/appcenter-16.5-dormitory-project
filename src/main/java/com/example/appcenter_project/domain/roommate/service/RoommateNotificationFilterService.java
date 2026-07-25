@@ -6,6 +6,7 @@ import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoomma
 import com.example.appcenter_project.domain.roommate.entity.RoommateBoard;
 import com.example.appcenter_project.domain.roommate.entity.RoommateCheckList;
 import com.example.appcenter_project.domain.roommate.entity.RoommateNotificationFilter;
+import com.example.appcenter_project.domain.roommate.repository.RoommateBoardReadRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateBoardRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateNotificationFilterRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateMatchingRepository;
@@ -23,6 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.servlet.http.HttpServletRequest;
+
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -38,6 +41,7 @@ public class RoommateNotificationFilterService {
     private final RoommateBoardRepository boardRepository;
     private final RoommateMatchingRepository roommateMatchingRepository;
     private final UserRepository userRepository;
+    private final RoommateBoardReadRepository roommateBoardReadRepository;
     private final ImageService imageService;
 
     public void saveOrUpdateFilter(Long userId, RequestRoommateNotificationFilterDto dto) {
@@ -114,54 +118,52 @@ public class RoommateNotificationFilterService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
-        // 필터가 없으면 빈 리스트 반환
         RoommateNotificationFilter filter = filterRepository.findByUserId(userId).orElse(null);
         if (filter == null) {
             log.warn("필터가 설정되지 않았습니다. userId: {}", userId);
             return List.of();
         }
-        log.info("필터 조회 성공. userId: {}, dormType: {}, dormPeriodDays: {}, colleges: {}", 
+        log.info("필터 조회 성공. userId: {}, dormType: {}, dormPeriodDays: {}, colleges: {}",
                 userId, filter.getDormType(), filter.getDormPeriodDays(), filter.getColleges());
 
-        // 참고: 필터링된 게시글 조회는 알림 수신 설정과 무관하게 보여줌
-        // (알림 전송 시에만 알림 수신 설정을 확인)
-
-        // 모든 게시글 조회 (JOIN FETCH로 RoommateCheckList와 User 함께 조회)
         List<RoommateBoard> allBoards = boardRepository.findAllWithCheckListAndUserOrderByCreatedDateDesc();
         log.info("필터링 시작. 총 게시글 수: {}, 필터 설정 사용자 ID: {}", allBoards.size(), userId);
 
-        // 필터 조건에 맞는 게시글만 필터링
-        List<ResponseRoommatePostDto> result = allBoards.stream()
+        // 필터 조건에 맞는 게시글만 추출
+        List<RoommateBoard> matchedBoards = allBoards.stream()
                 .filter(board -> {
-                    // 본인이 작성한 게시글은 제외
                     if (board.getUser().getId().equals(userId)) {
                         log.debug("본인 게시글 제외. boardId: {}, userId: {}", board.getId(), userId);
                         return false;
                     }
-
                     RoommateCheckList checkList = board.getRoommateCheckList();
                     if (checkList == null) {
                         log.debug("RoommateCheckList 없음. boardId: {}", board.getId());
                         return false;
                     }
-
                     User writer = board.getUser();
-                    
-                    // 필터 조건 체크 (User의 dormType과 college 사용)
                     boolean matches = matchesFilter(filter, checkList, writer, board.getId());
                     if (!matches) {
                         log.debug("필터 조건 불일치. boardId: {}, writerId: {}", board.getId(), writer.getId());
                     } else {
-                        log.info("✅ 필터 조건 일치! boardId: {}, writerId: {}, writerName: {}", 
+                        log.info("✅ 필터 조건 일치! boardId: {}, writerId: {}, writerName: {}",
                                 board.getId(), writer.getId(), writer.getName());
                     }
                     return matches;
                 })
+                .toList();
+
+        // 로그인 유저가 읽은 게시글 id (매칭된 범위로 한정)
+        List<Long> matchedIds = matchedBoards.stream().map(RoommateBoard::getId).toList();
+        Set<Long> readBoardIds = matchedIds.isEmpty()
+                ? Set.of()
+                : new HashSet<>(roommateBoardReadRepository.findReadBoardIds(userId, matchedIds));
+
+        List<ResponseRoommatePostDto> result = matchedBoards.stream()
                 .map(board -> {
                     RoommateCheckList cl = board.getRoommateCheckList();
                     User writer = board.getUser();
-                    
-                    // 매칭 여부 확인
+
                     boolean isMatched = roommateMatchingRepository.existsBySenderAndStatus(writer, MatchingStatus.COMPLETED)
                             || roommateMatchingRepository.existsByReceiverAndStatus(writer, MatchingStatus.COMPLETED);
 
@@ -193,10 +195,11 @@ public class RoommateNotificationFilterService {
                             .createDate(board.getCreatedDate())
                             .isMatched(isMatched)
                             .userProfileImageUrl(writerImg)
+                            .isRead(readBoardIds.contains(board.getId()))
                             .build();
                 })
                 .toList();
-        
+
         log.info("필터링 완료. 일치하는 게시글 수: {}개, 필터 설정 사용자 ID: {}", result.size(), userId);
         return result;
     }
