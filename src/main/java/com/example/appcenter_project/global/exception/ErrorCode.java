@@ -182,6 +182,11 @@ public enum ErrorCode {
     OPEN_CHAT_KICK_FORBIDDEN(FORBIDDEN, 22017, "[OpenChat] 강제퇴장 권한이 없습니다."),
     OPEN_CHAT_NEW_HOST_REQUIRED(BAD_REQUEST, 22018, "[OpenChat] 방장 강퇴 시 새 방장을 지정해야 합니다."),
     OPEN_CHAT_SELF_PERSONAL_FORBIDDEN(BAD_REQUEST, 22019, "[OpenChat] 자기 자신과 개인 채팅방을 생성할 수 없습니다."),
+    OPEN_CHAT_MESSAGE_NOT_FOUND(NOT_FOUND, 22020, "[OpenChat] 메시지를 찾을 수 없습니다."),
+    OPEN_CHAT_REPORT_SELF(BAD_REQUEST, 22021, "[OpenChat] 자신의 메시지는 신고할 수 없습니다."),
+    OPEN_CHAT_REPORT_NOT_FOUND(NOT_FOUND, 22022, "[OpenChat] 신고 내역을 찾을 수 없습니다."),
+    OPEN_CHAT_REPORT_ALREADY_HANDLED(BAD_REQUEST, 22023, "[OpenChat] 이미 처리된 신고입니다."),
+    OPEN_CHAT_REPORT_TARGET_INVALID(BAD_REQUEST, 22024, "[OpenChat] 신고할 수 없는 메시지입니다."),
 
     // STUDENT_ID_DISCLOSURE
     DISCLOSURE_REQUEST_NOT_FOUND(NOT_FOUND, 23001, "[StudentIdDisclosure] 학번 공개 요청을 찾을 수 없습니다."),
