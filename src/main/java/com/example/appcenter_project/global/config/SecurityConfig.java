@@ -176,6 +176,7 @@ public class SecurityConfig {
                         .requestMatchers("/features/**").permitAll()
 
                         /** 오픈 채팅 **/
+                        .requestMatchers("/admin/open-chat-reports/**").hasRole("ADMIN")
                         .requestMatchers("/open-chat-rooms/**").authenticated()
 
                         /** 학번 공개 **/
