@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.openChat.controller;
 
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatReportDto;
+import com.example.appcenter_project.domain.openChat.dto.response.ResponseReportedUserDto;
 import com.example.appcenter_project.domain.openChat.enums.ReportStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -14,6 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.List;
 
 @Tag(name = "OpenChat Report Admin", description = "오픈채팅 신고 관리자 API (ROLE_ADMIN 전용)")
 public interface OpenChatReportAdminApiSpecification {
@@ -56,4 +59,12 @@ public interface OpenChatReportAdminApiSpecification {
     ResponseEntity<Long> countReports(
             @Parameter(description = "대상 학번", required = true) @RequestParam String studentNumber,
             @Parameter(description = "집계 상태(미지정 시 전체)", example = "APPROVED") @RequestParam(required = false) ReportStatus status);
+
+    @Operation(summary = "신고 누적 유저 조회",
+            description = "승인된 신고가 1건 이상인 유저를 누적 수 내림차순으로 조회.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "403", description = "관리자 권한 없음", content = @Content)
+    })
+    ResponseEntity<List<ResponseReportedUserDto>> findReportedUsers();
 }

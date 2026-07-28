@@ -4,6 +4,7 @@ import com.example.appcenter_project.domain.notification.service.ReportNotificat
 import com.example.appcenter_project.domain.openChat.dto.TargetReportCount;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestReportOpenChatMessageDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatReportDto;
+import com.example.appcenter_project.domain.openChat.dto.response.ResponseReportedUserDto;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatMessage;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatMessageReport;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatMessageType;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.Comparator;
 
 import static com.example.appcenter_project.global.exception.ErrorCode.*;
 

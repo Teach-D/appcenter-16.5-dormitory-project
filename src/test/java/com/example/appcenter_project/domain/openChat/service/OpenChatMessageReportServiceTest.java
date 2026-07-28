@@ -1,7 +1,9 @@
 package com.example.appcenter_project.domain.openChat.service;
 
 import com.example.appcenter_project.domain.notification.service.ReportNotificationService;
+import com.example.appcenter_project.domain.openChat.dto.TargetReportCount;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestReportOpenChatMessageDto;
+import com.example.appcenter_project.domain.openChat.dto.response.ResponseReportedUserDto;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatMessage;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatMessageReport;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatMessageType;
@@ -23,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import static org.mockito.Mockito.*;
 
+import java.util.List;
 import java.util.Optional;
 
 import static com.example.appcenter_project.global.exception.ErrorCode.*;
@@ -155,5 +158,24 @@ class OpenChatMessageReportServiceTest {
 
         assertThat(report.getStatus()).isEqualTo(ReportStatus.CANCELLED);
         verify(reportNotificationService, never()).notifyReporterApproved(any());
+    }
+
+    @Test
+    @DisplayName("승인 신고 1건 이상 유저를 누적 수 내림차순으로 반환한다")
+    void findReportedUsers() {
+        given(reportRepository.findApprovedCountsGroupByTargetStudentNumber(ReportStatus.APPROVED))
+                .willReturn(List.of(new TargetReportCount("202001688", 3L),
+                        new TargetReportCount("202302157", 1L)));
+        User u1 = User.createForTest(408L, "대상A");   // studentNumber = "test-408"...
+        // ↑ createForTest는 studentNumber를 "test-{id}"로 설정하므로, 학번 매칭 테스트는 findByStudentNumberIn 스텁으로 맞춤
+        given(userRepository.findByStudentNumberIn(List.of("202001688", "202302157")))
+                .willReturn(List.of());   // 이름 없이도 동작(모두 null) 확인
+
+        List<ResponseReportedUserDto> result = reportService.findReportedUsers();
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getStudentNumber()).isEqualTo("202001688");  // 3건이 먼저
+        assertThat(result.get(0).getApprovedCount()).isEqualTo(3L);
+        assertThat(result.get(1).getApprovedCount()).isEqualTo(1L);
     }
 }

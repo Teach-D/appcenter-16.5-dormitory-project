@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.openChat.controller;
 
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatReportDto;
+import com.example.appcenter_project.domain.openChat.dto.response.ResponseReportedUserDto;
 import com.example.appcenter_project.domain.openChat.enums.ReportStatus;
 import com.example.appcenter_project.domain.openChat.service.OpenChatMessageReportService;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -42,5 +45,10 @@ public class OpenChatReportAdminController implements OpenChatReportAdminApiSpec
             @RequestParam String studentNumber,
             @RequestParam(required = false) ReportStatus status) {
         return ResponseEntity.ok(reportService.countReports(studentNumber, status));
+    }
+
+    @GetMapping("/reported-users")
+    public ResponseEntity<List<ResponseReportedUserDto>> findReportedUsers() {
+        return ResponseEntity.ok(reportService.findReportedUsers());
     }
 }
