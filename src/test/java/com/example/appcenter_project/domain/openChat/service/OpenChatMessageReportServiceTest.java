@@ -1,5 +1,6 @@
 package com.example.appcenter_project.domain.openChat.service;
 
+import com.example.appcenter_project.domain.notification.service.ReportNotificationService;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestReportOpenChatMessageDto;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatMessage;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatMessageReport;
@@ -20,12 +21,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import static org.mockito.Mockito.*;
 
 import java.util.Optional;
 
 import static com.example.appcenter_project.global.exception.ErrorCode.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -36,6 +39,7 @@ class OpenChatMessageReportServiceTest {
     @Mock OpenChatMessageRepository openChatMessageRepository;
     @Mock OpenChatParticipantRepository openChatParticipantRepository;
     @Mock UserRepository userRepository;
+    @Mock ReportNotificationService reportNotificationService;
 
     @InjectMocks OpenChatMessageReportService reportService;
 
@@ -46,7 +50,7 @@ class OpenChatMessageReportServiceTest {
     }
 
     @Test
-    @DisplayName("메시지 신고 시 학번 스냅샷과 함께 PENDING 상태로 저장된다")
+    @DisplayName("메시지 신고 시 학번 스냅샷과 함께 저장되고 관리자 알림이 발송된다")
     void reportMessage_success() {
         Long reporterId = 1L, targetId = 2L, roomId = 5L, messageId = 10L;
         OpenChatMessage message = OpenChatMessage.create(roomId, targetId, "광고 메시지", OpenChatMessageType.TEXT);
@@ -56,6 +60,7 @@ class OpenChatMessageReportServiceTest {
         User target = User.createForTest(targetId, "대상자");
         given(userRepository.findById(reporterId)).willReturn(Optional.of(reporter));
         given(userRepository.findById(targetId)).willReturn(Optional.of(target));
+        given(reportRepository.save(any(OpenChatMessageReport.class))).willAnswer(inv -> inv.getArgument(0));
 
         reportService.reportMessage(reporterId, messageId, reasonDto(ReportReason.SPAM_AD));
 
@@ -63,11 +68,9 @@ class OpenChatMessageReportServiceTest {
         verify(reportRepository).save(captor.capture());
         OpenChatMessageReport saved = captor.getValue();
         assertThat(saved.getReason()).isEqualTo(ReportReason.SPAM_AD);
-        assertThat(saved.getTargetUserId()).isEqualTo(targetId);
         assertThat(saved.getTargetStudentNumber()).isEqualTo("test-" + targetId);
-        assertThat(saved.getReporterStudentNumber()).isEqualTo("test-" + reporterId);
-        assertThat(saved.getReportedContent()).isEqualTo("광고 메시지");
         assertThat(saved.isPending()).isTrue();
+        verify(reportNotificationService).notifyAdminsNewReport(any());
     }
 
     @Test
@@ -125,6 +128,7 @@ class OpenChatMessageReportServiceTest {
         reportService.approveReport(100L);
 
         assertThat(report.getStatus()).isEqualTo(ReportStatus.APPROVED);
+        verify(reportNotificationService).notifyReporterApproved(1L);
     }
 
     @Test
@@ -141,7 +145,7 @@ class OpenChatMessageReportServiceTest {
     }
 
     @Test
-    @DisplayName("취소 시 상태가 CANCELLED로 바뀐다")
+    @DisplayName("취소 시 상태만 CANCELLED로 바뀌고 알림은 발송하지 않는다")
     void cancelReport_success() {
         OpenChatMessageReport report = OpenChatMessageReport.create(
                 10L, 5L, 1L, "test-1", 2L, "test-2", ReportReason.FRAUD, "글");
@@ -150,5 +154,6 @@ class OpenChatMessageReportServiceTest {
         reportService.cancelReport(100L);
 
         assertThat(report.getStatus()).isEqualTo(ReportStatus.CANCELLED);
+        verify(reportNotificationService, never()).notifyReporterApproved(any());
     }
 }

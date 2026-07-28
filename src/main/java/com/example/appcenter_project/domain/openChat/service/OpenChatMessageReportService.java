@@ -1,5 +1,6 @@
 package com.example.appcenter_project.domain.openChat.service;
 
+import com.example.appcenter_project.domain.notification.service.ReportNotificationService;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestReportOpenChatMessageDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatReportDto;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatMessage;
@@ -37,11 +38,11 @@ public class OpenChatMessageReportService {
     private final OpenChatMessageRepository openChatMessageRepository;
     private final OpenChatParticipantRepository openChatParticipantRepository;
     private final UserRepository userRepository;
+    private final ReportNotificationService reportNotificationService;
 
     public void reportMessage(Long reporterId, Long messageId, RequestReportOpenChatMessageDto request) {
         OpenChatMessage message = openChatMessageRepository.findById(messageId)
                 .orElseThrow(() -> new CustomException(OPEN_CHAT_MESSAGE_NOT_FOUND));
-
 
         if (message.getType() == OpenChatMessageType.SYSTEM) {
             throw new CustomException(OPEN_CHAT_REPORT_TARGET_INVALID);
@@ -58,12 +59,13 @@ public class OpenChatMessageReportService {
         User target = userRepository.findById(message.getSenderId())
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
-        OpenChatMessageReport report = OpenChatMessageReport.create(
+        OpenChatMessageReport saved = reportRepository.save(OpenChatMessageReport.create(
                 message.getId(), message.getRoomId(),
                 reporter.getId(), reporter.getStudentNumber(),
                 target.getId(), target.getStudentNumber(),
-                request.getReason(), message.getContent());
-        reportRepository.save(report);
+                request.getReason(), message.getContent()));
+
+        reportNotificationService.notifyAdminsNewReport(saved.getId());
     }
 
     @Transactional(readOnly = true)
@@ -89,6 +91,7 @@ public class OpenChatMessageReportService {
             throw new CustomException(OPEN_CHAT_REPORT_ALREADY_HANDLED);
         }
         report.approve();
+        reportNotificationService.notifyReporterApproved(report.getReporterId());
     }
 
     public void cancelReport(Long reportId) {

@@ -16,7 +16,8 @@ public enum NotificationType {
     SUPPORTERS("서포터즈"),
     COMPLAINT("민원"),
     COUPON("쿠폰"),
-    CHAT("채팅");
+    CHAT("채팅"),
+    REPORT("신고");
 
     private final String description;
 
