@@ -13,7 +13,7 @@ public class ResponseUserDto {
     private String studentNumber;
     private String dormType;
     private String college;
-    private int penalty;
+    private long reportedCount;
     private boolean isRoommateCheckList;
     private boolean hasTimeTableImage;
     // 이용약관 동의 여부
@@ -23,14 +23,15 @@ public class ResponseUserDto {
     private boolean hasUnreadNotifications;
     private String role;
 
-    public static ResponseUserDto from(User user, boolean checkList, boolean hasUnreadNotifications) {
+    public static ResponseUserDto from(User user, boolean checkList,
+                                       boolean hasUnreadNotifications, long reportedCount) {
         return ResponseUserDto.builder()
                 .id(user.getId())
                 .name(user.getName() != null ? user.getName() : "")
                 .studentNumber(user.getStudentNumber())
                 .dormType(user.getDormType() != null ? user.getDormType().toValue() : "")
                 .college(user.getCollege() != null ? user.getCollege().toValue() : "")
-                .penalty(user.getPenalty())
+                .reportedCount(reportedCount)
                 .isRoommateCheckList(checkList)
                 .hasTimeTableImage(user.getTimeTableImage() != null)
                 .isTermsAgreed(user.isTermsAgreed())

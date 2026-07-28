@@ -68,13 +68,13 @@ public class OpenChatMessageReportService {
 
     @Transactional(readOnly = true)
     public Page<ResponseOpenChatReportDto> findReports(ReportStatus status, Pageable pageable) {
-        Page<OpenChatMessageReport> reports = reportRepository.findByStatus(status, pageable);
+        Page<OpenChatMessageReport> reports = (status == null)
+                ? reportRepository.findAll(pageable)
+                : reportRepository.findByStatus(status, pageable);
 
         Set<Long> userIds = reports.getContent().stream()
                 .flatMap(r -> Stream.of(r.getReporterId(), r.getTargetUserId()))
                 .collect(Collectors.toSet());
-
-        // 이름 배치 조회. 탈퇴 계정은 맵에 없어 null 처리됨
         Map<Long, String> nameById = new HashMap<>();
         userRepository.findAllById(userIds).forEach(u -> nameById.put(u.getId(), u.getName()));
 
@@ -102,6 +102,13 @@ public class OpenChatMessageReportService {
 
     @Transactional(readOnly = true)
     public long countReports(String studentNumber, ReportStatus status) {
-        return reportRepository.countByTargetStudentNumberAndStatus(studentNumber, status);
+        return (status == null)
+                ? reportRepository.countByTargetStudentNumber(studentNumber)
+                : reportRepository.countByTargetStudentNumberAndStatus(studentNumber, status);
+    }
+
+    @Transactional(readOnly = true)
+    public long countApprovedReports(String studentNumber) {
+        return reportRepository.countByTargetStudentNumberAndStatus(studentNumber, ReportStatus.APPROVED);
     }
 }

@@ -20,7 +20,7 @@ public class OpenChatReportAdminController implements OpenChatReportAdminApiSpec
 
     @GetMapping
     public ResponseEntity<Page<ResponseOpenChatReportDto>> findReports(
-            @RequestParam(defaultValue = "PENDING") ReportStatus status,
+            @RequestParam(required = false) ReportStatus status,
             @PageableDefault(size = 20, sort = "createdDate", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(reportService.findReports(status, pageable));
     }
@@ -40,7 +40,7 @@ public class OpenChatReportAdminController implements OpenChatReportAdminApiSpec
     @GetMapping("/count")
     public ResponseEntity<Long> countReports(
             @RequestParam String studentNumber,
-            @RequestParam(defaultValue = "APPROVED") ReportStatus status) {
+            @RequestParam(required = false) ReportStatus status) {
         return ResponseEntity.ok(reportService.countReports(studentNumber, status));
     }
 }

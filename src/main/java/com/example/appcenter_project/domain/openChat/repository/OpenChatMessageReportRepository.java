@@ -11,4 +11,5 @@ public interface OpenChatMessageReportRepository extends JpaRepository<OpenChatM
     Page<OpenChatMessageReport> findByStatus(ReportStatus status, Pageable pageable);
 
     long countByTargetStudentNumberAndStatus(String targetStudentNumber, ReportStatus status);
+    long countByTargetStudentNumber(String targetStudentNumber);
 }
