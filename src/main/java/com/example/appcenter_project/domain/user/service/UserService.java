@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.user.service;
 
 import com.example.appcenter_project.domain.groupOrder.service.GroupOrderQueryService;
+import com.example.appcenter_project.domain.openChat.service.OpenChatMessageReportService;
 import com.example.appcenter_project.domain.user.dto.request.*;
 import com.example.appcenter_project.common.image.dto.ImageLinkDto;
 import com.example.appcenter_project.domain.groupOrder.dto.response.ResponseGroupOrderDto;
@@ -62,6 +63,7 @@ public class UserService {
     private final FcmMessageService fcmMessageService;
     private final MixpanelService mixpanelService;
     private final TestAccountProperties testAccountProperties;
+    private final OpenChatMessageReportService openChatMessageReportService;
 
     // ========== Public Methods ========== //
 
@@ -116,11 +118,11 @@ public class UserService {
 
     public ResponseUserDto findUser(Long userId) {
         User user = findUserById(userId);
-
         boolean hasUnreadNotifications = user.hasUnreadNotifications();
         boolean hasRoommateCheckList = user.hasRoommateCheckList();
+        long reportedCount = openChatMessageReportService.countApprovedReports(user.getStudentNumber());
 
-        return ResponseUserDto.from(user, hasRoommateCheckList, hasUnreadNotifications);
+        return ResponseUserDto.from(user, hasRoommateCheckList, hasUnreadNotifications, reportedCount);
     }
 
     public List<ResponseUserDto> findAllUsers() {
@@ -202,11 +204,11 @@ public class UserService {
     public ResponseUserDto updateUser(Long userId, RequestUserDto request) {
         User user = findUserById(userId);
         user.update(request);
-
         boolean hasUnreadNotifications = user.hasUnreadNotifications();
         boolean hasRoommateCheckList = user.hasRoommateCheckList();
+        long reportedCount = openChatMessageReportService.countApprovedReports(user.getStudentNumber());
 
-        return ResponseUserDto.from(user, hasRoommateCheckList, hasUnreadNotifications);
+        return ResponseUserDto.from(user, hasRoommateCheckList, hasUnreadNotifications, reportedCount);
     }
 
     public void updateUserAgreement(Long userId, boolean isTermsAgreed, boolean isPrivacyAgreed) {

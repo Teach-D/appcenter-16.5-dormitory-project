@@ -43,7 +43,6 @@ public class User extends BaseTimeEntity {
     private String studentNumber;
     private String name;
     private String password;
-    private Integer penalty;
 
     @Enumerated(EnumType.STRING)
     private DormType dormType;
@@ -140,11 +139,10 @@ public class User extends BaseTimeEntity {
     private List<FcmToken>  fcmTokenList = new ArrayList<>();
 
     @Builder
-    public User(String studentNumber, String name, String password, Integer penalty, DormType dormType, Role role, Image image) {
+    public User(String studentNumber, String name, String password, DormType dormType, Role role, Image image) {
         this.name = name;
         this.studentNumber = studentNumber;
         this.password = password;
-        this.penalty = penalty;
         this.dormType = dormType;
         this.role = role;
         this.image = image;
@@ -153,7 +151,7 @@ public class User extends BaseTimeEntity {
     public static User createNewUser(String studentNumber, String password) {
         User user = User.builder()
                 .studentNumber(studentNumber).password(password)
-                .penalty(0).image(null).role(Role.ROLE_USER).build();
+                .image(null).role(Role.ROLE_USER).build();
 
         user.isFreshman = false;
         return user;
@@ -164,7 +162,7 @@ public class User extends BaseTimeEntity {
         User user = User.builder()
                 .studentNumber(studentNumber).password(password)
                 .name(name).dormType(dormType)
-                .penalty(0).image(null).role(role).build();
+                .image(null).role(role).build();
         user.isFreshman = false;
         user.college = college;
         return user;
@@ -173,7 +171,7 @@ public class User extends BaseTimeEntity {
     public static User createFreshman(String username, String password) {
         User user = User.builder()
                 .studentNumber(username).password(password)
-                .penalty(0).image(null).role(Role.ROLE_USER).build();
+                .image(null).role(Role.ROLE_USER).build();
         user.isFreshman = true;
         return user;
     }

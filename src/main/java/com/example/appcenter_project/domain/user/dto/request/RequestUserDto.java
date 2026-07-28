@@ -20,7 +20,4 @@ public class RequestUserDto {
     @Schema(description = "기숙사 타입",
             allowableValues = {"2기숙사", "3기숙사"})
     private String dormType;  // 기숙사 타입
-
-    private int penalty;
-
 }
