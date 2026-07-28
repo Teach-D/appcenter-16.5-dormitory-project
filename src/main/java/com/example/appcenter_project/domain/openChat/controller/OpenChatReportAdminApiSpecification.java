@@ -54,7 +54,6 @@ public interface OpenChatReportAdminApiSpecification {
             @ApiResponse(responseCode = "403", description = "관리자 권한 없음", content = @Content)
     })
     ResponseEntity<Long> countReports(
-            @Parameter(description = "대상 학번", required = true, example = "202012345") @RequestParam String studentNumber,
-            @Parameter(description = "집계 상태(미지정 시 전체)", example = "APPROVED")
-            @RequestParam(required = false) ReportStatus status);
+            @Parameter(description = "대상 학번", required = true) @RequestParam String studentNumber,
+            @Parameter(description = "집계 상태(미지정 시 전체)", example = "APPROVED") @RequestParam(required = false) ReportStatus status);
 }
