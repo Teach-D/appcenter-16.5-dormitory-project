@@ -1,8 +1,10 @@
 package com.example.appcenter_project.domain.openChat.service;
 
 import com.example.appcenter_project.domain.notification.service.ReportNotificationService;
+import com.example.appcenter_project.domain.openChat.dto.TargetReportCount;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestReportOpenChatMessageDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatReportDto;
+import com.example.appcenter_project.domain.openChat.dto.response.ResponseReportedUserDto;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatMessage;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatMessageReport;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatMessageType;
@@ -21,10 +23,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.Comparator;
 
 import static com.example.appcenter_project.global.exception.ErrorCode.*;
 
@@ -113,5 +117,32 @@ public class OpenChatMessageReportService {
     @Transactional(readOnly = true)
     public long countApprovedReports(String studentNumber) {
         return reportRepository.countByTargetStudentNumberAndStatus(studentNumber, ReportStatus.APPROVED);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Long> approvedCountMap() {
+        return reportRepository.findApprovedCountsGroupByTargetStudentNumber(ReportStatus.APPROVED).stream()
+                .collect(Collectors.toMap(TargetReportCount::getStudentNumber, TargetReportCount::getCount));
+    }
+
+    @Transactional(readOnly = true)
+    public List<ResponseReportedUserDto> findReportedUsers() {
+        List<TargetReportCount> counts =
+                reportRepository.findApprovedCountsGroupByTargetStudentNumber(ReportStatus.APPROVED);
+
+        List<String> studentNumbers = counts.stream().map(TargetReportCount::getStudentNumber).toList();
+        Map<String, User> userBySn = userRepository.findByStudentNumberIn(studentNumbers).stream()
+                .collect(Collectors.toMap(User::getStudentNumber, u -> u, (a, b) -> a));
+
+        return counts.stream()
+                .sorted(Comparator.comparingLong(TargetReportCount::getCount).reversed())
+                .map(c -> {
+                    User u = userBySn.get(c.getStudentNumber());
+                    return ResponseReportedUserDto.of(c.getStudentNumber(),
+                            u != null ? u.getId() : null,
+                            u != null ? u.getName() : null,
+                            c.getCount());
+                })
+                .toList();
     }
 }

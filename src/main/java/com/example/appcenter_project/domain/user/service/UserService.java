@@ -126,7 +126,10 @@ public class UserService {
     }
 
     public List<ResponseUserDto> findAllUsers() {
-        return userRepository.findAll().stream().map(ResponseUserDto::createBasicDto).toList();
+        Map<String, Long> countMap = openChatMessageReportService.approvedCountMap();
+        return userRepository.findAll().stream()
+                .map(u -> ResponseUserDto.createBasicDto(u, countMap.getOrDefault(u.getStudentNumber(), 0L)))
+                .toList();
     }
 
     public List<ResponseUserRole> findUsersDormitoryRoles() {

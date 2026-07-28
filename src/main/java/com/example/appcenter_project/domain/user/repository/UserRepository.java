@@ -28,6 +28,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findByReceiveNotificationTypesContains(NotificationType notificationType);
 
+    List<User> findByStudentNumberIn(List<String> studentNumbers);
+
     @Query("SELECT DISTINCT u FROM User u " +
             "LEFT JOIN FETCH u.fcmTokenList " +
             "WHERE :notificationType MEMBER OF u.receiveNotificationTypes " +

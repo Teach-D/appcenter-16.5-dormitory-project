@@ -41,10 +41,11 @@ public class ResponseUserDto {
                 .build();
     }
 
-    public static ResponseUserDto createBasicDto(User user) {
+    public static ResponseUserDto createBasicDto(User user, long reportedCount) {
         return ResponseUserDto.builder()
                 .id(user.getId())
                 .studentNumber(user.getStudentNumber())
+                .reportedCount(reportedCount)
                 .build();
     }
 }
