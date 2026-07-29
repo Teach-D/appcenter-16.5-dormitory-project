@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.roommate.service;
 
 import com.example.appcenter_project.domain.roommate.dto.request.RequestRoommateNotificationFilterDto;
+import com.example.appcenter_project.domain.roommate.dto.response.ResponseFilteredRoommatePostDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateNotificationFilterDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommatePostDto;
 import com.example.appcenter_project.domain.roommate.entity.RoommateBoard;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -110,11 +112,8 @@ public class RoommateNotificationFilterService {
         }
     }
 
-    /**
-     * 현재 사용자의 필터 조건에 맞는 게시글 목록 조회 (테스트용)
-     */
     @Transactional(readOnly = true)
-    public List<ResponseRoommatePostDto> getFilteredBoards(Long userId, HttpServletRequest request) {
+    public List<ResponseFilteredRoommatePostDto> getFilteredBoards(Long userId, HttpServletRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
@@ -159,7 +158,7 @@ public class RoommateNotificationFilterService {
                 ? Set.of()
                 : new HashSet<>(roommateBoardReadRepository.findReadBoardIds(userId, matchedIds));
 
-        List<ResponseRoommatePostDto> result = matchedBoards.stream()
+        List<ResponseFilteredRoommatePostDto> result = matchedBoards.stream()
                 .map(board -> {
                     RoommateCheckList cl = board.getRoommateCheckList();
                     User writer = board.getUser();
@@ -172,7 +171,7 @@ public class RoommateNotificationFilterService {
                         writerImg = imageService.findStaticImageUrl(ImageType.USER, writer.getId(), request);
                     } catch (Exception ignored) {}
 
-                    return ResponseRoommatePostDto.builder()
+                    ResponseRoommatePostDto post = ResponseRoommatePostDto.builder()
                             .id(board.getId())
                             .title(cl.getTitle())
                             .dormPeriod(DormDayUtil.sortDormDays(cl.getDormPeriod()))
@@ -196,6 +195,11 @@ public class RoommateNotificationFilterService {
                             .isMatched(isMatched)
                             .userProfileImageUrl(writerImg)
                             .isRead(readBoardIds.contains(board.getId()))
+                            .build();
+
+                    return ResponseFilteredRoommatePostDto.builder()
+                            .post(post)
+                            .matchedFilterFields(getMatchedFields(filter, cl))
                             .build();
                 })
                 .toList();
@@ -293,6 +297,58 @@ public class RoommateNotificationFilterService {
 
         log.debug("모든 필터 조건 일치! boardId: {}", boardId);
         return true;
+    }
+
+    private List<String> getMatchedFields(RoommateNotificationFilter filter, RoommateCheckList checkList) {
+        List<String> matched = new ArrayList<>();
+
+        if (filter.getDormType() != null && filter.getDormType().equals(checkList.getDormType())) {
+            matched.add("dormType");
+        }
+        if (filter.getDormPeriodDays() != null && !filter.getDormPeriodDays().isEmpty()) {
+            Set<com.example.appcenter_project.domain.roommate.enums.DormDay> checkListDormPeriod = checkList.getDormPeriod();
+            if (checkListDormPeriod != null && !checkListDormPeriod.isEmpty()) {
+                boolean hasIntersection = checkListDormPeriod.stream()
+                        .anyMatch(filter.getDormPeriodDays()::contains);
+                if (!hasIntersection) {
+                    matched.add("dormPeriodDays");
+                }
+            }
+        }
+        if (filter.getColleges() != null && !filter.getColleges().isEmpty()
+                && checkList.getCollege() != null && filter.getColleges().contains(checkList.getCollege())) {
+            matched.add("colleges");
+        }
+        if (filter.getSmoking() != null && filter.getSmoking().equals(checkList.getSmoking())) {
+            matched.add("smoking");
+        }
+        if (filter.getSnoring() != null && filter.getSnoring().equals(checkList.getSnoring())) {
+            matched.add("snoring");
+        }
+        if (filter.getToothGrind() != null && filter.getToothGrind().equals(checkList.getToothGrind())) {
+            matched.add("toothGrind");
+        }
+        if (filter.getSleeper() != null && filter.getSleeper().equals(checkList.getSleeper())) {
+            matched.add("sleeper");
+        }
+        if (filter.getShowerHour() != null && filter.getShowerHour().equals(checkList.getShowerHour())) {
+            matched.add("showerHour");
+        }
+        if (filter.getShowerTime() != null && filter.getShowerTime().equals(checkList.getShowerTime())) {
+            matched.add("showerTime");
+        }
+        if (filter.getBedTime() != null && filter.getBedTime().equals(checkList.getBedTime())) {
+            matched.add("bedTime");
+        }
+        if (filter.getArrangement() != null && filter.getArrangement().equals(checkList.getArrangement())) {
+            matched.add("arrangement");
+        }
+        if (filter.getReligions() != null && !filter.getReligions().isEmpty()
+                && checkList.getReligion() != null && filter.getReligions().contains(checkList.getReligion())) {
+            matched.add("religions");
+        }
+
+        return matched;
     }
 }
 
