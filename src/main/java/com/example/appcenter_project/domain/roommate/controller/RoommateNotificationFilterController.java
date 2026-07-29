@@ -1,8 +1,8 @@
 package com.example.appcenter_project.domain.roommate.controller;
 
 import com.example.appcenter_project.domain.roommate.dto.request.RequestRoommateNotificationFilterDto;
+import com.example.appcenter_project.domain.roommate.dto.response.ResponseFilteredRoommatePostDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateNotificationFilterDto;
-import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommatePostDto;
 import com.example.appcenter_project.domain.roommate.service.RoommateNotificationFilterService;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import jakarta.servlet.http.HttpServletRequest;
@@ -55,12 +55,12 @@ public class RoommateNotificationFilterController implements RoommateNotificatio
 
     @Override
     @GetMapping("/matching-posts")
-    public ResponseEntity<List<ResponseRoommatePostDto>> getFilteredBoards(
+    public ResponseEntity<List<ResponseFilteredRoommatePostDto>> getFilteredBoards(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             HttpServletRequest request
     ) {
         Long userId = userDetails.getId();
-        List<ResponseRoommatePostDto> filteredBoards = filterService.getFilteredBoards(userId, request);
+        List<ResponseFilteredRoommatePostDto> filteredBoards = filterService.getFilteredBoards(userId, request);
         return ResponseEntity.status(OK).body(filteredBoards);
     }
 }

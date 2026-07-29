@@ -1,8 +1,8 @@
 package com.example.appcenter_project.domain.roommate.controller;
 
 import com.example.appcenter_project.domain.roommate.dto.request.RequestRoommateNotificationFilterDto;
+import com.example.appcenter_project.domain.roommate.dto.response.ResponseFilteredRoommatePostDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateNotificationFilterDto;
-import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommatePostDto;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -140,14 +140,14 @@ public interface RoommateNotificationFilterApiSpecification {
                             description = "필터링된 게시글 목록 조회 성공",
                             content = @Content(
                                     mediaType = "application/json",
-                                    array = @ArraySchema(schema = @Schema(implementation = ResponseRoommatePostDto.class))
+                                    array = @ArraySchema(schema = @Schema(implementation = ResponseFilteredRoommatePostDto.class))
                             )
                     ),
                     @ApiResponse(responseCode = "401", description = "인증 필요"),
                     @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다. (USER_NOT_FOUND)")
             }
     )
-    ResponseEntity<List<ResponseRoommatePostDto>> getFilteredBoards(
+    ResponseEntity<List<ResponseFilteredRoommatePostDto>> getFilteredBoards(
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
             @Parameter(hidden = true) HttpServletRequest request
     );
