@@ -83,7 +83,8 @@ public class RoommateCheckList {
     @Column(name = "registration_year")
     private Integer year;
 
-    private Integer semester;
+    @Convert(converter = SemesterTypeConverter.class)
+    private SemesterType semester;
 
     @OneToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name="user_id")
@@ -94,7 +95,7 @@ public class RoommateCheckList {
                              SmokingType smoking, SnoringType snoring, TeethGrindingType toothGrind,
                              SleepSensitivityType sleeper, ShowerTimeType showerHour, ShowerDurationType showerTime,
                              BedTimeType bedTime, CleanlinessType arrangement, String comment, String title, User user,
-                             Integer year, Integer semester) {
+                             Integer year, SemesterType semester) {
         this.dormPeriod = dormPeriod;
         this.dormType = dormType;
         this.college = college;

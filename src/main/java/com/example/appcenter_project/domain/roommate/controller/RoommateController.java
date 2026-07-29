@@ -38,11 +38,12 @@ public class RoommateController implements RoommateApiSpecification{
     @Override
     @GetMapping("/list")
     public ResponseEntity<List<ResponseRoommatePostDto>> getRoommateBoardList(
+            @RequestParam(required = false) Integer semester,
             @AuthenticationPrincipal(errorOnInvalidType = false) CustomUserDetails userDetails,
             jakarta.servlet.http.HttpServletRequest request
     ) {
         Long userId = userDetails != null ? userDetails.getId() : null;
-        return ResponseEntity.ok(roommateService.getRoommateBoardList(userId, request));
+        return ResponseEntity.ok(roommateService.getRoommateBoardList(userId, request, semester));
     }
 
     @TrackApi

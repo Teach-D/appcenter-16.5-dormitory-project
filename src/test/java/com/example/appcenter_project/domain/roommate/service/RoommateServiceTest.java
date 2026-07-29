@@ -152,7 +152,7 @@ class RoommateServiceTest {
         when(roommateMatchingRepository.existsByReceiverAndStatus(any(User.class), eq(MatchingStatus.COMPLETED)))
                 .thenReturn(false);
 
-        List<ResponseRoommatePostDto> result = roommateService.getRoommateBoardList(null, null);
+        List<ResponseRoommatePostDto> result = roommateService.getRoommateBoardList(null, null, null);
 
         assertThat(result).hasSize(1);
     }
@@ -162,7 +162,7 @@ class RoommateServiceTest {
     void getRoommateBoardList_게시글없으면_예외() {
         when(roommateBoardRepository.findAllByOrderByCreatedDateDesc()).thenReturn(List.of());
 
-        assertThatThrownBy(() -> roommateService.getRoommateBoardList(null, null))
+        assertThatThrownBy(() -> roommateService.getRoommateBoardList(null, null, null))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ROOMMATE_BOARD_NOT_FOUND);
     }

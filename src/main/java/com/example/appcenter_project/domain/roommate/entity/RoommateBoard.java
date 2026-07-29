@@ -1,6 +1,8 @@
 package com.example.appcenter_project.domain.roommate.entity;
 
 import com.example.appcenter_project.common.BaseTimeEntity;
+import com.example.appcenter_project.domain.roommate.enums.SemesterType;
+import com.example.appcenter_project.domain.roommate.enums.SemesterTypeConverter;
 import com.example.appcenter_project.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -40,7 +42,8 @@ public class RoommateBoard extends BaseTimeEntity {
     @Column(name = "registration_year")
     private Integer year;
 
-    private Integer semester;
+    @Convert(converter = SemesterTypeConverter.class)
+    private SemesterType semester;
 
     public Integer plusLike(){
         this.roommateBoardLike +=1;
@@ -53,7 +56,7 @@ public class RoommateBoard extends BaseTimeEntity {
     }
 
     @Builder
-    public RoommateBoard(String title, User user, int roommateBoardLike, RoommateCheckList roommateCheckList, Integer year, Integer semester) {
+    public RoommateBoard(String title, User user, int roommateBoardLike, RoommateCheckList roommateCheckList, Integer year, SemesterType semester) {
         this.title = title;
         this.user = user;
         this.roommateBoardLike = roommateBoardLike;

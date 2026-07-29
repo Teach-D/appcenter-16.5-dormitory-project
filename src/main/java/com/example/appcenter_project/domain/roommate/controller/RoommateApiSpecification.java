@@ -43,9 +43,11 @@ public interface RoommateApiSpecification {
 
     @Operation(
             summary = "룸메이트 게시글 최신순 목록 조회",
-            description = "작성된 룸메이트 게시글을 최신순으로 조회합니다. (작성자 프로필 이미지 URL 포함, 로그인 시 isMyPost 반환)"
+            description = "작성된 룸메이트 게시글을 최신순으로 조회합니다. semester 쿼리 파라미터로 특정 학기 게시글만 필터링할 수 있습니다. (1=1학기, 2=2학기, 3=여름방학, 4=겨울방학, 미입력 시 전체 조회)"
     )
     ResponseEntity<List<ResponseRoommatePostDto>> getRoommateBoardList(
+            @Parameter(description = "학기 코드 (1=1학기, 2=2학기, 3=여름방학, 4=겨울방학)", example = "1")
+            @RequestParam(required = false) Integer semester,
             @Parameter(hidden = true) CustomUserDetails userDetails,
             @Parameter(hidden = true) HttpServletRequest request
     );

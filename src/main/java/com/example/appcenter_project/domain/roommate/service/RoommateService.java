@@ -13,6 +13,7 @@ import com.example.appcenter_project.domain.roommate.entity.RoommateCheckList;
 import com.example.appcenter_project.domain.roommate.repository.*;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.roommate.enums.MatchingStatus;
+import com.example.appcenter_project.domain.roommate.enums.SemesterType;
 import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.global.exception.ErrorCode;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
@@ -56,14 +57,12 @@ public class RoommateService {
     private final RoommateBoardReadRepository roommateBoardReadRepository;
 
 
-    public Integer[] resolveSemester(int month) {
-        if (month == 1 || month == 2) {
-            return new Integer[]{LocalDate.now().getYear(), 1};
-        } else if (month == 7 || month == 8) {
-            return new Integer[]{LocalDate.now().getYear(), 2};
-        } else {
-            return new Integer[]{null, null};
-        }
+    public SemesterType resolveSemester(int month) {
+        if (month == 1 || month == 2) return SemesterType.FIRST;
+        if (month == 5) return SemesterType.SUMMER_VACATION;
+        if (month == 7 || month == 8) return SemesterType.SECOND;
+        if (month == 11) return SemesterType.WINTER_VACATION;
+        return null;
     }
 
     @Transactional
@@ -73,9 +72,8 @@ public class RoommateService {
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
 
         // 2. 학기 계산
-        Integer[] yearSemester = resolveSemester(LocalDate.now().getMonthValue());
-        Integer year = yearSemester[0];
-        Integer semester = yearSemester[1];
+        SemesterType semester = resolveSemester(LocalDate.now().getMonthValue());
+        Integer year = semester != null ? LocalDate.now().getYear() : null;
 
         // 3. 체크리스트 생성 + user 설정
         RoommateCheckList roommateCheckList = RoommateCheckList.builder()
@@ -144,8 +142,11 @@ public class RoommateService {
     }
 
     //최신순 조회
-    public List<ResponseRoommatePostDto> getRoommateBoardList(Long userId, jakarta.servlet.http.HttpServletRequest request) {
-        List<RoommateBoard> boards = roommateBoardRepository.findAllByOrderByCreatedDateDesc();
+    public List<ResponseRoommatePostDto> getRoommateBoardList(Long userId, jakarta.servlet.http.HttpServletRequest request, Integer semesterCode) {
+        SemesterType semester = SemesterType.fromCodeOrNull(semesterCode);
+        List<RoommateBoard> boards = semester != null
+                ? roommateBoardRepository.findAllBySemesterOrderByCreatedDateDesc(semester)
+                : roommateBoardRepository.findAllByOrderByCreatedDateDesc();
 
         if (boards.isEmpty()){
             throw new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND);
