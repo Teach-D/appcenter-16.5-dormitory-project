@@ -70,7 +70,7 @@ public class UserService {
     public ResponseLoginDto saveUser(SignupUser signupUser) {
         boolean isTestAccount = testAccountProperties.matches(signupUser.getStudentNumber(), signupUser.getPassword());
         if (!isTestAccount) {
-            checkINUStudent(signupUser);
+            //checkINUStudent(signupUser);
         }
         User user = isTestAccount ? createTestAccountUser(signupUser) : createUser(signupUser);
         trackSignupProfile(user);
@@ -142,10 +142,11 @@ public class UserService {
     }
 
     public List<ResponseBoardDto> findUserBoards(Long userId, HttpServletRequest request) {
+        List<ResponseRoommatePostDto> roommateBoards = roommateQueryService.findByUser(userId);
         List<ResponseTipDto> tips = tipQueryService.findTipsByUser(userId, request);
         List<ResponseGroupOrderDto> groupOrders = groupOrderQueryService.findGroupOrdersByUser(userId, request);
 
-        return Stream.of(tips, groupOrders)
+        return Stream.of(roommateBoards, tips, groupOrders)
                 .flatMap(Collection::stream)
                 .sorted(Comparator.comparing(ResponseBoardDto::getCreateDate).reversed())
                 .collect(Collectors.toList());
