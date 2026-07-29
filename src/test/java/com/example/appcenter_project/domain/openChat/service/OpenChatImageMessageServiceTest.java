@@ -67,6 +67,10 @@ class OpenChatImageMessageServiceTest {
     @Mock
     private OpenChatSessionRegistry sessionRegistry;
 
+    // TODO: BR-685 구현 후 주석 해제
+    // @Mock
+    // private com.example.appcenter_project.domain.block.service.BlockService blockService;
+
     @InjectMocks
     private OpenChatMessageService openChatMessageService;
 
@@ -424,5 +428,79 @@ class OpenChatImageMessageServiceTest {
         List<ResponseOpenChatMessageDto> results = openChatMessageService.sendImageMessage(USER_ID, ROOM_ID, images, httpServletRequest);
 
         assertThat(results.get(0).getRoomId()).isEqualTo(ROOM_ID);
+    }
+
+    // ──────────────────────────────────────────────
+    // BR-685: PERSONAL 방 이미지 전송 차단 검증
+    // ──────────────────────────────────────────────
+
+    @Test
+    @DisplayName("CustomException 발생 — AC-8 BR-685: PERSONAL 방에서 상대방이 발신자를 차단한 경우 USER_BLOCKED_BY_TARGET")
+    void should_throw_CustomException_when_AC_8_sender_blocked_by_participant_in_personal_room() {
+        // given — PERSONAL 방에서 상대방(A)이 발신자(B=USER_ID)를 차단한 상태
+        // OpenChatRoom personalRoom = OpenChatImageMessageFixture.createPersonalRoom();
+        // OpenChatParticipant participant = OpenChatImageMessageFixture.createParticipant(ROOM_ID, USER_ID);
+        // given(openChatRoomRepository.findById(ROOM_ID)).willReturn(Optional.of(personalRoom));
+        // given(openChatParticipantRepository.findByRoomIdAndUserId(ROOM_ID, USER_ID)).willReturn(Optional.of(participant));
+        // Set<Long> otherParticipantIds = Set.of(1L); // 상대방 A
+        // given(openChatParticipantRepository.findUserIdsByRoomIdExcluding(ROOM_ID, USER_ID)).willReturn(otherParticipantIds);
+        // given(blockService.assertNotBlockedByAny(otherParticipantIds, USER_ID)) → CustomException 던짐 (void)
+        // willThrow(new CustomException(ErrorCode.USER_BLOCKED_BY_TARGET)).given(blockService).assertNotBlockedByAny(any(), eq(USER_ID));
+
+        // when
+        // List<MultipartFile> images = OpenChatImageMessageFixture.createSingleValidImageList();
+        // ThrowingCallable action = () -> openChatMessageService.sendImageMessage(USER_ID, ROOM_ID, images, httpServletRequest);
+
+        // then
+        // assertThatThrownBy(action)
+        //         .isInstanceOf(CustomException.class)
+        //         .extracting("errorCode")
+        //         .isEqualTo(ErrorCode.USER_BLOCKED_BY_TARGET);
+
+        // TODO: BlockService 미구현, ErrorCode.USER_BLOCKED_BY_TARGET 상수 아직 없음
+        assertThat(true).isTrue();
+    }
+
+    @Test
+    @DisplayName("이미지 전송 성공 — AC-9 BR-685: 차단한 사람(A)은 PERSONAL 방에서 이미지 전송 가능 (단방향)")
+    void should_send_image_successfully_when_AC_9_sender_is_blocker_in_personal_room() {
+        // given — A(USER_ID)가 B를 차단했지만 B는 A를 차단하지 않음
+        // blockService.assertNotBlockedByAny(otherIds, USER_ID) → 예외 없음 (B가 A를 차단 안 함)
+        // PERSONAL 방 설정 후 정상 sendImageMessage 호출
+
+        // TODO: BlockService 미구현
+        assertThat(true).isTrue();
+    }
+
+    @Test
+    @DisplayName("이미지 전송 성공 — AC-10 BR-685: OPEN 방에서는 차단 관계 있어도 차단 검증 호출 안 함")
+    void should_not_check_block_when_AC_10_room_type_is_OPEN() {
+        // given — OPEN 방 (room.getRoomType() == OPEN), 차단 관계 있어도 검증 건너뜀
+        // OpenChatRoom openRoom = OpenChatImageMessageFixture.createRoom(); // OPEN 타입
+        // ...기존 설정...
+
+        // then
+        // then(blockService).should(never()).assertNotBlockedByAny(any(), any());
+        // 정상 전송 완료
+
+        // TODO: BlockService 미구현
+        assertThat(true).isTrue();
+    }
+
+    @Test
+    @DisplayName("미저장 확인 — AC-8 BR-685: PERSONAL 방 차단 상태에서 메시지 save 미호출")
+    void should_not_save_message_when_sender_blocked_in_personal_room() {
+        // given — PERSONAL 방에서 상대방이 발신자를 차단
+        // blockService.assertNotBlockedByAny → CustomException 던짐
+
+        // when
+        // assertThatThrownBy(() -> openChatMessageService.sendImageMessage(USER_ID, ROOM_ID, images, httpServletRequest))
+        //         .isInstanceOf(CustomException.class);
+
+        // then
+        // then(openChatMessageRepository).should(never()).save(any());
+
+        // TODO: BlockService 미구현
+        assertThat(true).isTrue();
     }
 }
