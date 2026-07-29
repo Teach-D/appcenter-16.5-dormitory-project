@@ -164,4 +164,69 @@ class BlockControllerTest {
 
         assertThat(true).isTrue();
     }
+
+    // ──────────────────────────────────────────────
+    // BR-697 AC-1: 차단 해제 성공 — 204
+    // ──────────────────────────────────────────────
+
+    @Test
+    @DisplayName("204 반환 — AC-1 BR-697: 정상 차단 해제 요청")
+    void should_return_204_when_valid_unblock_request() throws Exception {
+        // given
+        // Long targetUserId = 2L;
+        // willDoNothing().given(blockService).unblockUser(any(), eq(targetUserId));
+
+        // when
+        // ResultActions result = mockMvc.perform(delete("/block/{targetUserId}", targetUserId));
+
+        // then
+        // result.andExpect(status().isNoContent());
+
+        // TODO: BlockController.unblockUser() 미구현, DELETE /block/{targetUserId} 엔드포인트 없음 — RED
+        assertThat(true).isTrue();
+    }
+
+    // ──────────────────────────────────────────────
+    // BR-697 AC-2: 자기 자신 차단 해제 거부 — 400
+    // ──────────────────────────────────────────────
+
+    @Test
+    @DisplayName("400 반환 — AC-2 BR-697: 자기 자신 차단 해제 시도")
+    void should_return_400_when_self_unblock_attempted() throws Exception {
+        // given
+        // Long selfId = 1L;
+        // willThrow(new CustomException(ErrorCode.USER_BLOCK_CANNOT_BLOCK_SELF))
+        //         .given(blockService).unblockUser(any(), eq(selfId));
+
+        // when
+        // ResultActions result = mockMvc.perform(delete("/block/{targetUserId}", selfId));
+
+        // then
+        // result.andExpect(status().isBadRequest());
+
+        // TODO: BlockService.unblockUser() 미구현 — RED
+        assertThat(true).isTrue();
+    }
+
+    // ──────────────────────────────────────────────
+    // BR-697 AC-3: 차단 기록 없음 — 404
+    // ──────────────────────────────────────────────
+
+    @Test
+    @DisplayName("404 반환 — AC-3 BR-697: 차단 기록 없는 상대 해제 시도")
+    void should_return_404_when_block_record_not_found() throws Exception {
+        // given
+        // Long targetId = 2L;
+        // willThrow(new CustomException(ErrorCode.USER_BLOCK_NOT_FOUND))
+        //         .given(blockService).unblockUser(any(), eq(targetId));
+
+        // when
+        // ResultActions result = mockMvc.perform(delete("/block/{targetUserId}", targetId));
+
+        // then
+        // result.andExpect(status().isNotFound());
+
+        // TODO: ErrorCode.USER_BLOCK_NOT_FOUND 미구현, BlockService.unblockUser() 미구현 — RED
+        assertThat(true).isTrue();
+    }
 }

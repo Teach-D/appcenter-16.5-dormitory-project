@@ -14,4 +14,9 @@ public interface BlockApiSpecification {
     ResponseEntity<Void> blockUser(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long targetUserId);
+
+    @Operation(summary = "사용자 차단 해제", description = "자신이 차단한 targetUserId를 차단 해제한다.")
+    ResponseEntity<Void> unblockUser(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long targetUserId);
 }
