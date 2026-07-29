@@ -218,6 +218,7 @@ public enum ErrorCode {
     USER_BLOCK_CANNOT_BLOCK_SELF(BAD_REQUEST, 26001, "[Block] 자기 자신을 차단할 수 없습니다."),
     USER_BLOCK_ALREADY_EXISTS(CONFLICT, 26002, "[Block] 이미 차단한 사용자입니다."),
     USER_BLOCKED_BY_TARGET(FORBIDDEN, 26003, "[Block] 상대방에 의해 차단된 사용자입니다."),
+    USER_BLOCK_NOT_FOUND(NOT_FOUND, 26004, "[Block] 차단 기록이 존재하지 않습니다."),
 
     // SERVER
     UNHANDLED_EXCEPTION(INTERNAL_SERVER_ERROR, 99999, "[Server] 서버 내부 오류가 발생했습니다.");

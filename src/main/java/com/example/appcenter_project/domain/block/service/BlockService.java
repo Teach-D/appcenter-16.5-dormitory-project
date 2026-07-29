@@ -42,4 +42,15 @@ public class BlockService {
             throw new CustomException(ErrorCode.USER_BLOCKED_BY_TARGET);
         }
     }
+
+    @Transactional
+    public void unblockUser(Long requesterId, Long targetId) {
+        if (requesterId.equals(targetId)) {
+            throw new CustomException(ErrorCode.USER_BLOCK_CANNOT_BLOCK_SELF);
+        }
+        if (!userBlockRepository.existsByBlockerIdAndBlockedId(requesterId, targetId)) {
+            throw new CustomException(ErrorCode.USER_BLOCK_NOT_FOUND);
+        }
+        userBlockRepository.deleteByBlockerIdAndBlockedId(requesterId, targetId);
+    }
 }
