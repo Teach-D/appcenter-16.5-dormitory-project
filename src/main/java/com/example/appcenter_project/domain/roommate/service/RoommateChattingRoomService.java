@@ -149,6 +149,12 @@ public class RoommateChattingRoomService {
             User partner = iAmHost ? guest : host;
             boolean opponentLeft = iAmHost ? room.isGuestLeft() : room.isHostLeft();
 
+            String hostBoardTitle = room.getRoommateBoard() != null ? room.getRoommateBoard().getTitle() : null;
+            String guestBoardTitle = roommateBoardRepository.findByUserId(guest.getId())
+                    .map(RoommateBoard::getTitle).orElse(null);
+            String myBoardTitle = iAmHost ? hostBoardTitle : guestBoardTitle;
+            String opponentBoardTitle = iAmHost ? guestBoardTitle : hostBoardTitle;
+
             // ImageService의 정적 리소스 URL(fileName)을 사용
             String partnerProfileImageUrl = null;
             try {
@@ -168,6 +174,8 @@ public class RoommateChattingRoomService {
                     .partnerId(partner.getId())
                     .partnerProfileImageUrl(partnerProfileImageUrl)
                     .isOpponentLeft(opponentLeft)
+                    .myBoardTitle(myBoardTitle)
+                    .opponentBoardTitle(opponentBoardTitle)
                     .build());
         }
 
