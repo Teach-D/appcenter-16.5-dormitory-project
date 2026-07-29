@@ -12,11 +12,13 @@ import com.example.appcenter_project.domain.roommate.repository.RoommateBoardLik
 import com.example.appcenter_project.domain.roommate.repository.RoommateBoardReadRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateBoardRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateCheckListRepository;
+import com.example.appcenter_project.domain.roommate.repository.RoommateChattingRoomRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateMatchingRepository;
 import com.example.appcenter_project.domain.notification.service.RoommateNotificationService;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.global.exception.CustomException;
+import com.example.appcenter_project.global.mixpanel.MixpanelService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,6 +42,12 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class RoommateServiceTest {
+
+    @Mock
+    RoommateChattingRoomRepository roommateChattingRoomRepository;
+
+    @Mock
+    MixpanelService mixpanelService;
 
     @Mock
     UserRepository userRepository;
@@ -315,5 +323,69 @@ class RoommateServiceTest {
         boolean result = roommateService.isRoommateBoardLikedByUser(1L, 1L);
 
         assertThat(result).isTrue();
+    }
+
+    @Test
+    @DisplayName("룸메이트 게시글 삭제 - 정상 삭제 (채팅방 유지, 읽음 기록 삭제)")
+    void deleteRoommateBoard_정상_삭제() {
+        User mockUser = buildMockUser(1L);
+        RoommateBoard mockBoard = buildMockBoard(1L, mockUser);
+        RoommateCheckList mockCheckList = mockBoard.getRoommateCheckList();
+        when(mockCheckList.getId()).thenReturn(10L);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+        when(roommateBoardRepository.findByUserId(1L)).thenReturn(Optional.of(mockBoard));
+
+        roommateService.deleteRoommateBoard(1L);
+
+        verify(roommateChattingRoomRepository).detachBoard(1L);
+        verify(roommateChattingRoomRepository).detachGuestChecklist(10L);
+        verify(roommateChattingRoomRepository).detachHostChecklist(10L);
+        verify(roommateBoardReadRepository).deleteAllByRoommateBoardId(1L);
+        verify(roommateBoardRepository).delete(mockBoard);
+        verify(roommateCheckListRepository).delete(mockCheckList);
+    }
+
+    @Test
+    @DisplayName("룸메이트 게시글 삭제 - 체크리스트 없을 때 채팅방 분리 쿼리 호출 안 함")
+    void deleteRoommateBoard_체크리스트없을때_정상삭제() {
+        User mockUser = buildMockUser(1L);
+        RoommateBoard mockBoard = mock(RoommateBoard.class);
+        when(mockBoard.getId()).thenReturn(1L);
+        when(mockBoard.getUser()).thenReturn(mockUser);
+        when(mockBoard.getRoommateCheckList()).thenReturn(null);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+        when(roommateBoardRepository.findByUserId(1L)).thenReturn(Optional.of(mockBoard));
+
+        roommateService.deleteRoommateBoard(1L);
+
+        verify(roommateChattingRoomRepository).detachBoard(1L);
+        verify(roommateChattingRoomRepository, never()).detachGuestChecklist(anyLong());
+        verify(roommateChattingRoomRepository, never()).detachHostChecklist(anyLong());
+        verify(roommateBoardRepository).delete(mockBoard);
+        verify(roommateCheckListRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("룸메이트 게시글 삭제 - 유저 없으면 예외")
+    void deleteRoommateBoard_유저없으면_예외() {
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> roommateService.deleteRoommateBoard(99L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ROOMMATE_USER_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("룸메이트 게시글 삭제 - 게시글 없으면 예외")
+    void deleteRoommateBoard_게시글없으면_예외() {
+        User mockUser = buildMockUser(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+        when(roommateBoardRepository.findByUserId(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> roommateService.deleteRoommateBoard(1L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ROOMMATE_BOARD_NOT_FOUND);
     }
 }
