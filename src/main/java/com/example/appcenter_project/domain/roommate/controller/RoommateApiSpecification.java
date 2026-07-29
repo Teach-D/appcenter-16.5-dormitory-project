@@ -43,7 +43,7 @@ public interface RoommateApiSpecification {
 
     @Operation(
             summary = "룸메이트 게시글 최신순 목록 조회",
-            description = "작성된 룸메이트 게시글을 최신순으로 조회합니다. (작성자 프로필 이미지 URL 포함)"
+            description = "작성된 룸메이트 게시글을 최신순으로 조회합니다. (작성자 프로필 이미지 URL 포함, 로그인 시 isMyPost 반환)"
     )
     ResponseEntity<List<ResponseRoommatePostDto>> getRoommateBoardList(
             @Parameter(hidden = true) CustomUserDetails userDetails,
@@ -134,7 +134,7 @@ public interface RoommateApiSpecification {
     @Operation(
             summary = "룸메이트 게시글 최신순 스크롤 조회",
             description = "boardId 내림차순으로 최신순 게시글을 페이지네이션하여 조회합니다. " +
-                    "lastId를 기준으로 이전 페이지 데이터를 불러옵니다."
+                    "lastId를 기준으로 이전 페이지 데이터를 불러옵니다. 로그인 시 isMyPost 반환."
     )
     ResponseEntity<List<ResponseRoommatePostDto>> getRoommateBoardListScroll(
             @Parameter(description = "마지막으로 조회한 게시글 ID (첫 페이지일 경우 비움)", example = "15")

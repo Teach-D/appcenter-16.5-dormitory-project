@@ -189,6 +189,7 @@ public class RoommateService {
                             .isMatched(isMatched)
                             .userProfileImageUrl(writerImg)
                             .isRead(readBoardIds.contains(board.getId()))
+                            .isMyPost(userId != null && writer.getId().equals(userId))
                             .build();
                 })
                 .toList();
@@ -514,6 +515,7 @@ public class RoommateService {
                     .isMatched(isMatched)
                     .userProfileImageUrl(writerImg)
                     .isRead(readBoardIds.contains(board.getId()))
+                    .isMyPost(userId != null && writer.getId().equals(userId))
                     .build();
         }).toList();
     }

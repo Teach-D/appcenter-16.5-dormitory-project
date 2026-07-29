@@ -38,6 +38,7 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
     private Integer year;
     private Integer semester;
     private boolean isRead;
+    private boolean isMyPost;
 
     @Builder
     public ResponseRoommatePostDto(Long id, String title, String type, LocalDateTime createDate, String filePath,
@@ -46,7 +47,7 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
                                    SleepSensitivityType sleeper, ShowerTimeType showerHour, ShowerDurationType showerTime,
                                    BedTimeType bedTime, CleanlinessType arrangement, String comment,
                                    int roommateBoardLike, Long userId, String userName, boolean isMatched,
-                                   String userProfileImageUrl, Integer year, Integer semester, boolean isRead) {  // ★ isRead 추가
+                                   String userProfileImageUrl, Integer year, Integer semester, boolean isRead, boolean isMyPost) {
         super(id, title, type, createDate, filePath);
         this.dormPeriod = dormPeriod;
         this.dormType = dormType;
@@ -70,6 +71,7 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
         this.year = year;
         this.semester = semester;
         this.isRead = isRead;
+        this.isMyPost = isMyPost;
     }
 
     public void updateIsRead(boolean isRead) {
