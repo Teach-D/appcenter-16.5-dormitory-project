@@ -43,7 +43,8 @@ public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslR
         return queryFactory
                 .selectFrom(openChatRoom)
                 .where(
-                        scopeEq(OpenChatRoomScope.DORMITORY),
+                        openChatRoom.scope.eq(OpenChatRoomScope.DORMITORY)
+                                .or(openChatRoom.roomType.eq(OpenChatRoomType.DERIVED)),
                         creatorDormitoryEq(dormType),
                         keywordContains(keyword)
                 )

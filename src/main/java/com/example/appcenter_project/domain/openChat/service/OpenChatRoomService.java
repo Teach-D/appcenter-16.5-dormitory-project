@@ -94,7 +94,7 @@ public class OpenChatRoomService {
 
     @Transactional
     public ResponseDerivedRoomCreatedDto createDerivedRoom(Long userId, RequestCreateDerivedRoomDto request) {
-        openChatRoomRepository.findById(request.getOriginRoomId())
+        OpenChatRoom originRoom = openChatRoomRepository.findById(request.getOriginRoomId())
                 .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND));
 
         if (!openChatParticipantRepository.existsByRoomIdAndUserId(request.getOriginRoomId(), userId)) {
@@ -107,7 +107,8 @@ public class OpenChatRoomService {
                 request.getMaxParticipants(),
                 userId,
                 request.getPassword(),
-                request.getIsPublic()
+                request.getIsPublic(),
+                originRoom.getCreatorDormitory()
         );
         OpenChatRoom savedRoom = openChatRoomRepository.save(derivedRoom);
         openChatParticipantRepository.save(OpenChatParticipant.create(savedRoom.getId(), userId, true));
