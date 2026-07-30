@@ -18,6 +18,8 @@ import com.example.appcenter_project.domain.notification.service.RoommateNotific
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.global.exception.CustomException;
+import com.example.appcenter_project.domain.roommate.enums.RoommateMatchingStatus;
+import com.example.appcenter_project.domain.roommate.enums.SemesterType;
 import com.example.appcenter_project.global.mixpanel.MixpanelService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,6 +31,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -76,6 +79,9 @@ class RoommateServiceTest {
     @InjectMocks
     RoommateService roommateService;
 
+    @Mock
+    RoommateMatchingPeriodResolver periodResolver;
+
     private RoommateBoard buildMockBoard(Long id, User user) {
         RoommateBoard board = mock(RoommateBoard.class);
         RoommateCheckList cl = buildMockCheckList();
@@ -109,6 +115,9 @@ class RoommateServiceTest {
     void createRoommateCheckListandBoard_정상_생성() {
         User mockUser = buildMockUser(1L);
         when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+
+        when(periodResolver.resolveCurrent(any(LocalDate.class)))
+                .thenReturn(new MatchingPeriod(2026, SemesterType.FIRST, RoommateMatchingStatus.OPEN));
 
         RequestRoommateFormDto dto = mock(RequestRoommateFormDto.class);
         when(dto.getTitle()).thenReturn("룸메이트 찾아요");
@@ -152,8 +161,7 @@ class RoommateServiceTest {
         when(roommateMatchingRepository.existsByReceiverAndStatus(any(User.class), eq(MatchingStatus.COMPLETED)))
                 .thenReturn(false);
 
-        List<ResponseRoommatePostDto> result = roommateService.getRoommateBoardList(null, null, null);
-
+        List<ResponseRoommatePostDto> result = roommateService.getRoommateBoardList(null, null);
         assertThat(result).hasSize(1);
     }
 
@@ -162,8 +170,7 @@ class RoommateServiceTest {
     void getRoommateBoardList_게시글없으면_예외() {
         when(roommateBoardRepository.findAllByOrderByCreatedDateDesc()).thenReturn(List.of());
 
-        assertThatThrownBy(() -> roommateService.getRoommateBoardList(null, null, null))
-                .isInstanceOf(CustomException.class)
+        assertThatThrownBy(() -> roommateService.getRoommateBoardList(null, null))                .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ROOMMATE_BOARD_NOT_FOUND);
     }
 

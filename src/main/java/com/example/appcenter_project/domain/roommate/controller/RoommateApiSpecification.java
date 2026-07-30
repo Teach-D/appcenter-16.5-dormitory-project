@@ -2,6 +2,7 @@ package com.example.appcenter_project.domain.roommate.controller;
 
 import com.example.appcenter_project.domain.roommate.dto.request.RequestRoommateFormDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateCheckListDto;
+import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateMatchingStatusDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommatePostDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateSimilarityDto;
 import com.example.appcenter_project.global.security.CustomUserDetails;
@@ -42,12 +43,11 @@ public interface RoommateApiSpecification {
     );
 
     @Operation(
-            summary = "룸메이트 게시글 최신순 목록 조회",
-            description = "작성된 룸메이트 게시글을 최신순으로 조회합니다. semester 쿼리 파라미터로 특정 학기 게시글만 필터링할 수 있습니다. (1=1학기, 2=2학기, 3=여름방학, 4=겨울방학, 미입력 시 전체 조회)"
+            summary = "룸메이트 게시글 목록 조회 (전체 학기)",
+            description = "작성된 룸메이트 게시글 전체를 최신순으로 조회합니다. " +
+                    "각 게시글의 year/semester 값으로 학기를 구분(라벨링)할 수 있습니다."
     )
     ResponseEntity<List<ResponseRoommatePostDto>> getRoommateBoardList(
-            @Parameter(description = "학기 코드 (1=1학기, 2=2학기, 3=여름방학, 4=겨울방학)", example = "1")
-            @RequestParam(required = false) Integer semester,
             @Parameter(hidden = true) CustomUserDetails userDetails,
             @Parameter(hidden = true) HttpServletRequest request
     );
@@ -163,4 +163,11 @@ public interface RoommateApiSpecification {
             @Parameter(hidden = true) CustomUserDetails userDetails,
             @Parameter(hidden = true) HttpServletRequest request
     );
+
+    @Operation(
+            summary = "룸메이트 매칭 기간/상태 조회",
+            description = "현재 매칭 기간(year, semester)과 매칭 상태(OPEN/CLOSED)를 반환합니다. " +
+                    "CLOSED이면 매칭 기간 종료 상태로, UI 안내/차단 처리에 사용합니다."
+    )
+    ResponseEntity<ResponseRoommateMatchingStatusDto> getMatchingStatus();
 }
