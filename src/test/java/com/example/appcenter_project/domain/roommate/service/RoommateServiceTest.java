@@ -21,6 +21,7 @@ import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.domain.roommate.enums.RoommateMatchingStatus;
 import com.example.appcenter_project.domain.roommate.enums.SemesterType;
 import com.example.appcenter_project.global.mixpanel.MixpanelService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -108,6 +109,12 @@ class RoommateServiceTest {
         when(user.getId()).thenReturn(id);
         when(user.getName()).thenReturn("홍길동");
         return user;
+    }
+
+    @BeforeEach
+    void setUpPeriodResolver() {
+        when(periodResolver.resolveCurrent(any(LocalDate.class)))
+                .thenReturn(new MatchingPeriod(2026, SemesterType.FIRST, RoommateMatchingStatus.OPEN));
     }
 
     @Test
