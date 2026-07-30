@@ -60,6 +60,19 @@ public class CrawledAnnouncement extends Announcement {
         this.viewCount = viewCount;
     }
 
+    public void updateFromCrawl(AnnouncementCategory category, String title, String content,
+                                String writer, LocalDate crawledDate) {
+        this.announcementCategory = category;
+        this.title = title;
+        this.content = content;
+        this.writer = writer;
+        this.crawledDate = crawledDate;
+        this.scheduleExtractStatus = ScheduleExtractStatus.PENDING; // 일정 재추출 대상으로 리셋
+        this.scheduleExtractRetryCount = 0;
+        this.scheduleExtractLastError = null;
+        this.scheduleExtractedAt = null;
+    }
+
     public void markSuccess() {
         this.scheduleExtractStatus = ScheduleExtractStatus.SUCCESS;
         this.scheduleExtractedAt = LocalDateTime.now();
