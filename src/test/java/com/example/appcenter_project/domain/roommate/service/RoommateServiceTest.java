@@ -277,25 +277,25 @@ class RoommateServiceTest {
     }
 
     @Test
-    @DisplayName("내 체크리스트 조회 - 정상 반환")
+    @DisplayName("내 체크리스트 조회 - 최신(현재 학기) 체크리스트 반환")
     void getMyCheckList_정상_반환() {
-        User mockUser = buildMockUser(1L);
-        RoommateBoard mockBoard = buildMockBoard(1L, mockUser);
-        when(roommateBoardRepository.findByUserId(1L)).thenReturn(Optional.of(mockBoard));
+        RoommateCheckList cl = buildMockCheckList();
+        when(roommateCheckListRepository.findFirstByUserIdOrderByIdDesc(1L)).thenReturn(Optional.of(cl));
 
-        Long result = roommateService.getMyCheckList(1L);
+        ResponseRoommateCheckListDto result = roommateService.getMyCheckList(1L);
 
         assertThat(result).isNotNull();
+        assertThat(result.getTitle()).isEqualTo("룸메이트 찾아요");
     }
 
     @Test
     @DisplayName("내 체크리스트 조회 - 없으면 예외")
     void getMyCheckList_없으면_예외() {
-        when(roommateBoardRepository.findByUserId(99L)).thenReturn(Optional.empty());
+        when(roommateCheckListRepository.findFirstByUserIdOrderByIdDesc(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> roommateService.getMyCheckList(99L))
                 .isInstanceOf(CustomException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ROOMMATE_BOARD_NOT_FOUND);
+                .hasFieldOrPropertyWithValue("errorCode", ROOMMATE_CHECKLIST_NOT_FOUND);
     }
 
     @Test
