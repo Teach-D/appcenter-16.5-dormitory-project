@@ -19,7 +19,8 @@ public interface CrawledAnnouncementRepository extends JpaRepository<CrawledAnno
     @Query("SELECT c FROM CrawledAnnouncement c " +
             "WHERE c.scheduleExtractStatus IN :statuses " +
             "  AND c.scheduleExtractRetryCount < 3 " +
-            "  AND c.crawledDate >= :cutoffDate " +
+            "  AND (c.crawledDate >= :cutoffDate " +
+            "       OR c.scheduleExtractStatus = com.example.appcenter_project.domain.announcement.enums.ScheduleExtractStatus.PENDING) " +
             "  AND c.id > :lastId " +
             "ORDER BY c.id ASC")
     List<CrawledAnnouncement> findScheduleExtractTargets(
