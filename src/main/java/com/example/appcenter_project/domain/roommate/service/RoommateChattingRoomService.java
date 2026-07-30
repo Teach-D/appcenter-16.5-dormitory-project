@@ -9,6 +9,7 @@ import com.example.appcenter_project.domain.roommate.entity.RoommateChattingRoom
 import com.example.appcenter_project.domain.roommate.entity.RoommateCheckList;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.global.exception.CustomException;
+import com.example.appcenter_project.domain.roommate.repository.MyRoommateRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateBoardRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateChattingRoomRepository;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
@@ -38,6 +39,7 @@ public class RoommateChattingRoomService {
     private final UserRepository userRepository;
     private final ImageService imageService;
     private final RoommateChattingChatService roommateChattingChatService;
+    private final MyRoommateRepository myRoommateRepository;
 
 
     //채팅방 생성
@@ -148,6 +150,8 @@ public class RoommateChattingRoomService {
             boolean iAmHost = host.getId().equals(user.getId());
             User partner = iAmHost ? guest : host;
             boolean opponentLeft = iAmHost ? room.isGuestLeft() : room.isHostLeft();
+            boolean isRoommate = myRoommateRepository
+                    .findByUserIdAndRoommateId(user.getId(), partner.getId()).isPresent();
 
             String hostBoardTitle = room.getRoommateBoard() != null ? room.getRoommateBoard().getTitle() : null;
             String guestBoardTitle = roommateBoardRepository.findByUserId(guest.getId())
@@ -174,14 +178,17 @@ public class RoommateChattingRoomService {
                     .partnerId(partner.getId())
                     .partnerProfileImageUrl(partnerProfileImageUrl)
                     .isOpponentLeft(opponentLeft)
+                    .isRoommate(isRoommate)
                     .myBoardTitle(myBoardTitle)
                     .opponentBoardTitle(opponentBoardTitle)
                     .build());
         }
 
-        result.sort(Comparator.comparing(
-                ResponseRoommateChatRoomDto::getLastMessageTime,
-                Comparator.nullsLast(Comparator.reverseOrder())));
+        result.sort(Comparator
+                .comparing(ResponseRoommateChatRoomDto::isRoommate, Comparator.reverseOrder())
+                .thenComparing(
+                        ResponseRoommateChatRoomDto::getLastMessageTime,
+                        Comparator.nullsLast(Comparator.reverseOrder())));
 
         return result;
     }

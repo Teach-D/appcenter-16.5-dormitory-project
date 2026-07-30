@@ -18,6 +18,7 @@ public class ResponseRoommateChatRoomDto {
     private String partnerName;
     private String partnerProfileImageUrl;
     private boolean isOpponentLeft;
+    private boolean isRoommate;
     private String myBoardTitle;
     private String opponentBoardTitle;
 }
