@@ -145,6 +145,7 @@ public class RoommateService {
             throw new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND);
         }
 
+        MatchingPeriod current = periodResolver.resolveCurrent(LocalDate.now());
         List<Long> boardIds = boards.stream().map(RoommateBoard::getId).toList();
         Set<Long> readBoardIds = loadReadBoardIds(userId, boardIds);
 
@@ -162,7 +163,7 @@ public class RoommateService {
                     return ResponseRoommatePostDto.builder()
                             .id(board.getId())
                             .title(cl.getTitle())
-                            .dormPeriod(DormDayUtil.sortDormDays(cl.getDormPeriod())) // 정렬해서 넣음
+                            .dormPeriod(DormDayUtil.sortDormDays(cl.getDormPeriod()))
                             .dormType(writer.getDormType())
                             .college(writer.getCollege())
                             .religion(cl.getReligion())
@@ -186,6 +187,7 @@ public class RoommateService {
                             .isMyPost(userId != null && writer.getId().equals(userId))
                             .year(board.getYear())
                             .semester(board.getSemester())
+                            .isCurrentPeriod(isInCurrentPeriod(board, current))
                             .build();
                 })
                 .toList();
@@ -482,6 +484,7 @@ public class RoommateService {
             return List.of(); // 마지막 페이지
         }
 
+        MatchingPeriod current = periodResolver.resolveCurrent(LocalDate.now());
         List<Long> boardIds = boards.stream().map(RoommateBoard::getId).toList();
         Set<Long> readBoardIds = loadReadBoardIds(userId, boardIds);
 
@@ -522,6 +525,7 @@ public class RoommateService {
                     .isMyPost(userId != null && writer.getId().equals(userId))
                     .year(board.getYear())
                     .semester(board.getSemester())
+                    .isCurrentPeriod(isInCurrentPeriod(board, current))
                     .build();
         }).toList();
     }
