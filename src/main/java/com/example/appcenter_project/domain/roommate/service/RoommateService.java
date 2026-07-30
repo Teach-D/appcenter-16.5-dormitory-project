@@ -442,8 +442,16 @@ public class RoommateService {
     // 내가 작성한 이번 학기 체크리스트 내용 조회 (수정 화면 표시용)
     @Transactional(readOnly = true)
     public ResponseRoommateCheckListDto getMyCheckList(Long userId) {
-        RoommateCheckList checkList = roommateCheckListRepository.findFirstByUserIdOrderByIdDesc(userId)
+        MatchingPeriod current = periodResolver.resolveCurrent(LocalDate.now());
+
+        RoommateCheckList checkList = roommateCheckListRepository
+                .findFirstByUserIdAndYearAndSemester(
+                        userId,
+                        current.year(),
+                        current.semester()
+                )
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_CHECKLIST_NOT_FOUND));
+
         return ResponseRoommateCheckListDto.from(checkList);
     }
 
