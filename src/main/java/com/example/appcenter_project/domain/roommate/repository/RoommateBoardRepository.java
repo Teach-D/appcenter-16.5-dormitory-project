@@ -1,7 +1,6 @@
 package com.example.appcenter_project.domain.roommate.repository;
 
 import com.example.appcenter_project.domain.roommate.entity.RoommateBoard;
-import com.example.appcenter_project.domain.roommate.enums.SemesterType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -11,7 +10,6 @@ import java.util.Optional;
 
 public interface RoommateBoardRepository extends JpaRepository<RoommateBoard, Long> {
     List<RoommateBoard> findAllByOrderByCreatedDateDesc();
-    List<RoommateBoard> findAllBySemesterOrderByCreatedDateDesc(SemesterType semester);
     Optional<RoommateBoard> findByUserId(Long userId);
 
     // 가장 최근 10개의 게시글 조회
@@ -25,10 +23,9 @@ public interface RoommateBoardRepository extends JpaRepository<RoommateBoard, Lo
 
     // 필터링용: RoommateCheckList와 User를 함께 조회
     @Query("SELECT DISTINCT b FROM RoommateBoard b " +
-           "JOIN FETCH b.roommateCheckList c " +
-           "LEFT JOIN FETCH c.dormPeriod " +
-           "JOIN FETCH b.user u " +
-           "ORDER BY b.createdDate DESC")
+            "JOIN FETCH b.roommateCheckList c " +
+            "LEFT JOIN FETCH c.dormPeriod " +
+            "JOIN FETCH b.user u " +
+            "ORDER BY b.createdDate DESC")
     List<RoommateBoard> findAllWithCheckListAndUserOrderByCreatedDateDesc();
-
 }

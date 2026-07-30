@@ -24,7 +24,6 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -176,7 +175,7 @@ class RoommateControllerSemesterTest {
     void should_include_year_field_in_board_list_response() throws Exception {
         // given
         ResponseRoommatePostDto response = RoommateSemesterFixture.createResponseWithSemester(2026, SemesterType.FIRST);
-        given(roommateService.getRoommateBoardList(any(), any(), any())).willReturn(List.of(response));
+        given(roommateService.getRoommateBoardList(any(), any())).willReturn(List.of(response));
 
         // when
         ResultActions result = mockMvc.perform(get("/roommates/list")
@@ -191,7 +190,7 @@ class RoommateControllerSemesterTest {
     void should_include_semester_field_in_board_list_response() throws Exception {
         // given
         ResponseRoommatePostDto response = RoommateSemesterFixture.createResponseWithSemester(2026, SemesterType.FIRST);
-        given(roommateService.getRoommateBoardList(any(), any(), any())).willReturn(List.of(response));
+        given(roommateService.getRoommateBoardList(any(), any())).willReturn(List.of(response));
 
         // when
         ResultActions result = mockMvc.perform(get("/roommates/list")
@@ -202,29 +201,12 @@ class RoommateControllerSemesterTest {
     }
 
     @Test
-    @DisplayName("200 반환 — semester=1 필터 시 해당 학기 게시글만 반환")
-    void should_return_filtered_list_when_semester_param_given() throws Exception {
-        // given
-        ResponseRoommatePostDto response = RoommateSemesterFixture.createResponseWithSemester(2026, SemesterType.FIRST);
-        given(roommateService.getRoommateBoardList(any(), any(), eq(1))).willReturn(List.of(response));
-
-        // when
-        ResultActions result = mockMvc.perform(get("/roommates/list")
-                .param("semester", "1")
-                .contentType(MediaType.APPLICATION_JSON));
-
-        // then
-        result.andExpect(status().isOk())
-              .andExpect(jsonPath("$[0].semester").value(1));
-    }
-
-    @Test
-    @DisplayName("200 반환 — semester 미입력 시 전체 게시글 반환")
-    void should_return_all_when_no_semester_param() throws Exception {
+    @DisplayName("200 반환 — 목록 조회 시 전체 게시글 반환")
+    void should_return_all_boards() throws Exception {
         // given
         ResponseRoommatePostDto r1 = RoommateSemesterFixture.createResponseWithSemester(2026, SemesterType.FIRST);
         ResponseRoommatePostDto r2 = RoommateSemesterFixture.createResponseWithSemester(2026, SemesterType.SUMMER_VACATION);
-        given(roommateService.getRoommateBoardList(any(), any(), eq(null))).willReturn(List.of(r1, r2));
+        given(roommateService.getRoommateBoardList(any(), any())).willReturn(List.of(r1, r2));
 
         // when
         ResultActions result = mockMvc.perform(get("/roommates/list")
@@ -232,7 +214,7 @@ class RoommateControllerSemesterTest {
 
         // then
         result.andExpect(status().isOk())
-              .andExpect(jsonPath("$.length()").value(2));
+                .andExpect(jsonPath("$.length()").value(2));
     }
 
     @Test
