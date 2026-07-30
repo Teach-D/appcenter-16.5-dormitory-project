@@ -18,8 +18,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class StudentIdDisclosureTransactionService {
@@ -59,11 +57,6 @@ public class StudentIdDisclosureTransactionService {
             if (!requesterIn || !targetIn) {
                 throw new CustomException(ErrorCode.DISCLOSURE_NOT_IN_SAME_ROOM);
             }
-        }
-
-        if (disclosureRequestRepository.existsByRequesterIdAndTargetIdAndRoomIdAndStatusIn(
-                requesterId, targetId, roomId, List.of(DisclosureRequestStatus.PENDING, DisclosureRequestStatus.ACCEPTED))) {
-            throw new CustomException(ErrorCode.DISCLOSURE_REQUEST_ALREADY_EXISTS);
         }
 
         disclosureRequestRepository.deleteByRequesterIdAndTargetIdAndRoomId(requesterId, targetId, roomId);

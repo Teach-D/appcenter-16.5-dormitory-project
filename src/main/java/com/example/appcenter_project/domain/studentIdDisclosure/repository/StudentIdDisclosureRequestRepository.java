@@ -8,14 +8,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface StudentIdDisclosureRequestRepository extends JpaRepository<StudentIdDisclosureRequest, Long> {
 
     Optional<StudentIdDisclosureRequest> findByRequesterIdAndTargetIdAndRoomId(Long requesterId, Long targetId, Long roomId);
-
-    boolean existsByRequesterIdAndTargetIdAndRoomIdAndStatusIn(Long requesterId, Long targetId, Long roomId, List<DisclosureRequestStatus> statuses);
 
     @Modifying
     @Transactional
