@@ -3,6 +3,7 @@ package com.example.appcenter_project.domain.openChat.service;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateDerivedRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateOpenChatRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreatePersonalRoomDto;
+import com.example.appcenter_project.domain.openChat.dto.request.RequestUpdateOpenChatRoomDto;
 import com.example.appcenter_project.domain.openChat.enums.ChatNotificationMode;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseChatRoomListDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseDerivedRoomCreatedDto;
@@ -351,6 +352,33 @@ public class OpenChatRoomService {
         log.info("[OpenChat-Exit] exitType=VOLUNTARY roomId={} targetUserId={} actorId={} processedAt={}",
                 roomId, userId, userId, Instant.now());
         return ResponseLeaveOpenChatRoomDto.builder().roomDeleted(false).build();
+    }
+
+    @Transactional
+    public void updateRoom(Long userId, Long roomId, RequestUpdateOpenChatRoomDto request) {
+        OpenChatRoom room = openChatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND));
+
+        OpenChatParticipant participant = openChatParticipantRepository.findByRoomIdAndUserId(roomId, userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_PARTICIPANT_NOT_FOUND));
+
+        if (!participant.isHost()) {
+            throw new CustomException(ErrorCode.OPEN_CHAT_NOT_HOST);
+        }
+
+        if (room.isOfficial() || room.getRoomType() == OpenChatRoomType.PERSONAL) {
+            throw new CustomException(ErrorCode.OPEN_CHAT_ROOM_FORBIDDEN);
+        }
+
+        if (request.getMaxParticipants() != null) {
+            long currentCount = openChatParticipantRepository.countByRoomId(roomId);
+            if (currentCount > request.getMaxParticipants()) {
+                throw new CustomException(ErrorCode.OPEN_CHAT_MAX_PARTICIPANTS_TOO_SMALL);
+            }
+        }
+
+        room.update(request.getName(), request.getDescription(), request.getScope(),
+                request.getMaxParticipants(), request.getPassword(), request.getIsPublic());
     }
 
     @Transactional
