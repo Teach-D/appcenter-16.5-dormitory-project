@@ -187,6 +187,8 @@ public enum ErrorCode {
     OPEN_CHAT_REPORT_NOT_FOUND(NOT_FOUND, 22022, "[OpenChat] 신고 내역을 찾을 수 없습니다."),
     OPEN_CHAT_REPORT_ALREADY_HANDLED(BAD_REQUEST, 22023, "[OpenChat] 이미 처리된 신고입니다."),
     OPEN_CHAT_REPORT_TARGET_INVALID(BAD_REQUEST, 22024, "[OpenChat] 신고할 수 없는 메시지입니다."),
+    OPEN_CHAT_NOT_HOST(FORBIDDEN, 22025, "[OpenChat] 방장만 채팅방 정보를 수정할 수 있습니다."),
+    OPEN_CHAT_MAX_PARTICIPANTS_TOO_SMALL(BAD_REQUEST, 22026, "[OpenChat] 최대 인원은 현재 참여자 수 이상이어야 합니다."),
 
     // STUDENT_ID_DISCLOSURE
     DISCLOSURE_REQUEST_NOT_FOUND(NOT_FOUND, 23001, "[StudentIdDisclosure] 학번 공개 요청을 찾을 수 없습니다."),

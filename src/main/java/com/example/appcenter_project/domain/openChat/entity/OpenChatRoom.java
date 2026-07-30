@@ -161,6 +161,16 @@ public class OpenChatRoom extends BaseTimeEntity {
         return room;
     }
 
+    public void update(String name, String description, OpenChatRoomScope scope,
+                       Integer maxParticipants, String password, Boolean isPublic) {
+        if (name != null)            this.name = name;
+        if (description != null)     this.description = description;
+        if (scope != null)           this.scope = scope;
+        if (maxParticipants != null) this.maxParticipants = maxParticipants;
+        if (password != null)        this.password = password.isBlank() ? null : password;
+        if (isPublic != null)        this.isPublic = isPublic;
+    }
+
     public void updateLastMessage(String content, LocalDateTime at) {
         this.lastMessage = content != null && content.length() > 500 ? content.substring(0, 500) : content;
         this.lastMessageAt = at;

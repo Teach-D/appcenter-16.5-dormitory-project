@@ -4,6 +4,7 @@ import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateDe
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateOpenChatRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreatePersonalRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestUpdateNotificationModeDto;
+import com.example.appcenter_project.domain.openChat.dto.request.RequestUpdateOpenChatRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseChatRoomListDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseDerivedRoomCreatedDto;
 import com.example.appcenter_project.domain.openChat.dto.response.ResponseLeaveOpenChatRoomDto;
@@ -105,6 +106,16 @@ public class OpenChatRoomController implements OpenChatRoomApiSpecification {
             @RequestParam KickReason reason,
             @RequestParam(required = false) Long newHostUserId) {
         openChatRoomService.kickParticipant(user.getId(), roomId, targetUserId, reason, newHostUserId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{roomId}")
+    public ResponseEntity<Void> updateRoom(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId,
+            @RequestBody @Valid RequestUpdateOpenChatRoomDto request) {
+        Long userId = user != null ? user.getId() : 0L;
+        openChatRoomService.updateRoom(userId, roomId, request);
         return ResponseEntity.noContent().build();
     }
 
