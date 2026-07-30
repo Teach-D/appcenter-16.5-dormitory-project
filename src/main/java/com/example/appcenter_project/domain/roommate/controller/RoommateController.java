@@ -129,12 +129,22 @@ public class RoommateController implements RoommateApiSpecification{
         return ResponseEntity.ok(isLiked);
     }
 
+    @TrackApi
     @Override
-    @GetMapping("/my-checklist-id")
-    public ResponseEntity<Long> getMyCheckList(
+    @GetMapping("/my-checklist")
+    public ResponseEntity<ResponseRoommateCheckListDto> getMyCheckList(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         return ResponseEntity.ok(roommateService.getMyCheckList(userDetails.getId()));
+    }
+
+    @TrackApi
+    @Override
+    @GetMapping("/my-checklist/previous")
+    public ResponseEntity<ResponseRoommateCheckListDto> getPreviousCheckListContent(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(roommateService.getPreviousCheckListContent(userDetails.getId()));
     }
 
     @GetMapping("/latest10/random")

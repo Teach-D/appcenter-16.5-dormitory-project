@@ -34,10 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
@@ -442,11 +439,28 @@ public class RoommateService {
         return roommateBoardLikeRepository.existsByUserAndRoommateBoard(user, board);
     }
 
+    // 내가 작성한 이번 학기 체크리스트 내용 조회 (수정 화면 표시용)
     @Transactional(readOnly = true)
-    public Long getMyCheckList(Long userId) {
-        RoommateBoard board = roommateBoardRepository.findByUserId(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
-        return board.getId();
+    public ResponseRoommateCheckListDto getMyCheckList(Long userId) {
+        RoommateCheckList checkList = roommateCheckListRepository.findFirstByUserIdOrderByIdDesc(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_CHECKLIST_NOT_FOUND));
+        return ResponseRoommateCheckListDto.from(checkList);
+    }
+
+    // 이전 학기 체크리스트 내용 조회 (현재 학기 제외 가장 최근 과거 데이터)
+    @Transactional(readOnly = true)
+    public ResponseRoommateCheckListDto getPreviousCheckListContent(Long userId) {
+        MatchingPeriod current = periodResolver.resolveCurrent(LocalDate.now());
+        RoommateCheckList previous = roommateCheckListRepository.findByUserIdOrderByIdDesc(userId).stream()
+                .filter(checkList -> !isSamePeriod(checkList, current))
+                .findFirst()
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_CHECKLIST_NOT_FOUND));
+        return ResponseRoommateCheckListDto.from(previous);
+    }
+
+    private boolean isSamePeriod(RoommateCheckList checkList, MatchingPeriod period) {
+        return Objects.equals(checkList.getYear(), period.year())
+                && checkList.getSemester() == period.semester();
     }
 
     @Transactional(readOnly = true)

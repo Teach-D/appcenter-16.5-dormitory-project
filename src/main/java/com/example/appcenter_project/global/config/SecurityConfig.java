@@ -86,6 +86,8 @@ public class SecurityConfig {
                         .requestMatchers(GET, "/roommates/similar").authenticated()
                         // 나의 체크리스트 조회
                         .requestMatchers(GET, "/roommates/my-checklist").authenticated()
+                        // 이전 학기 체크리스트 불러오기
+                        .requestMatchers(GET, "/roommates/my-checklist/previous").authenticated()
                         // 게시글 좋아요 여부 확인
                         .requestMatchers(GET, "/roommates/{boardId}/liked").authenticated()
                         // 룸메이트 게시글 조회

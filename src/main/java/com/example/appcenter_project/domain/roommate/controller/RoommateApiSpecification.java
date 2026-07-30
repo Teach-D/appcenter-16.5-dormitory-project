@@ -119,11 +119,36 @@ public interface RoommateApiSpecification {
             @Parameter(hidden = true) CustomUserDetails userDetails
     );
 
-    @Operation(summary = "내 체크리스트 단일 조회")
-    ResponseEntity<Long> getMyCheckList(
+    @Operation(
+            summary = "내 체크리스트 내용 조회",
+            description = "로그인한 사용자가 작성한 가장 최근(현재 학기) 체크리스트 내용을 반환합니다. " +
+                    "체크리스트 수정 화면 프리필에 사용합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "조회 성공",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseRoommateCheckListDto.class))),
+                    @ApiResponse(responseCode = "404", description = "체크리스트를 찾을 수 없습니다. (ROOMMATE_CHECKLIST_NOT_FOUND)")
+            }
+    )
+    ResponseEntity<ResponseRoommateCheckListDto> getMyCheckList(
             @Parameter(hidden = true) CustomUserDetails userDetails
     );
 
+    @Operation(
+            summary = "이전 학기 체크리스트 내용 조회",
+            description = "현재 학기를 제외한, 로그인한 사용자의 가장 최근 과거 체크리스트 내용을 반환합니다. " +
+                    "신규 학기 체크리스트 작성 시 '이전 학기에서 불러오기'에 사용합니다. " +
+                    "직전 학기가 없어도 가장 최근인 과거 데이터를 반환합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "조회 성공",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseRoommateCheckListDto.class))),
+                    @ApiResponse(responseCode = "404", description = "불러올 이전 학기 체크리스트가 없습니다. (ROOMMATE_CHECKLIST_NOT_FOUND)")
+            }
+    )
+    ResponseEntity<ResponseRoommateCheckListDto> getPreviousCheckListContent(
+            @Parameter(hidden = true) CustomUserDetails userDetails
+    );
     @Operation(
             summary = "최신 10개 중 무작위 1개 조회",
             description = "최신 10개 게시글 중 무작위 1개를 반환합니다. 작성자 프로필 이미지 URL 포함"
