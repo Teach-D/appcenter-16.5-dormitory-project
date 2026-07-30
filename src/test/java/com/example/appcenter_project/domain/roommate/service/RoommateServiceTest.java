@@ -277,10 +277,15 @@ class RoommateServiceTest {
     }
 
     @Test
-    @DisplayName("내 체크리스트 조회 - 최신(현재 학기) 체크리스트 반환")
+    @DisplayName("내 체크리스트 조회 - 현재 학기 체크리스트 반환")
     void getMyCheckList_정상_반환() {
         RoommateCheckList cl = buildMockCheckList();
-        when(roommateCheckListRepository.findFirstByUserIdOrderByIdDesc(1L)).thenReturn(Optional.of(cl));
+
+        when(roommateCheckListRepository.findFirstByUserIdAndYearAndSemester(
+                eq(1L),
+                eq(2026),
+                eq(SemesterType.FIRST)
+        )).thenReturn(Optional.of(cl));
 
         ResponseRoommateCheckListDto result = roommateService.getMyCheckList(1L);
 
@@ -291,7 +296,12 @@ class RoommateServiceTest {
     @Test
     @DisplayName("내 체크리스트 조회 - 없으면 예외")
     void getMyCheckList_없으면_예외() {
-        when(roommateCheckListRepository.findFirstByUserIdOrderByIdDesc(99L)).thenReturn(Optional.empty());
+
+        when(roommateCheckListRepository.findFirstByUserIdAndYearAndSemester(
+                eq(99L),
+                eq(2026),
+                eq(SemesterType.FIRST)
+        )).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> roommateService.getMyCheckList(99L))
                 .isInstanceOf(CustomException.class)
