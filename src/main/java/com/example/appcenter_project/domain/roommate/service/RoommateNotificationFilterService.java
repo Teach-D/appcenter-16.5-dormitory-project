@@ -299,6 +299,13 @@ public class RoommateNotificationFilterService {
         return true;
     }
 
+    @Transactional(readOnly = true)
+    public List<String> getMatchedFieldsByUserId(Long userId, RoommateCheckList checkList) {
+        return filterRepository.findByUserId(userId)
+                .map(filter -> getMatchedFields(filter, checkList))
+                .orElse(null);
+    }
+
     private List<String> getMatchedFields(RoommateNotificationFilter filter, RoommateCheckList checkList) {
         List<String> matched = new ArrayList<>();
 

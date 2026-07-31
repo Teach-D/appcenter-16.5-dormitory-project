@@ -54,6 +54,7 @@ public class RoommateService {
     private final MixpanelService mixpanelService;
     private final RoommateBoardReadRepository roommateBoardReadRepository;
     private final RoommateMatchingPeriodResolver periodResolver;
+    private final RoommateNotificationFilterService roommateNotificationFilterService;
 
     @Transactional
     public ResponseRoommatePostDto createRoommateCheckListandBoard(RequestRoommateFormDto requestDto, Long userId) {
@@ -205,6 +206,12 @@ public class RoommateService {
 
         ResponseRoommatePostDto dto = ResponseRoommatePostDto.entityToDto(board, isMatched, writerImg);
         dto.updateIsRead(read);
+
+        if (userId != null) {
+            List<String> matchedFields = roommateNotificationFilterService.getMatchedFieldsByUserId(userId, board.getRoommateCheckList());
+            dto.updateMatchedFilter(matchedFields);
+        }
+
         return dto;
     }
 

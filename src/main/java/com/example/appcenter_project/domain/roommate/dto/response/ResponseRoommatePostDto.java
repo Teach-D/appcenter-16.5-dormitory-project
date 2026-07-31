@@ -40,6 +40,8 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
     private boolean isRead;
     private boolean isMyPost;
     private boolean isCurrentPeriod;
+    private Integer matchedFilterCount;
+    private List<String> matchedFilterFields;
 
     @Builder
     public ResponseRoommatePostDto(Long id, String title, String type, LocalDateTime createDate, String filePath,
@@ -78,6 +80,11 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
 
     public void updateIsRead(boolean isRead) {
         this.isRead = isRead;
+    }
+
+    public void updateMatchedFilter(List<String> fields) {
+        this.matchedFilterFields = fields;
+        this.matchedFilterCount = fields != null ? fields.size() : null;
     }
 
     public static ResponseRoommatePostDto entityToDto(RoommateBoard board, boolean isMatched, String userProfileImageUrl) {
