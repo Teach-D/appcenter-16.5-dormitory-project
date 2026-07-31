@@ -116,6 +116,10 @@ public class RoommateCheckList {
         this.semester = semester;
     }
 
+    public void updateDormType(DormType dormType) {
+        this.dormType = dormType;
+    }
+
     public void update(RequestRoommateFormDto dto) {
         this.title = dto.getTitle();
         this.dormPeriod = dto.getDormPeriod();
