@@ -6,6 +6,7 @@ import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoomma
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateMatchingStatusDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommatePostDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateSimilarityDto;
+import com.example.appcenter_project.domain.roommate.enums.SemesterType;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import com.example.appcenter_project.domain.roommate.service.RoommateService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -160,11 +161,15 @@ public class RoommateController implements RoommateApiSpecification{
     public ResponseEntity<List<ResponseRoommatePostDto>> getRoommateBoardListScroll(
             @RequestParam(required = false) Long lastId,
             @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer semester,
             @AuthenticationPrincipal(errorOnInvalidType = false) CustomUserDetails userDetails,
             HttpServletRequest request
     ) {
         Long userId = userDetails != null ? userDetails.getId() : null;
-        return ResponseEntity.ok(roommateService.getRoommateBoardListScroll(userId, request, lastId, size));
+        SemesterType semesterType = SemesterType.fromCodeOrNull(semester);
+        return ResponseEntity.ok(roommateService.getRoommateBoardListScroll(userId, request, lastId, size, keyword, year, semesterType));
     }
 
     @GetMapping("/list/similar/scroll/me")

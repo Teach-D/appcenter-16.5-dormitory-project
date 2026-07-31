@@ -5,6 +5,7 @@ import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoomma
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateMatchingStatusDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommatePostDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateSimilarityDto;
+import com.example.appcenter_project.domain.roommate.enums.SemesterType;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -168,6 +169,12 @@ public interface RoommateApiSpecification {
             @RequestParam(required = false) Long lastId,
             @Parameter(description = "한 번에 가져올 데이터 개수", example = "10")
             @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "제목/내용 검색어")
+            @RequestParam(required = false) String keyword,
+            @Parameter(description = "년도 필터 (예: 2025)")
+            @RequestParam(required = false) Integer year,
+            @Parameter(description = "학기 코드 (1=1학기, 2=2학기, 3=여름방학, 4=겨울방학)")
+            @RequestParam(required = false) Integer semester,
             @Parameter(hidden = true) CustomUserDetails userDetails,
             @Parameter(hidden = true) HttpServletRequest request
     );

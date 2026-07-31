@@ -27,8 +27,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -490,17 +489,10 @@ public class RoommateService {
         return ResponseRoommatePostDto.entityToDto(target, isMatched, writerImg);
     }
 
-    //전체 학기 스크롤 조회 (id 내림차순)
+    //전체 학기 스크롤 조회 (id 내림차순, 검색어·년도·학기 필터 지원)
     @Transactional(readOnly = true)
-    public List<ResponseRoommatePostDto> getRoommateBoardListScroll(Long userId, HttpServletRequest request, Long lastId, int size) {
-        Pageable pageable = PageRequest.of(0, size);
-        List<RoommateBoard> boards;
-
-        if (lastId == null) {
-            boards = roommateBoardRepository.findAllByOrderByIdDesc(pageable);
-        } else {
-            boards = roommateBoardRepository.findByIdLessThanOrderByIdDesc(lastId, pageable);
-        }
+    public List<ResponseRoommatePostDto> getRoommateBoardListScroll(Long userId, HttpServletRequest request, Long lastId, int size, String keyword, Integer year, SemesterType semester) {
+        List<RoommateBoard> boards = roommateBoardRepository.searchBoards(lastId, size, keyword, year, semester);
 
         if (boards.isEmpty()) {
             return List.of(); // 마지막 페이지
