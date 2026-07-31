@@ -29,6 +29,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import com.example.appcenter_project.domain.block.service.BlockService;
 import com.example.appcenter_project.domain.roommate.entity.RoommateChattingChat;
 import com.example.appcenter_project.domain.roommate.entity.RoommateChattingRoom;
+import com.example.appcenter_project.domain.roommate.repository.MyRoommateRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateChattingChatRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateChattingRoomRepository;
 import com.example.appcenter_project.domain.user.entity.User;
@@ -68,6 +69,7 @@ public class OpenChatRoomService {
     private final OpenChatRoomQuerydslRepository openChatRoomQuerydslRepository;
     private final RoommateChattingRoomRepository roommateChattingRoomRepository;
     private final RoommateChattingChatRepository roommateChattingChatRepository;
+    private final MyRoommateRepository myRoommateRepository;
     private final BlockService blockService;
 
     @Autowired
@@ -80,6 +82,7 @@ public class OpenChatRoomService {
             @Qualifier("openChatRoomQuerydslRepositoryImpl") OpenChatRoomQuerydslRepository openChatRoomQuerydslRepository,
             RoommateChattingRoomRepository roommateChattingRoomRepository,
             RoommateChattingChatRepository roommateChattingChatRepository,
+            MyRoommateRepository myRoommateRepository,
             BlockService blockService) {
         this.openChatRoomRepository = openChatRoomRepository;
         this.openChatParticipantRepository = openChatParticipantRepository;
@@ -89,6 +92,7 @@ public class OpenChatRoomService {
         this.openChatRoomQuerydslRepository = openChatRoomQuerydslRepository;
         this.roommateChattingRoomRepository = roommateChattingRoomRepository;
         this.roommateChattingChatRepository = roommateChattingChatRepository;
+        this.myRoommateRepository = myRoommateRepository;
         this.blockService = blockService;
     }
 
@@ -219,26 +223,34 @@ public class OpenChatRoomService {
                 ? Map.of()
                 : roommateChattingChatRepository.countUnreadByRoomIdsAndUserId(roommateRoomIds, userId);
 
+        Long myRoommateId = myRoommateRepository.findByUserId(userId)
+                .map(mr -> mr.getRoommate().getId())
+                .orElse(null);
+
         List<ResponseOpenChatRoomDto> openChatDtos = buildOpenChatDtosWithUnread(openChatRooms, userId);
         List<ResponseOpenChatRoomDto> roommateDtos = roommateRooms.stream()
                 .map(r -> {
                     RoommateChattingChat lastChat = lastMsgMap.get(r.getId());
                     int unread = unreadMap.getOrDefault(r.getId(), 0L).intValue();
+                    Long opponentId = r.getHost().getId().equals(userId) ? r.getGuest().getId() : r.getHost().getId();
+                    boolean isMyRoommate = myRoommateId != null && myRoommateId.equals(opponentId);
                     return ResponseOpenChatRoomDto.fromRoommate(
                             r.getId(),
                             getOpponentName(r, userId),
                             lastChat != null ? lastChat.getCreatedDate() : null,
                             lastChat != null ? lastChat.getContent() : null,
-                            unread);
+                            unread,
+                            isMyRoommate);
                 })
                 .toList();
 
         List<ResponseOpenChatRoomDto> merged = new ArrayList<>();
         merged.addAll(openChatDtos);
         merged.addAll(roommateDtos);
-        merged.sort(Comparator.comparing(
-                ResponseOpenChatRoomDto::getLastMessageAt,
-                Comparator.nullsLast(Comparator.reverseOrder())));
+        merged.sort(Comparator
+                .comparing(ResponseOpenChatRoomDto::isMyRoommate, Comparator.reverseOrder())
+                .thenComparing(ResponseOpenChatRoomDto::getLastMessageAt,
+                        Comparator.nullsLast(Comparator.reverseOrder())));
 
         int openChatUnread = openChatDtos.stream().mapToInt(ResponseOpenChatRoomDto::getUnreadCount).sum();
         int roommateUnread = (int) unreadMap.values().stream().mapToLong(Long::longValue).sum();

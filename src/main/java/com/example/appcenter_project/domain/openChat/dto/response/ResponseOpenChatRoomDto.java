@@ -27,6 +27,7 @@ public class ResponseOpenChatRoomDto {
     private LocalDateTime lastMessageAt;
     private String lastMessage;
     private int unreadCount;
+    private boolean isMyRoommate;
 
     public static ResponseOpenChatRoomDto from(OpenChatRoom room, int currentParticipants, boolean joined) {
         return ResponseOpenChatRoomDto.builder()
@@ -69,7 +70,7 @@ public class ResponseOpenChatRoomDto {
     public static ResponseOpenChatRoomDto fromRoommate(
             Long roomId, String partnerName,
             LocalDateTime lastMessageAt, String lastMessage,
-            int unreadCount) {
+            int unreadCount, boolean isMyRoommate) {
         return ResponseOpenChatRoomDto.builder()
                 .roomId(roomId)
                 .name(partnerName)
@@ -85,6 +86,7 @@ public class ResponseOpenChatRoomDto {
                 .lastMessageAt(lastMessageAt)
                 .lastMessage(lastMessage)
                 .unreadCount(unreadCount)
+                .isMyRoommate(isMyRoommate)
                 .build();
     }
 }

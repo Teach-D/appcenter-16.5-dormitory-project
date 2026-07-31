@@ -6,8 +6,10 @@ import com.example.appcenter_project.domain.openChat.enums.ChatCategory;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomTab;
 import com.example.appcenter_project.domain.openChat.fixture.ChatRoomListFixture;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatRoomQuerydslRepository;
+import com.example.appcenter_project.domain.roommate.repository.MyRoommateRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateChattingChatRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateChattingRoomRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,10 +20,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class ChatRoomListServiceTest {
@@ -35,8 +39,16 @@ class ChatRoomListServiceTest {
     @Mock
     RoommateChattingChatRepository roommateChattingChatRepository;
 
+    @Mock
+    MyRoommateRepository myRoommateRepository;
+
     @InjectMocks
     OpenChatRoomService openChatRoomService;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(myRoommateRepository.findByUserId(anyLong())).thenReturn(Optional.empty());
+    }
 
     // ============================================================
     // AC-1: ALL 탭 — keyword 없이 전체 조회
