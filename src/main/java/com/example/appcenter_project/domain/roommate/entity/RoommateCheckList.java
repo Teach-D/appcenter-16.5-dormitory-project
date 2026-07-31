@@ -116,8 +116,9 @@ public class RoommateCheckList {
         this.semester = semester;
     }
 
-    public void updateDormType(DormType dormType) {
+    public void syncUserInfo(DormType dormType, College college) {
         this.dormType = dormType;
+        this.college = college;
     }
 
     public void update(RequestRoommateFormDto dto) {

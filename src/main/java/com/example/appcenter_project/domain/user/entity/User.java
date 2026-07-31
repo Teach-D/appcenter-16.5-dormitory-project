@@ -224,7 +224,7 @@ public class User extends BaseTimeEntity {
         this.college = College.from(requestUserDto.getCollege());
 
         if (this.roommateCheckList != null) {
-            this.roommateCheckList.updateDormType(this.dormType);
+            this.roommateCheckList.syncUserInfo(this.dormType, this.college);
         }
 
         if (DormType.from(requestUserDto.getDormType()) == DormType.DORM_1 || DormType.from(requestUserDto.getDormType()) == DormType.DORM_2
