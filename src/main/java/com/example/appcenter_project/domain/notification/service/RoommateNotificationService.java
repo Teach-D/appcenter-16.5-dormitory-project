@@ -197,6 +197,49 @@ public class RoommateNotificationService {
         return true;
     }
 
+    public void sendFilteredNotificationsOnUpdate(RoommateBoard board) {
+        User boardAuthor = board.getUser();
+        RoommateCheckList checkList = board.getRoommateCheckList();
+
+        if (checkList == null) {
+            log.info("RoommateCheckList가 없어 수정 알림을 전송하지 않습니다. boardId: {}", board.getId());
+            return;
+        }
+
+        Long boardAuthorId = boardAuthor.getId();
+        List<RoommateNotificationFilter> filters = filterRepository.findAllWithUser();
+        List<User> targetUsers = new ArrayList<>();
+
+        for (RoommateNotificationFilter filter : filters) {
+            User filterUser = filter.getUser();
+            if (filterUser.getId().equals(boardAuthorId)) continue;
+            if (!filterUser.getReceiveNotificationTypes().contains(NotificationType.ROOMMATE)) continue;
+            if (!matchesFilter(filter, checkList, board.getId(), filterUser.getId())) continue;
+            if (notificationService.hasReceivedRoommateBoardNotification(filterUser.getId(), board.getId())) continue;
+            targetUsers.add(filterUser);
+        }
+
+        if (targetUsers.isEmpty()) {
+            log.info("수정 후 신규 매칭 사용자 없음. boardId: {}", board.getId());
+            return;
+        }
+
+        Notification notification = notificationService.createRoommateBoardUpdateNotification(
+                boardAuthor.getName(), board.getId());
+
+        for (User targetUser : targetUsers) {
+            notificationService.createUserNotification(targetUser, notification);
+            try {
+                fcmMessageService.sendNotification(targetUser, notification.getTitle(), notification.getBody());
+            } catch (Exception e) {
+                log.error("FCM 전송 실패(update). userId: {}, boardId: {}, error: {}",
+                        targetUser.getId(), board.getId(), e.getMessage());
+            }
+        }
+
+        log.info("룸메이트 게시글 수정 알림 전송 완료. boardId: {}, 전송 대상: {}명", board.getId(), targetUsers.size());
+    }
+
     /**
      * 테스트용: 특정 게시글에 대해 필터링 결과를 확인하는 메서드 (알림 전송 없음)
      */

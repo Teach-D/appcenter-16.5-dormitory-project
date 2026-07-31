@@ -140,6 +140,20 @@ public class NotificationService {
         return roommateBoardNotification;
     }
 
+    public Notification createRoommateBoardUpdateNotification(String authorName, Long boardId) {
+        String title = "룸메이트 게시글이 수정됐어요!";
+        String body = authorName + "님이 룸메이트 게시글을 수정했습니다.";
+
+        Notification notification = Notification.createRoommateBoardNotification(title, body, boardId);
+        notificationRepository.save(notification);
+        return notification;
+    }
+
+    public boolean hasReceivedRoommateBoardNotification(Long userId, Long boardId) {
+        return userNotificationRepository.existsByUserIdAndNotificationBoardIdAndApiType(
+                userId, boardId, ApiType.ROOMMATE);
+    }
+
     // ========== Private Methods ========== //
 
     private void saveUserNotifications(Notification notification, List<User> receiveUsers) {

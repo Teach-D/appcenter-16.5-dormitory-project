@@ -342,6 +342,8 @@ public class RoommateService {
             throw new CustomException(ErrorCode.ROOMMATE_CHECKLIST_UPDATE_FAILED);
         }
 
+        roommateNotificationService.sendFilteredNotificationsOnUpdate(board);
+
         try {
             mixpanelService.trackEvent(user.getId().toString(), "room_rules_edit", new JSONObject());
         } catch (Exception e) {
