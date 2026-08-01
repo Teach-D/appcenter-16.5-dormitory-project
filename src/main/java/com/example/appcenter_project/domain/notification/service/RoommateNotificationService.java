@@ -226,10 +226,6 @@ public class RoommateNotificationService {
                 log.info("수정 알림 제외(필터 불일치): userId={}", filterUser.getId());
                 continue;
             }
-            if (notificationService.hasReceivedRoommateBoardNotification(filterUser.getId(), board.getId())) {
-                log.info("수정 알림 제외(이미 수신): userId={}, boardId={}", filterUser.getId(), board.getId());
-                continue;
-            }
             log.info("수정 알림 대상 추가: userId={}", filterUser.getId());
             targetUsers.add(filterUser);
         }
