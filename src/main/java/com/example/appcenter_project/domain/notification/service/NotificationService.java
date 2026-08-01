@@ -151,9 +151,7 @@ public class NotificationService {
 
     public boolean hasReceivedRoommateBoardNotification(Long userId, Long boardId) {
         return userNotificationRepository.existsByUserIdAndNotificationBoardIdAndApiType(
-                userId, boardId, ApiType.ROOMMATE)
-                || userNotificationRepository.existsByUserIdAndNotificationBoardIdAndApiType(
-                userId, boardId, ApiType.ROOMMATE_UPDATE);
+                userId, boardId, ApiType.ROOMMATE);
     }
 
     // ========== Private Methods ========== //
