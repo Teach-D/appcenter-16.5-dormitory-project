@@ -162,7 +162,10 @@ public interface RoommateApiSpecification {
     @Operation(
             summary = "룸메이트 게시글 최신순 스크롤 조회",
             description = "boardId 내림차순으로 최신순 게시글을 페이지네이션하여 조회합니다. " +
-                    "lastId를 기준으로 이전 페이지 데이터를 불러옵니다. 로그인 시 isMyPost 반환."
+                    "lastId를 기준으로 이전 페이지 데이터를 불러옵니다. 로그인 시 isMyPost 반환.\n\n" +
+                    "**학기 필터 규칙**\n" +
+                    "- `semester` 미전송 또는 미인식 값(0 등) → 전체 학기: year 값에 상관없이 모든 게시글 반환\n" +
+                    "- `semester=1~4` 지정 → 해당 학기만 필터링, year도 함께 지정하면 연도까지 필터링"
     )
     ResponseEntity<List<ResponseRoommatePostDto>> getRoommateBoardListScroll(
             @Parameter(description = "마지막으로 조회한 게시글 ID (첫 페이지일 경우 비움)", example = "15")
@@ -171,9 +174,9 @@ public interface RoommateApiSpecification {
             @RequestParam(defaultValue = "10") int size,
             @Parameter(description = "제목/내용 검색어")
             @RequestParam(required = false) String keyword,
-            @Parameter(description = "년도 필터 (예: 2025)")
+            @Parameter(description = "년도 필터 (예: 2026). semester 미전송 시 무시됨")
             @RequestParam(required = false) Integer year,
-            @Parameter(description = "학기 코드 (1=1학기, 2=2학기, 3=여름방학, 4=겨울방학)")
+            @Parameter(description = "학기 코드 (1=1학기, 2=2학기, 3=여름방학, 4=겨울방학). 미전송 시 전체 학기 조회")
             @RequestParam(required = false) Integer semester,
             @Parameter(hidden = true) CustomUserDetails userDetails,
             @Parameter(hidden = true) HttpServletRequest request

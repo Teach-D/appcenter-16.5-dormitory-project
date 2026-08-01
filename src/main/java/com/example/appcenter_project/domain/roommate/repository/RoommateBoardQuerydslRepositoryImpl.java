@@ -28,7 +28,7 @@ public class RoommateBoardQuerydslRepositoryImpl implements RoommateBoardQueryds
                 .where(
                         cursorId(lastId),
                         keywordContains(keyword),
-                        yearEq(year),
+                        yearEq(year, semester),
                         semesterEq(semester)
                 )
                 .orderBy(board.id.desc())
@@ -45,8 +45,9 @@ public class RoommateBoardQuerydslRepositoryImpl implements RoommateBoardQueryds
         return cl.title.containsIgnoreCase(keyword).or(cl.comment.containsIgnoreCase(keyword));
     }
 
-    private BooleanExpression yearEq(Integer year) {
-        return year != null ? board.year.eq(year) : null;
+    private BooleanExpression yearEq(Integer year, SemesterType semester) {
+        if (semester == null) return null;
+        return (year != null && year > 0) ? board.year.eq(year) : null;
     }
 
     private BooleanExpression semesterEq(SemesterType semester) {
