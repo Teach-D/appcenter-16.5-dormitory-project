@@ -220,16 +220,14 @@ public class RoommateNotificationFilterService {
         if (filter.getDormPeriodDays() != null && !filter.getDormPeriodDays().isEmpty()) {
             Set<com.example.appcenter_project.domain.roommate.enums.DormDay> checkListDormPeriod = checkList.getDormPeriod();
             if (checkListDormPeriod == null || checkListDormPeriod.isEmpty()) {
-                log.debug("필터 불일치: dormPeriodDays (게시글에 상주기간 없음). boardId: {}", boardId);
+                log.debug("필터 불일치: dormPeriodDays (게시글에 비상주기간 없음). boardId: {}", boardId);
                 return false;
             }
-            // 필터에서 선택한 날짜는 비상주 기간이므로, 교집합이 없어야 함
-            // 예: 필터 ["월"] 선택 = 월에 비상주 = 화, 수, 목, 금, 토, 일에 상주하는 사람의 글만 알림
-            // 게시글 작성자의 상주기간 ["화"]와 필터의 비상주기간 ["월"]은 교집합 없음 → 통과
+            // dormPeriod = 비상주기간. 나와 같은 비상주 날짜가 하나라도 있어야 통과
             boolean hasIntersection = checkListDormPeriod.stream()
                     .anyMatch(filter.getDormPeriodDays()::contains);
-            if (hasIntersection) {
-                log.debug("필터 불일치: dormPeriodDays (교집합 있음). filter 비상주: {}, 게시글 상주: {}, boardId: {}", 
+            if (!hasIntersection) {
+                log.debug("필터 불일치: dormPeriodDays (교집합 없음). filter 비상주: {}, 게시글 비상주: {}, boardId: {}",
                         filter.getDormPeriodDays(), checkListDormPeriod, boardId);
                 return false;
             }
@@ -317,7 +315,7 @@ public class RoommateNotificationFilterService {
             if (checkListDormPeriod != null && !checkListDormPeriod.isEmpty()) {
                 boolean hasIntersection = checkListDormPeriod.stream()
                         .anyMatch(filter.getDormPeriodDays()::contains);
-                if (!hasIntersection) {
+                if (hasIntersection) {
                     matched.add("dormPeriodDays");
                 }
             }
