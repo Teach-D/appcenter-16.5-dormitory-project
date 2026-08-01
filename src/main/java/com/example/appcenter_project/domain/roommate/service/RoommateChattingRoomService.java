@@ -158,7 +158,8 @@ public class RoommateChattingRoomService {
                     .findByUserIdAndRoommateIdAndYearAndSemester(user.getId(), partner.getId(), current.year(), current.semester()).isPresent();
 
             String hostBoardTitle = room.getRoommateBoard() != null ? room.getRoommateBoard().getTitle() : null;
-            String guestBoardTitle = roommateBoardRepository.findByUserId(guest.getId())
+            String guestBoardTitle = roommateBoardRepository
+                    .findByUserIdAndYearAndSemester(guest.getId(), current.year(), current.semester())
                     .map(RoommateBoard::getTitle).orElse(null);
             String myBoardTitle = iAmHost ? hostBoardTitle : guestBoardTitle;
             String opponentBoardTitle = iAmHost ? guestBoardTitle : hostBoardTitle;
