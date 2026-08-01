@@ -7,6 +7,7 @@ import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoomma
 import com.example.appcenter_project.domain.roommate.entity.MyRoommate;
 import com.example.appcenter_project.domain.roommate.entity.RoommateChattingRoom;
 import com.example.appcenter_project.domain.roommate.entity.RoommateMatching;
+import com.example.appcenter_project.domain.roommate.enums.SemesterType;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.roommate.enums.MatchingStatus;
 import com.example.appcenter_project.global.exception.CustomException;
@@ -23,6 +24,7 @@ import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,6 +41,7 @@ public class RoommateMatchingService {
     private final FcmMessageService fcmMessageService;
     private final NotificationService notificationService;
     private final MixpanelService mixpanelService;
+    private final RoommateMatchingPeriodResolver periodResolver;
 
     //매칭요청 학번
     @Transactional
@@ -176,25 +179,25 @@ public class RoommateMatchingService {
         User sender = matching.getSender();
         User receiver = matching.getReceiver();
 
-        if (sender.getRoommateBoard() != null) {
-            sender.getRoommateBoard().changeIsMatched(false);
-        }
-        if (receiver.getRoommateBoard() != null) {
-            receiver.getRoommateBoard().changeIsMatched(false);
-        }
-
         log.info("=== cancelMatching START ===");
         log.info("matchingId: {}, userId: {}", matchingId, userId);
         log.info("senderId: {}, receiverId: {}", sender.getId(), receiver.getId());
 
-        // MyRoommate 직접 삭제 (반환값으로 삭제된 행 수 확인)
-        int deletedCount1 = myRoommateRepository.deleteByUserIdAndRoommateId(sender.getId(), receiver.getId());
+        int deletedCount1;
+        int deletedCount2;
+        if (periodResolver == null) {
+            deletedCount1 = myRoommateRepository.deleteByUserIdAndRoommateId(sender.getId(), receiver.getId());
+            deletedCount2 = myRoommateRepository.deleteByUserIdAndRoommateId(receiver.getId(), sender.getId());
+        } else {
+            MatchingPeriod period = periodResolver.resolveCurrent(LocalDate.now());
+            Integer year = period.year();
+            SemesterType semester = period.semester();
+            deletedCount1 = myRoommateRepository.deleteByUserIdAndRoommateIdAndYearAndSemester(sender.getId(), receiver.getId(), year, semester);
+            deletedCount2 = myRoommateRepository.deleteByUserIdAndRoommateIdAndYearAndSemester(receiver.getId(), sender.getId(), year, semester);
+        }
         log.info("Deleted {} rows for sender {} -> receiver {}", deletedCount1, sender.getId(), receiver.getId());
-
-        int deletedCount2 = myRoommateRepository.deleteByUserIdAndRoommateId(receiver.getId(), sender.getId());
         log.info("Deleted {} rows for receiver {} -> sender {}", deletedCount2, receiver.getId(), sender.getId());
 
-        // 총 삭제된 행 수 확인
         log.info("Total deleted MyRoommate rows: {}", deletedCount1 + deletedCount2);
 
         // RoommateMatching 레코드 완전 삭제
@@ -278,25 +281,34 @@ public class RoommateMatchingService {
     }
 
     private void registerMyRoommate(User sender, User receiver) {
-        MyRoommate myRoommate1 = MyRoommate.builder()
-                .user(sender)
-                .roommate(receiver)
-                .build();
-
-        MyRoommate myRoommate2 = MyRoommate.builder()
-                .user(receiver)
-                .roommate(sender)
-                .build();
-
-        if (sender.getRoommateBoard() != null) {
-            sender.getRoommateBoard().changeIsMatched(true);
+        if (periodResolver == null) {
+            myRoommateRepository.save(MyRoommate.builder().user(sender).roommate(receiver).build());
+            myRoommateRepository.save(MyRoommate.builder().user(receiver).roommate(sender).build());
+            return;
         }
-        if (receiver.getRoommateBoard() != null) {
-            receiver.getRoommateBoard().changeIsMatched(true);
+        MatchingPeriod period = periodResolver.resolveCurrent(LocalDate.now());
+        Integer year = period.year();
+        SemesterType semester = period.semester();
+
+        if (myRoommateRepository.findByUserIdAndYearAndSemester(sender.getId(), year, semester).isEmpty()) {
+            MyRoommate myRoommate1 = MyRoommate.builder()
+                    .user(sender)
+                    .roommate(receiver)
+                    .year(year)
+                    .semester(semester)
+                    .build();
+            myRoommateRepository.save(myRoommate1);
         }
 
-        myRoommateRepository.save(myRoommate1);
-        myRoommateRepository.save(myRoommate2);
+        if (myRoommateRepository.findByUserIdAndYearAndSemester(receiver.getId(), year, semester).isEmpty()) {
+            MyRoommate myRoommate2 = MyRoommate.builder()
+                    .user(receiver)
+                    .roommate(sender)
+                    .year(year)
+                    .semester(semester)
+                    .build();
+            myRoommateRepository.save(myRoommate2);
+        }
     }
 
     private void cleanUpOldMatchingRecords(User sender, User receiver) {

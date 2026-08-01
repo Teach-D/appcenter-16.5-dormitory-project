@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -40,6 +41,7 @@ public class RoommateChattingRoomService {
     private final ImageService imageService;
     private final RoommateChattingChatService roommateChattingChatService;
     private final MyRoommateRepository myRoommateRepository;
+    private final RoommateMatchingPeriodResolver periodResolver;
 
 
     //채팅방 생성
@@ -128,6 +130,8 @@ public class RoommateChattingRoomService {
 
         List<RoommateChattingRoom> rooms = roommateChattingRoomRepository.findAllByHostOrGuest(user, user);
 
+        MatchingPeriod current = periodResolver.resolveCurrent(LocalDate.now());
+
         List<ResponseRoommateChatRoomDto> result = new ArrayList<>();
         int index = 1;
 
@@ -151,7 +155,7 @@ public class RoommateChattingRoomService {
             User partner = iAmHost ? guest : host;
             boolean opponentLeft = iAmHost ? room.isGuestLeft() : room.isHostLeft();
             boolean isRoommate = myRoommateRepository
-                    .findByUserIdAndRoommateId(user.getId(), partner.getId()).isPresent();
+                    .findByUserIdAndRoommateIdAndYearAndSemester(user.getId(), partner.getId(), current.year(), current.semester()).isPresent();
 
             String hostBoardTitle = room.getRoommateBoard() != null ? room.getRoommateBoard().getTitle() : null;
             String guestBoardTitle = roommateBoardRepository.findByUserId(guest.getId())

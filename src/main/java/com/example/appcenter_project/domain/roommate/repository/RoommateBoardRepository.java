@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.roommate.repository;
 
 import com.example.appcenter_project.domain.roommate.entity.RoommateBoard;
+import com.example.appcenter_project.domain.roommate.enums.SemesterType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -28,4 +29,6 @@ public interface RoommateBoardRepository extends JpaRepository<RoommateBoard, Lo
             "JOIN FETCH b.user u " +
             "ORDER BY b.createdDate DESC")
     List<RoommateBoard> findAllWithCheckListAndUserOrderByCreatedDateDesc();
+
+    Optional<RoommateBoard> findByUserIdAndYearAndSemester(Long userId, Integer year, SemesterType semester);
 }
