@@ -86,7 +86,7 @@ public class RoommateCheckList {
     @Convert(converter = SemesterTypeConverter.class)
     private SemesterType semester;
 
-    @OneToOne(fetch =  FetchType.LAZY)
+    @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name="user_id")
     private User user;
 

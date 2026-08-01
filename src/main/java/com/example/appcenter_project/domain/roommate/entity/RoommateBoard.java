@@ -23,7 +23,7 @@ public class RoommateBoard extends BaseTimeEntity {
 
     private String title;
 
-    @OneToOne(fetch =  FetchType.LAZY)
+    @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
