@@ -141,8 +141,8 @@ public class NotificationService {
     }
 
     public Notification createRoommateBoardUpdateNotification(String authorName, Long boardId) {
-        String title = "룸메이트 게시글이 수정됐어요!";
-        String body = authorName + "님이 룸메이트 게시글을 수정했습니다.";
+        String title = "새로운 룸메이트 게시글이 올라왔어요!";
+        String body = authorName + "님이 룸메이트 게시글을 작성했습니다.";
 
         Notification notification = Notification.createRoommateBoardUpdateNotification(title, body, boardId);
         notificationRepository.save(notification);
