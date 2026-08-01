@@ -18,4 +18,6 @@ public interface RoommateCheckListRepository extends JpaRepository<RoommateCheck
 
     // 내가 작성한 체크리스트 최신순 (이전 학기 필터링용)
     List<RoommateCheckList> findByUserIdOrderByIdDesc(Long userId);
+
+    boolean existsByUserIdAndYearAndSemester(Long userId, Integer year, SemesterType semester);
 }

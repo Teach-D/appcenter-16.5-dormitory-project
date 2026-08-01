@@ -67,6 +67,11 @@ public class RoommateService {
         Integer year = period.year();
         SemesterType semester = period.semester();
 
+        // 2-1. 동일 학기 중복 체크
+        if (roommateCheckListRepository.existsByUserIdAndYearAndSemester(userId, year, semester)) {
+            throw new CustomException(ErrorCode.ROOMMATE_BOARD_ALREADY_EXISTS);
+        }
+
         // 3. 체크리스트 생성 + user 설정
         RoommateCheckList roommateCheckList = RoommateCheckList.builder()
                 .title(requestDto.getTitle())
@@ -237,10 +242,7 @@ public class RoommateService {
         }
 
         // 1. 내 체크리스트 가져오기
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
-
-        RoommateBoard myBoard = roommateBoardRepository.findByUserId(userId)
+        RoommateBoard myBoard = roommateBoardRepository.findByUserIdAndYearAndSemester(userId, current.year(), current.semester())
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
 
         RoommateCheckList myChecklist = myBoard.getRoommateCheckList();
@@ -328,7 +330,7 @@ public class RoommateService {
     public ResponseRoommatePostDto updateRoommateChecklistAndBoard(
             RequestRoommateFormDto requestDto,
             Long userId,
-            jakarta.servlet.http.HttpServletRequest request // 추가
+            jakarta.servlet.http.HttpServletRequest request
     )  {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_USER_NOT_FOUND));
@@ -336,12 +338,36 @@ public class RoommateService {
         RoommateBoard board = roommateBoardRepository.findByUserId(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
 
-        RoommateCheckList checkList = board.getRoommateCheckList();
-        boolean isMatched = isRoommateBoardOwnerMatched(board.getId());
+        return doUpdateBoard(requestDto, board, user, userId, request);
+    }
 
-        if (!checkList.getUser().getId().equals(userId)) {
+    @Transactional
+    public ResponseRoommatePostDto updateRoommateChecklistAndBoard(
+            RequestRoommateFormDto requestDto,
+            Long boardId,
+            Long userId,
+            jakarta.servlet.http.HttpServletRequest request
+    )  {
+        RoommateBoard board = roommateBoardRepository.findById(boardId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
+
+        if (!board.getUser().getId().equals(userId)) {
             throw new CustomException(ErrorCode.ROOMMATE_UPDATE_NOT_ALLOWED);
         }
+
+        User user = board.getUser();
+        return doUpdateBoard(requestDto, board, user, userId, request);
+    }
+
+    private ResponseRoommatePostDto doUpdateBoard(
+            RequestRoommateFormDto requestDto,
+            RoommateBoard board,
+            User user,
+            Long userId,
+            jakarta.servlet.http.HttpServletRequest request
+    ) {
+        RoommateCheckList checkList = board.getRoommateCheckList();
+        boolean isMatched = isBoardOwnerMatched(board);
 
         try {
             checkList.update(requestDto);
@@ -425,18 +451,15 @@ public class RoommateService {
     }
 
     public boolean isRoommateBoardOwnerMatched(Long boardId) {
-        // 1. 게시글 조회
         RoommateBoard board = roommateBoardRepository.findById(boardId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
+        return isBoardOwnerMatched(board);
+    }
 
+    private boolean isBoardOwnerMatched(RoommateBoard board) {
         User owner = board.getUser();
-
-        // 2. owner가 COMPLETED 상태인 매칭에 포함되어 있는지 검사
-        boolean alreadyMatched =
-                roommateMatchingRepository.existsBySenderAndStatus(owner, MatchingStatus.COMPLETED)
-                        || roommateMatchingRepository.existsByReceiverAndStatus(owner, MatchingStatus.COMPLETED);
-
-        return alreadyMatched;
+        return roommateMatchingRepository.existsBySenderAndStatus(owner, MatchingStatus.COMPLETED)
+                || roommateMatchingRepository.existsByReceiverAndStatus(owner, MatchingStatus.COMPLETED);
     }
 
     //로그인한 사용자가 좋아요를 눌렀는지 여부를 반환
@@ -654,26 +677,34 @@ public class RoommateService {
         RoommateBoard board = roommateBoardRepository.findByUserId(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
 
+        doDeleteBoard(board);
+    }
+
+    @Transactional
+    public void deleteRoommateBoard(Long boardId, Long userId) {
+        RoommateBoard board = roommateBoardRepository.findById(boardId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_BOARD_NOT_FOUND));
+
         if (!board.getUser().getId().equals(userId)) {
             throw new CustomException(ErrorCode.ROOMMATE_DELETE_NOT_ALLOWED);
         }
 
+        doDeleteBoard(board);
+    }
+
+    private void doDeleteBoard(RoommateBoard board) {
         RoommateCheckList checkList = board.getRoommateCheckList();
 
-        // 연결된 채팅방의 board/checklist 참조를 null로 처리 (채팅방과 채팅 내역은 유지)
         roommateChattingRoomRepository.detachBoard(board.getId());
         if (checkList != null) {
             roommateChattingRoomRepository.detachGuestChecklist(checkList.getId());
             roommateChattingRoomRepository.detachHostChecklist(checkList.getId());
         }
 
-        // 읽음 기록 삭제 (FK 정합성)
         roommateBoardReadRepository.deleteAllByRoommateBoardId(board.getId());
 
-        // 게시글 삭제 (좋아요는 orphanRemoval로 자동 삭제)
         roommateBoardRepository.delete(board);
 
-        // 체크리스트 삭제
         if (checkList != null) {
             roommateCheckListRepository.delete(checkList);
         }
