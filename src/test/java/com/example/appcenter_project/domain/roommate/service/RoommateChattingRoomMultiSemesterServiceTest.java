@@ -2,6 +2,7 @@ package com.example.appcenter_project.domain.roommate.service;
 
 import com.example.appcenter_project.common.image.service.ImageService;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateChatRoomDto;
+import com.example.appcenter_project.domain.roommate.entity.RoommateBoard;
 import com.example.appcenter_project.domain.roommate.entity.RoommateChattingRoom;
 import com.example.appcenter_project.domain.roommate.enums.RoommateMatchingStatus;
 import com.example.appcenter_project.domain.roommate.enums.SemesterType;
@@ -165,5 +166,55 @@ class RoommateChattingRoomMultiSemesterServiceTest {
 
         // then
         then(myRoommateRepository).should(never()).findByUserIdAndRoommateId(anyLong(), anyLong());
+    }
+
+    @Test
+    @DisplayName("opponentBoardTitle — 상대의 현재 학기 게시글 제목을 반환")
+    void should_return_opponent_current_semester_board_title() {
+        User user = buildMockUser(1L);      // host(작성자) 시점 조회
+        User partner = buildMockUser(2L);   // guest(요청자)
+        RoommateChattingRoom room = buildMockRoom(user, partner);
+
+        CustomUserDetails userDetails = mock(CustomUserDetails.class);
+        when(userDetails.getId()).thenReturn(1L);
+
+        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+        given(roommateChattingRoomRepository.findAllByHostOrGuest(user, user)).willReturn(List.of(room));
+        given(myRoommateRepository.findByUserIdAndRoommateIdAndYearAndSemester(1L, 2L, 2026, SemesterType.FIRST))
+                .willReturn(Optional.empty());
+
+        RoommateBoard guestBoard = mock(com.example.appcenter_project.domain.roommate.entity.RoommateBoard.class);
+        when(guestBoard.getTitle()).thenReturn("게스트 현재학기 모집글");
+        given(roommateBoardRepository.findByUserIdAndYearAndSemester(2L, 2026, SemesterType.FIRST))
+                .willReturn(Optional.of(guestBoard));
+
+        List<ResponseRoommateChatRoomDto> result = roommateChattingRoomService
+                .findRoommateChatRoomListByUser(userDetails, mock(HttpServletRequest.class));
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getOpponentBoardTitle()).isEqualTo("게스트 현재학기 모집글");
+    }
+
+    @Test
+    @DisplayName("opponentBoardTitle — 상대가 현재 학기 게시글 없으면 null")
+    void should_return_null_opponent_board_title_when_none_in_current_semester() {
+        User user = buildMockUser(1L);
+        User partner = buildMockUser(2L);
+        RoommateChattingRoom room = buildMockRoom(user, partner);
+
+        CustomUserDetails userDetails = mock(CustomUserDetails.class);
+        when(userDetails.getId()).thenReturn(1L);
+
+        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+        given(roommateChattingRoomRepository.findAllByHostOrGuest(user, user)).willReturn(List.of(room));
+        given(myRoommateRepository.findByUserIdAndRoommateIdAndYearAndSemester(1L, 2L, 2026, SemesterType.FIRST))
+                .willReturn(Optional.empty());
+        given(roommateBoardRepository.findByUserIdAndYearAndSemester(2L, 2026, SemesterType.FIRST))
+                .willReturn(Optional.empty());
+
+        List<ResponseRoommateChatRoomDto> result = roommateChattingRoomService
+                .findRoommateChatRoomListByUser(userDetails, mock(HttpServletRequest.class));
+
+        assertThat(result.get(0).getOpponentBoardTitle()).isNull();
     }
 }
