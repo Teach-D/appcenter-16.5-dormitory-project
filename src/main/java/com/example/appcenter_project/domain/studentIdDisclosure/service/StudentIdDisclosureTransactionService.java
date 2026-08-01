@@ -39,25 +39,7 @@ public class StudentIdDisclosureTransactionService {
             throw new CustomException(ErrorCode.DISCLOSURE_CANNOT_REQUEST_SELF);
         }
 
-        boolean isRoommateRoom;
-        if (openChatRoomRepository.existsById(roomId)) {
-            isRoommateRoom = false;
-            if (!openChatParticipantRepository.existsByRoomIdAndUserId(roomId, requesterId)
-                    || !openChatParticipantRepository.existsByRoomIdAndUserId(roomId, targetId)) {
-                throw new CustomException(ErrorCode.DISCLOSURE_NOT_IN_SAME_ROOM);
-            }
-        } else {
-            RoommateChattingRoom roommateRoom = roommateChattingRoomRepository.findById(roomId)
-                    .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND));
-            isRoommateRoom = true;
-            boolean requesterIn = roommateRoom.getHost().getId().equals(requesterId)
-                    || roommateRoom.getGuest().getId().equals(requesterId);
-            boolean targetIn = roommateRoom.getHost().getId().equals(targetId)
-                    || roommateRoom.getGuest().getId().equals(targetId);
-            if (!requesterIn || !targetIn) {
-                throw new CustomException(ErrorCode.DISCLOSURE_NOT_IN_SAME_ROOM);
-            }
-        }
+        boolean isRoommateRoom = resolveIsRoommateRoom(roomId, requesterId, targetId);
 
         disclosureRequestRepository.deleteByRequesterIdAndTargetIdAndRoomId(requesterId, targetId, roomId);
 
@@ -101,7 +83,8 @@ public class StudentIdDisclosureTransactionService {
                 .requesterStudentNumber(requester.getStudentNumber())
                 .build();
 
-        boolean isRoommateRoom = roommateChattingRoomRepository.existsById(request.getRoomId());
+        boolean isRoommateRoom = resolveIsRoommateRoom(
+                request.getRoomId(), request.getRequesterId(), request.getTargetId());
         return new AcceptResult(dto, requester.getId(), request.getRoomId(), isRoommateRoom);
     }
 
@@ -118,7 +101,8 @@ public class StudentIdDisclosureTransactionService {
 
         request.reject();
 
-        boolean isRoommateRoom = roommateChattingRoomRepository.existsById(request.getRoomId());
+        boolean isRoommateRoom = resolveIsRoommateRoom(
+                request.getRoomId(), request.getRequesterId(), request.getTargetId());
         return new RejectResult(request.getRequesterId(), request.getRoomId(), isRoommateRoom);
     }
 
@@ -127,5 +111,32 @@ public class StudentIdDisclosureTransactionService {
     @Transactional
     public void deleteByRoomAndUser(Long roomId, Long userId) {
         disclosureRequestRepository.deleteByRoomIdAndUserId(roomId, userId);
+    }
+
+    //@return true = 룸메이트 채팅방, false = 오픈채팅방
+    private boolean resolveIsRoommateRoom(Long roomId, Long userA, Long userB) {
+        boolean openChatExists = openChatRoomRepository.existsById(roomId);
+        if (openChatExists
+                && openChatParticipantRepository.existsByRoomIdAndUserId(roomId, userA)
+                && openChatParticipantRepository.existsByRoomIdAndUserId(roomId, userB)) {
+            return false;
+        }
+
+        RoommateChattingRoom roommateRoom = roommateChattingRoomRepository.findById(roomId).orElse(null);
+        if (roommateRoom != null
+                && isInRoommateRoom(roommateRoom, userA)
+                && isInRoommateRoom(roommateRoom, userB)) {
+            return true;
+        }
+
+        if (!openChatExists && roommateRoom == null) {
+            throw new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND);
+        }
+        throw new CustomException(ErrorCode.DISCLOSURE_NOT_IN_SAME_ROOM);
+    }
+
+    private boolean isInRoommateRoom(RoommateChattingRoom room, Long userId) {
+        return room.getHost().getId().equals(userId)
+                || room.getGuest().getId().equals(userId);
     }
 }
