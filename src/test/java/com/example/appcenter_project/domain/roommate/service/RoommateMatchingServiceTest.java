@@ -4,7 +4,6 @@ import com.example.appcenter_project.domain.notification.service.NotificationSer
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseReceivedRoommateMatchingDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateMatchingDto;
 import com.example.appcenter_project.domain.roommate.entity.MyRoommate;
-import com.example.appcenter_project.domain.roommate.entity.RoommateBoard;
 import com.example.appcenter_project.domain.roommate.entity.RoommateChattingRoom;
 import com.example.appcenter_project.domain.roommate.entity.RoommateMatching;
 import com.example.appcenter_project.domain.roommate.enums.MatchingStatus;
@@ -62,8 +61,6 @@ class RoommateMatchingServiceTest {
         when(user.getId()).thenReturn(id);
         when(user.getName()).thenReturn("사용자" + id);
         when(user.getStudentNumber()).thenReturn(studentNumber);
-        RoommateBoard board = mock(RoommateBoard.class);
-        when(user.getRoommateBoard()).thenReturn(board);
         return user;
     }
 
