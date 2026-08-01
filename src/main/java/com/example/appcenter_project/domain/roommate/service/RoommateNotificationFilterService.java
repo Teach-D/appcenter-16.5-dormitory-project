@@ -223,11 +223,11 @@ public class RoommateNotificationFilterService {
                 log.debug("필터 불일치: dormPeriodDays (게시글에 비상주기간 없음). boardId: {}", boardId);
                 return false;
             }
-            // dormPeriod = 비상주기간. 나와 같은 비상주 날짜가 하나라도 있어야 통과
+            // dormPeriod = 상주기간. 내 비상주기간과 겹치는 날이 없어야 통과 (교집합 없어야 함)
             boolean hasIntersection = checkListDormPeriod.stream()
                     .anyMatch(filter.getDormPeriodDays()::contains);
-            if (!hasIntersection) {
-                log.debug("필터 불일치: dormPeriodDays (교집합 없음). filter 비상주: {}, 게시글 비상주: {}, boardId: {}",
+            if (hasIntersection) {
+                log.debug("필터 불일치: dormPeriodDays (교집합 있음). filter 비상주: {}, 게시글 상주: {}, boardId: {}",
                         filter.getDormPeriodDays(), checkListDormPeriod, boardId);
                 return false;
             }
@@ -315,7 +315,7 @@ public class RoommateNotificationFilterService {
             if (checkListDormPeriod != null && !checkListDormPeriod.isEmpty()) {
                 boolean hasIntersection = checkListDormPeriod.stream()
                         .anyMatch(filter.getDormPeriodDays()::contains);
-                if (hasIntersection) {
+                if (!hasIntersection) {
                     matched.add("dormPeriodDays");
                 }
             }
