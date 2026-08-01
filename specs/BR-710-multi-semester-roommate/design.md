@@ -75,24 +75,34 @@ fetch 전략: 모두 `FetchType.LAZY` 유지.
 ### 수동 실행 필요 (ddl-auto=update는 기존 제약 DROP 불가)
 
 ```sql
--- 1. 기존 UNIQUE 제약 이름 조회 (실행 후 이름 확인)
+-- 1. 기존 UNIQUE 제약 이름 조회
 SELECT TABLE_NAME, CONSTRAINT_NAME
 FROM information_schema.TABLE_CONSTRAINTS
 WHERE TABLE_SCHEMA = DATABASE()
   AND TABLE_NAME IN ('roommate_check_list', 'roommate_board', 'my_roommate')
   AND CONSTRAINT_TYPE = 'UNIQUE';
 
--- 2. 기존 user_id / member_id 단독 UNIQUE 제거
-ALTER TABLE roommate_check_list DROP INDEX <UK_이름>;
-ALTER TABLE roommate_board      DROP INDEX <UK_이름>;
-ALTER TABLE my_roommate         DROP INDEX <UK_이름>;  -- member_id 단독 유니크
+-- 2. FK 임시 제거 (유니크 인덱스가 FK에 묶여 있어 직접 DROP 불가)
+ALTER TABLE my_roommate         DROP FOREIGN KEY FKqanysibkmn5ybq9r8b25u6ut3;
+ALTER TABLE roommate_board      DROP FOREIGN KEY FKmbwldrt009uqb703dbdp3v99k;
+ALTER TABLE roommate_check_list DROP FOREIGN KEY FKcqsgrm7fdy0glsdn69x9fo904;
 
--- 3. my_roommate 신규 컬럼 추가 (ddl-auto=update가 자동 추가하지만 선행 가능)
+-- 3. 기존 user_id / member_id 단독 UNIQUE 제거
+ALTER TABLE my_roommate         DROP INDEX UKd8trq76dkmm9avodgq6rjdlxh;  -- member_id
+ALTER TABLE roommate_board      DROP INDEX UK65faxv4e0immtb8ihq108c7xr;  -- user_id
+ALTER TABLE roommate_check_list DROP INDEX UKp4cqpp1nxdxlkn7stgum35yg8;  -- user_id
+
+-- 4. FK 재추가 (일반 인덱스로)
+ALTER TABLE my_roommate         ADD CONSTRAINT FKqanysibkmn5ybq9r8b25u6ut3 FOREIGN KEY (member_id) REFERENCES user(id);
+ALTER TABLE roommate_board      ADD CONSTRAINT FKmbwldrt009uqb703dbdp3v99k FOREIGN KEY (user_id)   REFERENCES user(id);
+ALTER TABLE roommate_check_list ADD CONSTRAINT FKcqsgrm7fdy0glsdn69x9fo904 FOREIGN KEY (user_id)   REFERENCES user(id);
+
+-- 5. my_roommate 신규 컬럼 추가 (ddl-auto=update가 자동 추가하므로 이미 존재하면 생략)
 ALTER TABLE my_roommate
     ADD COLUMN registration_year INT NULL,
     ADD COLUMN semester          INT NULL;
 
--- 4. 복합 UNIQUE 추가 (ddl-auto=update가 @Table uniqueConstraints 읽어 자동 추가)
+-- 6. 복합 UNIQUE 추가 (ddl-auto=update가 @Table uniqueConstraints 읽어 자동 추가하므로 이미 존재하면 생략)
 ALTER TABLE roommate_check_list
     ADD CONSTRAINT uq_checklist_user_period  UNIQUE (user_id, registration_year, semester);
 ALTER TABLE roommate_board
@@ -100,6 +110,8 @@ ALTER TABLE roommate_board
 ALTER TABLE my_roommate
     ADD CONSTRAINT uq_myroommate_user_period UNIQUE (member_id, registration_year, semester);
 ```
+
+> **실제 적용 결과 (2026-08-02)**: 앱 기동 시 `ddl-auto=update`가 컬럼(5단계)·복합 유니크(6단계)를 자동 추가함. FK DROP → 단독 유니크 DROP → FK 재추가(2~4단계)만 수동 실행 필요했음.
 
 > **레거시 NULL 데이터**: `registration_year`/`semester`가 NULL인 기존 행은 NULL ≠ NULL 특성으로 복합 유니크 충돌 없이 공존한다.
 
