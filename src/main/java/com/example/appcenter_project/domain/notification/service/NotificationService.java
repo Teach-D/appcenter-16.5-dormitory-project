@@ -144,14 +144,16 @@ public class NotificationService {
         String title = "룸메이트 게시글이 수정됐어요!";
         String body = authorName + "님이 룸메이트 게시글을 수정했습니다.";
 
-        Notification notification = Notification.createRoommateBoardNotification(title, body, boardId);
+        Notification notification = Notification.createRoommateBoardUpdateNotification(title, body, boardId);
         notificationRepository.save(notification);
         return notification;
     }
 
     public boolean hasReceivedRoommateBoardNotification(Long userId, Long boardId) {
         return userNotificationRepository.existsByUserIdAndNotificationBoardIdAndApiType(
-                userId, boardId, ApiType.ROOMMATE);
+                userId, boardId, ApiType.ROOMMATE)
+                || userNotificationRepository.existsByUserIdAndNotificationBoardIdAndApiType(
+                userId, boardId, ApiType.ROOMMATE_UPDATE);
     }
 
     // ========== Private Methods ========== //

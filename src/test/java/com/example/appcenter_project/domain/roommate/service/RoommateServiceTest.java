@@ -31,6 +31,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -142,6 +143,37 @@ class RoommateServiceTest {
         verify(roommateCheckListRepository).save(any(RoommateCheckList.class));
         verify(roommateBoardRepository).save(any(RoommateBoard.class));
         verify(roommateNotificationService).sendFilteredNotifications(any(RoommateBoard.class));
+    }
+
+    @Test
+    @DisplayName("룸메이트 게시글 수정 - 수정 후 필터 매칭 유저에게 알림 발송")
+    void updateRoommateChecklistAndBoard_수정후_알림발송() {
+        User mockUser = buildMockUser(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+
+        RoommateCheckList mockCheckList = mock(RoommateCheckList.class);
+        when(mockCheckList.getTitle()).thenReturn("룸메이트 찾아요");
+        when(mockCheckList.getDormPeriod()).thenReturn(Collections.emptySet());
+        when(mockCheckList.getMbti()).thenReturn("INFJ");
+        when(mockCheckList.getUser()).thenReturn(mockUser);
+
+        RoommateBoard mockBoard = buildMockBoard(1L, mockUser);
+        when(mockBoard.getRoommateCheckList()).thenReturn(mockCheckList);
+
+        when(roommateBoardRepository.findByUserId(1L)).thenReturn(Optional.of(mockBoard));
+        when(roommateBoardRepository.findById(1L)).thenReturn(Optional.of(mockBoard));
+        when(roommateMatchingRepository.existsBySenderAndStatus(any(User.class), eq(MatchingStatus.COMPLETED)))
+                .thenReturn(false);
+        when(roommateMatchingRepository.existsByReceiverAndStatus(any(User.class), eq(MatchingStatus.COMPLETED)))
+                .thenReturn(false);
+
+        RequestRoommateFormDto dto = mock(RequestRoommateFormDto.class);
+
+        ResponseRoommatePostDto result = roommateService.updateRoommateChecklistAndBoard(
+                dto, 1L, mock(HttpServletRequest.class));
+
+        assertThat(result).isNotNull();
+        verify(roommateNotificationService).sendFilteredNotificationsOnUpdate(any(RoommateBoard.class));
     }
 
     @Test

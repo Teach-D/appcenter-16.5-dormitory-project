@@ -345,6 +345,7 @@ public class RoommateService {
 
         try {
             checkList.update(requestDto);
+            checkList.syncUserInfo(user.getDormType(), user.getCollege());
         } catch (Exception e) {
             throw new CustomException(ErrorCode.ROOMMATE_CHECKLIST_UPDATE_FAILED);
         }

@@ -10,7 +10,7 @@ import java.util.Optional;
 public interface RoommateNotificationFilterRepository extends JpaRepository<RoommateNotificationFilter, Long> {
     Optional<RoommateNotificationFilter> findByUserId(Long userId);
 
-    @Query("SELECT f FROM RoommateNotificationFilter f " +
+    @Query("SELECT DISTINCT f FROM RoommateNotificationFilter f " +
            "JOIN FETCH f.user u " +
            "LEFT JOIN FETCH u.receiveNotificationTypes")
     List<RoommateNotificationFilter> findAllWithUser();
