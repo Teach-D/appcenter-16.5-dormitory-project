@@ -37,6 +37,8 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.example.appcenter_project.domain.calender.service.AiScheduleService.CHANGE_DETECT_WEEKS;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -255,15 +257,17 @@ public class AnnouncementCrawlScheduler {
                 boolean extractionValid = !title.isBlank() && !content.isBlank();
                 boolean changed = !Objects.equals(existing.getTitle(), title)
                         || !Objects.equals(existing.getContent(), content);
+                // 수정 감지 재크롤은 최근 2주 이내 작성 공지에만 적용
+                boolean recent = existing.getCrawledDate() != null
+                        && !existing.getCrawledDate().isBefore(LocalDate.now().minusWeeks(CHANGE_DETECT_WEEKS));
 
-                if (!extractionValid || !changed) {
-                    existing.updateViewCount(viewCountInt);           // 변경없음/추출실패 → 조회수만
+                if (!extractionValid || !changed || !recent) {
+                    existing.updateViewCount(viewCountInt);   // 변경없음/추출실패/2주 초과 → 조회수만
                     crawledAnnouncementRepository.saveAndFlush(existing);
                     log.info("기존 공지 조회수 업데이트 - 번호: {}, 조회수: {}", number, viewCountInt);
                     return;
                 }
 
-                // 변경 감지 → 서비스에 위임 (알림 재발송 없음)
                 crawledAnnouncementUpdateService.applyCrawlUpdate(
                         existing.getId(), AnnouncementCategory.from(category), title, content,
                         writer, LocalDate.parse(createDate), viewCountInt, crawledAnnouncementFiles);

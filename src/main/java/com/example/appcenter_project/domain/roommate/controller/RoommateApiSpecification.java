@@ -77,6 +77,7 @@ public interface RoommateApiSpecification {
             description = "기존에 작성한 룸메이트 체크리스트 및 게시글을 수정합니다. (작성자 프로필 이미지 URL 포함)"
     )
     ResponseEntity<ResponseRoommatePostDto> updateRoommateCheckListAndBoard(
+            @Parameter(description = "수정할 게시글 ID", example = "10") @PathVariable Long boardId,
             @Parameter(hidden = true) CustomUserDetails userDetails,
             @RequestBody
             @Parameter(description = "수정할 룸메이트 체크리스트 요청 DTO", required = true)
@@ -94,6 +95,7 @@ public interface RoommateApiSpecification {
             }
     )
     ResponseEntity<Void> deleteRoommateBoard(
+            @Parameter(description = "삭제할 게시글 ID", example = "10") @PathVariable Long boardId,
             @Parameter(hidden = true) CustomUserDetails userDetails
     );
 

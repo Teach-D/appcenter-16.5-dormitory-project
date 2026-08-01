@@ -1,11 +1,13 @@
 package com.example.appcenter_project.domain.roommate.repository;
 
 import com.example.appcenter_project.domain.roommate.entity.MyRoommate;
+import com.example.appcenter_project.domain.roommate.enums.SemesterType;
 import com.example.appcenter_project.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,4 +30,15 @@ public interface MyRoommateRepository extends JpaRepository<MyRoommate, Long> {
     // 두 사용자 간의 모든 MyRoommate 관계 조회
     @Query("SELECT m FROM MyRoommate m WHERE (m.user.id = :userId1 AND m.roommate.id = :userId2) OR (m.user.id = :userId2 AND m.roommate.id = :userId1)")
     List<MyRoommate> findAllByTwoUsers(@Param("userId1") Long userId1, @Param("userId2") Long userId2);
+
+    @Query("SELECT m FROM MyRoommate m WHERE m.user.id = :userId AND m.year = :year AND m.semester = :semester")
+    Optional<MyRoommate> findByUserIdAndYearAndSemester(@Param("userId") Long userId, @Param("year") Integer year, @Param("semester") SemesterType semester);
+
+    @Query("SELECT m FROM MyRoommate m WHERE m.user.id = :userId AND m.roommate.id = :roommateId AND m.year = :year AND m.semester = :semester")
+    Optional<MyRoommate> findByUserIdAndRoommateIdAndYearAndSemester(@Param("userId") Long userId, @Param("roommateId") Long roommateId, @Param("year") Integer year, @Param("semester") SemesterType semester);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM MyRoommate m WHERE m.user.id = :userId AND m.roommate.id = :roommateId AND m.year = :year AND m.semester = :semester")
+    int deleteByUserIdAndRoommateIdAndYearAndSemester(@Param("userId") Long userId, @Param("roommateId") Long roommateId, @Param("year") Integer year, @Param("semester") SemesterType semester);
 }

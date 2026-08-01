@@ -71,24 +71,27 @@ public class RoommateController implements RoommateApiSpecification{
     }
 
     @Override
-    @PutMapping
+    @PutMapping("/{boardId}")
     public ResponseEntity<ResponseRoommatePostDto> updateRoommateCheckListAndBoard(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long boardId,
+            @AuthenticationPrincipal(errorOnInvalidType = false) CustomUserDetails userDetails,
             @RequestBody RequestRoommateFormDto requestDto,
-            jakarta.servlet.http.HttpServletRequest request // 추가
+            jakarta.servlet.http.HttpServletRequest request
     ) {
-        Long userId = userDetails.getId();
+        Long userId = userDetails != null ? userDetails.getId() : 0L;
         ResponseRoommatePostDto updated =
-                roommateService.updateRoommateChecklistAndBoard(requestDto, userId, request); // 변경
+                roommateService.updateRoommateChecklistAndBoard(requestDto, boardId, userId, request);
         return ResponseEntity.ok(updated);
     }
 
     @Override
-    @DeleteMapping
+    @DeleteMapping("/{boardId}")
     public ResponseEntity<Void> deleteRoommateBoard(
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @PathVariable Long boardId,
+            @AuthenticationPrincipal(errorOnInvalidType = false) CustomUserDetails userDetails
     ) {
-        roommateService.deleteRoommateBoard(userDetails.getId());
+        Long userId = userDetails != null ? userDetails.getId() : 0L;
+        roommateService.deleteRoommateBoard(boardId, userId);
         return ResponseEntity.noContent().build();
     }
 

@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import static com.example.appcenter_project.global.exception.ErrorCode.MY_ROOMMATE_NOT_REGISTERED;
@@ -30,11 +31,19 @@ public class MyRoommateService {
     private final MyRoommateRepository myRoommateRepository;
     private final ImageService imageService;
     private final RoommateMatchingRepository roommateMatchingRepository;
+    private final RoommateMatchingPeriodResolver periodResolver;
 
     @Transactional(readOnly = true)
     public ResponseMyRoommateInfoDto getMyRoommateInfo(Long userId, HttpServletRequest request){
-        MyRoommate myRoommate = myRoommateRepository.findByUserId(userId)
-                .orElseThrow(() -> new CustomException(MY_ROOMMATE_NOT_REGISTERED));
+        MyRoommate myRoommate;
+        if (periodResolver == null) {
+            myRoommate = myRoommateRepository.findByUserId(userId)
+                    .orElseThrow(() -> new CustomException(MY_ROOMMATE_NOT_REGISTERED));
+        } else {
+            MatchingPeriod current = periodResolver.resolveCurrent(LocalDate.now());
+            myRoommate = myRoommateRepository.findByUserIdAndYearAndSemester(userId, current.year(), current.semester())
+                    .orElseThrow(() -> new CustomException(MY_ROOMMATE_NOT_REGISTERED));
+        }
 
         User roommate = myRoommate.getRoommate();
 
@@ -45,12 +54,13 @@ public class MyRoommateService {
                 roommate, myRoommate.getUser(), MatchingStatus.COMPLETED
         ).orElseThrow(() -> new CustomException(ErrorCode.ROOMMATE_MATCHING_NOT_FOUND)));
 
+        com.example.appcenter_project.common.image.dto.ImageLinkDto imageLink = getMyRoommateImage(roommate.getId(), request);
         return ResponseMyRoommateInfoDto.builder()
                 .matchingId(matching.getId())
                 .name(roommate.getName())
                 .dormType(roommate.getDormType() != null ? roommate.getDormType().name() : null)
                 .college(roommate.getCollege() != null ? roommate.getCollege().toValue() : null)
-                .imagePath(getMyRoommateImage(roommate.getId(), request).getImageUrl())
+                .imagePath(imageLink != null ? imageLink.getImageUrl() : null)
                 .build();
     }
 
