@@ -202,6 +202,7 @@ public class RoommateNotificationFilterService {
                             .matchedFilterFields(getMatchedFields(filter, cl))
                             .build();
                 })
+                .sorted((a, b) -> Boolean.compare(a.getPost().isRead(), b.getPost().isRead()))
                 .toList();
 
         log.info("필터링 완료. 일치하는 게시글 수: {}개, 필터 설정 사용자 ID: {}", result.size(), userId);
