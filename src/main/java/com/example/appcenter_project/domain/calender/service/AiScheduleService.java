@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -27,9 +28,12 @@ public class AiScheduleService {
 
     private static final int TITLE_MAX_LENGTH = 100;
     private static final String DEFAULT_TITLE = "[일정]";
+    private static final long MAX_SCHEDULE_DURATION_DAYS = 31;   // 31일 초과 일정은 제외
 
     private final AiScheduleExtractClient aiClient;
     private final AiCalendarPersistenceService persistenceService;
+
+    public static final int CHANGE_DETECT_WEEKS = 2;
 
     public ProcessResult process(CrawledAnnouncement announcement) {
         Long id = announcement.getId();
@@ -115,6 +119,17 @@ public class AiScheduleService {
             }
 
             LocalDate end = Optional.ofNullable(parse(item.getEndDate())).orElse(start);
+            if (end.isBefore(start)) {
+                end = start; // 잘못된 종료일 → 단일 일정으로 처리
+            }
+
+            // 기간이 지나치게 긴(상시성) 일정은 캘린더를 더럽히므로 제외
+            long durationDays = ChronoUnit.DAYS.between(start, end);
+            if (durationDays > MAX_SCHEDULE_DURATION_DAYS) {
+                log.warn("[AI-EXTRACT][{}] 기간 {}일 초과 — 일정 스킵: '{}' {}~{}",
+                        id, durationDays, item.getTitle(), start, end);
+                continue;
+            }
 
             String rawTitle;
             if (item.getTitle() != null && !item.getTitle().isBlank()) {
