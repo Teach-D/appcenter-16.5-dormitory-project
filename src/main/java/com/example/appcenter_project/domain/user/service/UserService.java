@@ -28,6 +28,8 @@ import com.example.appcenter_project.global.mixpanel.MixpanelService;
 import com.example.appcenter_project.global.security.jwt.JwtTokenProvider;
 import com.example.appcenter_project.domain.fcm.service.FcmMessageService;
 import com.example.appcenter_project.common.image.service.ImageService;
+import com.example.appcenter_project.domain.notification.service.RoommateNotificationService;
+import com.example.appcenter_project.domain.roommate.repository.RoommateBoardRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateCheckListRepository;
 import com.example.appcenter_project.domain.roommate.service.MatchingPeriod;
 import com.example.appcenter_project.domain.roommate.service.RoommateMatchingPeriodResolver;
@@ -70,6 +72,8 @@ public class UserService {
     private final OpenChatMessageReportService openChatMessageReportService;
     private final OpenChatDormOfficialRoomService openChatDormOfficialRoomService;
     private final RoommateCheckListRepository roommateCheckListRepository;
+    private final RoommateBoardRepository roommateBoardRepository;
+    private final RoommateNotificationService roommateNotificationService;
     private final RoommateMatchingPeriodResolver periodResolver;
 
     // ========== Public Methods ========== //
@@ -223,6 +227,8 @@ public class UserService {
         MatchingPeriod period = periodResolver.resolveCurrent(LocalDate.now());
         roommateCheckListRepository.findFirstByUserIdAndYearAndSemester(userId, period.year(), period.semester())
                 .ifPresent(cl -> cl.syncUserInfo(user.getDormType(), user.getCollege()));
+        roommateBoardRepository.findByUserIdAndYearAndSemester(userId, period.year(), period.semester())
+                .ifPresent(board -> roommateNotificationService.sendFilteredNotificationsOnUpdate(board, userId));
         boolean hasUnreadNotifications = user.hasUnreadNotifications();
         boolean hasRoommateCheckList = roommateCheckListRepository.existsByUserIdAndYearAndSemester(userId, period.year(), period.semester());
         long reportedCount = openChatMessageReportService.countApprovedReports(user.getStudentNumber());
