@@ -7,6 +7,7 @@ import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomScope;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomType;
 import com.example.appcenter_project.domain.user.enums.DormType;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 
@@ -53,7 +54,9 @@ public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslR
                 .selectFrom(openChatRoom)
                 .where(condition, keywordContains(keyword))
                 .orderBy(
-                        openChatRoom.targetDorm.isNotNull().desc(),
+                        new CaseBuilder()
+                                .when(openChatRoom.targetDorm.isNotNull()).then(1)
+                                .otherwise(0).desc(),
                         openChatRoom.lastMessageAt.desc().nullsLast(),
                         openChatRoom.createdDate.desc()
                 )
