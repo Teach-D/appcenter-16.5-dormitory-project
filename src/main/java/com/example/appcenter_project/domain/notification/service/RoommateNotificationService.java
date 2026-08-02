@@ -197,7 +197,7 @@ public class RoommateNotificationService {
         return true;
     }
 
-    public void sendFilteredNotificationsOnUpdate(RoommateBoard board) {
+    public void sendFilteredNotificationsOnUpdate(RoommateBoard board, Long boardAuthorId) {
         User boardAuthor = board.getUser();
         RoommateCheckList checkList = board.getRoommateCheckList();
 
@@ -206,7 +206,6 @@ public class RoommateNotificationService {
             return;
         }
 
-        Long boardAuthorId = boardAuthor.getId();
         List<RoommateNotificationFilter> filters = filterRepository.findAllWithUser();
         List<User> targetUsers = new ArrayList<>();
 

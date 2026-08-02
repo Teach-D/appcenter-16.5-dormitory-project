@@ -173,7 +173,7 @@ class RoommateServiceTest {
                 dto, 1L, mock(HttpServletRequest.class));
 
         assertThat(result).isNotNull();
-        verify(roommateNotificationService).sendFilteredNotificationsOnUpdate(any(RoommateBoard.class));
+        verify(roommateNotificationService).sendFilteredNotificationsOnUpdate(any(RoommateBoard.class), eq(1L));
     }
 
     @Test
