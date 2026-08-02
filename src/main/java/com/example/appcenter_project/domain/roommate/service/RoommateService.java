@@ -209,7 +209,9 @@ public class RoommateService {
             writerImg = imageService.findStaticImageUrl(ImageType.USER, board.getUser().getId(), request);
         } catch (Exception ignored) {}
 
+        MatchingPeriod current = periodResolver.resolveCurrent(LocalDate.now());
         ResponseRoommatePostDto dto = ResponseRoommatePostDto.entityToDto(board, isMatched, writerImg);
+        dto.updateIsCurrentPeriod(isInCurrentPeriod(board, current));
         dto.updateIsRead(read);
 
         if (userId != null) {
