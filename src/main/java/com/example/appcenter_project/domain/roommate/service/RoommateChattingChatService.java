@@ -233,7 +233,9 @@ public class RoommateChattingChatService {
         // 안 읽은 메시지 읽음 처리 (내가 보낸 거 제외)
         List<Long> readIds = new ArrayList<>();
         chatList.stream()
-                .filter(chat -> !chat.getMember().getId().equals(userId) && !chat.isReadByReceiver())
+                .filter(chat -> chat.getMember() != null
+                        && !chat.getMember().getId().equals(userId)
+                        && !chat.isReadByReceiver())
                 .forEach(chat -> {
                     chat.markAsRead();
                     readIds.add(chat.getId());
