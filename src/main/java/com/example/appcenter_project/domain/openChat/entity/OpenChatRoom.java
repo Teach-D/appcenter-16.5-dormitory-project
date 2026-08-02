@@ -8,7 +8,6 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.domain.Persistable;
 
 import java.time.LocalDateTime;
 
@@ -16,25 +15,11 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "open_chat_room")
-public class OpenChatRoom extends BaseTimeEntity implements Persistable<Long> {
+public class OpenChatRoom extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Transient
-    private boolean isNew = true;
-
-    @Override
-    public boolean isNew() {
-        return isNew;
-    }
-
-    @PostLoad
-    @PostPersist
-    void markNotNew() {
-        this.isNew = false;
-    }
 
     @Column(nullable = false, length = 30)
     private String name;
@@ -168,7 +153,19 @@ public class OpenChatRoom extends BaseTimeEntity implements Persistable<Long> {
         room.roomType = OpenChatRoomType.OPEN;
         room.isPublic = true;
         room.targetDorm = targetDorm;
-        room.id = targetDorm != null ? (long) targetDorm.ordinal() + 1L : 1L;
+        return room;
+    }
+
+    public static OpenChatRoom createDormOfficialForTest(Long id, String name, DormType targetDorm) {
+        OpenChatRoom room = new OpenChatRoom();
+        room.id = id;
+        room.name = name;
+        room.scope = OpenChatRoomScope.ALL;
+        room.maxParticipants = Integer.MAX_VALUE;
+        room.isOfficial = true;
+        room.roomType = OpenChatRoomType.OPEN;
+        room.isPublic = true;
+        room.targetDorm = targetDorm;
         return room;
     }
 

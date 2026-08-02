@@ -77,10 +77,9 @@ public class OpenChatDormOfficialRoomFixture {
     }
 
     public static OpenChatRoom createDormOfficialRoom(DormType dormType) {
-        return OpenChatRoom.createDormOfficial(
+        return OpenChatRoom.createDormOfficialForTest(
+                (long) dormType.ordinal() + 1L,
                 dormType.name() + " 공식 오픈채팅",
-                "설명",
-                null,
                 dormType
         );
     }
