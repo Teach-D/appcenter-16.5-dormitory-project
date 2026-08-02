@@ -5,7 +5,11 @@ import com.example.appcenter_project.domain.roommate.entity.RoommateBoard;
 import com.example.appcenter_project.domain.roommate.service.RoommateChattingChatService;
 import com.example.appcenter_project.domain.roommate.entity.RoommateChattingRoom;
 import com.example.appcenter_project.domain.roommate.entity.RoommateCheckList;
+import com.example.appcenter_project.domain.roommate.enums.RoommateMatchingStatus;
+import com.example.appcenter_project.domain.roommate.enums.SemesterType;
+import com.example.appcenter_project.domain.roommate.repository.MyRoommateRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateBoardRepository;
+import com.example.appcenter_project.domain.roommate.repository.RoommateCheckListRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateChattingRoomRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateCheckListRepository;
 import com.example.appcenter_project.domain.roommate.enums.SemesterType;
@@ -50,6 +54,7 @@ class RoommateChattingRoomServiceTest {
     RoommateChattingChatService roommateChattingChatService;
 
     @Mock
+
     RoommateMatchingPeriodResolver periodResolver;
 
     @Mock
@@ -62,7 +67,6 @@ class RoommateChattingRoomServiceTest {
         User user = mock(User.class);
         when(user.getId()).thenReturn(id);
         when(user.getName()).thenReturn("사용자" + id);
-        when(user.getRoommateCheckList()).thenReturn(mock(RoommateCheckList.class));
         return user;
     }
 
@@ -81,6 +85,11 @@ class RoommateChattingRoomServiceTest {
         when(roommateChattingRoomRepository.existsRoommateChattingRoomByGuestAndHost(guest, host)).thenReturn(false);
         when(roommateChattingRoomRepository.existsRoommateChattingRoomByGuestAndHost(host, guest)).thenReturn(false);
         when(roommateChattingRoomRepository.existsByRoommateBoardAndGuest(roommateBoard, guest)).thenReturn(false);
+
+        when(periodResolver.resolveCurrent(any())).thenReturn(
+                new MatchingPeriod(2026, SemesterType.FIRST, RoommateMatchingStatus.OPEN));
+        when(roommateCheckListRepository.findFirstByUserIdAndYearAndSemester(anyLong(), anyInt(), any()))
+                .thenReturn(Optional.empty());
 
         RoommateChattingRoom savedRoom = mock(RoommateChattingRoom.class);
         when(savedRoom.getId()).thenReturn(100L);

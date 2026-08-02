@@ -27,6 +27,9 @@ import com.example.appcenter_project.global.mixpanel.MixpanelService;
 import com.example.appcenter_project.global.security.jwt.JwtTokenProvider;
 import com.example.appcenter_project.domain.fcm.service.FcmMessageService;
 import com.example.appcenter_project.common.image.service.ImageService;
+import com.example.appcenter_project.domain.roommate.repository.RoommateCheckListRepository;
+import com.example.appcenter_project.domain.roommate.service.MatchingPeriod;
+import com.example.appcenter_project.domain.roommate.service.RoommateMatchingPeriodResolver;
 import com.example.appcenter_project.domain.roommate.service.RoommateQueryService;
 import com.example.appcenter_project.domain.tip.service.TipQueryService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -64,6 +67,8 @@ public class UserService {
     private final MixpanelService mixpanelService;
     private final TestAccountProperties testAccountProperties;
     private final OpenChatMessageReportService openChatMessageReportService;
+    private final RoommateCheckListRepository roommateCheckListRepository;
+    private final RoommateMatchingPeriodResolver periodResolver;
 
     // ========== Public Methods ========== //
 
@@ -119,7 +124,8 @@ public class UserService {
     public ResponseUserDto findUser(Long userId) {
         User user = findUserById(userId);
         boolean hasUnreadNotifications = user.hasUnreadNotifications();
-        boolean hasRoommateCheckList = user.hasRoommateCheckList();
+        MatchingPeriod period = periodResolver.resolveCurrent(LocalDate.now());
+        boolean hasRoommateCheckList = roommateCheckListRepository.existsByUserIdAndYearAndSemester(userId, period.year(), period.semester());
         long reportedCount = openChatMessageReportService.countApprovedReports(user.getStudentNumber());
 
         return ResponseUserDto.from(user, hasRoommateCheckList, hasUnreadNotifications, reportedCount);
@@ -208,8 +214,11 @@ public class UserService {
     public ResponseUserDto updateUser(Long userId, RequestUserDto request) {
         User user = findUserById(userId);
         user.update(request);
+        MatchingPeriod period = periodResolver.resolveCurrent(LocalDate.now());
+        roommateCheckListRepository.findFirstByUserIdAndYearAndSemester(userId, period.year(), period.semester())
+                .ifPresent(cl -> cl.syncUserInfo(user.getDormType(), user.getCollege()));
         boolean hasUnreadNotifications = user.hasUnreadNotifications();
-        boolean hasRoommateCheckList = user.hasRoommateCheckList();
+        boolean hasRoommateCheckList = roommateCheckListRepository.existsByUserIdAndYearAndSemester(userId, period.year(), period.semester());
         long reportedCount = openChatMessageReportService.countApprovedReports(user.getStudentNumber());
 
         return ResponseUserDto.from(user, hasRoommateCheckList, hasUnreadNotifications, reportedCount);

@@ -11,6 +11,7 @@ import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.domain.roommate.repository.MyRoommateRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateBoardRepository;
+import com.example.appcenter_project.domain.roommate.repository.RoommateCheckListRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateChattingRoomRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateCheckListRepository;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
@@ -79,12 +80,16 @@ public class RoommateChattingRoomService {
         }
 
         // 채팅방 생성
+        MatchingPeriod period = periodResolver.resolveCurrent(LocalDate.now());
+        RoommateCheckList guestChecklist = roommateCheckListRepository
+                .findFirstByUserIdAndYearAndSemester(guestId, period.year(), period.semester())
+                .orElse(null);
         RoommateChattingRoom chattingRoom = RoommateChattingRoom.builder()
                 .roommateBoard(roommateBoard)
                 .host(host)
                 .guest(guest)
-                .hostChecklist(host.getRoommateCheckList())
-                .guestChecklist(guest.getRoommateCheckList())
+                .hostChecklist(roommateBoard.getRoommateCheckList())
+                .guestChecklist(guestChecklist)
                 .build();
 
         roommateChattingRoomRepository.save(chattingRoom);
