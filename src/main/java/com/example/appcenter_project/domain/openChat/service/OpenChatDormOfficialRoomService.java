@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.openChat.service;
 
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateDormOfficialRoomDto;
+import com.example.appcenter_project.domain.openChat.dto.request.RequestUpdateDormOfficialRoomDto;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatParticipant;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatRoom;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatParticipantRepository;
@@ -45,6 +46,25 @@ public class OpenChatDormOfficialRoomService {
         openChatParticipantRepository.saveAll(participants);
 
         return savedRoom.getId();
+    }
+
+    public void updateDormOfficialRoom(Long roomId, RequestUpdateDormOfficialRoomDto request) {
+        OpenChatRoom room = openChatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND));
+        if (!room.isOfficial() || room.getTargetDorm() == null) {
+            throw new CustomException(ErrorCode.OPEN_CHAT_ROOM_FORBIDDEN);
+        }
+        room.update(request.getName(), request.getDescription(), null, null, null, null);
+    }
+
+    public void deleteDormOfficialRoom(Long roomId) {
+        OpenChatRoom room = openChatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_ROOM_NOT_FOUND));
+        if (!room.isOfficial() || room.getTargetDorm() == null) {
+            throw new CustomException(ErrorCode.OPEN_CHAT_ROOM_FORBIDDEN);
+        }
+        openChatParticipantRepository.deleteAllByRoomId(roomId);
+        openChatRoomRepository.delete(room);
     }
 
     public void reassignDormRoom(Long userId, DormType oldDorm, DormType newDorm) {
