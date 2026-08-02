@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -28,6 +29,8 @@ public interface OpenChatParticipantRepository extends JpaRepository<OpenChatPar
     Optional<OpenChatParticipant> findByRoomIdAndUserId(Long roomId, Long userId);
 
     List<OpenChatParticipant> findAllByRoomId(Long roomId);
+
+    List<OpenChatParticipant> findAllByRoomIdIn(Collection<Long> roomIds);
 
     List<OpenChatParticipant> findAllByRoomIdAndNotificationMode(Long roomId, ChatNotificationMode mode);
 

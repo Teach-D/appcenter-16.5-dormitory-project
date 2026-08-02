@@ -228,6 +228,30 @@ public class OpenChatRoomService {
                 .orElse(null);
 
         List<ResponseOpenChatRoomDto> openChatDtos = buildOpenChatDtosWithUnread(openChatRooms, userId);
+
+        List<Long> personalRoomIds = openChatRooms.stream()
+                .filter(r -> r.getRoomType() == OpenChatRoomType.PERSONAL)
+                .map(OpenChatRoom::getId)
+                .toList();
+        if (!personalRoomIds.isEmpty()) {
+            List<OpenChatParticipant> personalParticipants =
+                    openChatParticipantRepository.findAllByRoomIdIn(personalRoomIds);
+            Map<Long, Long> partnerIdByRoomId = personalParticipants.stream()
+                    .filter(p -> !p.getUserId().equals(userId))
+                    .collect(Collectors.toMap(
+                            OpenChatParticipant::getRoomId,
+                            OpenChatParticipant::getUserId,
+                            (a, b) -> a));
+            Map<Long, ResponseOpenChatRoomDto> dtoByRoomId = openChatDtos.stream()
+                    .collect(Collectors.toMap(ResponseOpenChatRoomDto::getRoomId, r -> r));
+            partnerIdByRoomId.forEach((roomId, partnerId) -> {
+                if (blockService.isBlockedBy(partnerId, userId)) {
+                    ResponseOpenChatRoomDto dto = dtoByRoomId.get(roomId);
+                    if (dto != null) dto.updateIsBlockedByPartner(true);
+                }
+            });
+        }
+
         List<ResponseOpenChatRoomDto> roommateDtos = roommateRooms.stream()
                 .map(r -> {
                     RoommateChattingChat lastChat = lastMsgMap.get(r.getId());

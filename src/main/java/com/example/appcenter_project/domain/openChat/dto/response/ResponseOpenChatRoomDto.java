@@ -28,6 +28,11 @@ public class ResponseOpenChatRoomDto {
     private String lastMessage;
     private int unreadCount;
     private boolean isMyRoommate;
+    private boolean isBlockedByPartner;
+
+    public void updateIsBlockedByPartner(boolean v) {
+        this.isBlockedByPartner = v;
+    }
 
     public static ResponseOpenChatRoomDto from(OpenChatRoom room, int currentParticipants, boolean joined) {
         return ResponseOpenChatRoomDto.builder()

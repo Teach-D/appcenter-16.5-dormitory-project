@@ -42,6 +42,7 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
     private boolean isCurrentPeriod;
     private Integer matchedFilterCount;
     private List<String> matchedFilterFields;
+    private boolean isBlockedByAuthor;
 
     @Builder
     public ResponseRoommatePostDto(Long id, String title, String type, LocalDateTime createDate, String filePath,
@@ -89,6 +90,10 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
     public void updateMatchedFilter(List<String> fields) {
         this.matchedFilterFields = fields;
         this.matchedFilterCount = fields != null ? fields.size() : null;
+    }
+
+    public void updateIsBlockedByAuthor(boolean v) {
+        this.isBlockedByAuthor = v;
     }
 
     public static ResponseRoommatePostDto entityToDto(RoommateBoard board, boolean isMatched, String userProfileImageUrl) {

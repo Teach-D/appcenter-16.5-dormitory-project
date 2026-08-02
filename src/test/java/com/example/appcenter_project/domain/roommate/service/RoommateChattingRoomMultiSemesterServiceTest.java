@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.roommate.service;
 
 import com.example.appcenter_project.common.image.service.ImageService;
+import com.example.appcenter_project.domain.block.service.BlockService;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateChatRoomDto;
 import com.example.appcenter_project.domain.roommate.entity.RoommateBoard;
 import com.example.appcenter_project.domain.roommate.entity.RoommateChattingRoom;
@@ -62,6 +63,9 @@ class RoommateChattingRoomMultiSemesterServiceTest {
 
     @Mock
     RoommateMatchingPeriodResolver periodResolver;
+
+    @Mock
+    BlockService blockService;
 
     @InjectMocks
     RoommateChattingRoomService roommateChattingRoomService;

@@ -19,6 +19,7 @@ import com.example.appcenter_project.domain.roommate.enums.SemesterType;
 import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.global.exception.ErrorCode;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
+import com.example.appcenter_project.domain.block.service.BlockService;
 import com.example.appcenter_project.domain.notification.service.RoommateNotificationService;
 import com.example.appcenter_project.global.mixpanel.MixpanelService;
 import com.example.appcenter_project.shared.utils.DormDayUtil;
@@ -55,6 +56,7 @@ public class RoommateService {
     private final RoommateBoardReadRepository roommateBoardReadRepository;
     private final RoommateMatchingPeriodResolver periodResolver;
     private final RoommateNotificationFilterService roommateNotificationFilterService;
+    private final BlockService blockService;
 
     @Transactional
     public ResponseRoommatePostDto createRoommateCheckListandBoard(RequestRoommateFormDto requestDto, Long userId) {
@@ -215,6 +217,7 @@ public class RoommateService {
         dto.updateIsRead(read);
 
         if (userId != null) {
+            dto.updateIsBlockedByAuthor(blockService.isBlockedBy(board.getUser().getId(), userId));
             List<String> matchedFields = roommateNotificationFilterService.getMatchedFieldsByUserId(userId, board.getRoommateCheckList());
             dto.updateMatchedFilter(matchedFields);
         }

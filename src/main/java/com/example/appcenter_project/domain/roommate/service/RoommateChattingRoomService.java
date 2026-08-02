@@ -2,6 +2,7 @@ package com.example.appcenter_project.domain.roommate.service;
 
 import com.example.appcenter_project.common.image.enums.ImageType;
 import com.example.appcenter_project.common.image.service.ImageService;
+import com.example.appcenter_project.domain.block.service.BlockService;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateChatRoomDto;
 import com.example.appcenter_project.domain.roommate.entity.RoommateBoard;
 import com.example.appcenter_project.domain.roommate.entity.RoommateChattingChat;
@@ -45,6 +46,7 @@ public class RoommateChattingRoomService {
     private final MyRoommateRepository myRoommateRepository;
     private final RoommateMatchingPeriodResolver periodResolver;
     private final RoommateCheckListRepository roommateCheckListRepository;
+    private final BlockService blockService;
 
 
     //채팅방 생성
@@ -161,6 +163,7 @@ public class RoommateChattingRoomService {
             boolean iAmHost = host.getId().equals(user.getId());
             User partner = iAmHost ? guest : host;
             boolean opponentLeft = iAmHost ? room.isGuestLeft() : room.isHostLeft();
+            boolean isBlockedByPartner = blockService.isBlockedBy(partner.getId(), user.getId());
             boolean isRoommate = myRoommateRepository
                     .findByUserIdAndRoommateIdAndYearAndSemester(user.getId(), partner.getId(), current.year(), current.semester()).isPresent();
 
@@ -191,6 +194,7 @@ public class RoommateChattingRoomService {
                     .partnerProfileImageUrl(partnerProfileImageUrl)
                     .isOpponentLeft(opponentLeft)
                     .isRoommate(isRoommate)
+                    .isBlockedByPartner(isBlockedByPartner)
                     .myBoardTitle(myBoardTitle)
                     .opponentBoardTitle(opponentBoardTitle)
                     .build());
