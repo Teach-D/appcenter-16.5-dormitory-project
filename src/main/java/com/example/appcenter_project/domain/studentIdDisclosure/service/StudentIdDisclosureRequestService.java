@@ -117,7 +117,7 @@ public class StudentIdDisclosureRequestService {
         }
 
         Optional<StudentIdDisclosureRequest> pendingSent = disclosureRequestRepository
-                .findByRoomIdAndRequesterIdAndTargetIdAndStatus(roomId, currentUserId, targetId, DisclosureRequestStatus.PENDING);
+                .findFirstByRoomIdAndRequesterIdAndTargetIdAndStatus(roomId, currentUserId, targetId, DisclosureRequestStatus.PENDING);
         if (pendingSent.isPresent()) {
             return ResponseDisclosureStatusDto.builder()
                     .status("PENDING_SENT")
@@ -126,7 +126,7 @@ public class StudentIdDisclosureRequestService {
         }
 
         Optional<StudentIdDisclosureRequest> pendingReceived = disclosureRequestRepository
-                .findByRoomIdAndRequesterIdAndTargetIdAndStatus(roomId, targetId, currentUserId, DisclosureRequestStatus.PENDING);
+                .findFirstByRoomIdAndRequesterIdAndTargetIdAndStatus(roomId, targetId, currentUserId, DisclosureRequestStatus.PENDING);
         if (pendingReceived.isPresent()) {
             return ResponseDisclosureStatusDto.builder()
                     .status("PENDING_RECEIVED")
@@ -135,7 +135,7 @@ public class StudentIdDisclosureRequestService {
         }
 
         Optional<StudentIdDisclosureRequest> rejectedSent = disclosureRequestRepository
-                .findByRoomIdAndRequesterIdAndTargetIdAndStatus(roomId, currentUserId, targetId, DisclosureRequestStatus.REJECTED);
+                .findFirstByRoomIdAndRequesterIdAndTargetIdAndStatus(roomId, currentUserId, targetId, DisclosureRequestStatus.REJECTED);
         if (rejectedSent.isPresent()) {
             return ResponseDisclosureStatusDto.builder()
                     .status("REJECTED")

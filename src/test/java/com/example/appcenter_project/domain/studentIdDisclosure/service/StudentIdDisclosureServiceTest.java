@@ -141,7 +141,7 @@ class StudentIdDisclosureServiceTest {
                 ROOM_ID, REQUESTER_ID, TARGET_ID, ACCEPTED)).willReturn(Optional.empty());
         given(disclosureRequestRepository.findByRoomIdAndRequesterIdAndTargetIdAndStatus(
                 ROOM_ID, TARGET_ID, REQUESTER_ID, ACCEPTED)).willReturn(Optional.empty());
-        given(disclosureRequestRepository.findByRoomIdAndRequesterIdAndTargetIdAndStatus(
+        given(disclosureRequestRepository.findFirstByRoomIdAndRequesterIdAndTargetIdAndStatus(
                 ROOM_ID, REQUESTER_ID, TARGET_ID, PENDING)).willReturn(Optional.of(pending));
 
         ResponseDisclosureStatusDto result = disclosureService.getStatus(REQUESTER_ID, ROOM_ID, TARGET_ID);
@@ -157,9 +157,9 @@ class StudentIdDisclosureServiceTest {
                 ROOM_ID, REQUESTER_ID, TARGET_ID, ACCEPTED)).willReturn(Optional.empty());
         given(disclosureRequestRepository.findByRoomIdAndRequesterIdAndTargetIdAndStatus(
                 ROOM_ID, TARGET_ID, REQUESTER_ID, ACCEPTED)).willReturn(Optional.empty());
-        given(disclosureRequestRepository.findByRoomIdAndRequesterIdAndTargetIdAndStatus(
+        given(disclosureRequestRepository.findFirstByRoomIdAndRequesterIdAndTargetIdAndStatus(
                 ROOM_ID, REQUESTER_ID, TARGET_ID, PENDING)).willReturn(Optional.empty());
-        given(disclosureRequestRepository.findByRoomIdAndRequesterIdAndTargetIdAndStatus(
+        given(disclosureRequestRepository.findFirstByRoomIdAndRequesterIdAndTargetIdAndStatus(
                 ROOM_ID, TARGET_ID, REQUESTER_ID, PENDING)).willReturn(Optional.of(pending));
 
         ResponseDisclosureStatusDto result = disclosureService.getStatus(REQUESTER_ID, ROOM_ID, TARGET_ID);
@@ -174,9 +174,9 @@ class StudentIdDisclosureServiceTest {
                 ROOM_ID, REQUESTER_ID, TARGET_ID, ACCEPTED)).willReturn(Optional.empty());
         given(disclosureRequestRepository.findByRoomIdAndRequesterIdAndTargetIdAndStatus(
                 ROOM_ID, TARGET_ID, REQUESTER_ID, ACCEPTED)).willReturn(Optional.empty());
-        given(disclosureRequestRepository.findByRoomIdAndRequesterIdAndTargetIdAndStatus(
+        given(disclosureRequestRepository.findFirstByRoomIdAndRequesterIdAndTargetIdAndStatus(
                 ROOM_ID, REQUESTER_ID, TARGET_ID, PENDING)).willReturn(Optional.empty());
-        given(disclosureRequestRepository.findByRoomIdAndRequesterIdAndTargetIdAndStatus(
+        given(disclosureRequestRepository.findFirstByRoomIdAndRequesterIdAndTargetIdAndStatus(
                 ROOM_ID, TARGET_ID, REQUESTER_ID, PENDING)).willReturn(Optional.empty());
 
         ResponseDisclosureStatusDto result = disclosureService.getStatus(REQUESTER_ID, ROOM_ID, TARGET_ID);
@@ -444,9 +444,9 @@ class StudentIdDisclosureServiceTest {
                 ROOM_ID, REQUESTER_ID, TARGET_ID, ACCEPTED)).willReturn(Optional.empty());
         given(disclosureRequestRepository.findByRoomIdAndRequesterIdAndTargetIdAndStatus(
                 ROOM_ID, TARGET_ID, REQUESTER_ID, ACCEPTED)).willReturn(Optional.empty());
-        given(disclosureRequestRepository.findByRoomIdAndRequesterIdAndTargetIdAndStatus(
+        given(disclosureRequestRepository.findFirstByRoomIdAndRequesterIdAndTargetIdAndStatus(
                 ROOM_ID, REQUESTER_ID, TARGET_ID, PENDING)).willReturn(Optional.empty());
-        given(disclosureRequestRepository.findByRoomIdAndRequesterIdAndTargetIdAndStatus(
+        given(disclosureRequestRepository.findFirstByRoomIdAndRequesterIdAndTargetIdAndStatus(
                 ROOM_ID, TARGET_ID, REQUESTER_ID, PENDING)).willReturn(Optional.empty());
 
         ResponseDisclosureStatusDto result = disclosureService.getStatus(REQUESTER_ID, ROOM_ID, TARGET_ID);

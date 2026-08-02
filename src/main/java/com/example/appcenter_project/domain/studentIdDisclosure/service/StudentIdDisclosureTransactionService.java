@@ -14,7 +14,6 @@ import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,15 +40,14 @@ public class StudentIdDisclosureTransactionService {
 
         boolean isRoommateRoom = resolveIsRoommateRoom(roomId, requesterId, targetId);
 
-        disclosureRequestRepository.deleteByRequesterIdAndTargetIdAndRoomId(requesterId, targetId, roomId);
-
-        try {
-            StudentIdDisclosureRequest saved = disclosureRequestRepository.save(
-                    StudentIdDisclosureRequest.create(requesterId, targetId, roomId));
-            return new SaveResult(saved.getId(), isRoommateRoom);
-        } catch (DataIntegrityViolationException e) {
+        if (disclosureRequestRepository.existsByRequesterIdAndTargetIdAndRoomIdAndStatus(
+                requesterId, targetId, roomId, DisclosureRequestStatus.ACCEPTED)) {
             throw new CustomException(ErrorCode.DISCLOSURE_REQUEST_ALREADY_EXISTS);
         }
+
+        StudentIdDisclosureRequest saved = disclosureRequestRepository.save(
+                StudentIdDisclosureRequest.create(requesterId, targetId, roomId));
+        return new SaveResult(saved.getId(), isRoommateRoom);
     }
 
     @Transactional

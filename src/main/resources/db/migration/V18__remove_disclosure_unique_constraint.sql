@@ -1,0 +1,2 @@
+ALTER TABLE student_id_disclosure_request
+DROP INDEX uk_disclosure_request;
