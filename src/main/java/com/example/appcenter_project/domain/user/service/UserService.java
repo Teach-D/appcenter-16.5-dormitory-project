@@ -215,7 +215,11 @@ public class UserService {
 
     public ResponseUserDto updateUser(Long userId, RequestUserDto request) {
         User user = findUserById(userId);
+        DormType oldDorm = user.getDormType();
         user.update(request);
+        if (oldDorm != user.getDormType()) {
+            openChatDormOfficialRoomService.reassignDormRoom(userId, oldDorm, user.getDormType());
+        }
         MatchingPeriod period = periodResolver.resolveCurrent(LocalDate.now());
         roommateCheckListRepository.findFirstByUserIdAndYearAndSemester(userId, period.year(), period.semester())
                 .ifPresent(cl -> cl.syncUserInfo(user.getDormType(), user.getCollege()));
