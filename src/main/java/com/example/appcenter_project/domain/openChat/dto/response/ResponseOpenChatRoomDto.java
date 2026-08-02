@@ -29,6 +29,7 @@ public class ResponseOpenChatRoomDto {
     private int unreadCount;
     private boolean isMyRoommate;
     private boolean isBlockedByPartner;
+    private boolean isDormOfficial;
 
     public void updateIsBlockedByPartner(boolean v) {
         this.isBlockedByPartner = v;
@@ -50,6 +51,7 @@ public class ResponseOpenChatRoomDto {
                 .lastMessageAt(room.getLastMessageAt())
                 .lastMessage(room.getLastMessage())
                 .unreadCount(0)
+                .isDormOfficial(room.getTargetDorm() != null)
                 .build();
     }
 
@@ -69,6 +71,7 @@ public class ResponseOpenChatRoomDto {
                 .lastMessageAt(room.getLastMessageAt())
                 .lastMessage(room.getLastMessage())
                 .unreadCount(unreadCount)
+                .isDormOfficial(room.getTargetDorm() != null)
                 .build();
     }
 

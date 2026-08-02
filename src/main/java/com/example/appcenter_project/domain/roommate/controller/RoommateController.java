@@ -8,6 +8,8 @@ import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoomma
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateSimilarityDto;
 import com.example.appcenter_project.domain.roommate.enums.SemesterType;
 import com.example.appcenter_project.global.security.CustomUserDetails;
+import com.example.appcenter_project.domain.roommate.service.MyRoommateService;
+import com.example.appcenter_project.domain.roommate.service.RoommateQueryService;
 import com.example.appcenter_project.domain.roommate.service.RoommateService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,8 @@ import java.util.List;
 public class RoommateController implements RoommateApiSpecification{
 
     private final RoommateService roommateService;
+    private final MyRoommateService myRoommateService;
+    private final RoommateQueryService roommateQueryService;
 
     @TrackApi
     @Override

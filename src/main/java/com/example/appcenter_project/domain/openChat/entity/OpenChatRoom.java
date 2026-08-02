@@ -3,6 +3,7 @@ package com.example.appcenter_project.domain.openChat.entity;
 import com.example.appcenter_project.common.BaseTimeEntity;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomScope;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomType;
+import com.example.appcenter_project.domain.user.enums.DormType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -54,6 +55,9 @@ public class OpenChatRoom extends BaseTimeEntity {
 
     @Column(nullable = false)
     private boolean isPublic = true;
+
+    @Enumerated(EnumType.STRING)
+    private DormType targetDorm;
 
     public boolean matchesPassword(String input) {
         return this.password == null || this.password.equals(input);
@@ -135,6 +139,21 @@ public class OpenChatRoom extends BaseTimeEntity {
         room.roomType = OpenChatRoomType.DERIVED;
         room.password = password;
         room.isPublic = isPublic;
+        return room;
+    }
+
+    public static OpenChatRoom createDormOfficial(String name, String description, Long createdBy, DormType targetDorm) {
+        OpenChatRoom room = new OpenChatRoom();
+        room.name = name;
+        room.description = description;
+        room.scope = OpenChatRoomScope.ALL;
+        room.maxParticipants = Integer.MAX_VALUE;
+        room.isOfficial = true;
+        room.createdBy = createdBy;
+        room.roomType = OpenChatRoomType.OPEN;
+        room.isPublic = true;
+        room.targetDorm = targetDorm;
+        room.id = targetDorm != null ? (long) targetDorm.ordinal() + 1L : 1L;
         return room;
     }
 

@@ -1,6 +1,7 @@
 package com.example.appcenter_project.domain.user.service;
 
 import com.example.appcenter_project.domain.groupOrder.service.GroupOrderQueryService;
+import com.example.appcenter_project.domain.openChat.service.OpenChatDormOfficialRoomService;
 import com.example.appcenter_project.domain.openChat.service.OpenChatMessageReportService;
 import com.example.appcenter_project.domain.user.dto.request.*;
 import com.example.appcenter_project.common.image.dto.ImageLinkDto;
@@ -67,6 +68,7 @@ public class UserService {
     private final MixpanelService mixpanelService;
     private final TestAccountProperties testAccountProperties;
     private final OpenChatMessageReportService openChatMessageReportService;
+    private final OpenChatDormOfficialRoomService openChatDormOfficialRoomService;
     private final RoommateCheckListRepository roommateCheckListRepository;
     private final RoommateMatchingPeriodResolver periodResolver;
 
@@ -432,6 +434,14 @@ public class UserService {
         } catch (Exception e) {
             log.warn("Mixpanel 로그인 이벤트 추적 실패 - userId: {}", user.getId());
         }
+    }
+
+    public void reassignDormRoomOnDormTypeChange(Long userId, DormType oldDorm, DormType newDorm) {
+        userRepository.findById(userId);
+        if (oldDorm == newDorm) {
+            return;
+        }
+        openChatDormOfficialRoomService.reassignDormRoom(userId, oldDorm, newDorm);
     }
 
     private void trackLoginFail(String studentNumber, String reason) {
