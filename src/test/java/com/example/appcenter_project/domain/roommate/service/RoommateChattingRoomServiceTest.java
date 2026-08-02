@@ -82,8 +82,12 @@ class RoommateChattingRoomServiceTest {
         when(roommateBoardRepository.findById(10L)).thenReturn(Optional.of(roommateBoard));
         when(userRepository.findById(2L)).thenReturn(Optional.of(guest));
 
-        when(roommateChattingRoomRepository.existsRoommateChattingRoomByGuestAndHost(guest, host)).thenReturn(false);
-        when(roommateChattingRoomRepository.existsRoommateChattingRoomByGuestAndHost(host, guest)).thenReturn(false);
+        when(roommateBoard.getYear()).thenReturn(2026);
+        when(roommateBoard.getSemester()).thenReturn(SemesterType.FIRST);
+        when(roommateChattingRoomRepository.findByGuestAndHostAndBoardYearAndSemester(guest, host, 2026, SemesterType.FIRST))
+                .thenReturn(Optional.empty());
+        when(roommateChattingRoomRepository.findByGuestAndHostAndBoardYearAndSemester(host, guest, 2026, SemesterType.FIRST))
+                .thenReturn(Optional.empty());
         when(roommateChattingRoomRepository.existsByRoommateBoardAndGuest(roommateBoard, guest)).thenReturn(false);
 
         when(periodResolver.resolveCurrent(any())).thenReturn(
@@ -118,7 +122,6 @@ class RoommateChattingRoomServiceTest {
         when(roommateBoard.getUser()).thenReturn(host);
         when(roommateBoardRepository.findById(10L)).thenReturn(Optional.of(roommateBoard));
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
-        when(roommateChattingRoomRepository.existsRoommateChattingRoomByGuestAndHost(any(), any())).thenReturn(false);
 
         assertThatThrownBy(() -> roommateChattingRoomService.createChatRoom(99L, 10L))
                 .isInstanceOf(CustomException.class)
@@ -132,10 +135,13 @@ class RoommateChattingRoomServiceTest {
 
         RoommateBoard roommateBoard = mock(RoommateBoard.class);
         when(roommateBoard.getUser()).thenReturn(host);
+        when(roommateBoard.getYear()).thenReturn(2026);
+        when(roommateBoard.getSemester()).thenReturn(SemesterType.FIRST);
         when(roommateBoardRepository.findById(10L)).thenReturn(Optional.of(roommateBoard));
         when(userRepository.findById(1L)).thenReturn(Optional.of(host)); // guest = host (같은 사용자)
 
-        when(roommateChattingRoomRepository.existsRoommateChattingRoomByGuestAndHost(host, host)).thenReturn(false);
+        when(roommateChattingRoomRepository.findByGuestAndHostAndBoardYearAndSemester(any(), any(), anyInt(), any()))
+                .thenReturn(Optional.empty());
         when(roommateChattingRoomRepository.existsByRoommateBoardAndGuest(roommateBoard, host)).thenReturn(false);
 
         assertThatThrownBy(() -> roommateChattingRoomService.createChatRoom(1L, 10L))
@@ -144,26 +150,62 @@ class RoommateChattingRoomServiceTest {
     }
 
     @Test
-    @DisplayName("채팅방 생성 - 이미 채팅방 존재하면 기존 채팅방 ID 반환")
+    @DisplayName("채팅방 생성 - 같은 학기 채팅방 존재하면 기존 채팅방 ID 반환")
     void createChatRoom_이미존재시_기존방ID반환() throws Exception {
         User host = buildMockUser(1L);
         User guest = buildMockUser(2L);
 
         RoommateBoard roommateBoard = mock(RoommateBoard.class);
         when(roommateBoard.getUser()).thenReturn(host);
+        when(roommateBoard.getYear()).thenReturn(2026);
+        when(roommateBoard.getSemester()).thenReturn(SemesterType.FIRST);
         when(roommateBoardRepository.findById(10L)).thenReturn(Optional.of(roommateBoard));
         when(userRepository.findById(2L)).thenReturn(Optional.of(guest));
 
-        when(roommateChattingRoomRepository.existsRoommateChattingRoomByGuestAndHost(guest, host)).thenReturn(true);
-
         RoommateChattingRoom existingRoom = mock(RoommateChattingRoom.class);
         when(existingRoom.getId()).thenReturn(100L);
-        when(roommateChattingRoomRepository.findByGuestAndHost(guest, host)).thenReturn(Optional.of(existingRoom));
+        when(roommateChattingRoomRepository.findByGuestAndHostAndBoardYearAndSemester(guest, host, 2026, SemesterType.FIRST))
+                .thenReturn(Optional.of(existingRoom));
 
         Long result = roommateChattingRoomService.createChatRoom(2L, 10L);
 
         assertThat(result).isEqualTo(100L);
         verify(roommateChattingRoomRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("채팅방 생성 - 이전 학기 채팅방이 있어도 새 학기에는 신규 채팅방 생성")
+    void createChatRoom_이전학기채팅방있어도_새학기에_신규생성() throws Exception {
+        User host = buildMockUser(1L);
+        User guest = buildMockUser(2L);
+
+        RoommateBoard newBoard = mock(RoommateBoard.class);
+        when(newBoard.getUser()).thenReturn(host);
+        when(newBoard.getYear()).thenReturn(2026);
+        when(newBoard.getSemester()).thenReturn(SemesterType.SECOND);
+        when(newBoard.getRoommateCheckList()).thenReturn(null);
+        when(roommateBoardRepository.findById(20L)).thenReturn(Optional.of(newBoard));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(guest));
+
+        // 현재 학기(2026-2)에는 채팅방 없음
+        when(roommateChattingRoomRepository.findByGuestAndHostAndBoardYearAndSemester(guest, host, 2026, SemesterType.SECOND))
+                .thenReturn(Optional.empty());
+        when(roommateChattingRoomRepository.findByGuestAndHostAndBoardYearAndSemester(host, guest, 2026, SemesterType.SECOND))
+                .thenReturn(Optional.empty());
+        when(roommateChattingRoomRepository.existsByRoommateBoardAndGuest(newBoard, guest)).thenReturn(false);
+
+        when(periodResolver.resolveCurrent(any())).thenReturn(
+                new MatchingPeriod(2026, SemesterType.SECOND, RoommateMatchingStatus.OPEN));
+        when(roommateCheckListRepository.findFirstByUserIdAndYearAndSemester(anyLong(), anyInt(), any()))
+                .thenReturn(Optional.empty());
+
+        RoommateChattingRoom savedRoom = mock(RoommateChattingRoom.class);
+        when(savedRoom.getId()).thenReturn(200L);
+        when(roommateChattingRoomRepository.save(any(RoommateChattingRoom.class))).thenReturn(savedRoom);
+
+        roommateChattingRoomService.createChatRoom(2L, 20L);
+
+        verify(roommateChattingRoomRepository).save(any(RoommateChattingRoom.class));
     }
 
     @Test

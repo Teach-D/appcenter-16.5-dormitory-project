@@ -8,6 +8,7 @@ import com.example.appcenter_project.domain.roommate.entity.RoommateBoard;
 import com.example.appcenter_project.domain.roommate.entity.RoommateChattingChat;
 import com.example.appcenter_project.domain.roommate.entity.RoommateChattingRoom;
 import com.example.appcenter_project.domain.roommate.entity.RoommateCheckList;
+import com.example.appcenter_project.domain.roommate.enums.SemesterType;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.domain.roommate.repository.MyRoommateRepository;
@@ -61,13 +62,18 @@ public class RoommateChattingRoomService {
         User guest = userRepository.findById(guestId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
-        // 양방향 생성 제한
-        if (roommateChattingRoomRepository.existsRoommateChattingRoomByGuestAndHost(guest, host)) {
-            RoommateChattingRoom roommateChattingRoom = roommateChattingRoomRepository.findByGuestAndHost(guest, host).orElseThrow(() -> new CustomException(ROOMMATE_CHAT_ROOM_NOT_FOUND));
-            return roommateChattingRoom.getId();
-        } else if (roommateChattingRoomRepository.existsRoommateChattingRoomByGuestAndHost(host, guest)) {
-            RoommateChattingRoom roommateChattingRoom = roommateChattingRoomRepository.findByGuestAndHost(host, guest).orElseThrow(() -> new CustomException(ROOMMATE_CHAT_ROOM_NOT_FOUND));
-            return roommateChattingRoom.getId();
+        // 양방향 생성 제한 — 동일 학기 게시글 기준으로 체크해 학기 간 채팅방 재사용 방지
+        Integer boardYear = roommateBoard.getYear();
+        SemesterType boardSemester = roommateBoard.getSemester();
+        Optional<RoommateChattingRoom> existingRoom =
+                roommateChattingRoomRepository.findByGuestAndHostAndBoardYearAndSemester(guest, host, boardYear, boardSemester);
+        if (existingRoom.isPresent()) {
+            return existingRoom.get().getId();
+        }
+        Optional<RoommateChattingRoom> reversedRoom =
+                roommateChattingRoomRepository.findByGuestAndHostAndBoardYearAndSemester(host, guest, boardYear, boardSemester);
+        if (reversedRoom.isPresent()) {
+            return reversedRoom.get().getId();
         }
 
         // 자기 자신과 채팅 방지
