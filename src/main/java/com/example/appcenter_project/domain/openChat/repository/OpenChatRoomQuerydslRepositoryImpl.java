@@ -5,6 +5,7 @@ import com.example.appcenter_project.domain.openChat.entity.QOpenChatParticipant
 import com.example.appcenter_project.domain.openChat.entity.QOpenChatRoom;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomScope;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomType;
+import com.example.appcenter_project.domain.user.enums.DormType;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
@@ -40,13 +41,21 @@ public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslR
 
     @Override
     public List<OpenChatRoom> findByDormitory(String dormType, String keyword) {
+        BooleanExpression regularRooms =
+                openChatRoom.scope.eq(OpenChatRoomScope.DORMITORY)
+                        .or(openChatRoom.roomType.eq(OpenChatRoomType.DERIVED))
+                        .and(creatorDormitoryEq(dormType));
+        BooleanExpression officialRoom = targetDormEq(dormType);
+        BooleanExpression condition = officialRoom != null
+                ? regularRooms.or(officialRoom)
+                : regularRooms;
         return queryFactory
                 .selectFrom(openChatRoom)
-                .where(
-                        openChatRoom.scope.eq(OpenChatRoomScope.DORMITORY)
-                                .or(openChatRoom.roomType.eq(OpenChatRoomType.DERIVED)),
-                        creatorDormitoryEq(dormType),
-                        keywordContains(keyword)
+                .where(condition, keywordContains(keyword))
+                .orderBy(
+                        openChatRoom.targetDorm.isNotNull().desc(),
+                        openChatRoom.lastMessageAt.desc().nullsLast(),
+                        openChatRoom.createdDate.desc()
                 )
                 .fetch();
     }
@@ -69,6 +78,16 @@ public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslR
 
     private BooleanExpression creatorDormitoryEq(String dormType) {
         return dormType != null ? openChatRoom.creatorDormitory.eq(dormType) : null;
+    }
+
+    private BooleanExpression targetDormEq(String dormType) {
+        if (dormType == null) return null;
+        try {
+            DormType dorm = DormType.valueOf(dormType);
+            return dorm == DormType.NONE ? null : openChatRoom.targetDorm.eq(dorm);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     private BooleanExpression keywordContains(String keyword) {
