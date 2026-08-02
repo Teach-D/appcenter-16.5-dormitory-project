@@ -137,9 +137,10 @@ public class RoommateChattingChatService {
             readIds.add(chat.getId());
         });
 
-        // 읽음 처리된 메시지 ID들을 실시간으로 전송
+        // 읽음 처리된 메시지 ID들을 발신자(상대방)에게 실시간 전송
         if (!readIds.isEmpty()) {
-            String destination = "/sub/roommate/chat/read/" + roomId + "/user/" + userId;
+            Long otherUserId = room.getHost().getId().equals(userId) ? room.getGuest().getId() : room.getHost().getId();
+            String destination = "/sub/roommate/chat/read/" + roomId + "/user/" + otherUserId;
             log.info("📖 [실시간 읽음 처리] destination: {}, readIds: {}", destination, readIds);
             messagingTemplate.convertAndSend(destination, readIds);
         }
@@ -241,9 +242,10 @@ public class RoommateChattingChatService {
                     readIds.add(chat.getId());
                 });
 
-        // 읽음 처리된 메시지가 있으면 알림 전송
+        // 읽음 처리된 메시지가 있으면 발신자(상대방)에게 알림 전송
         if (!readIds.isEmpty()) {
-            String destination = "/sub/roommate/chat/read/" + roomId + "/user/" + userId;
+            Long otherUserId = room.getHost().getId().equals(userId) ? room.getGuest().getId() : room.getHost().getId();
+            String destination = "/sub/roommate/chat/read/" + roomId + "/user/" + otherUserId;
             log.info("📖 [채팅 조회 시 읽음 처리] destination: {}, readIds: {}", destination, readIds);
             messagingTemplate.convertAndSend(destination, readIds);
         }
