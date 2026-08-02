@@ -11,7 +11,9 @@ import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.global.exception.CustomException;
 import com.example.appcenter_project.domain.roommate.repository.MyRoommateRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateBoardRepository;
+import com.example.appcenter_project.domain.roommate.repository.RoommateCheckListRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateChattingRoomRepository;
+import com.example.appcenter_project.domain.roommate.repository.RoommateCheckListRepository;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +44,7 @@ public class RoommateChattingRoomService {
     private final RoommateChattingChatService roommateChattingChatService;
     private final MyRoommateRepository myRoommateRepository;
     private final RoommateMatchingPeriodResolver periodResolver;
+    private final RoommateCheckListRepository roommateCheckListRepository;
 
 
     //채팅방 생성
@@ -77,12 +80,16 @@ public class RoommateChattingRoomService {
         }
 
         // 채팅방 생성
+        MatchingPeriod period = periodResolver.resolveCurrent(LocalDate.now());
+        RoommateCheckList guestChecklist = roommateCheckListRepository
+                .findFirstByUserIdAndYearAndSemester(guestId, period.year(), period.semester())
+                .orElse(null);
         RoommateChattingRoom chattingRoom = RoommateChattingRoom.builder()
                 .roommateBoard(roommateBoard)
                 .host(host)
                 .guest(guest)
-                .hostChecklist(host.getRoommateCheckList())
-                .guestChecklist(guest.getRoommateCheckList())
+                .hostChecklist(roommateBoard.getRoommateCheckList())
+                .guestChecklist(guestChecklist)
                 .build();
 
         roommateChattingRoomRepository.save(chattingRoom);
@@ -158,7 +165,8 @@ public class RoommateChattingRoomService {
                     .findByUserIdAndRoommateIdAndYearAndSemester(user.getId(), partner.getId(), current.year(), current.semester()).isPresent();
 
             String hostBoardTitle = room.getRoommateBoard() != null ? room.getRoommateBoard().getTitle() : null;
-            String guestBoardTitle = roommateBoardRepository.findByUserId(guest.getId())
+            String guestBoardTitle = roommateBoardRepository
+                    .findByUserIdAndYearAndSemester(guest.getId(), current.year(), current.semester())
                     .map(RoommateBoard::getTitle).orElse(null);
             String myBoardTitle = iAmHost ? hostBoardTitle : guestBoardTitle;
             String opponentBoardTitle = iAmHost ? guestBoardTitle : hostBoardTitle;
@@ -213,12 +221,12 @@ public class RoommateChattingRoomService {
             throw new CustomException(ROOMMATE_FORBIDDEN_ACCESS);
         }
 
-        // 상대방 체크리스트 반환
-        if (chatRoom.getHost().getId().equals(userId)) {
-            return chatRoom.getGuestChecklist(); // 상대는 guest
-        } else {
-            return chatRoom.getHostChecklist(); // 상대는 host
-        }
+        // 상대방의 현재 학기 체크리스트를 동적으로 조회
+        Long opponentId = isHost ? chatRoom.getGuest().getId() : chatRoom.getHost().getId();
+        MatchingPeriod current = periodResolver.resolveCurrent(LocalDate.now());
+        return roommateCheckListRepository
+                .findFirstByUserIdAndYearAndSemester(opponentId, current.year(), current.semester())
+                .orElse(null);
     }
 }
 

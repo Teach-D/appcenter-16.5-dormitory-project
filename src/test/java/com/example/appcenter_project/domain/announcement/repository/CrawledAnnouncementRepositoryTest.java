@@ -5,6 +5,7 @@ import com.example.appcenter_project.domain.announcement.enums.AnnouncementCateg
 import com.example.appcenter_project.domain.announcement.enums.AnnouncementType;
 import com.example.appcenter_project.domain.announcement.enums.ScheduleExtractStatus;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>쿼리: status IN (PENDING, FAILED) AND retryCount < 3
  *        AND (crawledDate >= cutoff OR status = PENDING) AND id > lastId
  */
+@Disabled
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Testcontainers

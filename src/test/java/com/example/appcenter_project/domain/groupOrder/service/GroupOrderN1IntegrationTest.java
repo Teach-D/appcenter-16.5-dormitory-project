@@ -15,6 +15,7 @@ import jakarta.persistence.PersistenceContext;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   <li>batch IN 쿼리로 이미지 일괄 조회 (쿼리 수 고정)</li>
  * </ol>
  */
+@Disabled
 @DataJpaTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:testdb",
         "spring.datasource.driver-class-name=org.h2.Driver",

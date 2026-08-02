@@ -10,8 +10,6 @@ import com.example.appcenter_project.domain.groupOrder.entity.GroupOrderLike;
 import com.example.appcenter_project.domain.roommate.entity.RoommateBoardLike;
 import com.example.appcenter_project.domain.tip.entity.TipLike;
 import com.example.appcenter_project.domain.notification.entity.UserNotification;
-import com.example.appcenter_project.domain.roommate.entity.RoommateBoard;
-import com.example.appcenter_project.domain.roommate.entity.RoommateCheckList;
 import com.example.appcenter_project.domain.tip.entity.Tip;
 import com.example.appcenter_project.domain.groupOrder.enums.GroupOrderType;
 import com.example.appcenter_project.domain.user.enums.College;
@@ -123,12 +121,6 @@ public class User extends BaseTimeEntity {
     @OneToMany(mappedBy = "user", orphanRemoval = true, fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<UserGroupOrderChatRoom> userGroupOrderChatRoomList = new ArrayList<>();
 
-    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private RoommateCheckList roommateCheckList;
-
-    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private RoommateBoard roommateBoard;
-
     @OneToMany(mappedBy = "user")
     private List<RoommateBoardLike> roommateBoardLikeList = new ArrayList<>();
 
@@ -198,10 +190,6 @@ public class User extends BaseTimeEntity {
                 .anyMatch(userNotification -> !userNotification.isRead());
     }
 
-    public boolean hasRoommateCheckList() {
-        return roommateCheckList != null;
-    }
-
     public void updateTermsAgreed(boolean isTermsAgreed) {
         this.isTermsAgreed = isTermsAgreed;
     }
@@ -222,10 +210,6 @@ public class User extends BaseTimeEntity {
         this.name = requestUserDto.getName();
         this.dormType = DormType.from(requestUserDto.getDormType());
         this.college = College.from(requestUserDto.getCollege());
-
-        if (this.roommateCheckList != null) {
-            this.roommateCheckList.syncUserInfo(this.dormType, this.college);
-        }
 
         if (DormType.from(requestUserDto.getDormType()) == DormType.DORM_1 || DormType.from(requestUserDto.getDormType()) == DormType.DORM_2
                 || DormType.from(requestUserDto.getDormType()) == DormType.DORM_3) {
