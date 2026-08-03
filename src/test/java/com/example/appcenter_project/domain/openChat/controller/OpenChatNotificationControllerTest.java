@@ -14,11 +14,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -35,9 +35,10 @@ class OpenChatNotificationControllerTest {
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper objectMapper;
 
-    @MockBean OpenChatRoomService openChatRoomService;
-    @MockBean SlackErrorNotifier slackErrorNotifier;
-    @MockBean JpaMetamodelMappingContext jpaMetamodelMappingContext;
+    @MockitoBean
+    OpenChatRoomService openChatRoomService;
+    @MockitoBean SlackErrorNotifier slackErrorNotifier;
+    @MockitoBean JpaMetamodelMappingContext jpaMetamodelMappingContext;
 
     @BeforeEach
     void setUp() {
