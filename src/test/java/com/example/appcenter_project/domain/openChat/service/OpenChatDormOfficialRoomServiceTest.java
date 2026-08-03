@@ -3,6 +3,7 @@ package com.example.appcenter_project.domain.openChat.service;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateDormOfficialRoomDto;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatParticipant;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatRoom;
+import com.example.appcenter_project.domain.openChat.enums.ChatNotificationMode;
 import com.example.appcenter_project.domain.openChat.fixture.OpenChatDormOfficialRoomFixture;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatParticipantRepository;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatRoomRepository;
@@ -330,5 +331,37 @@ class OpenChatDormOfficialRoomServiceTest {
 
         // then
         then(openChatParticipantRepository).should(never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("공식방 참여자 기본 알림 = BUNDLED — 벌크 생성 시 전원 1시간 묶음")
+    void should_create_participants_with_bundled_when_official_room() {
+        RequestCreateDormOfficialRoomDto request = OpenChatDormOfficialRoomFixture.createRequest();
+        List<User> users = OpenChatDormOfficialRoomFixture.createUsersWithDorm(DormType.DORM_1, 3);
+        OpenChatRoom savedRoom = OpenChatDormOfficialRoomFixture.createDormOfficialRoom(DormType.DORM_1);
+        given(openChatRoomRepository.findByTargetDorm(DormType.DORM_1)).willReturn(Optional.empty());
+        given(userRepository.findAllByDormType(DormType.DORM_1)).willReturn(users);
+        given(openChatRoomRepository.save(any())).willReturn(savedRoom);
+
+        openChatDormOfficialRoomService.createDormOfficialRoom(1L, request);
+
+        then(openChatParticipantRepository).should().saveAll(argThat(list ->
+                ((List<OpenChatParticipant>) list).stream()
+                        .allMatch(p -> p.getNotificationMode() == ChatNotificationMode.BUNDLED)
+        ));
+    }
+
+    @Test
+    @DisplayName("재배정 재입장 참여자 기본 알림 = BUNDLED")
+    void should_create_participant_with_bundled_on_reassign() {
+        OpenChatRoom newRoom = OpenChatDormOfficialRoomFixture.createDormOfficialRoom(DormType.DORM_1);
+        given(openChatRoomRepository.findByTargetDorm(DormType.DORM_1)).willReturn(Optional.of(newRoom));
+        given(openChatParticipantRepository.existsByRoomIdAndUserId(any(), eq(10L))).willReturn(false);
+        ArgumentCaptor<OpenChatParticipant> captor = ArgumentCaptor.forClass(OpenChatParticipant.class);
+
+        openChatDormOfficialRoomService.reassignDormRoom(10L, DormType.NONE, DormType.DORM_1);
+
+        then(openChatParticipantRepository).should().save(captor.capture());
+        assertThat(captor.getValue().getNotificationMode()).isEqualTo(ChatNotificationMode.BUNDLED);
     }
 }
