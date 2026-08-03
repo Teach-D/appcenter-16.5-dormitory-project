@@ -10,9 +10,11 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+@Repository
 public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslRepository {
 
     private final JPAQueryFactory queryFactory;
