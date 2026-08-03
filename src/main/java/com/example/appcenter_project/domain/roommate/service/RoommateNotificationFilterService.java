@@ -12,6 +12,7 @@ import com.example.appcenter_project.domain.roommate.repository.RoommateBoardRep
 import com.example.appcenter_project.domain.roommate.repository.RoommateNotificationFilterRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateMatchingRepository;
 import com.example.appcenter_project.domain.roommate.enums.MatchingStatus;
+import com.example.appcenter_project.domain.roommate.enums.SemesterType;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.user.enums.NotificationType;
 import com.example.appcenter_project.global.exception.CustomException;
@@ -125,7 +126,9 @@ public class RoommateNotificationFilterService {
         log.info("필터 조회 성공. userId: {}, dormType: {}, dormPeriodDays: {}, colleges: {}",
                 userId, filter.getDormType(), filter.getDormPeriodDays(), filter.getColleges());
 
-        List<RoommateBoard> allBoards = boardRepository.findAllWithCheckListAndUserOrderByCreatedDateDesc();
+        List<RoommateBoard> allBoards = boardRepository.findAllWithCheckListAndUserOrderByCreatedDateDesc().stream()
+                .filter(b -> Integer.valueOf(2026).equals(b.getYear()) && SemesterType.SECOND.equals(b.getSemester()))
+                .toList();
         log.info("필터링 시작. 총 게시글 수: {}, 필터 설정 사용자 ID: {}", allBoards.size(), userId);
 
         // 필터 조건에 맞는 게시글만 추출
