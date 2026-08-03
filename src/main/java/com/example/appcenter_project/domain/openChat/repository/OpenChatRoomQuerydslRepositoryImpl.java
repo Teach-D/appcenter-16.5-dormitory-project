@@ -10,9 +10,11 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+@Repository
 public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslRepository {
 
     private final JPAQueryFactory queryFactory;
@@ -52,6 +54,7 @@ public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslR
         BooleanExpression condition = officialRoom != null
                 ? regularRooms.or(officialRoom)
                 : regularRooms;
+        condition = condition.and(openChatRoom.isPublic.isTrue());   // 비노출 방 제외
         return queryFactory
                 .selectFrom(openChatRoom)
                 .where(condition, keywordContains(keyword))
@@ -71,12 +74,11 @@ public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslR
                 .selectFrom(openChatRoom)
                 .where(
                         openChatRoom.isPublic.isTrue()
+                                .and(openChatRoom.scope.eq(OpenChatRoomScope.ALL))
+                                .and(openChatRoom.targetDorm.isNull())
                                 .and(
                                         openChatRoom.roomType.eq(OpenChatRoomType.OPEN)
-                                                .or(
-                                                        openChatRoom.roomType.eq(OpenChatRoomType.DERIVED)
-                                                                .and(openChatRoom.scope.eq(OpenChatRoomScope.ALL))
-                                                )
+                                                .or(openChatRoom.roomType.eq(OpenChatRoomType.DERIVED))
                                 ),
                         keywordContains(keyword)
                 )

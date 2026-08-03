@@ -25,6 +25,7 @@ import com.example.appcenter_project.domain.openChat.repository.OpenChatMessageR
 import com.example.appcenter_project.domain.openChat.repository.OpenChatParticipantRepository;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatRoomQuerydslRepository;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatRoomRepository;
+import com.example.appcenter_project.domain.openChat.dto.response.ResponseNotificationModeDto;
 import org.springframework.beans.factory.annotation.Qualifier;
 import com.example.appcenter_project.domain.block.service.BlockService;
 import com.example.appcenter_project.domain.roommate.entity.RoommateChattingChat;
@@ -321,7 +322,11 @@ public class OpenChatRoomService {
             throw new CustomException(ErrorCode.OPEN_CHAT_ROOM_FULL);
         }
 
-        openChatParticipantRepository.save(OpenChatParticipant.create(roomId, userId, LocalDateTime.now()));
+        ChatNotificationMode defaultMode = (room.isOfficial() && room.getTargetDorm() != null)
+                ? ChatNotificationMode.BUNDLED
+                : ChatNotificationMode.EVERY;
+        openChatParticipantRepository.save(
+                OpenChatParticipant.create(roomId, userId, LocalDateTime.now(), defaultMode));
         openChatMessageService.sendSystemMessage(roomId, user.getName() + "님이 입장했습니다.");
 
         return toDetailDto(room, roomId);
@@ -425,6 +430,14 @@ public class OpenChatRoomService {
                 .findByRoomIdAndUserId(roomId, userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_PARTICIPANT_NOT_FOUND));
         participant.updateNotificationMode(mode);
+    }
+
+    @Transactional(readOnly = true)
+    public ResponseNotificationModeDto getNotificationMode(Long userId, Long roomId) {
+        OpenChatParticipant participant = openChatParticipantRepository
+                .findByRoomIdAndUserId(roomId, userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.OPEN_CHAT_PARTICIPANT_NOT_FOUND));
+        return ResponseNotificationModeDto.of(participant.getNotificationMode());
     }
 
     @Transactional

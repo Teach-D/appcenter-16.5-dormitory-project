@@ -5,14 +5,7 @@ import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateOp
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreatePersonalRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestUpdateNotificationModeDto;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestUpdateOpenChatRoomDto;
-import com.example.appcenter_project.domain.openChat.dto.response.ResponseChatRoomListDto;
-import com.example.appcenter_project.domain.openChat.dto.response.ResponseDerivedRoomCreatedDto;
-import com.example.appcenter_project.domain.openChat.dto.response.ResponseLeaveOpenChatRoomDto;
-import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatParticipantListDto;
-import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDetailDto;
-import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDto;
-import com.example.appcenter_project.domain.openChat.dto.response.ResponsePersonalRoomCreatedDto;
-import com.example.appcenter_project.domain.openChat.dto.response.ResponseSimpleParticipantListDto;
+import com.example.appcenter_project.domain.openChat.dto.response.*;
 import com.example.appcenter_project.domain.openChat.enums.KickReason;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomTab;
 import com.example.appcenter_project.domain.openChat.service.OpenChatRoomService;
@@ -96,6 +89,14 @@ public class OpenChatRoomController implements OpenChatRoomApiSpecification {
             @RequestBody @Valid RequestUpdateNotificationModeDto dto) {
         openChatRoomService.updateNotificationMode(user.getId(), roomId, dto.getMode());
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{roomId}/participants/me/notification")
+    public ResponseEntity<ResponseNotificationModeDto> getNotification(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId) {
+        ResponseNotificationModeDto result = openChatRoomService.getNotificationMode(user.getId(), roomId);
+        return ResponseEntity.ok(result);
     }
 
     @DeleteMapping("/{roomId}/participants/{targetUserId}")
