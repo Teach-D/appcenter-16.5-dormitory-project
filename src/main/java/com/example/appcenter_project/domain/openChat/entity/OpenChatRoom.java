@@ -142,6 +142,23 @@ public class OpenChatRoom extends BaseTimeEntity {
         return room;
     }
 
+    public static OpenChatRoom createDerived(String name, String description, int maxParticipants,
+                                              Long createdBy, String password, boolean isPublic,
+                                              String creatorDormitory, OpenChatRoomScope scope) {
+        OpenChatRoom room = new OpenChatRoom();
+        room.name = name;
+        room.description = description;
+        room.scope = scope;
+        room.maxParticipants = maxParticipants;
+        room.creatorDormitory = creatorDormitory;
+        room.isOfficial = false;
+        room.createdBy = createdBy;
+        room.roomType = OpenChatRoomType.DERIVED;
+        room.password = password;
+        room.isPublic = isPublic;
+        return room;
+    }
+
     public static OpenChatRoom createDormOfficial(String name, String description, Long createdBy, DormType targetDorm) {
         OpenChatRoom room = new OpenChatRoom();
         room.name = name;
