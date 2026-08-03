@@ -72,7 +72,8 @@ public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslR
                         openChatRoom.roomType.in(OpenChatRoomType.OPEN, OpenChatRoomType.DERIVED)
                                 .and(openChatRoom.isPublic.isTrue())
                                 .and(openChatRoom.scope.eq(OpenChatRoomScope.ALL))
-                                .and(openChatRoom.creatorDormitory.isNull()),
+                                .and(openChatRoom.creatorDormitory.isNull())
+                                .and(openChatRoom.targetDorm.isNull()),
                         keywordContains(keyword)
                 )
                 .fetch();

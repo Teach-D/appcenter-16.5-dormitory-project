@@ -72,14 +72,14 @@ class OpenChatRoomVisibilityRepositoryTest {
     }
 
     @Test
-    @DisplayName("findAllPublicRooms — 관리자 공식 기숙사방(targetDorm)은 전체 탭에 계속 노출된다 (공식방 미변경 가드)")
-    void allTab_keepsOfficialDormRoom() {
+    @DisplayName("findAllPublicRooms — 기숙사 기본방(공식방, targetDorm)은 전체 탭에서 제외된다")
+    void allTab_excludesOfficialDormRoom() {
         OpenChatRoom official = openChatRoomRepository.save(
                 OpenChatRoom.createDormOfficial("1기숙사 공식방", "설명", CREATOR, DormType.DORM_1));
 
         List<OpenChatRoom> result = openChatRoomRepository.findAllPublicRooms(null);
 
-        assertThat(result).extracting(OpenChatRoom::getId).contains(official.getId());
+        assertThat(result).extracting(OpenChatRoom::getId).doesNotContain(official.getId());
     }
 
     @Test
