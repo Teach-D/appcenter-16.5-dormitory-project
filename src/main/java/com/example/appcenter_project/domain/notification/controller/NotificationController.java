@@ -2,10 +2,14 @@ package com.example.appcenter_project.domain.notification.controller;
 
 import com.example.appcenter_project.common.metrics.annotation.TrackApi;
 import com.example.appcenter_project.domain.notification.dto.request.RequestNotificationDto;
+import com.example.appcenter_project.domain.notification.dto.request.RequestNotificationReadDto;
 import com.example.appcenter_project.domain.notification.dto.request.RequestSendDirectNotificationDto;
 import com.example.appcenter_project.domain.notification.dto.response.ResponseNotificationDto;
+import com.example.appcenter_project.domain.notification.dto.response.ResponseNotificationReadDto;
 import com.example.appcenter_project.global.security.CustomUserDetails;
+import com.example.appcenter_project.domain.notification.service.NotificationReadService;
 import com.example.appcenter_project.domain.notification.service.NotificationService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,6 +25,16 @@ import static org.springframework.http.HttpStatus.*;
 public class NotificationController implements NotificationApiSpecification {
 
     private final NotificationService notificationService;
+    private final NotificationReadService notificationReadService;
+
+    @PatchMapping("/read")
+    public ResponseEntity<ResponseNotificationReadDto> markAsRead(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestBody @Valid RequestNotificationReadDto dto) {
+        Long targetId = dto.getTargetIdAsLong();
+        return ResponseEntity.status(OK).body(
+                notificationReadService.markAsRead(user != null ? user.getId() : null, dto.getType(), targetId));
+    }
 
     @PostMapping
     public ResponseEntity<Void> saveNotification(@RequestBody RequestNotificationDto requestNotificationDto) {

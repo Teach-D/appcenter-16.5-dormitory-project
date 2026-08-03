@@ -1,6 +1,8 @@
 package com.example.appcenter_project.domain.fcm.entity;
 
 import com.example.appcenter_project.common.BaseTimeEntity;
+import com.example.appcenter_project.domain.fcm.converter.FcmRoutingTypeConverter;
+import com.example.appcenter_project.domain.fcm.enums.FcmRoutingType;
 import com.example.appcenter_project.domain.fcm.enums.OutboxStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -48,13 +50,26 @@ public class FcmOutbox extends BaseTimeEntity {
 
     private LocalDateTime expiredAt;
 
+    @Convert(converter = FcmRoutingTypeConverter.class)
+    @Column(length = 20)
+    private FcmRoutingType routingType;
+
+    private Long routingId;
+
     private static final int TTL_HOURS = 24;
 
     public static FcmOutbox create(String token, String title, String body) {
+        return create(token, title, body, null, null);
+    }
+
+    public static FcmOutbox create(String token, String title, String body,
+                                   FcmRoutingType routingType, Long routingId) {
         FcmOutbox outbox = new FcmOutbox();
         outbox.token = token;
         outbox.title = title;
         outbox.body = body;
+        outbox.routingType = routingType;
+        outbox.routingId = routingId;
         outbox.status = OutboxStatus.PENDING;
         outbox.retryCount = 0;
         outbox.maxRetry = 3;

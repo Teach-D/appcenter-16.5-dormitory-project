@@ -1,6 +1,8 @@
 package com.example.appcenter_project.domain.studentIdDisclosure.service;
 
 import com.example.appcenter_project.domain.fcm.service.FcmMessageService;
+import com.example.appcenter_project.domain.openChat.service.OpenChatMessageService;
+import com.example.appcenter_project.domain.roommate.service.RoommateChattingChatService;
 import com.example.appcenter_project.domain.studentIdDisclosure.dto.request.RequestCreateDisclosureDto;
 import com.example.appcenter_project.domain.studentIdDisclosure.dto.response.ResponseDisclosureAcceptDto;
 import com.example.appcenter_project.domain.studentIdDisclosure.dto.response.ResponseDisclosureSendDto;
@@ -27,9 +29,11 @@ public class StudentIdDisclosureRequestService {
     private final StudentIdDisclosureRequestRepository disclosureRequestRepository;
     private final UserRepository userRepository;
     private final FcmMessageService fcmMessageService;
+    private final OpenChatMessageService openChatMessageService;
+    private final RoommateChattingChatService roommateChattingChatService;
 
     public ResponseDisclosureSendDto sendRequest(Long requesterId, RequestCreateDisclosureDto dto) {
-        Long savedId = transactionService.saveRequest(requesterId, dto);
+        StudentIdDisclosureTransactionService.SaveResult saved = transactionService.saveRequest(requesterId, dto);
 
         userRepository.findById(dto.getTargetId()).ifPresent(targetUser -> {
             if (targetUser.getReceiveNotificationTypes().contains(NotificationType.CHAT)) {
@@ -37,8 +41,14 @@ public class StudentIdDisclosureRequestService {
             }
         });
 
+        if (saved.isRoommateRoom()) {
+            roommateChattingChatService.sendStudentIdRequestMessage(dto.getRoomId(), requesterId, saved.savedId());
+        } else {
+            openChatMessageService.sendStudentIdRequestMessage(dto.getRoomId(), requesterId, saved.savedId());
+        }
+
         return ResponseDisclosureSendDto.builder()
-                .requestId(savedId)
+                .requestId(saved.savedId())
                 .build();
     }
 
@@ -55,17 +65,29 @@ public class StudentIdDisclosureRequestService {
             }
         });
 
+        if (result.isRoommateRoom()) {
+            roommateChattingChatService.sendSystemMessageById(result.roomId(), "학번 공유가 수락되었습니다.");
+        } else {
+            openChatMessageService.sendSystemMessage(result.roomId(), "학번 공유가 수락되었습니다.");
+        }
+
         return result.dto();
     }
 
     public void reject(Long targetId, Long requestId) {
-        Long requesterId = transactionService.rejectRequest(targetId, requestId);
+        StudentIdDisclosureTransactionService.RejectResult result = transactionService.rejectRequest(targetId, requestId);
 
-        userRepository.findById(requesterId).ifPresent(requester -> {
+        userRepository.findById(result.requesterId()).ifPresent(requester -> {
             if (requester.getReceiveNotificationTypes().contains(NotificationType.CHAT)) {
                 fcmMessageService.sendNotification(requester, "학번 공개 거절", "학번 공개 요청이 거절되었습니다.");
             }
         });
+
+        if (result.isRoommateRoom()) {
+            roommateChattingChatService.sendSystemMessageById(result.roomId(), "학번 공유가 거절되었습니다.");
+        } else {
+            openChatMessageService.sendSystemMessage(result.roomId(), "학번 공유가 거절되었습니다.");
+        }
     }
 
     @Transactional(readOnly = true)
@@ -95,7 +117,7 @@ public class StudentIdDisclosureRequestService {
         }
 
         Optional<StudentIdDisclosureRequest> pendingSent = disclosureRequestRepository
-                .findByRoomIdAndRequesterIdAndTargetIdAndStatus(roomId, currentUserId, targetId, DisclosureRequestStatus.PENDING);
+                .findFirstByRoomIdAndRequesterIdAndTargetIdAndStatus(roomId, currentUserId, targetId, DisclosureRequestStatus.PENDING);
         if (pendingSent.isPresent()) {
             return ResponseDisclosureStatusDto.builder()
                     .status("PENDING_SENT")
@@ -104,11 +126,20 @@ public class StudentIdDisclosureRequestService {
         }
 
         Optional<StudentIdDisclosureRequest> pendingReceived = disclosureRequestRepository
-                .findByRoomIdAndRequesterIdAndTargetIdAndStatus(roomId, targetId, currentUserId, DisclosureRequestStatus.PENDING);
+                .findFirstByRoomIdAndRequesterIdAndTargetIdAndStatus(roomId, targetId, currentUserId, DisclosureRequestStatus.PENDING);
         if (pendingReceived.isPresent()) {
             return ResponseDisclosureStatusDto.builder()
                     .status("PENDING_RECEIVED")
                     .requestId(pendingReceived.get().getId())
+                    .build();
+        }
+
+        Optional<StudentIdDisclosureRequest> rejectedSent = disclosureRequestRepository
+                .findFirstByRoomIdAndRequesterIdAndTargetIdAndStatus(roomId, currentUserId, targetId, DisclosureRequestStatus.REJECTED);
+        if (rejectedSent.isPresent()) {
+            return ResponseDisclosureStatusDto.builder()
+                    .status("REJECTED")
+                    .requestId(rejectedSent.get().getId())
                     .build();
         }
 

@@ -1,6 +1,8 @@
 package com.example.appcenter_project.domain.roommate.entity;
 
 import com.example.appcenter_project.common.BaseTimeEntity;
+import com.example.appcenter_project.domain.roommate.enums.SemesterType;
+import com.example.appcenter_project.domain.roommate.enums.SemesterTypeConverter;
 import com.example.appcenter_project.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -21,7 +23,7 @@ public class RoommateBoard extends BaseTimeEntity {
 
     private String title;
 
-    @OneToOne(fetch =  FetchType.LAZY)
+    @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
@@ -37,6 +39,12 @@ public class RoommateBoard extends BaseTimeEntity {
 
     private boolean isMatched = false;
 
+    @Column(name = "registration_year")
+    private Integer year;
+
+    @Convert(converter = SemesterTypeConverter.class)
+    private SemesterType semester;
+
     public Integer plusLike(){
         this.roommateBoardLike +=1;
         return this.getRoommateBoardLike();
@@ -48,11 +56,13 @@ public class RoommateBoard extends BaseTimeEntity {
     }
 
     @Builder
-    public RoommateBoard(String title, User user, int roommateBoardLike, RoommateCheckList roommateCheckList) {
+    public RoommateBoard(String title, User user, int roommateBoardLike, RoommateCheckList roommateCheckList, Integer year, SemesterType semester) {
         this.title = title;
         this.user = user;
         this.roommateBoardLike = roommateBoardLike;
         this.roommateCheckList = roommateCheckList;
+        this.year = year;
+        this.semester = semester;
     }
 
     public void updateTitle(String title){

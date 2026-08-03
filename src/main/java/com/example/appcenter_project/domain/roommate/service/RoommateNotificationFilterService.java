@@ -1,11 +1,13 @@
 package com.example.appcenter_project.domain.roommate.service;
 
 import com.example.appcenter_project.domain.roommate.dto.request.RequestRoommateNotificationFilterDto;
+import com.example.appcenter_project.domain.roommate.dto.response.ResponseFilteredRoommatePostDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateNotificationFilterDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommatePostDto;
 import com.example.appcenter_project.domain.roommate.entity.RoommateBoard;
 import com.example.appcenter_project.domain.roommate.entity.RoommateCheckList;
 import com.example.appcenter_project.domain.roommate.entity.RoommateNotificationFilter;
+import com.example.appcenter_project.domain.roommate.repository.RoommateBoardReadRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateBoardRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateNotificationFilterRepository;
 import com.example.appcenter_project.domain.roommate.repository.RoommateMatchingRepository;
@@ -23,6 +25,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.servlet.http.HttpServletRequest;
+
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -38,6 +43,7 @@ public class RoommateNotificationFilterService {
     private final RoommateBoardRepository boardRepository;
     private final RoommateMatchingRepository roommateMatchingRepository;
     private final UserRepository userRepository;
+    private final RoommateBoardReadRepository roommateBoardReadRepository;
     private final ImageService imageService;
 
     public void saveOrUpdateFilter(Long userId, RequestRoommateNotificationFilterDto dto) {
@@ -106,62 +112,57 @@ public class RoommateNotificationFilterService {
         }
     }
 
-    /**
-     * 현재 사용자의 필터 조건에 맞는 게시글 목록 조회 (테스트용)
-     */
     @Transactional(readOnly = true)
-    public List<ResponseRoommatePostDto> getFilteredBoards(Long userId, HttpServletRequest request) {
+    public List<ResponseFilteredRoommatePostDto> getFilteredBoards(Long userId, HttpServletRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
-        // 필터가 없으면 빈 리스트 반환
         RoommateNotificationFilter filter = filterRepository.findByUserId(userId).orElse(null);
         if (filter == null) {
             log.warn("필터가 설정되지 않았습니다. userId: {}", userId);
             return List.of();
         }
-        log.info("필터 조회 성공. userId: {}, dormType: {}, dormPeriodDays: {}, colleges: {}", 
+        log.info("필터 조회 성공. userId: {}, dormType: {}, dormPeriodDays: {}, colleges: {}",
                 userId, filter.getDormType(), filter.getDormPeriodDays(), filter.getColleges());
 
-        // 참고: 필터링된 게시글 조회는 알림 수신 설정과 무관하게 보여줌
-        // (알림 전송 시에만 알림 수신 설정을 확인)
-
-        // 모든 게시글 조회 (JOIN FETCH로 RoommateCheckList와 User 함께 조회)
         List<RoommateBoard> allBoards = boardRepository.findAllWithCheckListAndUserOrderByCreatedDateDesc();
         log.info("필터링 시작. 총 게시글 수: {}, 필터 설정 사용자 ID: {}", allBoards.size(), userId);
 
-        // 필터 조건에 맞는 게시글만 필터링
-        List<ResponseRoommatePostDto> result = allBoards.stream()
+        // 필터 조건에 맞는 게시글만 추출
+        List<RoommateBoard> matchedBoards = allBoards.stream()
                 .filter(board -> {
-                    // 본인이 작성한 게시글은 제외
                     if (board.getUser().getId().equals(userId)) {
                         log.debug("본인 게시글 제외. boardId: {}, userId: {}", board.getId(), userId);
                         return false;
                     }
-
                     RoommateCheckList checkList = board.getRoommateCheckList();
                     if (checkList == null) {
                         log.debug("RoommateCheckList 없음. boardId: {}", board.getId());
                         return false;
                     }
-
                     User writer = board.getUser();
-                    
-                    // 필터 조건 체크 (User의 dormType과 college 사용)
                     boolean matches = matchesFilter(filter, checkList, writer, board.getId());
                     if (!matches) {
                         log.debug("필터 조건 불일치. boardId: {}, writerId: {}", board.getId(), writer.getId());
                     } else {
-                        log.info("✅ 필터 조건 일치! boardId: {}, writerId: {}, writerName: {}", 
+                        log.info("✅ 필터 조건 일치! boardId: {}, writerId: {}, writerName: {}",
                                 board.getId(), writer.getId(), writer.getName());
                     }
                     return matches;
                 })
+                .toList();
+
+        // 로그인 유저가 읽은 게시글 id (매칭된 범위로 한정)
+        List<Long> matchedIds = matchedBoards.stream().map(RoommateBoard::getId).toList();
+        Set<Long> readBoardIds = matchedIds.isEmpty()
+                ? Set.of()
+                : new HashSet<>(roommateBoardReadRepository.findReadBoardIds(userId, matchedIds));
+
+        List<ResponseFilteredRoommatePostDto> result = matchedBoards.stream()
                 .map(board -> {
                     RoommateCheckList cl = board.getRoommateCheckList();
                     User writer = board.getUser();
-                    
-                    // 매칭 여부 확인
+
                     boolean isMatched = roommateMatchingRepository.existsBySenderAndStatus(writer, MatchingStatus.COMPLETED)
                             || roommateMatchingRepository.existsByReceiverAndStatus(writer, MatchingStatus.COMPLETED);
 
@@ -170,7 +171,7 @@ public class RoommateNotificationFilterService {
                         writerImg = imageService.findStaticImageUrl(ImageType.USER, writer.getId(), request);
                     } catch (Exception ignored) {}
 
-                    return ResponseRoommatePostDto.builder()
+                    ResponseRoommatePostDto post = ResponseRoommatePostDto.builder()
                             .id(board.getId())
                             .title(cl.getTitle())
                             .dormPeriod(DormDayUtil.sortDormDays(cl.getDormPeriod()))
@@ -193,10 +194,17 @@ public class RoommateNotificationFilterService {
                             .createDate(board.getCreatedDate())
                             .isMatched(isMatched)
                             .userProfileImageUrl(writerImg)
+                            .isRead(readBoardIds.contains(board.getId()))
+                            .build();
+
+                    return ResponseFilteredRoommatePostDto.builder()
+                            .post(post)
+                            .matchedFilterFields(getMatchedFields(filter, cl))
                             .build();
                 })
+                .sorted((a, b) -> Boolean.compare(a.getPost().isRead(), b.getPost().isRead()))
                 .toList();
-        
+
         log.info("필터링 완료. 일치하는 게시글 수: {}개, 필터 설정 사용자 ID: {}", result.size(), userId);
         return result;
     }
@@ -213,16 +221,14 @@ public class RoommateNotificationFilterService {
         if (filter.getDormPeriodDays() != null && !filter.getDormPeriodDays().isEmpty()) {
             Set<com.example.appcenter_project.domain.roommate.enums.DormDay> checkListDormPeriod = checkList.getDormPeriod();
             if (checkListDormPeriod == null || checkListDormPeriod.isEmpty()) {
-                log.debug("필터 불일치: dormPeriodDays (게시글에 상주기간 없음). boardId: {}", boardId);
+                log.debug("필터 불일치: dormPeriodDays (게시글에 비상주기간 없음). boardId: {}", boardId);
                 return false;
             }
-            // 필터에서 선택한 날짜는 비상주 기간이므로, 교집합이 없어야 함
-            // 예: 필터 ["월"] 선택 = 월에 비상주 = 화, 수, 목, 금, 토, 일에 상주하는 사람의 글만 알림
-            // 게시글 작성자의 상주기간 ["화"]와 필터의 비상주기간 ["월"]은 교집합 없음 → 통과
+            // dormPeriod = 상주기간. 내 비상주기간과 겹치는 날이 없어야 통과 (교집합 없어야 함)
             boolean hasIntersection = checkListDormPeriod.stream()
                     .anyMatch(filter.getDormPeriodDays()::contains);
             if (hasIntersection) {
-                log.debug("필터 불일치: dormPeriodDays (교집합 있음). filter 비상주: {}, 게시글 상주: {}, boardId: {}", 
+                log.debug("필터 불일치: dormPeriodDays (교집합 있음). filter 비상주: {}, 게시글 상주: {}, boardId: {}",
                         filter.getDormPeriodDays(), checkListDormPeriod, boardId);
                 return false;
             }
@@ -290,6 +296,65 @@ public class RoommateNotificationFilterService {
 
         log.debug("모든 필터 조건 일치! boardId: {}", boardId);
         return true;
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> getMatchedFieldsByUserId(Long userId, RoommateCheckList checkList) {
+        return filterRepository.findByUserId(userId)
+                .map(filter -> getMatchedFields(filter, checkList))
+                .orElse(null);
+    }
+
+    private List<String> getMatchedFields(RoommateNotificationFilter filter, RoommateCheckList checkList) {
+        List<String> matched = new ArrayList<>();
+
+        if (filter.getDormType() != null && filter.getDormType().equals(checkList.getDormType())) {
+            matched.add("dormType");
+        }
+        if (filter.getDormPeriodDays() != null && !filter.getDormPeriodDays().isEmpty()) {
+            Set<com.example.appcenter_project.domain.roommate.enums.DormDay> checkListDormPeriod = checkList.getDormPeriod();
+            if (checkListDormPeriod != null && !checkListDormPeriod.isEmpty()) {
+                boolean hasIntersection = checkListDormPeriod.stream()
+                        .anyMatch(filter.getDormPeriodDays()::contains);
+                if (!hasIntersection) {
+                    matched.add("dormPeriodDays");
+                }
+            }
+        }
+        if (filter.getColleges() != null && !filter.getColleges().isEmpty()
+                && checkList.getCollege() != null && filter.getColleges().contains(checkList.getCollege())) {
+            matched.add("colleges");
+        }
+        if (filter.getSmoking() != null && filter.getSmoking().equals(checkList.getSmoking())) {
+            matched.add("smoking");
+        }
+        if (filter.getSnoring() != null && filter.getSnoring().equals(checkList.getSnoring())) {
+            matched.add("snoring");
+        }
+        if (filter.getToothGrind() != null && filter.getToothGrind().equals(checkList.getToothGrind())) {
+            matched.add("toothGrind");
+        }
+        if (filter.getSleeper() != null && filter.getSleeper().equals(checkList.getSleeper())) {
+            matched.add("sleeper");
+        }
+        if (filter.getShowerHour() != null && filter.getShowerHour().equals(checkList.getShowerHour())) {
+            matched.add("showerHour");
+        }
+        if (filter.getShowerTime() != null && filter.getShowerTime().equals(checkList.getShowerTime())) {
+            matched.add("showerTime");
+        }
+        if (filter.getBedTime() != null && filter.getBedTime().equals(checkList.getBedTime())) {
+            matched.add("bedTime");
+        }
+        if (filter.getArrangement() != null && filter.getArrangement().equals(checkList.getArrangement())) {
+            matched.add("arrangement");
+        }
+        if (filter.getReligions() != null && !filter.getReligions().isEmpty()
+                && checkList.getReligion() != null && filter.getReligions().contains(checkList.getReligion())) {
+            matched.add("religions");
+        }
+
+        return matched;
     }
 }
 

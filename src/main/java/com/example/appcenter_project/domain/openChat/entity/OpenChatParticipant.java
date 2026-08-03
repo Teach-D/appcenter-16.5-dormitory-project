@@ -1,5 +1,6 @@
 package com.example.appcenter_project.domain.openChat.entity;
 
+import com.example.appcenter_project.domain.openChat.enums.ChatNotificationMode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -24,8 +25,9 @@ public class OpenChatParticipant {
     @Column(nullable = false)
     private Long userId;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private boolean notificationEnabled = true;
+    private ChatNotificationMode notificationMode = ChatNotificationMode.EVERY;
 
     @Column(nullable = false)
     private LocalDateTime joinedAt;
@@ -40,7 +42,7 @@ public class OpenChatParticipant {
         participant.roomId = roomId;
         participant.userId = userId;
         participant.joinedAt = joinedAt;
-        participant.notificationEnabled = true;
+        participant.notificationMode = ChatNotificationMode.EVERY;
         participant.isHost = false;
         return participant;
     }
@@ -50,8 +52,18 @@ public class OpenChatParticipant {
         participant.roomId = roomId;
         participant.userId = userId;
         participant.joinedAt = LocalDateTime.now();
-        participant.notificationEnabled = true;
+        participant.notificationMode = ChatNotificationMode.EVERY;
         participant.isHost = isHost;
+        return participant;
+    }
+
+    public static OpenChatParticipant create(Long roomId, Long userId, LocalDateTime joinedAt, ChatNotificationMode mode) {
+        OpenChatParticipant participant = new OpenChatParticipant();
+        participant.roomId = roomId;
+        participant.userId = userId;
+        participant.joinedAt = joinedAt;
+        participant.notificationMode = mode;
+        participant.isHost = false;
         return participant;
     }
 
@@ -67,7 +79,8 @@ public class OpenChatParticipant {
         this.lastReadMessageId = messageId;
     }
 
-    public void updateNotificationEnabled(boolean enabled) {
-        this.notificationEnabled = enabled;
+    public void updateNotificationMode(ChatNotificationMode mode) {
+        this.notificationMode = mode;
     }
+
 }

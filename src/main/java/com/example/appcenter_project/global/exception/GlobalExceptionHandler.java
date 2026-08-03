@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -61,6 +62,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseEntity> handleMissingPart(MissingServletRequestPartException ex) {
         log.warn("MissingServletRequestPartException 발생: {}", ex.getMessage());
 
+        return ErrorResponseEntity.toResponseEntity(ErrorCode.VALIDATION_FAILED);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponseEntity> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        log.warn("HttpMessageNotReadableException 발생: {}", ex.getMessage());
         return ErrorResponseEntity.toResponseEntity(ErrorCode.VALIDATION_FAILED);
     }
 

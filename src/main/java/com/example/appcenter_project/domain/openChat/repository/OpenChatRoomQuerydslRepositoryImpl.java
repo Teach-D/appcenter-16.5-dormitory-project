@@ -5,12 +5,16 @@ import com.example.appcenter_project.domain.openChat.entity.QOpenChatParticipant
 import com.example.appcenter_project.domain.openChat.entity.QOpenChatRoom;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomScope;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomType;
+import com.example.appcenter_project.domain.user.enums.DormType;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+@Repository
 public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslRepository {
 
     private final JPAQueryFactory queryFactory;
@@ -23,13 +27,14 @@ public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslR
     private static final QOpenChatParticipant openChatParticipant = QOpenChatParticipant.openChatParticipant;
 
     @Override
-    public List<OpenChatRoom> findMyRooms(Long userId) {
+    public List<OpenChatRoom> findMyRooms(Long userId, String keyword) {
         return queryFactory
                 .selectFrom(openChatRoom)
                 .join(openChatParticipant).on(
                         openChatRoom.id.eq(openChatParticipant.roomId),
                         openChatParticipant.userId.eq(userId)
                 )
+                .where(keywordContains(keyword))
                 .orderBy(
                         openChatRoom.lastMessageAt.desc().nullsLast(),
                         openChatRoom.createdDate.desc()
@@ -38,27 +43,40 @@ public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslR
     }
 
     @Override
-    public List<OpenChatRoom> findByDormitory(String dormType) {
+    public List<OpenChatRoom> findByDormitory(String dormType, String keyword) {
+        BooleanExpression regularRooms =
+                openChatRoom.scope.eq(OpenChatRoomScope.DORMITORY)
+                        .or(openChatRoom.roomType.eq(OpenChatRoomType.DERIVED))
+                        .and(creatorDormitoryEq(dormType));
+        BooleanExpression officialRoom = targetDormEq(dormType);
+        BooleanExpression condition = officialRoom != null
+                ? regularRooms.or(officialRoom)
+                : regularRooms;
+        condition = condition.and(openChatRoom.isPublic.isTrue());   // 비노출 방 제외
         return queryFactory
                 .selectFrom(openChatRoom)
-                .where(
-                        scopeEq(OpenChatRoomScope.DORMITORY),
-                        creatorDormitoryEq(dormType)
+                .where(condition, keywordContains(keyword))
+                .orderBy(
+                        new CaseBuilder()
+                                .when(openChatRoom.targetDorm.isNotNull()).then(1)
+                                .otherwise(0).desc(),
+                        openChatRoom.lastMessageAt.desc().nullsLast(),
+                        openChatRoom.createdDate.desc()
                 )
                 .fetch();
     }
 
     @Override
-    public List<OpenChatRoom> findAllPublicRooms() {
+    public List<OpenChatRoom> findAllPublicRooms(String keyword) {
         return queryFactory
                 .selectFrom(openChatRoom)
                 .where(
-                        openChatRoom.roomType.eq(OpenChatRoomType.OPEN)
+                        openChatRoom.roomType.in(OpenChatRoomType.OPEN, OpenChatRoomType.DERIVED)
+                                .and(openChatRoom.isPublic.isTrue())
                                 .and(openChatRoom.scope.eq(OpenChatRoomScope.ALL))
-                        .or(
-                                openChatRoom.roomType.eq(OpenChatRoomType.DERIVED)
-                                        .and(openChatRoom.isPublic.isTrue())
-                        )
+                                .and(openChatRoom.creatorDormitory.isNull())
+                                .and(openChatRoom.targetDorm.isNull()),
+                        keywordContains(keyword)
                 )
                 .fetch();
     }
@@ -69,5 +87,21 @@ public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslR
 
     private BooleanExpression creatorDormitoryEq(String dormType) {
         return dormType != null ? openChatRoom.creatorDormitory.eq(dormType) : null;
+    }
+
+    private BooleanExpression targetDormEq(String dormType) {
+        if (dormType == null) return null;
+        try {
+            DormType dorm = DormType.valueOf(dormType);
+            return dorm == DormType.NONE ? null : openChatRoom.targetDorm.eq(dorm);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    private BooleanExpression keywordContains(String keyword) {
+        if (keyword == null || keyword.isBlank()) return null;
+        return openChatRoom.name.containsIgnoreCase(keyword)
+                .or(openChatRoom.description.containsIgnoreCase(keyword));
     }
 }

@@ -86,6 +86,8 @@ public class SecurityConfig {
                         .requestMatchers(GET, "/roommates/similar").authenticated()
                         // 나의 체크리스트 조회
                         .requestMatchers(GET, "/roommates/my-checklist").authenticated()
+                        // 이전 학기 체크리스트 불러오기
+                        .requestMatchers(GET, "/roommates/my-checklist/previous").authenticated()
                         // 게시글 좋아요 여부 확인
                         .requestMatchers(GET, "/roommates/{boardId}/liked").authenticated()
                         // 룸메이트 게시글 조회
@@ -136,6 +138,8 @@ public class SecurityConfig {
                         /** 알림 **/
                         // 특정 유저 1:1 직접 알림 전송(ADMIN 전용)
                         .requestMatchers(POST, "/notifications/admin/direct").hasRole("ADMIN")
+                        // 알림 읽음 처리(로그인한 사용자)
+                        .requestMatchers(PATCH, "/notifications/read").authenticated()
                         // 알림 조회(로그인한 사용자)
                         .requestMatchers(GET, "/notifications/**").permitAll()
                         // 알림 등록, 수정, 삭제(관리자)
@@ -174,6 +178,7 @@ public class SecurityConfig {
                         .requestMatchers("/features/**").permitAll()
 
                         /** 오픈 채팅 **/
+                        .requestMatchers("/admin/open-chat-reports/**").hasRole("ADMIN")
                         .requestMatchers("/open-chat-rooms/**").authenticated()
 
                         /** 학번 공개 **/
@@ -184,6 +189,9 @@ public class SecurityConfig {
 
                         /** 어드민 장소 관리 **/
                         .requestMatchers("/admin/places/**").hasRole("ADMIN")
+
+                        /** 차단 **/
+                        .requestMatchers("/block/**").authenticated()
 
                         /** 날씨 **/
                         .requestMatchers(GET, "/weather").permitAll()

@@ -56,13 +56,13 @@ public class RoommateNotificationService {
             
             // 게시글 작성자 본인은 제외
             if (filterUser.getId().equals(boardAuthorId)) {
-                log.debug("게시글 작성자 본인 제외. userId: {}", filterUser.getId());
+                log.info("게시글 작성자 본인 제외. userId: {}", filterUser.getId());
                 continue;
             }
 
             // ROOMMATE 알림을 받지 않도록 설정한 사용자는 제외
             if (!filterUser.getReceiveNotificationTypes().contains(NotificationType.ROOMMATE)) {
-                log.debug("ROOMMATE 알림 수신 비활성화 사용자 제외. userId: {}", filterUser.getId());
+                log.info("ROOMMATE 알림 수신 비활성화 사용자 제외. userId: {}", filterUser.getId());
                 continue;
             }
 
@@ -71,7 +71,7 @@ public class RoommateNotificationService {
                 targetUsers.add(filterUser);
                 log.info("필터 조건 일치! userId: {}, boardId: {}", filterUser.getId(), board.getId());
             } else {
-                log.debug("필터 조건 불일치. userId: {}, boardId: {}", filterUser.getId(), board.getId());
+                log.info("필터 조건 불일치. userId: {}, boardId: {}", filterUser.getId(), board.getId());
             }
         }
         
@@ -110,7 +110,7 @@ public class RoommateNotificationService {
     private boolean matchesFilter(RoommateNotificationFilter filter, RoommateCheckList checkList, Long boardId, Long userId) {
         // 기본 정보 필터링
         if (filter.getDormType() != null && !filter.getDormType().equals(checkList.getDormType())) {
-            log.debug("필터 불일치: dormType. filter: {}, checkList: {}, userId: {}, boardId: {}", 
+            log.info("필터 불일치: dormType. filter: {}, checkList: {}, userId: {}, boardId: {}", 
                     filter.getDormType(), checkList.getDormType(), userId, boardId);
             return false;
         }
@@ -118,7 +118,7 @@ public class RoommateNotificationService {
         if (filter.getDormPeriodDays() != null && !filter.getDormPeriodDays().isEmpty()) {
             Set<com.example.appcenter_project.domain.roommate.enums.DormDay> checkListDormPeriod = checkList.getDormPeriod();
             if (checkListDormPeriod == null || checkListDormPeriod.isEmpty()) {
-                log.debug("필터 불일치: dormPeriodDays (게시글에 상주기간 없음). userId: {}, boardId: {}", userId, boardId);
+                log.info("필터 불일치: dormPeriodDays (게시글에 상주기간 없음). userId: {}, boardId: {}", userId, boardId);
                 return false;
             }
             // 필터에서 선택한 날짜는 비상주 기간이므로, 교집합이 없어야 함
@@ -127,7 +127,7 @@ public class RoommateNotificationService {
             boolean hasIntersection = checkListDormPeriod.stream()
                     .anyMatch(filter.getDormPeriodDays()::contains);
             if (hasIntersection) {
-                log.debug("필터 불일치: dormPeriodDays (교집합 있음). filter: {}, checkList: {}, userId: {}, boardId: {}", 
+                log.info("필터 불일치: dormPeriodDays (교집합 있음). filter: {}, checkList: {}, userId: {}, boardId: {}", 
                         filter.getDormPeriodDays(), checkListDormPeriod, userId, boardId);
                 return false;
             }
@@ -135,7 +135,7 @@ public class RoommateNotificationService {
 
         if (filter.getColleges() != null && !filter.getColleges().isEmpty()) {
             if (checkList.getCollege() == null || !filter.getColleges().contains(checkList.getCollege())) {
-                log.debug("필터 불일치: colleges. filter: {}, checkList: {}, userId: {}, boardId: {}", 
+                log.info("필터 불일치: colleges. filter: {}, checkList: {}, userId: {}, boardId: {}", 
                         filter.getColleges(), checkList.getCollege(), userId, boardId);
                 return false;
             }
@@ -143,58 +143,111 @@ public class RoommateNotificationService {
 
         // 생활 습관 필터링
         if (filter.getSmoking() != null && !filter.getSmoking().equals(checkList.getSmoking())) {
-            log.debug("필터 불일치: smoking. filter: {}, checkList: {}, userId: {}, boardId: {}", 
+            log.info("필터 불일치: smoking. filter: {}, checkList: {}, userId: {}, boardId: {}", 
                     filter.getSmoking(), checkList.getSmoking(), userId, boardId);
             return false;
         }
 
         if (filter.getSnoring() != null && !filter.getSnoring().equals(checkList.getSnoring())) {
-            log.debug("필터 불일치: snoring. userId: {}, boardId: {}", userId, boardId);
+            log.info("필터 불일치: snoring. userId: {}, boardId: {}", userId, boardId);
             return false;
         }
 
         if (filter.getToothGrind() != null && !filter.getToothGrind().equals(checkList.getToothGrind())) {
-            log.debug("필터 불일치: toothGrind. userId: {}, boardId: {}", userId, boardId);
+            log.info("필터 불일치: toothGrind. userId: {}, boardId: {}", userId, boardId);
             return false;
         }
 
         if (filter.getSleeper() != null && !filter.getSleeper().equals(checkList.getSleeper())) {
-            log.debug("필터 불일치: sleeper. userId: {}, boardId: {}", userId, boardId);
+            log.info("필터 불일치: sleeper. userId: {}, boardId: {}", userId, boardId);
             return false;
         }
 
         // 생활 리듬 필터링
         if (filter.getShowerHour() != null && !filter.getShowerHour().equals(checkList.getShowerHour())) {
-            log.debug("필터 불일치: showerHour. userId: {}, boardId: {}", userId, boardId);
+            log.info("필터 불일치: showerHour. userId: {}, boardId: {}", userId, boardId);
             return false;
         }
 
         if (filter.getShowerTime() != null && !filter.getShowerTime().equals(checkList.getShowerTime())) {
-            log.debug("필터 불일치: showerTime. userId: {}, boardId: {}", userId, boardId);
+            log.info("필터 불일치: showerTime. userId: {}, boardId: {}", userId, boardId);
             return false;
         }
 
         if (filter.getBedTime() != null && !filter.getBedTime().equals(checkList.getBedTime())) {
-            log.debug("필터 불일치: bedTime. userId: {}, boardId: {}", userId, boardId);
+            log.info("필터 불일치: bedTime. userId: {}, boardId: {}", userId, boardId);
             return false;
         }
 
         // 성향 필터링
         if (filter.getArrangement() != null && !filter.getArrangement().equals(checkList.getArrangement())) {
-            log.debug("필터 불일치: arrangement. userId: {}, boardId: {}", userId, boardId);
+            log.info("필터 불일치: arrangement. userId: {}, boardId: {}", userId, boardId);
             return false;
         }
 
         if (filter.getReligions() != null && !filter.getReligions().isEmpty()) {
             if (checkList.getReligion() == null || !filter.getReligions().contains(checkList.getReligion())) {
-                log.debug("필터 불일치: religions. filter: {}, checkList: {}, userId: {}, boardId: {}", 
+                log.info("필터 불일치: religions. filter: {}, checkList: {}, userId: {}, boardId: {}", 
                         filter.getReligions(), checkList.getReligion(), userId, boardId);
                 return false;
             }
         }
 
-        log.debug("모든 필터 조건 일치! userId: {}, boardId: {}", userId, boardId);
+        log.info("모든 필터 조건 일치! userId: {}, boardId: {}", userId, boardId);
         return true;
+    }
+
+    public void sendFilteredNotificationsOnUpdate(RoommateBoard board, Long boardAuthorId) {
+        User boardAuthor = board.getUser();
+        RoommateCheckList checkList = board.getRoommateCheckList();
+
+        if (checkList == null) {
+            log.info("RoommateCheckList가 없어 수정 알림을 전송하지 않습니다. boardId: {}", board.getId());
+            return;
+        }
+
+        List<RoommateNotificationFilter> filters = filterRepository.findAllWithUser();
+        List<User> targetUsers = new ArrayList<>();
+
+        log.info("수정 알림 필터 시작: 총 {}명, boardId={}, smoking={}", filters.size(), board.getId(), checkList.getSmoking());
+
+        for (RoommateNotificationFilter filter : filters) {
+            User filterUser = filter.getUser();
+            if (filterUser.getId().equals(boardAuthorId)) {
+                log.info("수정 알림 제외(작성자 본인): userId={}", filterUser.getId());
+                continue;
+            }
+            if (!filterUser.getReceiveNotificationTypes().contains(NotificationType.ROOMMATE)) {
+                log.info("수정 알림 제외(ROOMMATE 비활성화): userId={}, types={}", filterUser.getId(), filterUser.getReceiveNotificationTypes());
+                continue;
+            }
+            if (!matchesFilter(filter, checkList, board.getId(), filterUser.getId())) {
+                log.info("수정 알림 제외(필터 불일치): userId={}", filterUser.getId());
+                continue;
+            }
+            log.info("수정 알림 대상 추가: userId={}", filterUser.getId());
+            targetUsers.add(filterUser);
+        }
+
+        if (targetUsers.isEmpty()) {
+            log.info("수정 후 신규 매칭 사용자 없음. boardId: {}", board.getId());
+            return;
+        }
+
+        Notification notification = notificationService.createRoommateBoardUpdateNotification(
+                boardAuthor.getName(), board.getId());
+
+        for (User targetUser : targetUsers) {
+            notificationService.createUserNotification(targetUser, notification);
+            try {
+                fcmMessageService.sendNotification(targetUser, notification.getTitle(), notification.getBody());
+            } catch (Exception e) {
+                log.error("FCM 전송 실패(update). userId: {}, boardId: {}, error: {}",
+                        targetUser.getId(), board.getId(), e.getMessage());
+            }
+        }
+
+        log.info("룸메이트 게시글 수정 알림 전송 완료. boardId: {}, 전송 대상: {}명", board.getId(), targetUsers.size());
     }
 
     /**

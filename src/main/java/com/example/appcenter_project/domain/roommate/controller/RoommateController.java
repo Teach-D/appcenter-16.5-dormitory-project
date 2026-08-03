@@ -3,9 +3,13 @@ package com.example.appcenter_project.domain.roommate.controller;
 import com.example.appcenter_project.common.metrics.annotation.TrackApi;
 import com.example.appcenter_project.domain.roommate.dto.request.RequestRoommateFormDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateCheckListDto;
+import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateMatchingStatusDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommatePostDto;
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateSimilarityDto;
+import com.example.appcenter_project.domain.roommate.enums.SemesterType;
 import com.example.appcenter_project.global.security.CustomUserDetails;
+import com.example.appcenter_project.domain.roommate.service.MyRoommateService;
+import com.example.appcenter_project.domain.roommate.service.RoommateQueryService;
 import com.example.appcenter_project.domain.roommate.service.RoommateService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -21,15 +25,17 @@ import java.util.List;
 public class RoommateController implements RoommateApiSpecification{
 
     private final RoommateService roommateService;
+    private final MyRoommateService myRoommateService;
+    private final RoommateQueryService roommateQueryService;
 
     @TrackApi
     @Override
     @PostMapping
     public ResponseEntity<ResponseRoommatePostDto> createRoommatePost(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @AuthenticationPrincipal(errorOnInvalidType = false) CustomUserDetails userDetails,
             @RequestBody RequestRoommateFormDto requestDto
     ) {
-        Long userId = userDetails.getId(); // 인증된 사용자 ID 가져오기
+        Long userId = userDetails != null ? userDetails.getId() : 0L;
         ResponseRoommatePostDto responseDto = roommateService.createRoommateCheckListandBoard(requestDto, userId);
         return ResponseEntity.status(201).body(responseDto);
     }
@@ -38,9 +44,11 @@ public class RoommateController implements RoommateApiSpecification{
     @Override
     @GetMapping("/list")
     public ResponseEntity<List<ResponseRoommatePostDto>> getRoommateBoardList(
+            @AuthenticationPrincipal(errorOnInvalidType = false) CustomUserDetails userDetails,
             jakarta.servlet.http.HttpServletRequest request
     ) {
-        return ResponseEntity.ok(roommateService.getRoommateBoardList(request));
+        Long userId = userDetails != null ? userDetails.getId() : null;
+        return ResponseEntity.ok(roommateService.getRoommateBoardList(userId, request));
     }
 
     @TrackApi
@@ -48,9 +56,11 @@ public class RoommateController implements RoommateApiSpecification{
     @GetMapping("/{boardId}")
     public ResponseEntity<ResponseRoommatePostDto> getRoommateBoardDetail(
             @PathVariable Long boardId,
+            @AuthenticationPrincipal(errorOnInvalidType = false) CustomUserDetails userDetails,
             jakarta.servlet.http.HttpServletRequest request
     ) {
-        return ResponseEntity.ok(roommateService.getRoommateBoardDetail(boardId, request));
+        Long userId = userDetails != null ? userDetails.getId() : null;
+        return ResponseEntity.ok(roommateService.getRoommateBoardDetail(boardId, userId, request));
     }
 
     @TrackApi
@@ -65,24 +75,27 @@ public class RoommateController implements RoommateApiSpecification{
     }
 
     @Override
-    @PutMapping
+    @PutMapping("/{boardId}")
     public ResponseEntity<ResponseRoommatePostDto> updateRoommateCheckListAndBoard(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long boardId,
+            @AuthenticationPrincipal(errorOnInvalidType = false) CustomUserDetails userDetails,
             @RequestBody RequestRoommateFormDto requestDto,
-            jakarta.servlet.http.HttpServletRequest request // 추가
+            jakarta.servlet.http.HttpServletRequest request
     ) {
-        Long userId = userDetails.getId();
+        Long userId = userDetails != null ? userDetails.getId() : 0L;
         ResponseRoommatePostDto updated =
-                roommateService.updateRoommateChecklistAndBoard(requestDto, userId, request); // 변경
+                roommateService.updateRoommateChecklistAndBoard(requestDto, boardId, userId, request);
         return ResponseEntity.ok(updated);
     }
 
     @Override
-    @DeleteMapping
+    @DeleteMapping("/{boardId}")
     public ResponseEntity<Void> deleteRoommateBoard(
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @PathVariable Long boardId,
+            @AuthenticationPrincipal(errorOnInvalidType = false) CustomUserDetails userDetails
     ) {
-        roommateService.deleteRoommateBoard(userDetails.getId());
+        Long userId = userDetails != null ? userDetails.getId() : 0L;
+        roommateService.deleteRoommateBoard(boardId, userId);
         return ResponseEntity.noContent().build();
     }
 
@@ -124,12 +137,22 @@ public class RoommateController implements RoommateApiSpecification{
         return ResponseEntity.ok(isLiked);
     }
 
+    @TrackApi
     @Override
-    @GetMapping("/my-checklist-id")
-    public ResponseEntity<Long> getMyCheckList(
+    @GetMapping("/my-checklist")
+    public ResponseEntity<ResponseRoommateCheckListDto> getMyCheckList(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         return ResponseEntity.ok(roommateService.getMyCheckList(userDetails.getId()));
+    }
+
+    @TrackApi
+    @Override
+    @GetMapping("/my-checklist/previous")
+    public ResponseEntity<ResponseRoommateCheckListDto> getPreviousCheckListContent(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(roommateService.getPreviousCheckListContent(userDetails.getId()));
     }
 
     @GetMapping("/latest10/random")
@@ -145,9 +168,15 @@ public class RoommateController implements RoommateApiSpecification{
     public ResponseEntity<List<ResponseRoommatePostDto>> getRoommateBoardListScroll(
             @RequestParam(required = false) Long lastId,
             @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer semester,
+            @AuthenticationPrincipal(errorOnInvalidType = false) CustomUserDetails userDetails,
             HttpServletRequest request
     ) {
-        return ResponseEntity.ok(roommateService.getRoommateBoardListScroll(request, lastId, size));
+        Long userId = userDetails != null ? userDetails.getId() : null;
+        SemesterType semesterType = SemesterType.fromCodeOrNull(semester);
+        return ResponseEntity.ok(roommateService.getRoommateBoardListScroll(userId, request, lastId, size, keyword, year, semesterType));
     }
 
     @GetMapping("/list/similar/scroll/me")
@@ -167,6 +196,13 @@ public class RoommateController implements RoommateApiSpecification{
                         size
                 )
         );
+    }
+
+    @TrackApi
+    @Override
+    @GetMapping("/matching-status")
+    public ResponseEntity<ResponseRoommateMatchingStatusDto> getMatchingStatus() {
+        return ResponseEntity.ok(roommateService.getMatchingStatus());
     }
 
 }

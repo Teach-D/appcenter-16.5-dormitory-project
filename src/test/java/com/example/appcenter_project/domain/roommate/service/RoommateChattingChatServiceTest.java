@@ -314,6 +314,45 @@ class RoommateChattingChatServiceTest {
     }
 
     @Test
+    @DisplayName("채팅 전송 - 수신자(host)가 나간 상태면 자동 재진입")
+    void sendChat_수신자가_나간_상태면_자동_재진입() {
+        User guest = buildMockUser(2L);
+        User host = buildMockUser(1L);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(guest));
+
+        RoommateChattingRoom room = mock(RoommateChattingRoom.class);
+        when(room.getId()).thenReturn(100L);
+        when(room.getGuest()).thenReturn(guest);
+        when(room.getHost()).thenReturn(host);
+        when(room.isHostLeft()).thenReturn(true);
+        when(room.isGuestLeft()).thenReturn(false);
+        when(chatRoomRepository.findById(100L)).thenReturn(Optional.of(room));
+
+        RoommateChattingChat savedChat = mock(RoommateChattingChat.class);
+        when(savedChat.getId()).thenReturn(1L);
+        when(savedChat.getMember()).thenReturn(guest);
+        when(savedChat.getContent()).thenReturn("안녕하세요!");
+        when(savedChat.isReadByReceiver()).thenReturn(false);
+        when(savedChat.getCreatedDate()).thenReturn(LocalDateTime.now());
+        when(savedChat.getRoommateChattingRoom()).thenReturn(room);
+        when(chatRepository.save(any(RoommateChattingChat.class))).thenReturn(savedChat);
+
+        Notification mockNotification = mock(Notification.class);
+        when(mockNotification.getTitle()).thenReturn("채팅 알림");
+        when(mockNotification.getBody()).thenReturn("안녕하세요!");
+        when(notificationService.createChatNotification(anyString(), anyLong(), anyString()))
+                .thenReturn(mockNotification);
+
+        RequestRoommateChatDto dto = mock(RequestRoommateChatDto.class);
+        when(dto.getRoommateChattingRoomId()).thenReturn(100L);
+        when(dto.getContent()).thenReturn("안녕하세요!");
+
+        roommateChattingChatService.sendChat(2L, dto);
+
+        verify(room).rejoinAsHost();
+    }
+
+    @Test
     @DisplayName("채팅 목록 조회 - 정상 반환")
     void getChatList_정상_반환() {
         User guest = buildMockUser(2L);
@@ -345,4 +384,52 @@ class RoommateChattingChatServiceTest {
 
         assertThat(result).hasSize(1);
     }
+
+    @Test
+    @DisplayName("채팅 목록 조회 - 시스템 메시지(member==null) 포함해도 NPE 없이 반환")
+    void getChatList_시스템메시지포함_정상반환() {
+        User guest = buildMockUser(2L);
+        User host = buildMockUser(1L);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(guest));
+
+        RoommateChattingRoom room = mock(RoommateChattingRoom.class);
+        when(room.getId()).thenReturn(100L);
+        when(room.getGuest()).thenReturn(guest);
+        when(room.getHost()).thenReturn(host);
+        when(chatRoomRepository.findById(100L)).thenReturn(Optional.of(room));
+
+        // 일반 메시지 (host가 보냄)
+        RoommateChattingChat normal = mock(RoommateChattingChat.class);
+        when(normal.getId()).thenReturn(1L);
+        when(normal.getMember()).thenReturn(host);
+        when(normal.getContent()).thenReturn("안녕하세요!");
+        when(normal.isReadByReceiver()).thenReturn(false);
+        when(normal.getCreatedDate()).thenReturn(LocalDateTime.now());
+        when(normal.getRoommateChattingRoom()).thenReturn(room);
+
+        // 시스템 메시지 (member == null) — 예전 코드면 여기서 NPE
+        RoommateChattingChat system = mock(RoommateChattingChat.class);
+        when(system.getId()).thenReturn(2L);
+        when(system.getMember()).thenReturn(null);
+        when(system.getContent()).thenReturn("사용자1님이 나갔습니다.");
+        when(system.isSystem()).thenReturn(true);
+        when(system.isReadByReceiver()).thenReturn(true);
+        when(system.getCreatedDate()).thenReturn(LocalDateTime.now());
+        when(system.getRoommateChattingRoom()).thenReturn(room);
+
+        when(chatRepository.findByRoommateChattingRoom(room)).thenReturn(List.of(normal, system));
+
+        ImageLinkDto mockImage = mock(ImageLinkDto.class);
+        when(mockImage.getImageUrl()).thenReturn("http://example.com/image.jpg");
+        when(imageService.findImage(eq(ImageType.USER), anyLong(), any(HttpServletRequest.class)))
+                .thenReturn(mockImage);
+
+        List<ResponseRoommateChatDto> result =
+                roommateChattingChatService.getChatList(2L, 100L, mock(HttpServletRequest.class));
+
+        assertThat(result).hasSize(2);
+        assertThat(result).anyMatch(ResponseRoommateChatDto::isSystem);
+    }
+
+
 }

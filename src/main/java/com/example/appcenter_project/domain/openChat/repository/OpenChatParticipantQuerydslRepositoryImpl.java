@@ -4,6 +4,7 @@ import com.example.appcenter_project.domain.openChat.dto.UnreadNotificationInfo;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatParticipant;
 import com.example.appcenter_project.domain.openChat.entity.QOpenChatMessage;
 import com.example.appcenter_project.domain.openChat.entity.QOpenChatParticipant;
+import com.example.appcenter_project.domain.openChat.enums.ChatNotificationMode;
 import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
@@ -105,14 +106,14 @@ public class OpenChatParticipantQuerydslRepositoryImpl implements OpenChatPartic
                         openChatParticipant.lastReadMessageId.isNull()
                                 .or(message.id.gt(openChatParticipant.lastReadMessageId))
                 )
-                .where(openChatParticipant.notificationEnabled.isTrue())
+                .where(openChatParticipant.notificationMode.eq(ChatNotificationMode.BUNDLED))
                 .groupBy(openChatParticipant.roomId, openChatParticipant.userId)
                 .fetch();
 
         return results.stream()
                 .map(t -> new UnreadNotificationInfo(
-                        t.get(openChatParticipant.roomId),
                         t.get(openChatParticipant.userId),
+                        t.get(openChatParticipant.roomId),
                         t.get(message.id.count()) != null ? t.get(message.id.count()) : 0L
                 ))
                 .toList();

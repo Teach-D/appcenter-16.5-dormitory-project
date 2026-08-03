@@ -2,6 +2,7 @@ package com.example.appcenter_project.domain.notification.service;
 
 import com.example.appcenter_project.domain.announcement.entity.Announcement;
 import com.example.appcenter_project.domain.fcm.entity.FcmOutbox;
+import com.example.appcenter_project.domain.fcm.enums.FcmRoutingType;
 import com.example.appcenter_project.domain.fcm.repository.FcmOutboxRepository;
 import com.example.appcenter_project.domain.notification.entity.Notification;
 import com.example.appcenter_project.domain.notification.entity.UserNotification;
@@ -56,7 +57,7 @@ public class AnnouncementNotificationService {
         }
 
         createUserNotifications(targetUser, notification);
-        sendMessagesTo(targetUser, notification, notificationType);
+        sendMessagesTo(targetUser, notification, notificationType, announcement.getId());
     }
 
     private Notification createNotification(Announcement announcement, NotificationType notificationType) {
@@ -85,29 +86,29 @@ public class AnnouncementNotificationService {
         return userRepository.findByReceiveNotificationTypesContainsAndRoleNotIn(notificationType, DORMITORY_ROLES);
     }
 
-    private void sendMessagesTo(List<User> targetUser, Notification notification, NotificationType notificationType) {
+    private void sendMessagesTo(List<User> targetUser, Notification notification, NotificationType notificationType, Long announcementId) {
         switch(notificationType) {
-            case DORMITORY -> sendDormitoryMessages(targetUser, notification.getTitle(), notification.getBody());
-            case SUPPORTERS -> sendSupporterMessages(targetUser, notification.getTitle(), notification.getBody());
-            case UNI_DORM -> sendUnidormMessages(targetUser, notification.getTitle(), notification.getBody());
+            case DORMITORY -> sendDormitoryMessages(targetUser, notification.getTitle(), notification.getBody(), announcementId);
+            case SUPPORTERS -> sendSupporterMessages(targetUser, notification.getTitle(), notification.getBody(), announcementId);
+            case UNI_DORM -> sendUnidormMessages(targetUser, notification.getTitle(), notification.getBody(), announcementId);
         }
     }
 
-    private void sendDormitoryMessages(List<User> targetUser, String title, String body) {
-        bulkEnqueueOutbox(targetUser, title, body);
+    private void sendDormitoryMessages(List<User> targetUser, String title, String body, Long announcementId) {
+        bulkEnqueueOutbox(targetUser, title, body, announcementId);
     }
 
-    private void sendSupporterMessages(List<User> targetUser, String title, String body) {
-        bulkEnqueueOutbox(targetUser, title, body);
+    private void sendSupporterMessages(List<User> targetUser, String title, String body, Long announcementId) {
+        bulkEnqueueOutbox(targetUser, title, body, announcementId);
     }
 
-    private void sendUnidormMessages(List<User> targetUser, String title, String body) {
-        bulkEnqueueOutbox(targetUser, title, body);
+    private void sendUnidormMessages(List<User> targetUser, String title, String body, Long announcementId) {
+        bulkEnqueueOutbox(targetUser, title, body, announcementId);
     }
 
-    private void bulkEnqueueOutbox(List<User> users, String title, String body) {
+    private void bulkEnqueueOutbox(List<User> users, String title, String body, Long announcementId) {
         List<FcmOutbox> outboxes = fcmTokenRepository.findAllByUserIn(users).stream()
-                .map(token -> FcmOutbox.create(token.getToken(), title, body))
+                .map(token -> FcmOutbox.create(token.getToken(), title, body, FcmRoutingType.ANNOUNCEMENT, announcementId))
                 .toList();
         if (!outboxes.isEmpty()) {
             fcmOutboxRepository.saveAll(outboxes);

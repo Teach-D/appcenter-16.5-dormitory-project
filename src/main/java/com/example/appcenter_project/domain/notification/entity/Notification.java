@@ -84,13 +84,23 @@ public class Notification extends BaseTimeEntity {
                 .build();
     }
 
-    public static Notification createRoommateBoardNotification(String title, String body, Long matchingId) {
+    public static Notification createRoommateBoardNotification(String title, String body, Long boardId) {
         return Notification.builder()
                 .title(title)
                 .body(body)
                 .notificationType(NotificationType.ROOMMATE)
                 .apiType(ApiType.ROOMMATE)
-                .boardId(matchingId)
+                .boardId(boardId)
+                .build();
+    }
+
+    public static Notification createRoommateBoardUpdateNotification(String title, String body, Long boardId) {
+        return Notification.builder()
+                .title(title)
+                .body(body)
+                .notificationType(NotificationType.ROOMMATE)
+                .apiType(ApiType.ROOMMATE_UPDATE)
+                .boardId(boardId)
                 .build();
     }
 

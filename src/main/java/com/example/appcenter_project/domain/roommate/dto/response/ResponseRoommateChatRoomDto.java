@@ -18,4 +18,8 @@ public class ResponseRoommateChatRoomDto {
     private String partnerName;
     private String partnerProfileImageUrl;
     private boolean isOpponentLeft;
+    private boolean isRoommate;
+    private boolean isBlockedByPartner;
+    private String myBoardTitle;
+    private String opponentBoardTitle;
 }

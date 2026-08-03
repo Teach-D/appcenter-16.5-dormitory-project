@@ -10,8 +10,6 @@ import com.example.appcenter_project.domain.groupOrder.entity.GroupOrderLike;
 import com.example.appcenter_project.domain.roommate.entity.RoommateBoardLike;
 import com.example.appcenter_project.domain.tip.entity.TipLike;
 import com.example.appcenter_project.domain.notification.entity.UserNotification;
-import com.example.appcenter_project.domain.roommate.entity.RoommateBoard;
-import com.example.appcenter_project.domain.roommate.entity.RoommateCheckList;
 import com.example.appcenter_project.domain.tip.entity.Tip;
 import com.example.appcenter_project.domain.groupOrder.enums.GroupOrderType;
 import com.example.appcenter_project.domain.user.enums.College;
@@ -43,7 +41,6 @@ public class User extends BaseTimeEntity {
     private String studentNumber;
     private String name;
     private String password;
-    private Integer penalty;
 
     @Enumerated(EnumType.STRING)
     private DormType dormType;
@@ -124,12 +121,6 @@ public class User extends BaseTimeEntity {
     @OneToMany(mappedBy = "user", orphanRemoval = true, fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<UserGroupOrderChatRoom> userGroupOrderChatRoomList = new ArrayList<>();
 
-    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private RoommateCheckList roommateCheckList;
-
-    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private RoommateBoard roommateBoard;
-
     @OneToMany(mappedBy = "user")
     private List<RoommateBoardLike> roommateBoardLikeList = new ArrayList<>();
 
@@ -140,11 +131,10 @@ public class User extends BaseTimeEntity {
     private List<FcmToken>  fcmTokenList = new ArrayList<>();
 
     @Builder
-    public User(String studentNumber, String name, String password, Integer penalty, DormType dormType, Role role, Image image) {
+    public User(String studentNumber, String name, String password, DormType dormType, Role role, Image image) {
         this.name = name;
         this.studentNumber = studentNumber;
         this.password = password;
-        this.penalty = penalty;
         this.dormType = dormType;
         this.role = role;
         this.image = image;
@@ -153,7 +143,7 @@ public class User extends BaseTimeEntity {
     public static User createNewUser(String studentNumber, String password) {
         User user = User.builder()
                 .studentNumber(studentNumber).password(password)
-                .penalty(0).image(null).role(Role.ROLE_USER).build();
+                .image(null).role(Role.ROLE_USER).build();
 
         user.isFreshman = false;
         return user;
@@ -164,7 +154,7 @@ public class User extends BaseTimeEntity {
         User user = User.builder()
                 .studentNumber(studentNumber).password(password)
                 .name(name).dormType(dormType)
-                .penalty(0).image(null).role(role).build();
+                .image(null).role(role).build();
         user.isFreshman = false;
         user.college = college;
         return user;
@@ -173,18 +163,31 @@ public class User extends BaseTimeEntity {
     public static User createFreshman(String username, String password) {
         User user = User.builder()
                 .studentNumber(username).password(password)
-                .penalty(0).image(null).role(Role.ROLE_USER).build();
+                .image(null).role(Role.ROLE_USER).build();
         user.isFreshman = true;
+        return user;
+    }
+
+    public static User createForTest(Long id, String name) {
+        User user = new User();
+        user.id = id;
+        user.name = name;
+        user.studentNumber = "test-" + id;
+        return user;
+    }
+
+    public static User createForTest(Long id, String name, DormType dormType) {
+        User user = new User();
+        user.id = id;
+        user.name = name;
+        user.studentNumber = "test-" + id;
+        user.dormType = dormType;
         return user;
     }
 
     public boolean hasUnreadNotifications() {
         return userNotifications.stream()
                 .anyMatch(userNotification -> !userNotification.isRead());
-    }
-
-    public boolean hasRoommateCheckList() {
-        return roommateCheckList != null;
     }
 
     public void updateTermsAgreed(boolean isTermsAgreed) {

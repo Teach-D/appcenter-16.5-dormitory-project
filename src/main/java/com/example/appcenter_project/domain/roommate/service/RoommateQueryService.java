@@ -2,6 +2,7 @@ package com.example.appcenter_project.domain.roommate.service;
 
 import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommatePostDto;
 import com.example.appcenter_project.domain.roommate.repository.RoommateBoardLikeRepository;
+import com.example.appcenter_project.domain.roommate.repository.RoommateBoardRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +15,14 @@ import java.util.List;
 public class RoommateQueryService {
 
     private final RoommateBoardLikeRepository roommateBoardLikeRepository;
+    private final RoommateBoardRepository roommateBoardRepository;
+
+    public List<ResponseRoommatePostDto> findByUser(Long userId) {
+        return roommateBoardRepository.findByUserId(userId)
+                .map(board -> ResponseRoommatePostDto.entityToDto(board, board.isMatched(), null))
+                .map(List::of)
+                .orElse(List.of());
+    }
 
     public List<ResponseRoommatePostDto> findLikedByUser(Long userId) {
         return roommateBoardLikeRepository.findByUserIdWithRoommateBoardAndRoommateCheckListAndUser(userId)

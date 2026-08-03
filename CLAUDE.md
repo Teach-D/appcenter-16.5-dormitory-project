@@ -79,3 +79,4 @@ src/main/java/com/example/appcenter_project/
 
 - `.claude/rules/antipatterns.md` — Spring 아키텍처, Lombok/엔티티 패턴, API/예외 처리 안티패턴
 - `.claude/rules/antipatterns-jpa.md` — N+1, 트랜잭션, QueryDSL 안티패턴
+- `.claude/rules/antipatterns-test.md` — Mockito/Fixture 안티패턴 (테스트 작성 전 확인)

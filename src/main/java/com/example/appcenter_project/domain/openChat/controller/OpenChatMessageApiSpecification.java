@@ -5,6 +5,10 @@ import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenCh
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
@@ -19,20 +23,74 @@ import java.util.List;
 @Tag(name = "OpenChat Message", description = "오픈 채팅 메시지 API")
 public interface OpenChatMessageApiSpecification {
 
-    @Operation(summary = "채팅 메시지 목록 조회", description = "커서 기반 페이지네이션으로 채팅 메시지를 조회한다")
+    @Operation(
+            summary = "채팅 메시지 목록 조회",
+            description = """
+                    커서 기반 페이지네이션으로 채팅 메시지를 최신순으로 조회합니다.
+
+                    - **lastMessageId**: 이전 응답의 `nextCursor` 값을 그대로 전달합니다. 최초 요청 시 생략.
+                    - **size**: 한 번에 가져올 메시지 수 (기본 30)
+                    - **hasNext**: `true`이면 더 이전 메시지가 존재합니다. `nextCursor`로 다음 요청.
+
+                    **메시지 type 설명**:
+                    - `TEXT`: 일반 텍스트 메시지
+                    - `IMAGE`: 이미지 메시지 — `imageUrls` 배열에 URL 포함
+                    - `SYSTEM`: 시스템 메시지 (입장/퇴장 등) — `senderId`가 null일 수 있음
+                    - `ROOM_LINK`: 파생 톡방 링크 메시지 — `linkedRoomId`, `linkedRoomName`, `linkedRoomDescription`, `linkedRoomMaxParticipants` 포함
+                    """,
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "조회 성공",
+                            content = @Content(schema = @Schema(implementation = ResponseOpenChatMessageListDto.class))
+                    ),
+                    @ApiResponse(responseCode = "401", description = "인증 필요"),
+                    @ApiResponse(responseCode = "403", description = "채팅방 참여자가 아님"),
+                    @ApiResponse(responseCode = "404", description = "채팅방을 찾을 수 없음")
+            }
+    )
     ResponseEntity<ResponseOpenChatMessageListDto> getMessages(
             @AuthenticationPrincipal CustomUserDetails user,
-            @PathVariable Long roomId,
-            @RequestParam(required = false) Long lastMessageId,
-            @RequestParam(defaultValue = "30") int size,
-            HttpServletRequest request);
+            @PathVariable
+            @Parameter(description = "채팅방 ID", required = true, example = "1")
+            Long roomId,
+            @RequestParam(required = false)
+            @Parameter(description = "커서: 이전 응답의 nextCursor 값 (첫 요청 시 생략)")
+            Long lastMessageId,
+            @RequestParam(defaultValue = "30")
+            @Parameter(description = "페이지 크기 (기본 30)", example = "30")
+            int size,
+            @Parameter(hidden = true) HttpServletRequest request);
 
-    @Operation(summary = "이미지 메시지 전송", description = "채팅방에 이미지를 전송한다. 저장 완료 후 WebSocket으로 전체 참여자에게 브로드캐스트된다.")
-    ResponseEntity<ResponseOpenChatMessageDto> sendImageMessage(
+    @Operation(
+            summary = "이미지 메시지 전송",
+            description = """
+                    채팅방에 이미지를 전송합니다.
+
+                    - **이미지 1장 = 메시지 1개**로 저장되며, 각 메시지가 WebSocket으로 브로드캐스트됩니다.
+                    - 지원 형식: jpg / jpeg / png / gif / webp
+                    - 최대 **5장**까지 동시 전송 가능
+                    - Content-Type은 `multipart/form-data` 로 요청해야 합니다.
+                    """,
+            responses = {
+                    @ApiResponse(
+                            responseCode = "201",
+                            description = "전송 성공 — 생성된 메시지 목록 반환",
+                            content = @Content(array = @ArraySchema(schema = @Schema(implementation = ResponseOpenChatMessageDto.class)))
+                    ),
+                    @ApiResponse(responseCode = "400", description = "지원하지 않는 파일 형식 또는 파일 없음"),
+                    @ApiResponse(responseCode = "401", description = "인증 필요"),
+                    @ApiResponse(responseCode = "403", description = "채팅방 참여자가 아님"),
+                    @ApiResponse(responseCode = "404", description = "채팅방을 찾을 수 없음")
+            }
+    )
+    ResponseEntity<List<ResponseOpenChatMessageDto>> sendImageMessage(
             @AuthenticationPrincipal CustomUserDetails user,
-            @PathVariable Long roomId,
+            @PathVariable
+            @Parameter(description = "채팅방 ID", required = true, example = "1")
+            Long roomId,
             @RequestPart(value = "images", required = false)
-            @Parameter(description = "전송할 이미지 파일 목록 (jpg/jpeg/png/gif/webp, 최대 5개)", required = false)
+            @Parameter(description = "전송할 이미지 파일 목록 (jpg/jpeg/png/gif/webp, 최대 5개)")
             List<MultipartFile> images,
-            HttpServletRequest request);
+            @Parameter(hidden = true) HttpServletRequest request);
 }

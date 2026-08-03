@@ -22,7 +22,6 @@ public interface RoommateBoardLikeRepository extends JpaRepository<RoommateBoard
             "JOIN FETCH rb.roommateCheckList rcl " +
             "LEFT JOIN FETCH rcl.dormPeriod " +
             "JOIN FETCH rcl.user u " +
-            "LEFT JOIN FETCH u.roommateBoard " +
             "WHERE rbl.user.id = :userId")
     List<RoommateBoardLike> findByUserIdWithRoommateBoardAndRoommateCheckListAndUser(@Param("userId") Long userId);
 

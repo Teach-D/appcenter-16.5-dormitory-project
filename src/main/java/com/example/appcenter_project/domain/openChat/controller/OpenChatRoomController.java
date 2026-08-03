@@ -1,10 +1,11 @@
 package com.example.appcenter_project.domain.openChat.controller;
 
+import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateDerivedRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateOpenChatRoomDto;
-import com.example.appcenter_project.domain.openChat.dto.response.ResponseLeaveOpenChatRoomDto;
-import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatParticipantListDto;
-import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDetailDto;
-import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDto;
+import com.example.appcenter_project.domain.openChat.dto.request.RequestCreatePersonalRoomDto;
+import com.example.appcenter_project.domain.openChat.dto.request.RequestUpdateNotificationModeDto;
+import com.example.appcenter_project.domain.openChat.dto.request.RequestUpdateOpenChatRoomDto;
+import com.example.appcenter_project.domain.openChat.dto.response.*;
 import com.example.appcenter_project.domain.openChat.enums.KickReason;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomTab;
 import com.example.appcenter_project.domain.openChat.service.OpenChatRoomService;
@@ -12,7 +13,6 @@ import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -29,6 +29,14 @@ public class OpenChatRoomController implements OpenChatRoomApiSpecification {
 
     private final OpenChatRoomService openChatRoomService;
 
+    @PostMapping("/derived")
+    public ResponseEntity<ResponseDerivedRoomCreatedDto> createDerivedRoom(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestBody @Valid RequestCreateDerivedRoomDto request) {
+        ResponseDerivedRoomCreatedDto result = openChatRoomService.createDerivedRoom(user.getId(), request);
+        return ResponseEntity.status(CREATED).body(result);
+    }
+
     @PostMapping
     public ResponseEntity<Map<String, Long>> createRoom(
             @AuthenticationPrincipal CustomUserDetails user,
@@ -37,18 +45,22 @@ public class OpenChatRoomController implements OpenChatRoomApiSpecification {
         return ResponseEntity.status(CREATED).body(Map.of("roomId", roomId));
     }
 
+    @PostMapping("/personal")
+    public ResponseEntity<ResponsePersonalRoomCreatedDto> createPersonalRoom(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestBody @Valid RequestCreatePersonalRoomDto request) {
+        ResponsePersonalRoomCreatedDto result = openChatRoomService.createPersonalRoom(user.getId(), request);
+        return ResponseEntity.status(CREATED).body(result);
+    }
+
     @GetMapping
-    public ResponseEntity<Page<ResponseOpenChatRoomDto>> getRooms(
+    public ResponseEntity<ResponseChatRoomListDto> getRooms(
             @AuthenticationPrincipal CustomUserDetails user,
             @RequestParam OpenChatRoomTab tab,
+            @RequestParam(required = false) String keyword,
             Pageable pageable) {
-        Page<ResponseOpenChatRoomDto> result;
-        if (tab == OpenChatRoomTab.DORMITORY) {
-            String dormType = getDormType(user);
-            result = openChatRoomService.getRoomsForDormitory(user.getId(), dormType, pageable);
-        } else {
-            result = openChatRoomService.getRooms(user.getId(), tab, pageable);
-        }
+        Long userId = user != null ? user.getId() : null;
+        ResponseChatRoomListDto result = openChatRoomService.getRooms(userId, tab, keyword, pageable);
         return ResponseEntity.ok(result);
     }
 
@@ -74,9 +86,17 @@ public class OpenChatRoomController implements OpenChatRoomApiSpecification {
     public ResponseEntity<Void> updateNotification(
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long roomId,
-            @RequestParam boolean enabled) {
-        openChatRoomService.updateNotification(user.getId(), roomId, enabled);
+            @RequestBody @Valid RequestUpdateNotificationModeDto dto) {
+        openChatRoomService.updateNotificationMode(user.getId(), roomId, dto.getMode());
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{roomId}/participants/me/notification")
+    public ResponseEntity<ResponseNotificationModeDto> getNotification(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId) {
+        ResponseNotificationModeDto result = openChatRoomService.getNotificationMode(user.getId(), roomId);
+        return ResponseEntity.ok(result);
     }
 
     @DeleteMapping("/{roomId}/participants/{targetUserId}")
@@ -87,6 +107,16 @@ public class OpenChatRoomController implements OpenChatRoomApiSpecification {
             @RequestParam KickReason reason,
             @RequestParam(required = false) Long newHostUserId) {
         openChatRoomService.kickParticipant(user.getId(), roomId, targetUserId, reason, newHostUserId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{roomId}")
+    public ResponseEntity<Void> updateRoom(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId,
+            @RequestBody @Valid RequestUpdateOpenChatRoomDto request) {
+        Long userId = user != null ? user.getId() : 0L;
+        openChatRoomService.updateRoom(userId, roomId, request);
         return ResponseEntity.noContent().build();
     }
 
@@ -130,6 +160,14 @@ public class OpenChatRoomController implements OpenChatRoomApiSpecification {
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long roomId) {
         ResponseOpenChatParticipantListDto result = openChatRoomService.getParticipants(roomId, user.getId());
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/{roomId}/participants/simple")
+    public ResponseEntity<ResponseSimpleParticipantListDto> getSimpleParticipants(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId) {
+        ResponseSimpleParticipantListDto result = openChatRoomService.getSimpleParticipants(roomId, user.getId());
         return ResponseEntity.ok(result);
     }
 

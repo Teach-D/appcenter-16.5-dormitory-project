@@ -1,9 +1,9 @@
 package com.example.appcenter_project.global.scheduler;
 
-// ... (기존 import 구문 유지) ...
 import com.example.appcenter_project.common.file.entity.CrawledAnnouncementFile;
 import com.example.appcenter_project.domain.announcement.entity.CrawledAnnouncement;
 import com.example.appcenter_project.domain.announcement.enums.AnnouncementCategory;
+import com.example.appcenter_project.domain.announcement.service.CrawledAnnouncementUpdateService;
 import com.example.appcenter_project.domain.notification.entity.Notification;
 import com.example.appcenter_project.domain.notification.entity.UserNotification;
 import com.example.appcenter_project.domain.user.entity.User;
@@ -37,6 +37,8 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.example.appcenter_project.domain.calender.service.AiScheduleService.CHANGE_DETECT_WEEKS;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -51,6 +53,7 @@ public class AnnouncementCrawlScheduler {
     private final UserRepository userRepository;
     private final UserNotificationRepository userNotificationRepository;
     private final FcmMessageService fcmMessageService;
+    private final CrawledAnnouncementUpdateService crawledAnnouncementUpdateService;
 
     @Scheduled(cron = "0 0 9,14,18 * * ?")
     public void crawling() {
@@ -159,53 +162,34 @@ public class AnnouncementCrawlScheduler {
         }
     }
 
-    /**
-     * 💡 변경됨: WebDriver를 인수로 받으며, 드라이버 생성/종료 로직이 삭제되었습니다.
-     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void saveCrawlAnnouncement(WebDriver driver, String link, boolean isDormitoryMove) {
-        // WebDriver driver = null; // ❌ 삭제됨
-
         try {
-            // ChromeOptions 설정 및 driver = new ChromeDriver(options); ❌ 삭제됨
-
-            driver.get(link); // 재활용된 드라이버 사용
-
+            driver.get(link);
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
             wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".view-title")));
-
-            // ... (기존 상세 크롤링 및 저장 로직 유지) ...
 
             String title = "";
             String category = "";
             try {
                 WebElement titleElement = driver.findElement(By.cssSelector(".view-title"));
                 String fullTitle = titleElement.getText().trim();
-
-                // 입퇴사 공지인 경우 무조건 "입퇴사 공지"로 설정
                 if (isDormitoryMove) {
                     category = "입퇴사 공지";
-                    title = fullTitle; // 입퇴사 공지는 전체 제목 사용
+                    title = fullTitle;
+                } else if (fullTitle.startsWith("[") && fullTitle.contains("]")) {
+                    int endIndex = fullTitle.indexOf("]");
+                    category = fullTitle.substring(1, endIndex);
+                    title = fullTitle.substring(endIndex + 1).trim();
                 } else {
-                    // 카테고리 추출 및 제목 분리
-                    if (fullTitle.startsWith("[") && fullTitle.contains("]")) {
-                        int endIndex = fullTitle.indexOf("]");
-                        category = fullTitle.substring(1, endIndex);
-
-                        // ] 이후의 문자열을 제목으로 (공백 제거)
-                        title = fullTitle.substring(endIndex + 1).trim();
-                    } else {
-                        category = "기타";
-                        title = fullTitle;
-                    }
+                    category = "기타";
+                    title = fullTitle;
                 }
-
             } catch (Exception e) {
                 log.debug("제목 추출 실패");
                 category = isDormitoryMove ? "입퇴사 공지" : "기타";
             }
 
-            // 조회수
             int viewCountInt = 0;
             try {
                 WebElement viewCountElement = driver.findElement(By.cssSelector("dl.count dd"));
@@ -217,70 +201,35 @@ public class AnnouncementCrawlScheduler {
                 log.debug("조회수 추출 실패, 기본값 0 사용");
             }
 
-            // 글번호 (String으로 처리)
             String number = "";
             try {
                 WebElement numberElement = driver.findElement(By.cssSelector("dl.view-num dd"));
                 number = numberElement.getText().trim();
-
-                // 빈 값이면 건너뛰기
-                if (number.isEmpty()) {
-                    log.warn("빈 글번호, 건너뛰기");
-                    return;
-                }
-
-                // 이미 저장되어 있는 공지사항은 저장 제외
-                Optional<CrawledAnnouncement> existingAnnouncement =
-                        crawledAnnouncementRepository.findByNumber(number);
-
-                if (existingAnnouncement.isPresent()) {
-                    CrawledAnnouncement announcement = existingAnnouncement.get();
-                    announcement.updateViewCount(viewCountInt);
-                    crawledAnnouncementRepository.saveAndFlush(announcement); // 명시적 저장
-                    log.info("기존 공지사항 조회수 업데이트 - 번호: {}, 조회수: {}", number, viewCountInt);
-                    return;
-                }
+                if (number.isEmpty()) { log.warn("빈 글번호, 건너뛰기"); return; }
             } catch (Exception e) {
                 log.error("글번호 추출 실패: {}", e.getMessage());
-                return; // 글번호가 없으면 저장하지 않음
+                return;
             }
 
-            // 작성일
             String createDate = "";
             try {
-                WebElement createDateElement = driver.findElement(By.cssSelector("dl.write dd"));
-                createDate = createDateElement.getText().trim();
-            } catch (Exception e) {
-                log.debug("작성일 추출 실패");
-            }
+                createDate = driver.findElement(By.cssSelector("dl.write dd")).getText().trim();
+            } catch (Exception e) { log.debug("작성일 추출 실패"); }
 
-            // 작성자
             String writer = "";
             try {
-                WebElement writerElement = driver.findElement(By.cssSelector("dl.writer dd"));
-                writer = writerElement.getText().trim();
-            } catch (Exception e) {
-                log.debug("작성자 추출 실패");
-            }
+                writer = driver.findElement(By.cssSelector("dl.writer dd")).getText().trim();
+            } catch (Exception e) { log.debug("작성자 추출 실패"); }
 
-
-
-            // 본문 내용
             String content = "";
             try {
                 WebElement contentElement = driver.findElement(By.cssSelector(".view-con"));
-                List<WebElement> children = contentElement.findElements(By.xpath("./*"));
-
-                for (WebElement child : children) {
-                    String textContent = child.getText().trim();
-                    content = content + textContent + "\n";
+                for (WebElement child : contentElement.findElements(By.xpath("./*"))) {
+                    content = content + child.getText().trim() + "\n";
                 }
                 content = content.replaceAll("[^\\u0000-\\uFFFF]", "");
-            } catch (Exception e) {
-                log.debug("본문 내용 추출 실패");
-            }
+            } catch (Exception e) { log.debug("본문 내용 추출 실패"); }
 
-            // 첨부파일 목록
             List<CrawledAnnouncementFile> crawledAnnouncementFiles = new ArrayList<>();
             try {
                 List<WebElement> fileElements = driver.findElements(By.cssSelector(".view-file .insert ul li"));
@@ -289,41 +238,50 @@ public class AnnouncementCrawlScheduler {
                         WebElement linkElement = fileElement.findElement(By.tagName("a"));
                         String fileName = linkElement.getText().trim();
                         String downloadUrl = linkElement.getAttribute("href");
-
                         if (!fileName.isEmpty() && downloadUrl != null && !downloadUrl.isEmpty()) {
-                            if (!downloadUrl.startsWith("http")) {
-                                downloadUrl = "https://dorm.inu.ac.kr" + downloadUrl;
-                            }
-
-                            CrawledAnnouncementFile fileDto = CrawledAnnouncementFile.builder()
-                                    .fileName(fileName)
-                                    .filePath(downloadUrl)
-                                    .build();
-                            crawledAnnouncementFiles.add(fileDto);
+                            if (!downloadUrl.startsWith("http")) downloadUrl = "https://dorm.inu.ac.kr" + downloadUrl;
+                            crawledAnnouncementFiles.add(CrawledAnnouncementFile.builder()
+                                    .fileName(fileName).filePath(downloadUrl).build());
                         }
-                    } catch (Exception e) {
-                        log.debug("개별 파일 추출 실패: {}", e.getMessage());
-                    }
+                    } catch (Exception e) { log.debug("개별 파일 추출 실패: {}", e.getMessage()); }
                 }
-            } catch (Exception e) {
-                log.debug("첨부파일 목록 추출 실패");
-            }
+            } catch (Exception e) { log.debug("첨부파일 목록 추출 실패"); }
 
             log.info("상세 정보 크롤링 완료: {}", title);
 
+            Optional<CrawledAnnouncement> existingOpt = crawledAnnouncementRepository.findByNumber(number);
+
+            if (existingOpt.isPresent()) {
+                CrawledAnnouncement existing = existingOpt.get();
+
+                boolean extractionValid = !title.isBlank() && !content.isBlank();
+                boolean changed = !Objects.equals(existing.getTitle(), title)
+                        || !Objects.equals(existing.getContent(), content);
+                // 수정 감지 재크롤은 최근 2주 이내 작성 공지에만 적용
+                boolean recent = existing.getCrawledDate() != null
+                        && !existing.getCrawledDate().isBefore(LocalDate.now().minusWeeks(CHANGE_DETECT_WEEKS));
+
+                if (!extractionValid || !changed || !recent) {
+                    existing.updateViewCount(viewCountInt);   // 변경없음/추출실패/2주 초과 → 조회수만
+                    crawledAnnouncementRepository.saveAndFlush(existing);
+                    log.info("기존 공지 조회수 업데이트 - 번호: {}, 조회수: {}", number, viewCountInt);
+                    return;
+                }
+
+                crawledAnnouncementUpdateService.applyCrawlUpdate(
+                        existing.getId(), AnnouncementCategory.from(category), title, content,
+                        writer, LocalDate.parse(createDate), viewCountInt, crawledAnnouncementFiles);
+                log.info("공지 변경 감지 → 갱신 완료 - 번호: {}", number);
+                return;
+            }
+
             CrawledAnnouncement crawledAnnouncement = CrawledAnnouncement.builder()
                     .category(AnnouncementCategory.from(category))
-                    .number(number)  // String으로 저장
-                    .title(title)
-                    .writer(writer)
-                    .viewCount(viewCountInt)
-                    .announcementType(AnnouncementType.DORMITORY)
-                    .content(content)
+                    .number(number).title(title).writer(writer).viewCount(viewCountInt)
+                    .announcementType(AnnouncementType.DORMITORY).content(content)
                     .crawledAnnouncementFiles(crawledAnnouncementFiles)
-                    .crawledDate(LocalDate.parse(createDate))
-                    .link(link)
+                    .crawledDate(LocalDate.parse(createDate)).link(link)
                     .build();
-
             crawledAnnouncementRepository.save(crawledAnnouncement);
 
             for (CrawledAnnouncementFile attachedFile : crawledAnnouncementFiles) {
@@ -336,26 +294,21 @@ public class AnnouncementCrawlScheduler {
                     .title("새로운 공지사항이 올라왔어요!")
                     .body(crawledAnnouncement.getTitle())
                     .notificationType(NotificationType.DORMITORY)
-                    .apiType(ApiType.ANNOUNCEMENT)
-                    .build();
-
+                    .apiType(ApiType.ANNOUNCEMENT).build();
             notificationRepository.save(notification);
 
-            List<Role> dormitoryUserRoles = Arrays.asList(Role.ROLE_DORM_MANAGER, Role.ROLE_DORM_LIFE_MANAGER, Role.ROLE_DORM_ROOMMATE_MANAGER);
-
-            List<User> allUsers = userRepository.findByReceiveNotificationTypesContainsAndRoleNotIn(NotificationType.DORMITORY, dormitoryUserRoles);
-
+            List<Role> dormitoryUserRoles = Arrays.asList(
+                    Role.ROLE_DORM_MANAGER, Role.ROLE_DORM_LIFE_MANAGER, Role.ROLE_DORM_ROOMMATE_MANAGER);
+            List<User> allUsers = userRepository.findByReceiveNotificationTypesContainsAndRoleNotIn(
+                    NotificationType.DORMITORY, dormitoryUserRoles);
             for (User receiveUser : allUsers) {
-                UserNotification userNotification = UserNotification.of(receiveUser, notification);
-                userNotificationRepository.save(userNotification);
-
+                userNotificationRepository.save(UserNotification.of(receiveUser, notification));
                 fcmMessageService.sendNotification(receiveUser, notification.getTitle(), notification.getBody());
             }
 
         } catch (Exception e) {
             log.error("링크 크롤링 실패: {}", e.getMessage(), e);
         }
-        // finally 블록에서 driver.quit(); ❌ 삭제됨 (crawling()에서 최종적으로 처리)
     }
 
     private List<Map<String, String>> extractNoticesFromPage(WebDriver driver) {

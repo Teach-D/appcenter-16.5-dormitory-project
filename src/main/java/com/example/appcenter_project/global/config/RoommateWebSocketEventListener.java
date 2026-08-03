@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionConnectedEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
+import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,6 +33,8 @@ public class RoommateWebSocketEventListener {
     public static final Map<String, String> roommateChatRoomMap = new ConcurrentHashMap<>();
     public static final Map<String, String> roommateChatRoomUserMap = new ConcurrentHashMap<>();
     public static final Map<String, List<String>> roommateChatRoomInUserMap = new ConcurrentHashMap<>();
+    // "sessionId:subscriptionId" → roomId (UNSUBSCRIBE 시 역추적용)
+    public static final Map<String, String> roommateSubscriptionRoomMap = new ConcurrentHashMap<>();
 
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectedEvent event) {
@@ -126,6 +129,12 @@ public class RoommateWebSocketEventListener {
                         .computeIfAbsent(roomId.toString(), k -> new ArrayList<>())
                         .add(userId);
 
+                // UNSUBSCRIBE 시 역추적을 위해 subscriptionId → roomId 기록
+                String subscriptionId = accessor.getSubscriptionId();
+                if (subscriptionId != null) {
+                    roommateSubscriptionRoomMap.put(sessionId + ":" + subscriptionId, roomId.toString());
+                }
+
                 // 읽지 않은 메시지 → 읽음 처리
                 try {
                     RoommateChattingRoom chatRoom = chatRoomRepository.findById(roomId)
@@ -164,6 +173,31 @@ public class RoommateWebSocketEventListener {
     }
 
     @EventListener
+    public void handleWebSocketUnsubscribeListener(SessionUnsubscribeEvent event) {
+        StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
+        String sessionId = accessor.getSessionId();
+        String subscriptionId = accessor.getSubscriptionId();
+
+        if (subscriptionId == null) return;
+
+        String roomId = roommateSubscriptionRoomMap.remove(sessionId + ":" + subscriptionId);
+        if (roomId == null) return;
+
+        String userId = roommateChatRoomUserMap.get(sessionId);
+        if (userId != null) {
+            List<String> users = roommateChatRoomInUserMap.get(roomId);
+            if (users != null) {
+                users.remove(userId);
+                if (users.isEmpty()) {
+                    roommateChatRoomInUserMap.remove(roomId);
+                }
+            }
+        }
+
+        log.info("Roommate 채팅방 구독 해제: roomId={}, userId={}", roomId, userId);
+    }
+
+    @EventListener
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
         String sessionId = event.getSessionId();
 
@@ -181,6 +215,7 @@ public class RoommateWebSocketEventListener {
 
             roommateChatRoomMap.remove(sessionId);
             roommateChatRoomUserMap.remove(sessionId);
+            roommateSubscriptionRoomMap.entrySet().removeIf(e -> e.getKey().startsWith(sessionId + ":"));
 
             log.info("Roommate 채팅방 퇴장: roomId={}, userId={}", roomId, userId);
         }

@@ -66,6 +66,13 @@ public class RoommateChattingChatService {
             throw new CustomException(ROOMMATE_CHAT_ROOM_FORBIDDEN); // 해당 채팅방 소속이 아님
         }
 
+        // 수신자가 방을 나간 상태면 메시지 수신 시 자동 재진입 (채팅 목록에 다시 표시)
+        if (room.getHost().getId().equals(receiver.getId()) && room.isHostLeft()) {
+            room.rejoinAsHost();
+        } else if (room.getGuest().getId().equals(receiver.getId()) && room.isGuestLeft()) {
+            room.rejoinAsGuest();
+        }
+
         log.info("👥 [채팅방 참여자] 발신자: {} ({}), 수신자: {} ({})",
                 sender.getId(), sender.getStudentNumber(),
                 receiver.getId(), receiver.getStudentNumber());
@@ -130,9 +137,10 @@ public class RoommateChattingChatService {
             readIds.add(chat.getId());
         });
 
-        // 읽음 처리된 메시지 ID들을 실시간으로 전송
+        // 읽음 처리된 메시지 ID들을 발신자(상대방)에게 실시간 전송
         if (!readIds.isEmpty()) {
-            String destination = "/sub/roommate/chat/read/" + roomId + "/user/" + userId;
+            Long otherUserId = room.getHost().getId().equals(userId) ? room.getGuest().getId() : room.getHost().getId();
+            String destination = "/sub/roommate/chat/read/" + roomId + "/user/" + otherUserId;
             log.info("📖 [실시간 읽음 처리] destination: {}, readIds: {}", destination, readIds);
             messagingTemplate.convertAndSend(destination, readIds);
         }
@@ -146,6 +154,35 @@ public class RoommateChattingChatService {
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
         return chatRepository.findByRoommateChattingRoomAndMemberNotAndReadByReceiverFalse(room, user).size();
+    }
+
+    public void sendSystemMessage(RoommateChattingRoom room, String content) {
+        RoommateChattingChat systemChat = RoommateChattingChat.createSystemMessage(room, content);
+        chatRepository.save(systemChat);
+        ResponseRoommateChatDto dto = ResponseRoommateChatDto.systemDto(room.getId(), content);
+        messagingTemplate.convertAndSend("/sub/roommate/chat/" + room.getId(), dto);
+    }
+
+    @Transactional
+    public void sendSystemMessageById(Long roomId, String content) {
+        RoommateChattingRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new CustomException(ROOMMATE_CHAT_ROOM_NOT_FOUND));
+        sendSystemMessage(room, content);
+    }
+
+    @Transactional
+    public void sendStudentIdRequestMessage(Long roomId, Long requesterId, Long requestId) {
+        RoommateChattingRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new CustomException(ROOMMATE_CHAT_ROOM_NOT_FOUND));
+        User requester = userRepository.findById(requesterId)
+                .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+        String content = "{\"requestId\":" + requestId + ",\"requesterId\":" + requesterId
+                + ",\"requesterNickname\":\"" + requester.getName() + "\"}";
+        RoommateChattingChat chat = RoommateChattingChat.createStudentIdRequestMessage(
+                room, requester, content, requestId);
+        chatRepository.save(chat);
+        ResponseRoommateChatDto dto = ResponseRoommateChatDto.entityToDto(chat, null);
+        messagingTemplate.convertAndSend("/sub/roommate/chat/" + roomId, dto);
     }
 
     public Integer getUnReadCountByUserId(Long userId) {
@@ -197,22 +234,27 @@ public class RoommateChattingChatService {
         // 안 읽은 메시지 읽음 처리 (내가 보낸 거 제외)
         List<Long> readIds = new ArrayList<>();
         chatList.stream()
-                .filter(chat -> !chat.getMember().getId().equals(userId) && !chat.isReadByReceiver())
+                .filter(chat -> chat.getMember() != null
+                        && !chat.getMember().getId().equals(userId)
+                        && !chat.isReadByReceiver())
                 .forEach(chat -> {
                     chat.markAsRead();
                     readIds.add(chat.getId());
                 });
 
-        // 읽음 처리된 메시지가 있으면 알림 전송
+        // 읽음 처리된 메시지가 있으면 발신자(상대방)에게 알림 전송
         if (!readIds.isEmpty()) {
-            String destination = "/sub/roommate/chat/read/" + roomId + "/user/" + userId;
+            Long otherUserId = room.getHost().getId().equals(userId) ? room.getGuest().getId() : room.getHost().getId();
+            String destination = "/sub/roommate/chat/read/" + roomId + "/user/" + otherUserId;
             log.info("📖 [채팅 조회 시 읽음 처리] destination: {}, readIds: {}", destination, readIds);
             messagingTemplate.convertAndSend(destination, readIds);
         }
 
         return chatList.stream()
                 .map(chat -> {
-                    String imageUrl = imageService.findImage(ImageType.USER, chat.getMember().getId(), request).getImageUrl();
+                    String imageUrl = chat.getMember() != null
+                            ? imageService.findImage(ImageType.USER, chat.getMember().getId(), request).getImageUrl()
+                            : null;
                     return ResponseRoommateChatDto.entityToDto(chat, imageUrl);
                 })
                 .toList();

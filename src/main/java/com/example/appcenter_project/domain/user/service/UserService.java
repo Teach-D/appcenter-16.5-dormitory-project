@@ -1,6 +1,8 @@
 package com.example.appcenter_project.domain.user.service;
 
 import com.example.appcenter_project.domain.groupOrder.service.GroupOrderQueryService;
+import com.example.appcenter_project.domain.openChat.service.OpenChatDormOfficialRoomService;
+import com.example.appcenter_project.domain.openChat.service.OpenChatMessageReportService;
 import com.example.appcenter_project.domain.user.dto.request.*;
 import com.example.appcenter_project.common.image.dto.ImageLinkDto;
 import com.example.appcenter_project.domain.groupOrder.dto.response.ResponseGroupOrderDto;
@@ -26,6 +28,11 @@ import com.example.appcenter_project.global.mixpanel.MixpanelService;
 import com.example.appcenter_project.global.security.jwt.JwtTokenProvider;
 import com.example.appcenter_project.domain.fcm.service.FcmMessageService;
 import com.example.appcenter_project.common.image.service.ImageService;
+import com.example.appcenter_project.domain.notification.service.RoommateNotificationService;
+import com.example.appcenter_project.domain.roommate.repository.RoommateBoardRepository;
+import com.example.appcenter_project.domain.roommate.repository.RoommateCheckListRepository;
+import com.example.appcenter_project.domain.roommate.service.MatchingPeriod;
+import com.example.appcenter_project.domain.roommate.service.RoommateMatchingPeriodResolver;
 import com.example.appcenter_project.domain.roommate.service.RoommateQueryService;
 import com.example.appcenter_project.domain.tip.service.TipQueryService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -62,6 +69,12 @@ public class UserService {
     private final FcmMessageService fcmMessageService;
     private final MixpanelService mixpanelService;
     private final TestAccountProperties testAccountProperties;
+    private final OpenChatMessageReportService openChatMessageReportService;
+    private final OpenChatDormOfficialRoomService openChatDormOfficialRoomService;
+    private final RoommateCheckListRepository roommateCheckListRepository;
+    private final RoommateBoardRepository roommateBoardRepository;
+    private final RoommateNotificationService roommateNotificationService;
+    private final RoommateMatchingPeriodResolver periodResolver;
 
     // ========== Public Methods ========== //
 
@@ -116,15 +129,19 @@ public class UserService {
 
     public ResponseUserDto findUser(Long userId) {
         User user = findUserById(userId);
-
         boolean hasUnreadNotifications = user.hasUnreadNotifications();
-        boolean hasRoommateCheckList = user.hasRoommateCheckList();
+        MatchingPeriod period = periodResolver.resolveCurrent(LocalDate.now());
+        boolean hasRoommateCheckList = roommateCheckListRepository.existsByUserIdAndYearAndSemester(userId, period.year(), period.semester());
+        long reportedCount = openChatMessageReportService.countApprovedReports(user.getStudentNumber());
 
-        return ResponseUserDto.from(user, hasRoommateCheckList, hasUnreadNotifications);
+        return ResponseUserDto.from(user, hasRoommateCheckList, hasUnreadNotifications, reportedCount);
     }
 
     public List<ResponseUserDto> findAllUsers() {
-        return userRepository.findAll().stream().map(ResponseUserDto::createBasicDto).toList();
+        Map<String, Long> countMap = openChatMessageReportService.approvedCountMap();
+        return userRepository.findAll().stream()
+                .map(u -> ResponseUserDto.createBasicDto(u, countMap.getOrDefault(u.getStudentNumber(), 0L)))
+                .toList();
     }
 
     public List<ResponseUserRole> findUsersDormitoryRoles() {
@@ -137,10 +154,11 @@ public class UserService {
     }
 
     public List<ResponseBoardDto> findUserBoards(Long userId, HttpServletRequest request) {
+        List<ResponseRoommatePostDto> roommateBoards = roommateQueryService.findByUser(userId);
         List<ResponseTipDto> tips = tipQueryService.findTipsByUser(userId, request);
         List<ResponseGroupOrderDto> groupOrders = groupOrderQueryService.findGroupOrdersByUser(userId, request);
 
-        return Stream.of(tips, groupOrders)
+        return Stream.of(roommateBoards, tips, groupOrders)
                 .flatMap(Collection::stream)
                 .sorted(Comparator.comparing(ResponseBoardDto::getCreateDate).reversed())
                 .collect(Collectors.toList());
@@ -201,12 +219,21 @@ public class UserService {
 
     public ResponseUserDto updateUser(Long userId, RequestUserDto request) {
         User user = findUserById(userId);
+        DormType oldDorm = user.getDormType();
         user.update(request);
-
+        if (oldDorm != user.getDormType()) {
+            openChatDormOfficialRoomService.reassignDormRoom(userId, oldDorm, user.getDormType());
+        }
+        MatchingPeriod period = periodResolver.resolveCurrent(LocalDate.now());
+        roommateCheckListRepository.findFirstByUserIdAndYearAndSemester(userId, period.year(), period.semester())
+                .ifPresent(cl -> cl.syncUserInfo(user.getDormType(), user.getCollege()));
+        roommateBoardRepository.findByUserIdAndYearAndSemester(userId, period.year(), period.semester())
+                .ifPresent(board -> roommateNotificationService.sendFilteredNotificationsOnUpdate(board, userId));
         boolean hasUnreadNotifications = user.hasUnreadNotifications();
-        boolean hasRoommateCheckList = user.hasRoommateCheckList();
+        boolean hasRoommateCheckList = roommateCheckListRepository.existsByUserIdAndYearAndSemester(userId, period.year(), period.semester());
+        long reportedCount = openChatMessageReportService.countApprovedReports(user.getStudentNumber());
 
-        return ResponseUserDto.from(user, hasRoommateCheckList, hasUnreadNotifications);
+        return ResponseUserDto.from(user, hasRoommateCheckList, hasUnreadNotifications, reportedCount);
     }
 
     public void updateUserAgreement(Long userId, boolean isTermsAgreed, boolean isPrivacyAgreed) {
@@ -417,6 +444,14 @@ public class UserService {
         } catch (Exception e) {
             log.warn("Mixpanel 로그인 이벤트 추적 실패 - userId: {}", user.getId());
         }
+    }
+
+    public void reassignDormRoomOnDormTypeChange(Long userId, DormType oldDorm, DormType newDorm) {
+        userRepository.findById(userId);
+        if (oldDorm == newDorm) {
+            return;
+        }
+        openChatDormOfficialRoomService.reassignDormRoom(userId, oldDorm, newDorm);
     }
 
     private void trackLoginFail(String studentNumber, String reason) {

@@ -35,6 +35,14 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
     private String userName;
     private boolean isMatched;
     private String userProfileImageUrl;
+    private Integer year;
+    private SemesterType semester;
+    private boolean isRead;
+    private boolean isMyPost;
+    private boolean isCurrentPeriod;
+    private Integer matchedFilterCount;
+    private List<String> matchedFilterFields;
+    private boolean isBlockedByAuthor;
 
     @Builder
     public ResponseRoommatePostDto(Long id, String title, String type, LocalDateTime createDate, String filePath,
@@ -43,7 +51,7 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
                                    SleepSensitivityType sleeper, ShowerTimeType showerHour, ShowerDurationType showerTime,
                                    BedTimeType bedTime, CleanlinessType arrangement, String comment,
                                    int roommateBoardLike, Long userId, String userName, boolean isMatched,
-                                   String userProfileImageUrl) {
+                                   String userProfileImageUrl, Integer year, SemesterType semester, boolean isRead, boolean isMyPost, boolean isCurrentPeriod) {
         super(id, title, type, createDate, filePath);
         this.dormPeriod = dormPeriod;
         this.dormType = dormType;
@@ -64,6 +72,28 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
         this.userName = userName;
         this.isMatched = isMatched;
         this.userProfileImageUrl = userProfileImageUrl;
+        this.year = year;
+        this.semester = semester;
+        this.isRead = isRead;
+        this.isMyPost = isMyPost;
+        this.isCurrentPeriod = isCurrentPeriod;
+    }
+
+    public void updateIsRead(boolean isRead) {
+        this.isRead = isRead;
+    }
+
+    public void updateIsCurrentPeriod(boolean isCurrentPeriod) {
+        this.isCurrentPeriod = isCurrentPeriod;
+    }
+
+    public void updateMatchedFilter(List<String> fields) {
+        this.matchedFilterFields = fields;
+        this.matchedFilterCount = fields != null ? fields.size() : null;
+    }
+
+    public void updateIsBlockedByAuthor(boolean v) {
+        this.isBlockedByAuthor = v;
     }
 
     public static ResponseRoommatePostDto entityToDto(RoommateBoard board, boolean isMatched, String userProfileImageUrl) {
@@ -95,6 +125,8 @@ public class ResponseRoommatePostDto extends ResponseBoardDto {
                 .userName(user.getName())
                 .isMatched(isMatched)
                 .userProfileImageUrl(userProfileImageUrl)
-                .build();
+                .year(board.getYear())
+                .semester(board.getSemester())
+                .build();   // isRead 미설정 → 기본 false, 상세에서 updateIsRead로 주입
     }
 }

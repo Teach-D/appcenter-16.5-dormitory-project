@@ -3,6 +3,7 @@ package com.example.appcenter_project.domain.openChat.entity;
 import com.example.appcenter_project.common.BaseTimeEntity;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomScope;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomType;
+import com.example.appcenter_project.domain.user.enums.DormType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -55,6 +56,9 @@ public class OpenChatRoom extends BaseTimeEntity {
     @Column(nullable = false)
     private boolean isPublic = true;
 
+    @Enumerated(EnumType.STRING)
+    private DormType targetDorm;
+
     public boolean matchesPassword(String input) {
         return this.password == null || this.password.equals(input);
     }
@@ -71,6 +75,38 @@ public class OpenChatRoom extends BaseTimeEntity {
         room.isOfficial = isOfficial;
         room.createdBy = createdBy;
         room.roomType = OpenChatRoomType.OPEN;
+        room.isPublic = true;
+        return room;
+    }
+
+    public static OpenChatRoom create(String name, String description, OpenChatRoomScope scope,
+                                       int maxParticipants, Long createdBy,
+                                       String creatorDormitory, boolean isOfficial,
+                                       String password, boolean isPublic) {
+        OpenChatRoom room = new OpenChatRoom();
+        room.name = name;
+        room.description = description;
+        room.scope = scope;
+        room.maxParticipants = maxParticipants;
+        room.creatorDormitory = creatorDormitory;
+        room.isOfficial = isOfficial;
+        room.createdBy = createdBy;
+        room.roomType = OpenChatRoomType.OPEN;
+        room.password = password;
+        room.isPublic = isPublic;
+        return room;
+    }
+
+    public static OpenChatRoom createPersonal(String name, Long createdBy, String password) {
+        OpenChatRoom room = new OpenChatRoom();
+        room.name = name;
+        room.scope = OpenChatRoomScope.ALL;
+        room.maxParticipants = 2;
+        room.isOfficial = false;
+        room.createdBy = createdBy;
+        room.roomType = OpenChatRoomType.PERSONAL;
+        room.isPublic = false;
+        room.password = (password != null && !password.isBlank()) ? password : null;
         return room;
     }
 
@@ -90,19 +126,83 @@ public class OpenChatRoom extends BaseTimeEntity {
     }
 
     public static OpenChatRoom createDerived(String name, String description, int maxParticipants,
-                                              Long createdBy, String password, boolean isPublic) {
+                                             Long createdBy, String password, boolean isPublic,
+                                             String creatorDormitory) {
         OpenChatRoom room = new OpenChatRoom();
         room.name = name;
         room.description = description;
-        room.scope = OpenChatRoomScope.ALL;
+        room.scope = creatorDormitory != null            // 부모 기숙사 상속
+                ? OpenChatRoomScope.DORMITORY
+                : OpenChatRoomScope.ALL;
         room.maxParticipants = maxParticipants;
-        room.creatorDormitory = null;
+        room.creatorDormitory = creatorDormitory;
         room.isOfficial = false;
         room.createdBy = createdBy;
         room.roomType = OpenChatRoomType.DERIVED;
         room.password = password;
         room.isPublic = isPublic;
         return room;
+    }
+
+    public static OpenChatRoom createDormOfficial(String name, String description, Long createdBy, DormType targetDorm) {
+        OpenChatRoom room = new OpenChatRoom();
+        room.name = name;
+        room.description = description;
+        room.scope = OpenChatRoomScope.ALL;
+        room.maxParticipants = Integer.MAX_VALUE;
+        room.isOfficial = true;
+        room.createdBy = createdBy;
+        room.roomType = OpenChatRoomType.OPEN;
+        room.isPublic = true;
+        room.targetDorm = targetDorm;
+        return room;
+    }
+
+    public static OpenChatRoom createDormOfficialForTest(Long id, String name, DormType targetDorm) {
+        OpenChatRoom room = new OpenChatRoom();
+        room.id = id;
+        room.name = name;
+        room.scope = OpenChatRoomScope.ALL;
+        room.maxParticipants = Integer.MAX_VALUE;
+        room.isOfficial = true;
+        room.roomType = OpenChatRoomType.OPEN;
+        room.isPublic = true;
+        room.targetDorm = targetDorm;
+        return room;
+    }
+
+    public static OpenChatRoom createForTest(Long id, String name) {
+        OpenChatRoom room = new OpenChatRoom();
+        room.id = id;
+        room.name = name;
+        room.scope = OpenChatRoomScope.ALL;
+        room.maxParticipants = 10;
+        room.isOfficial = false;
+        room.roomType = OpenChatRoomType.OPEN;
+        room.isPublic = true;
+        return room;
+    }
+
+    public static OpenChatRoom createForTest(Long id, String name, OpenChatRoomType roomType) {
+        OpenChatRoom room = new OpenChatRoom();
+        room.id = id;
+        room.name = name;
+        room.scope = OpenChatRoomScope.ALL;
+        room.maxParticipants = 10;
+        room.isOfficial = false;
+        room.roomType = roomType;
+        room.isPublic = true;
+        return room;
+    }
+
+    public void update(String name, String description, OpenChatRoomScope scope,
+                       Integer maxParticipants, String password, Boolean isPublic) {
+        if (name != null)            this.name = name;
+        if (description != null)     this.description = description;
+        if (scope != null)           this.scope = scope;
+        if (maxParticipants != null) this.maxParticipants = maxParticipants;
+        if (password != null)        this.password = password.isBlank() ? null : password;
+        if (isPublic != null)        this.isPublic = isPublic;
     }
 
     public void updateLastMessage(String content, LocalDateTime at) {

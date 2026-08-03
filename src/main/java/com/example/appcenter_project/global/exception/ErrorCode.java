@@ -181,6 +181,15 @@ public enum ErrorCode {
     OPEN_CHAT_SOLE_HOST_CANNOT_LEAVE(BAD_REQUEST, 22016, "[OpenChat] 단독 방장은 방 삭제 또는 방장 위임 후 나갈 수 있습니다."),
     OPEN_CHAT_KICK_FORBIDDEN(FORBIDDEN, 22017, "[OpenChat] 강제퇴장 권한이 없습니다."),
     OPEN_CHAT_NEW_HOST_REQUIRED(BAD_REQUEST, 22018, "[OpenChat] 방장 강퇴 시 새 방장을 지정해야 합니다."),
+    OPEN_CHAT_SELF_PERSONAL_FORBIDDEN(BAD_REQUEST, 22019, "[OpenChat] 자기 자신과 개인 채팅방을 생성할 수 없습니다."),
+    OPEN_CHAT_MESSAGE_NOT_FOUND(NOT_FOUND, 22020, "[OpenChat] 메시지를 찾을 수 없습니다."),
+    OPEN_CHAT_REPORT_SELF(BAD_REQUEST, 22021, "[OpenChat] 자신의 메시지는 신고할 수 없습니다."),
+    OPEN_CHAT_REPORT_NOT_FOUND(NOT_FOUND, 22022, "[OpenChat] 신고 내역을 찾을 수 없습니다."),
+    OPEN_CHAT_REPORT_ALREADY_HANDLED(BAD_REQUEST, 22023, "[OpenChat] 이미 처리된 신고입니다."),
+    OPEN_CHAT_REPORT_TARGET_INVALID(BAD_REQUEST, 22024, "[OpenChat] 신고할 수 없는 메시지입니다."),
+    OPEN_CHAT_NOT_HOST(FORBIDDEN, 22025, "[OpenChat] 방장만 채팅방 정보를 수정할 수 있습니다."),
+    OPEN_CHAT_MAX_PARTICIPANTS_TOO_SMALL(BAD_REQUEST, 22026, "[OpenChat] 최대 인원은 현재 참여자 수 이상이어야 합니다."),
+    OPEN_CHAT_DORM_OFFICIAL_ROOM_ALREADY_EXISTS(CONFLICT, 22027, "[OpenChat] 해당 기숙사의 공식 채팅방이 이미 존재합니다."),
 
     // STUDENT_ID_DISCLOSURE
     DISCLOSURE_REQUEST_NOT_FOUND(NOT_FOUND, 23001, "[StudentIdDisclosure] 학번 공개 요청을 찾을 수 없습니다."),
@@ -207,6 +216,12 @@ public enum ErrorCode {
     // WEATHER
     WEATHER_API_ERROR(INTERNAL_SERVER_ERROR, 25001, "[Weather] 기상청 API 호출 중 오류가 발생했습니다."),
     WEATHER_INVALID_LOCATION(BAD_REQUEST, 25002, "[Weather] 대한민국 범위를 벗어난 위경도입니다."),
+
+    // BLOCK
+    USER_BLOCK_CANNOT_BLOCK_SELF(BAD_REQUEST, 26001, "[Block] 자기 자신을 차단할 수 없습니다."),
+    USER_BLOCK_ALREADY_EXISTS(CONFLICT, 26002, "[Block] 이미 차단한 사용자입니다."),
+    USER_BLOCKED_BY_TARGET(FORBIDDEN, 26003, "[Block] 상대방에 의해 차단된 사용자입니다."),
+    USER_BLOCK_NOT_FOUND(NOT_FOUND, 26004, "[Block] 차단 기록이 존재하지 않습니다."),
 
     // SERVER
     UNHANDLED_EXCEPTION(INTERNAL_SERVER_ERROR, 99999, "[Server] 서버 내부 오류가 발생했습니다.");

@@ -8,14 +8,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface StudentIdDisclosureRequestRepository extends JpaRepository<StudentIdDisclosureRequest, Long> {
 
     Optional<StudentIdDisclosureRequest> findByRequesterIdAndTargetIdAndRoomId(Long requesterId, Long targetId, Long roomId);
-
-    boolean existsByRequesterIdAndTargetIdAndRoomIdAndStatusIn(Long requesterId, Long targetId, Long roomId, List<DisclosureRequestStatus> statuses);
 
     @Modifying
     @Transactional
@@ -27,4 +24,8 @@ public interface StudentIdDisclosureRequestRepository extends JpaRepository<Stud
     void deleteByRoomIdAndUserId(@Param("roomId") Long roomId, @Param("userId") Long userId);
 
     Optional<StudentIdDisclosureRequest> findByRoomIdAndRequesterIdAndTargetIdAndStatus(Long roomId, Long requesterId, Long targetId, DisclosureRequestStatus status);
+
+    Optional<StudentIdDisclosureRequest> findFirstByRoomIdAndRequesterIdAndTargetIdAndStatus(Long roomId, Long requesterId, Long targetId, DisclosureRequestStatus status);
+
+    boolean existsByRequesterIdAndTargetIdAndRoomIdAndStatus(Long requesterId, Long targetId, Long roomId, DisclosureRequestStatus status);
 }
