@@ -44,10 +44,12 @@ public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslR
 
     @Override
     public List<OpenChatRoom> findByDormitory(String dormType, String keyword) {
-        BooleanExpression regularRooms =
-                openChatRoom.scope.eq(OpenChatRoomScope.DORMITORY)
-                        .or(openChatRoom.roomType.eq(OpenChatRoomType.DERIVED))
-                        .and(creatorDormitoryEq(dormType));
+        BooleanExpression regularRooms = openChatRoom.scope.eq(OpenChatRoomScope.DORMITORY)
+                .and(creatorDormitoryEq(dormType))
+                .and(
+                        openChatRoom.roomType.ne(OpenChatRoomType.DERIVED)
+                                .or(openChatRoom.isPublic.isTrue())
+                );
         BooleanExpression officialRoom = targetDormEq(dormType);
         BooleanExpression condition = officialRoom != null
                 ? regularRooms.or(officialRoom)
@@ -71,11 +73,13 @@ public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslR
         return queryFactory
                 .selectFrom(openChatRoom)
                 .where(
-                        openChatRoom.roomType.in(OpenChatRoomType.OPEN, OpenChatRoomType.DERIVED)
-                                .and(openChatRoom.isPublic.isTrue())
+                        openChatRoom.isPublic.isTrue()
                                 .and(openChatRoom.scope.eq(OpenChatRoomScope.ALL))
-                                .and(openChatRoom.creatorDormitory.isNull())
-                                .and(openChatRoom.targetDorm.isNull()),
+                                .and(openChatRoom.targetDorm.isNull())
+                                .and(
+                                        openChatRoom.roomType.eq(OpenChatRoomType.OPEN)
+                                                .or(openChatRoom.roomType.eq(OpenChatRoomType.DERIVED))
+                                ),
                         keywordContains(keyword)
                 )
                 .fetch();

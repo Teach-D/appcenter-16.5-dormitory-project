@@ -113,7 +113,8 @@ public class OpenChatRoomService {
                 userId,
                 request.getPassword(),
                 request.getIsPublic(),
-                originRoom.getCreatorDormitory()
+                originRoom.getCreatorDormitory(),
+                originRoom.getScope()
         );
         OpenChatRoom savedRoom = openChatRoomRepository.save(derivedRoom);
         openChatParticipantRepository.save(OpenChatParticipant.create(savedRoom.getId(), userId, true));
