@@ -50,6 +50,7 @@ public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslR
         BooleanExpression condition = officialRoom != null
                 ? regularRooms.or(officialRoom)
                 : regularRooms;
+        condition = condition.and(openChatRoom.isPublic.isTrue());   // 비노출 방 제외
         return queryFactory
                 .selectFrom(openChatRoom)
                 .where(condition, keywordContains(keyword))
@@ -69,7 +70,9 @@ public class OpenChatRoomQuerydslRepositoryImpl implements OpenChatRoomQuerydslR
                 .selectFrom(openChatRoom)
                 .where(
                         openChatRoom.roomType.in(OpenChatRoomType.OPEN, OpenChatRoomType.DERIVED)
-                                .and(openChatRoom.isPublic.isTrue()),
+                                .and(openChatRoom.isPublic.isTrue())
+                                .and(openChatRoom.scope.eq(OpenChatRoomScope.ALL))
+                                .and(openChatRoom.creatorDormitory.isNull()),
                         keywordContains(keyword)
                 )
                 .fetch();
