@@ -6,6 +6,7 @@ import com.example.appcenter_project.domain.openChat.entity.OpenChatParticipant;
 import com.example.appcenter_project.domain.openChat.entity.OpenChatRoom;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatParticipantRepository;
 import com.example.appcenter_project.domain.openChat.repository.OpenChatRoomRepository;
+import com.example.appcenter_project.domain.openChat.enums.ChatNotificationMode;
 import com.example.appcenter_project.domain.user.entity.User;
 import com.example.appcenter_project.domain.user.enums.DormType;
 import com.example.appcenter_project.domain.user.repository.UserRepository;
@@ -41,7 +42,8 @@ public class OpenChatDormOfficialRoomService {
 
         List<User> users = userRepository.findAllByDormType(dormType);
         List<OpenChatParticipant> participants = users.stream()
-                .map(u -> OpenChatParticipant.create(savedRoom.getId(), u.getId(), LocalDateTime.now()))
+                .map(u -> OpenChatParticipant.create(savedRoom.getId(), u.getId(),
+                        LocalDateTime.now(), ChatNotificationMode.BUNDLED))
                 .toList();
         openChatParticipantRepository.saveAll(participants);
 
@@ -78,7 +80,7 @@ public class OpenChatDormOfficialRoomService {
             openChatRoomRepository.findByTargetDorm(newDorm).ifPresent(room -> {
                 if (!openChatParticipantRepository.existsByRoomIdAndUserId(room.getId(), userId)) {
                     openChatParticipantRepository.save(
-                            OpenChatParticipant.create(room.getId(), userId, LocalDateTime.now())
+                            OpenChatParticipant.create(room.getId(), userId, LocalDateTime.now(), ChatNotificationMode.BUNDLED)
                     );
                 }
             });

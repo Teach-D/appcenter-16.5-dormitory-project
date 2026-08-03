@@ -4,13 +4,7 @@ import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateDe
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreateOpenChatRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestCreatePersonalRoomDto;
 import com.example.appcenter_project.domain.openChat.dto.request.RequestUpdateNotificationModeDto;
-import com.example.appcenter_project.domain.openChat.dto.response.ResponseChatRoomListDto;
-import com.example.appcenter_project.domain.openChat.dto.response.ResponseDerivedRoomCreatedDto;
-import com.example.appcenter_project.domain.openChat.dto.response.ResponseLeaveOpenChatRoomDto;
-import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatParticipantListDto;
-import com.example.appcenter_project.domain.openChat.dto.response.ResponseOpenChatRoomDetailDto;
-import com.example.appcenter_project.domain.openChat.dto.response.ResponsePersonalRoomCreatedDto;
-import com.example.appcenter_project.domain.openChat.dto.response.ResponseSimpleParticipantListDto;
+import com.example.appcenter_project.domain.openChat.dto.response.*;
 import com.example.appcenter_project.domain.openChat.enums.KickReason;
 import com.example.appcenter_project.domain.openChat.enums.OpenChatRoomTab;
 import com.example.appcenter_project.global.security.CustomUserDetails;
@@ -230,6 +224,26 @@ public interface OpenChatRoomApiSpecification {
             @RequestBody @Valid
             @Parameter(description = "알림 모드 (EVERY / BUNDLED / OFF)", required = true)
             RequestUpdateNotificationModeDto dto);
+
+    @Operation(
+            summary = "FCM 알림 모드 조회",
+            description = """
+                    해당 채팅방에서 내 현재 FCM 알림 모드를 조회합니다.
+
+                    **mode**: `EVERY`(즉시) / `BUNDLED`(묶음) / `OFF`(끄기)
+                    """,
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "조회 성공",
+                            content = @Content(schema = @Schema(implementation = ResponseNotificationModeDto.class))),
+                    @ApiResponse(responseCode = "401", description = "인증 필요"),
+                    @ApiResponse(responseCode = "404", description = "채팅방 또는 참여 정보를 찾을 수 없음")
+            }
+    )
+    ResponseEntity<ResponseNotificationModeDto> getNotification(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable
+            @Parameter(description = "채팅방 ID", required = true, example = "1")
+            Long roomId);
 
     @Operation(
             summary = "채팅방 강제 삭제",

@@ -57,6 +57,16 @@ public class OpenChatParticipant {
         return participant;
     }
 
+    public static OpenChatParticipant create(Long roomId, Long userId, LocalDateTime joinedAt, ChatNotificationMode mode) {
+        OpenChatParticipant participant = new OpenChatParticipant();
+        participant.roomId = roomId;
+        participant.userId = userId;
+        participant.joinedAt = joinedAt;
+        participant.notificationMode = mode;
+        participant.isHost = false;
+        return participant;
+    }
+
     public void grantHost() {
         this.isHost = true;
     }
@@ -72,4 +82,5 @@ public class OpenChatParticipant {
     public void updateNotificationMode(ChatNotificationMode mode) {
         this.notificationMode = mode;
     }
+
 }
