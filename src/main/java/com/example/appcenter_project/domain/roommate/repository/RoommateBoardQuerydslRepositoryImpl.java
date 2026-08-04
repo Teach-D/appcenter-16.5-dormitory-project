@@ -4,6 +4,7 @@ import com.example.appcenter_project.domain.roommate.entity.QRoommateBoard;
 import com.example.appcenter_project.domain.roommate.entity.QRoommateCheckList;
 import com.example.appcenter_project.domain.roommate.entity.RoommateBoard;
 import com.example.appcenter_project.domain.roommate.enums.SemesterType;
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
@@ -52,5 +53,15 @@ public class RoommateBoardQuerydslRepositoryImpl implements RoommateBoardQueryds
 
     private BooleanExpression semesterEq(SemesterType semester) {
         return semester != null ? board.semester.eq(semester) : null;
+    }
+
+    @Override
+    public List<AvailablePeriod> findDistinctPeriods() {
+        return queryFactory
+                .select(Projections.constructor(AvailablePeriod.class, board.year, board.semester))
+                .distinct()
+                .from(board)
+                .where(board.year.isNotNull(), board.semester.isNotNull())
+                .fetch();
     }
 }

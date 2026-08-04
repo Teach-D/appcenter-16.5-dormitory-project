@@ -2,10 +2,7 @@ package com.example.appcenter_project.domain.roommate.controller;
 
 import com.example.appcenter_project.common.metrics.annotation.TrackApi;
 import com.example.appcenter_project.domain.roommate.dto.request.RequestRoommateFormDto;
-import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateCheckListDto;
-import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateMatchingStatusDto;
-import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommatePostDto;
-import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateSimilarityDto;
+import com.example.appcenter_project.domain.roommate.dto.response.*;
 import com.example.appcenter_project.domain.roommate.enums.SemesterType;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import com.example.appcenter_project.domain.roommate.service.MyRoommateService;
@@ -203,6 +200,13 @@ public class RoommateController implements RoommateApiSpecification{
     @GetMapping("/matching-status")
     public ResponseEntity<ResponseRoommateMatchingStatusDto> getMatchingStatus() {
         return ResponseEntity.ok(roommateService.getMatchingStatus());
+    }
+
+    @TrackApi
+    @Override
+    @GetMapping("/matching-periods")
+    public ResponseEntity<List<ResponseRoommateMatchingPeriodDto>> getMatchingPeriods() {
+        return ResponseEntity.ok(roommateService.getMatchingPeriods());
     }
 
 }
