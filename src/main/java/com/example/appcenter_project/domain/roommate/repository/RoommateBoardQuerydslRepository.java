@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface RoommateBoardQuerydslRepository {
     List<RoommateBoard> searchBoards(Long lastId, int size, String keyword, Integer year, SemesterType semester);
+    List<AvailablePeriod> findDistinctPeriods();
 }

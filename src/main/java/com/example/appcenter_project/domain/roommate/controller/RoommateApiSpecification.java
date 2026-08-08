@@ -1,10 +1,7 @@
 package com.example.appcenter_project.domain.roommate.controller;
 
 import com.example.appcenter_project.domain.roommate.dto.request.RequestRoommateFormDto;
-import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateCheckListDto;
-import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateMatchingStatusDto;
-import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommatePostDto;
-import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateSimilarityDto;
+import com.example.appcenter_project.domain.roommate.dto.response.*;
 import com.example.appcenter_project.domain.roommate.enums.SemesterType;
 import com.example.appcenter_project.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -207,4 +204,16 @@ public interface RoommateApiSpecification {
                     "CLOSED이면 매칭 기간 종료 상태로, UI 안내/차단 처리에 사용합니다."
     )
     ResponseEntity<ResponseRoommateMatchingStatusDto> getMatchingStatus();
+
+    @Operation(
+            summary = "룸메이트 매칭 선택 가능 기간 목록 조회",
+            description = "드롭다운용 — 게시글이 존재하는 학기(중복 제거)와 현재 학기를 최신순으로 반환합니다. " +
+                    "각 항목은 year, semester(1~4), label(예: \"2026년 2학기\"), isCurrent 플래그를 포함합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "조회 성공",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseRoommateMatchingPeriodDto.class)))
+            }
+    )
+    ResponseEntity<List<ResponseRoommateMatchingPeriodDto>> getMatchingPeriods();
 }

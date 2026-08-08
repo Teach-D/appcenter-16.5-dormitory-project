@@ -3,10 +3,7 @@ package com.example.appcenter_project.domain.roommate.service;
 import com.example.appcenter_project.common.image.enums.ImageType;
 import com.example.appcenter_project.common.image.service.ImageService;
 import com.example.appcenter_project.domain.roommate.dto.request.RequestRoommateFormDto;
-import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateCheckListDto;
-import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateMatchingStatusDto;
-import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommatePostDto;
-import com.example.appcenter_project.domain.roommate.dto.response.ResponseRoommateSimilarityDto;
+import com.example.appcenter_project.domain.roommate.dto.response.*;
 import com.example.appcenter_project.domain.roommate.entity.RoommateBoardLike;
 import com.example.appcenter_project.domain.roommate.entity.RoommateBoard;
 import com.example.appcenter_project.domain.roommate.entity.RoommateBoardRead;
@@ -377,6 +374,7 @@ public class RoommateService {
         try {
             checkList.syncUserInfo(user.getDormType(), user.getCollege());
             checkList.update(requestDto);
+            board.updateTitle(requestDto.getTitle());
         } catch (Exception e) {
             throw new CustomException(ErrorCode.ROOMMATE_CHECKLIST_UPDATE_FAILED);
         }
@@ -762,4 +760,36 @@ public class RoommateService {
         return ResponseRoommateMatchingStatusDto.of(current.year(), current.semester(), current.status());
     }
 
+    @Transactional(readOnly = true)
+    public List<ResponseRoommateMatchingPeriodDto> getMatchingPeriods() {
+        MatchingPeriod current = periodResolver.resolveCurrent(LocalDate.now());
+        AvailablePeriod currentKey = new AvailablePeriod(current.year(), current.semester());
+
+        // 게시글이 존재하는 학기(중복 제거) + 현재 학기 항상 포함
+        LinkedHashSet<AvailablePeriod> periods = new LinkedHashSet<>();
+        periods.add(currentKey);
+        periods.addAll(roommateBoardRepository.findDistinctPeriods());
+
+        return periods.stream()
+                .sorted(PERIOD_DESC)                         // 최신 학기 우선
+                .map(p -> ResponseRoommateMatchingPeriodDto.of(
+                        p.year(), p.semester(), p.equals(currentKey)))
+                .toList();
+    }
+
+    // 최신순 정렬: 연도 desc, 같은 연도는 실제 달력 순서 desc
+    private static final Comparator<AvailablePeriod> PERIOD_DESC =
+            Comparator.comparingInt((AvailablePeriod p) -> p.year())
+                    .thenComparingInt(p -> chronoRank(p.semester()))
+                    .reversed();
+
+    // SemesterType 코드(1,2,3,4)가 아니라 달력 순서로 정렬하기 위한 rank
+    private static int chronoRank(SemesterType semester) {
+        return switch (semester) {
+            case FIRST -> 0;            // 1~4월
+            case SUMMER_VACATION -> 1;  // 5~6월
+            case SECOND -> 2;           // 7~10월
+            case WINTER_VACATION -> 3;  // 11~12월
+        };
+    }
 }

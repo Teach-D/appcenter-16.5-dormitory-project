@@ -20,6 +20,7 @@ public class FcmTokenService {
 
     @Transactional
     public void saveToken(Long userId, String token) {
+        if (token == null || token.isBlank()) return;
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
@@ -45,6 +46,7 @@ public class FcmTokenService {
 
     @Transactional
     public void saveToken(CustomUserDetails userDetails, String token) {
+        if (token == null || token.isBlank()) return;
 
         // 로그인한 경우
         if(!(userDetails == null)) {
